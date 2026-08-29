@@ -16,6 +16,7 @@ from agents.poc import Scanner, Flagger
 from agents.scanner import vuln_scan
 from config import config
 from utils import page_helper, flagUtil
+from utils import asg as asg_builder
 from utils.logger import logger
 from utils.agent_manager import agent_manager
 
@@ -42,6 +43,7 @@ class FlagHunter():
         self.key_simple_file = f"{self.task_path}/key-simple.txt"
         self.vuln_file = f"{self.task_path}/vuln.txt"
         self.xray_result_file = f"{self.task_path}/result.json"
+        self.asg_file = f"{self.task_path}/asg.json"
 
         self.explorer_pages = []
         self.detect_pages = []
@@ -140,6 +142,22 @@ class FlagHunter():
                     self.explorer_pages.extend(step_pages)
                     # 更新全局页面列表供心跳使用
                     config.EXPLORED_PAGES = [p['id'] for p in self.explorer_pages]
+
+                # 场景塑造：基于当前已探索页面增量构建 Attack Scene Graph，
+                # 并根据已有漏洞信息计算多步攻击链，写入 asg.json 供后续阶段读取。
+                try:
+                    asg_doc = asg_builder.update_asg_for_task(
+                        self.task_path, vuln_pages=self.vuln_pages or None)
+                    chain_count = len(asg_doc.get("chains", []))
+                    logger.info(
+                        "场景塑造完成：nodes=%s edges=%s chains=%s -> %s",
+                        asg_doc["stats"]["node_count"],
+                        asg_doc["stats"]["edge_count"],
+                        chain_count,
+                        self.asg_file,
+                    )
+                except Exception as asg_exc:
+                    logger.warning("场景塑造失败，继续主流程: %s", asg_exc)
 
                 # 如果发现了新页面，发送页面消息
                 if discovered_pages and agent_manager.current_task_id:
@@ -342,6 +360,13 @@ class FlagHunter():
                             vuln_count += self.llm_scan(p)
                         if vuln_count:
                             self.new_vuln = True
+                            # 漏洞检测命中后立即更新 ASG，让攻击链实时反映新漏洞，
+                            # 便于后续阶段通过 asg 工具直接定位可链式利用的入口。
+                            try:
+                                asg_builder.update_asg_for_task(
+                                    self.task_path, vuln_pages=self.vuln_pages or None)
+                            except Exception as asg_exc:
+                                logger.warning("ASG 增量更新失败: %s", asg_exc)
                     self.detect_pages.append(p)
                 # 漏洞检测完成，更新消息状态为finish
                 if detect_message and agent_manager.current_task_id:

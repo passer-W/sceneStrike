@@ -1,0 +1,228 @@
+{
+  "id": 1685979,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjg1OTc5",
+  "url": "https://hackerone.com/reports/1685979",
+  "title": "DoS via Playbook ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-08-31T00:41:40.539Z",
+  "submitted_at": "2022-08-31T00:41:40.606Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "vultza",
+    "url": "/vultza",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/nn900mz33sie5ce8rs5xesax9tma/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35268,
+    "url": "https://hackerone.com/mattermost",
+    "handle": "mattermost",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Mattermost",
+      "twitter_handle": "Mattermost",
+      "website": "https://mattermost.com",
+      "about": "Open-source collaboration, self-managed or SaaS"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2022-4019"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-11-23T14:55:52.329Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-11-23T14:55:52.216Z",
+  "team_member_agreed_on_going_public_at": "2022-11-23T05:36:22.190Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nA normal user can create a playbook, that has some attributes like the `run_summary_template`, `retrospective_template` and `description`,that don't have any size check or validation, which allows an attacker to set an unlimited number of characters as their values.\n\nIn a production environment is possible to set up to 50MB of data, due to the default nginx configuration, as the `run_summary_template` value. The creation of the playbook for itself is not sufficient to trigger an DoS attack in the application, but once this playbook is executed(run) the server  starts to consume a large amount of computing resources, which causes to the server to stop responding to users requests and ultimately leads to server crash.\n\nThis attack is even worst because after the application is restarted, its not possible to the user who created the playbook run to finish its execution via the Web Portal, because both the channel created by the playbook run, and the run dedicated management page, don't properly load, showing only a blank screen.\n\n## Steps To Reproduce:\n1.  Log in as a normal user in the platform.\n2. Grab the user `MMAUTHTOKEN` authentication token.\n3. Generate the playbook payload, that contains 50000000(50MB) characters as the `run_summary_template` attribute value. Use F1893243\n4. Send the following `POST` request to the `plugins/playbooks/api/v0/playbooks` API endpoint:\n```bash\ncurl -X POST \"http://<domain>/plugins/playbooks/api/v0/playbooks\" -H 'Content-Type: application/json' -d @payload --cookie \"MMAUTHTOKEN=<user-auth-token>\" -H \"X-CSRF-TOKEN: <csrf-token>\"\n```\n5. Go to the playbooks page, and click on the newly created playbook.\n6. Click in the \"Run\" button and then set an name for the run.\n7. After the run is initiated, the server will start to consume an abnormal quantity of computing resources, and crashes after some seconds.\n8. The application becomes unavailable for all its users.\n\n## Supporting Material/References:\n\n  * PoC Video\n{F1893242}\n\n## Impact\n\nA user can cause a full denial of service attack in the application server, making the application server unavailable to all its users.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1893242,
+      "file_name": "dos_playbook_final.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/z25ecgyvkh8lczlknnww6gv2yiu4?response-content-disposition=attachment%3B%20filename%3D%22dos_playbook_final.mp4%22%3B%20filename%2A%3DUTF-8%27%27dos_playbook_final.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050005Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=12cbc9fc1a2b6a3b7617d4ead348b7b8aca4d27576ce2190a1bd7cc9f1a2e474",
+      "file_size": 12310291,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 1893243,
+      "file_name": "generate-payload.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/lawafgj3ghtqfg37s0zep44nfe7f?response-content-disposition=attachment%3B%20filename%3D%22generate-payload.py%22%3B%20filename%2A%3DUTF-8%27%27generate-payload.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050005Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b88258997b498bb25589ff0b499c57e3c3dda6b6f6b661761bb0a8cfd81f158e",
+      "file_size": 1637,
+      "type": "text/x-python",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-12-23T05:36:22.376Z",
+  "allow_singular_disclosure_after": -111281023.46178941,
+  "singular_disclosure_allowed": true,
+  "vote_count": 17,
+  "voters": [
+    "randomrootx",
+    "skoll101",
+    "ertugrul",
+    "oscuridad1010",
+    "zy9ard3",
+    "thalaivar304",
+    "shubham_srt",
+    "ayoub0x1",
+    "2026",
+    "kerolesmagdy",
+    "and 7 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 181350,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Mattermost Plugins",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1685979",
+  "votes": 17,
+  "latest_disclosable_activity_at": "2023-01-17T13:18:33.183Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:00:06.122084",
+    "source": "https://hackerone.com/reports/1685979.json",
+    "report_id": 1685979
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjg1OTc5",
+    "databaseId": "1685979",
+    "title": "DoS via Playbook ",
+    "url": "https://hackerone.com/reports/1685979",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-11-23T14:55:52.329Z",
+    "created_at": "2022-08-31T00:41:40.539Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "vultza"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTk5MTM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-09-02T11:27:16.729Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE2ODU5Nzk=",
+    "_id": "1685979",
+    "disclosed": true,
+    "votes": 17,
+    "latest_disclosable_activity_at": "2023-01-17T13:18:33.183Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjg1OTc5",
+      "databaseId": "1685979",
+      "title": "DoS via Playbook ",
+      "url": "https://hackerone.com/reports/1685979",
+      "disclosed_at": "2022-11-23T14:55:52.329Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    }
+  }
+}

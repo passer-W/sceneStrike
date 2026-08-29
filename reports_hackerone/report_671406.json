@@ -1,0 +1,234 @@
+{
+  "id": 671406,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NzE0MDY=",
+  "url": "https://hackerone.com/reports/671406",
+  "title": "Account takeover via Google OneTap",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-08-11T14:34:02.500Z",
+  "submitted_at": "2019-08-11T14:34:02.500Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "badca7",
+    "url": "/badca7",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/c8r1TwpGjyfCcXs9vLfLormF/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 59,
+    "url": "https://hackerone.com/priceline",
+    "handle": "priceline",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/059/ebb250a0326046ab0360a7b35be8cb3f1fe46a2b_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/059/ebb250a0326046ab0360a7b35be8cb3f1fe46a2b_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Priceline",
+      "twitter_handle": "",
+      "website": "http://www.priceline.com/",
+      "about": "Deep Discounts on Hotels, Flights and Rental Cars."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-05-11T09:37:14.985Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-04-11T09:37:07.580Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nIt's possible to take over any priceline.com user's account knowing their email. The only requirement is that the victim's email domain is not registered with Google's Gsuite. The root cause of this issue is that the backend does not verify whether the email provided is a confirmed one.\n\n## Steps To Reproduce:\n\n1. Create Account A (in my case `badca7@wearehackerone.com`) with priceline.com, without any SSO, via the \"Create an account\" link (aka \"register with email\").\n2. Once the account has been created, add a dummy phone number to the profile. It will serve as a canary to demonstrate we accessed the same data in the next steps.\n3. In another browser/session (eg, incognito/private mode) sign up for a trial GSuite account at https://gsuite.google.com/signup/basic/welcome  . This will be Account B.\n4. Use any email to register as you won't need to confirm that email. \n5. When the wizard comes to the \"Does your business have a domain?\" confirm and enter `wearehackerone.com` (or any other domain that hosts the victim's email box) as in F552718. You may not use the same domain name at this stage, as I claimed it for the purposes of this PoC however you can do so when my GSuite trial expires. From this comes the requirement that the victim's email domain name must not be registered with Google prior to this attack. \n6. Once you saved the domain record with Google, stop there as there's no need to verify the domain.\n7. At this stage the OneTap/GoogleYOLO popup will be showing on priceline.com when visited in the same browser session. It took me some time to get it to show however signing in and out of Google Account several times with the newly created GSuite credentials and then refreshing the priceline.com page helped. On another occasion a Gmail account, which I signed in in the same browser window helped too. You may need to play around with these until you see the newly created account to show in the list. F552723 \n8. Once you have that, just sign in (`badca7@wearehackerone.com` in my case). You can confirm you accessed Account A by seeing the phone number you added in step (2). In the other browser window/session with Account A you can see that now there are two accounts showing in the top right corner and the profile data is blank.\n9. Account takeover complete. F552724\n\n# Notes\n\n- IP used for this PoC: ███\n\n## Impact\n\nAttackers can take over any priceline.com account given they were able to register a specific domain with GSuite.",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 552718,
+      "file_name": "gsuite.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/WRBUJW9BMYXYFNe6UPXguXki?response-content-disposition=attachment%3B%20filename%3D%22gsuite.png%22%3B%20filename%2A%3DUTF-8%27%27gsuite.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051303Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f1ff8c4bec4cc57084344fb5e509cf5877e6d8b8e33980d8bcbcb639805a7e2e",
+      "file_size": 452861,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 552723,
+      "file_name": "popup_onetap.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ZgWnszG6fDSCm1z6JcvedJ2g?response-content-disposition=attachment%3B%20filename%3D%22popup_onetap.png%22%3B%20filename%2A%3DUTF-8%27%27popup_onetap.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051303Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1438ee1c2654db4cdcdd0023df52ccb8617919bf29d7a47bd9ae07db50affb2b",
+      "file_size": 2078055,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 552724,
+      "file_name": "AccountA_after_takeover.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/D4XrEU18NDB6jxMrfG5p7vxf?response-content-disposition=attachment%3B%20filename%3D%22AccountA_after_takeover.png%22%3B%20filename%2A%3DUTF-8%27%27AccountA_after_takeover.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051303Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=45ee73dc9068bd9f891ef1c6890e4a3025764670ed418c48a63bfc5caaa0ceea",
+      "file_size": 437967,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-05-11T09:37:07.732Z",
+  "allow_singular_disclosure_after": -130793755.94143261,
+  "singular_disclosure_allowed": true,
+  "vote_count": 80,
+  "voters": [
+    "0x800700e1",
+    "waseem009",
+    "yxw21",
+    "alp",
+    "zy9ard3",
+    "7odamoo",
+    "bug_vs_me",
+    "yuvraj_dighe",
+    "yassinek3ch",
+    "shreyaschavhan",
+    "and 70 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.1,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 6651,
+    "asset_type": "URL",
+    "asset_identifier": "www.priceline.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "671406",
+  "votes": 79,
+  "latest_disclosable_activity_at": "2022-05-11T09:37:15.095Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:13:03.789636",
+    "source": "https://hackerone.com/reports/671406.json",
+    "report_id": 671406
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NzE0MDY=",
+    "databaseId": "671406",
+    "title": "Account takeover via Google OneTap",
+    "url": "https://hackerone.com/reports/671406",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-05-11T09:37:14.985Z",
+    "created_at": "2019-08-11T14:34:02.500Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.1
+    },
+    "reporter": {
+      "username": "badca7"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU5",
+      "handle": "priceline",
+      "name": "Priceline",
+      "url": "https://hackerone.com/priceline",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNTMzNDc=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-08-15T20:30:48.596Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY3MTQwNg==",
+    "_id": "671406",
+    "disclosed": true,
+    "votes": 79,
+    "latest_disclosable_activity_at": "2022-05-11T09:37:15.095Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NzE0MDY=",
+      "databaseId": "671406",
+      "title": "Account takeover via Google OneTap",
+      "url": "https://hackerone.com/reports/671406",
+      "disclosed_at": "2022-05-11T09:37:14.985Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU5",
+      "handle": "priceline",
+      "name": "Priceline",
+      "url": "https://hackerone.com/priceline",
+      "currency": "usd"
+    }
+  }
+}

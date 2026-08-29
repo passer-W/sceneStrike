@@ -1,0 +1,189 @@
+{
+  "id": 213255,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTMyNTU=",
+  "url": "https://hackerone.com/reports/213255",
+  "title": "SIGSEGV in str_buf_cat",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2017-03-14T00:01:24.059Z",
+  "submitted_at": "2017-03-14T00:01:24.059Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ston3",
+    "url": "/ston3",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-04-27T21:18:22.638Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2017-03-28T21:18:12.755Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "PoC\n-------------------\n\nAttached as test_str_buf_cat.rb\n\nDebug - mirb\n-------------------\n\n\tProgram received signal SIGSEGV, Segmentation fault.\n\t__memcpy_sse2_unaligned () at ../sysdeps/x86_64/multiarch/memcpy-sse2-unaligned.S:36\n\t36\t../sysdeps/x86_64/multiarch/memcpy-sse2-unaligned.S: No such file or directory.\n\t(gdb) info reg\n\trax            0xffff80000955aee1\t-140737331745055\n\trbx            0xe\t14\n\trcx            0xd640a0\t14041248\n\trdx            0x6b2050\t7020624\n\trsi            0x719f50\t7446352\n\trdi            0x7ffff6b0d01f\t140737332170783\n\trbp            0x7fffffffc130\t0x7fffffffc130\n\trsp            0x7fffffffc0e8\t0x7fffffffc0e8\n\tr8             0xffffffff\t4294967295\n\tr9             0x0\t0\n\tr10            0x22\t34\n\tr11            0xf7acd701\t4155299585\n\tr12            0x401ca0\t4201632\n\tr13            0x7fffffffe070\t140737488347248\n\tr14            0x0\t0\n\tr15            0x0\t0\n\trip            0x7ffff77a6e3e\t0x7ffff77a6e3e <__memcpy_sse2_unaligned+46>\n\teflags         0x10206\t[ PF IF RF ]\n\tcs             0x33\t51\n\tss             0x2b\t43\n\tds             0x0\t0\n\tes             0x0\t0\n\tfs             0x0\t0\n\tgs             0x0\t0\n\t(gdb) up\n\t#1  0x00000000004158a1 in str_buf_cat (mrb=0x6b0010, s=0x6b9af0, ptr=0x719f50 \"\", len=7020624) at /home/x/Desktop/test/mruby/src/string.c:183\n\t183\t  memcpy(RSTR_PTR(s) + RSTR_LEN(s), ptr, len);\n\t(gdb) up\n\t#2  0x000000000041b9cf in mrb_str_cat (mrb=0x6b0010, str=..., ptr=0x719f50 \"\", len=7020624) at /home/x/Desktop/test/mruby/src/string.c:2586\n\t2586\t  str_buf_cat(mrb, mrb_str_ptr(str), ptr, len);\n\t(gdb) up\n\t#3  0x000000000041bac0 in mrb_str_cat_str (mrb=0x6b0010, str=..., str2=...) at /home/x/Desktop/test/mruby/src/string.c:2599\n\t2599\t  return mrb_str_cat(mrb, str, RSTRING_PTR(str2), RSTRING_LEN(str2));\n\n\nBacktrace - mirb\n-------------------\n\n\t(gdb) bt\n\t#0  __memcpy_sse2_unaligned () at ../sysdeps/x86_64/multiarch/memcpy-sse2-unaligned.S:36\n\t#1  0x00000000004158a1 in str_buf_cat (mrb=0x6b0010, s=0x6b9af0, ptr=0x719f50 \"\", len=7020624) at /home/x/Desktop/test/mruby/src/string.c:183\n\t#2  0x000000000041b9cf in mrb_str_cat (mrb=0x6b0010, str=..., ptr=0x719f50 \"\", len=7020624) at /home/x/Desktop/test/mruby/src/string.c:2586\n\t#3  0x000000000041bac0 in mrb_str_cat_str (mrb=0x6b0010, str=..., str2=...) at /home/x/Desktop/test/mruby/src/string.c:2599\n\t#4  0x0000000000429a4b in exc_inspect (mrb=0x6b0010, exc=...) at /home/x/Desktop/test/mruby/src/error.c:170\n\t#5  0x0000000000407567 in mrb_funcall_with_block (mrb=0x6b0010, self=..., mid=43, argc=0, argv=0x0, blk=...) at /home/x/Desktop/test/mruby/src/vm.c:444\n\t#6  0x0000000000407693 in mrb_funcall_argv (mrb=0x6b0010, self=..., mid=43, argc=0, argv=0x0) at /home/x/Desktop/test/mruby/src/vm.c:461\n\t#7  0x0000000000413570 in mrb_method_missing (mrb=0x6b0010, name=117, self=..., args=...) at /home/x/Desktop/test/mruby/src/kernel.c:926\n\t#8  0x0000000000409ed1 in mrb_vm_exec (mrb=0x6b0010, proc=0x756ae0, pc=0x756c64) at /home/x/Desktop/test/mruby/src/vm.c:1229\n\t#9  0x000000000040847f in mrb_vm_run (mrb=0x6b0010, proc=0x756ae0, self=..., stack_keep=11) at /home/x/Desktop/test/mruby/src/vm.c:820\n\t#10 0x0000000000402b90 in main (argc=2, argv=0x7fffffffe078) at /home/x/Desktop/test/mruby/mrbgems/mruby-bin-mirb/tools/mirb/mirb.c:549\n\nClang - mirb\n-------------------\n\n\tx@x:~/Desktop/test/mruby/bin$ ASAN_SYMBOLIZER_PATH=//usr/lib/llvm-3.8/bin/llvm-symbolizer ../../clang/mruby/bin/mirb test_str_buf_cat.rb \n\tmirb - Embeddable Interactive Ruby Shell\n\n\tNoMethodError: undefined method 'o' for main\n\tNoMethodError: undefined method 'e' for main\n\tNoMethodError: undefined method '�' for main\n\tNoMethodError: undefined method 'd' for main\n\t => nil\n\t => nil\n\tNoMethodError: undefined method 'd' for main\n\t => nil\n\t => [{\"\"=>0}]\n\tNoMethodError: undefined method 'r' for main\n\tNoMethodError: undefined method 's' for 0\n\tNoMethodError: undefined method 'h' for [0]\n\t => \"\"\n\tNoMethodError: undefined method 'd' for 0\n\tNoMethodError: undefined method 'd' for [0]\n\t => [0]\n\tNoMethodError: undefined method 's' for [0]\n\tNoMethodError: undefined method 'd' for main\n\tNoMethodError: undefined method 'k' for main\n\tNoMethodError: undefined method 'x' for 0\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method 'e' for main\n\t => nil\n\tNoMethodError: undefined method 'd' for [[0], 0, 0]\n\t => nil\n\tNoMethodError: undefined method 'nd' for main\n\tNoMethodError: undefined method 'o' for main\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\t => [0]\n\tNoMethodError: undefined method 'k' for main\n\tNoMethodError: undefined method 'a' for nil\n\tNoMethodError: undefined method 's' for [0]\n\tNoMethodError: undefined method 'h' for [[0]]\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method 'i' for main\n\tNoMethodError: undefined method 'd0' for main\n\tNoMethodError: undefined method 'k' for main\n\tNoMethodError: undefined method 'i' for main\n\tNoMethodError: undefined method 'o' for main\n\tNoMethodError: undefined method 'd0' for main\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\t => nil\n\tNoMethodError: undefined method 'i' for main\n\t => nil\n\tNoMethodError: undefined method 'i' for main\n\t => [0, 0]\n\tNoMethodError: undefined method 's' for [0, 0]\n\tNoMethodError: undefined method 'u' for [0, 0]\n\tNoMethodError: undefined method 'call' for [0, 0]\n\tNoMethodError: undefined method 'h' for [0, 0]\n\tNoMethodError: undefined method 's' for [0, 0]\n\t => \"\"\n\tNoMethodError: undefined method 's' for [0, 0]\n\t => \"\"\n\tNoMethodError: undefined method 'x' for main\n\tNoMethodError: undefined method '[]' for nil\n\t => [{\"\"=>0}]\n\t => nil\n\tNoMethodError: undefined method 's' for [0, 0]\n\tNoMethodError: undefined method '[]' for 0\n\t => nil\n\t => nil\n\tNoMethodError: undefined method 'x' for main\n\tNoMethodError: undefined method 'x' for main\n\t => nil\n\tNoMethodError: undefined method 'k' for main\n\t => [{\"\"=>0}]\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\t => nil\n\tNoMethodError: undefined method 'i' for main\n\t => nil\n\t => nil\n\t => nil\n\tNoMethodError: undefined method 'y' for main\n\tNoMethodError: undefined method 'o' for [{\"\"=>0}]\n\t => [{\"\"=>0}]\n\tNoMethodError: undefined method 'call' for [0, 0]\n\tNoMethodError: undefined method 'd=' for [[0, 0]]\n\t => nil\n\tNoMethodError: undefined method 't' for main\n\tNoMethodError: undefined method '[]' for 0\n\t => [0, 0]\n\t => nil\n\t => [{\"\"=>0}]\n\t => nil\n\tNoMethodError: undefined method 'call' for [{\"\"=>0}]\n\tNoMethodError: undefined method 's' for [0, [{\"\"=>0}]]\n\tNoMethodError: undefined method 's' for [[0, 0], [0, [{\"\"=>0}]]]\n\t => nil\n\tNoMethodError: undefined method 'call' for nil\n\t => [{\"\"=>0}]\n\tNoMethodError: undefined method 's' for [[0, 0], [0, [{\"\"=>0}]], [0], 0]\n\tNoMethodError: undefined method 'o' for main\n\tNoMethodError: undefined method 'i' for main\n\tNoMethodError: undefined method 'n' for main\n\t => nil\n\tNoMethodError: undefined method 'k' for main\n\tNoMethodError: undefined method 'call' for [{\"\"=>0}]\n\t => nil\n\tNoMethodError: undefined method 'm' for [{\"\"=>0}]\n\tNoMethodError: undefined method 'h' for [[0, 0], [0, [{\"\"=>0}]]]\n\t => \"\"\n\tNoMethodError: undefined method 'call' for [{\"\"=>0}]\n\t => [{\"\"=>0}]\n\t => [[{\"\"=>0}], [0, [{\"\"=>0}]]]\n\tNoMethodError: undefined method '�' for main\n\t(mirb):132: uninitialized constant M (NameError)\n\t => [0]\n\t => nil\n\t=================================================================\n\t==8172==ERROR: AddressSanitizer: heap-use-after-free on address 0x60d00000b980 at pc 0x00000045d032 bp 0x7ffffe05cb20 sp 0x7ffffe05c2d0\n\tREAD of size 8032 at 0x60d00000b980 thread T0\n\t\t#0 0x45d031 in __interceptor_memcpy (/home/x/Desktop/test/clang/mruby/bin/mirb+0x45d031)\n\t\t#1 0x50c963 in str_buf_cat /home/x/Desktop/test/clang/mruby/src/string.c:183:3\n\t\t#2 0x50c56e in mrb_str_cat /home/x/Desktop/test/clang/mruby/src/string.c:2586:3\n\t\t#3 0x50cbaf in mrb_str_cat_str /home/x/Desktop/test/clang/mruby/src/string.c:2599:10\n\t\t#4 0x5238b4 in exc_inspect /home/x/Desktop/test/clang/mruby/src/error.c:170:7\n\t\t#5 0x4f8539 in mrb_funcall_with_block /home/x/Desktop/test/clang/mruby/src/vm.c:444:13\n\t\t#6 0x4f7d68 in mrb_funcall_argv /home/x/Desktop/test/clang/mruby/src/vm.c:461:10\n\t\t#7 0x504b55 in mrb_method_missing /home/x/Desktop/test/clang/mruby/src/kernel.c:926:12\n\t\t#8 0x4fb0ce in mrb_vm_exec /home/x/Desktop/test/clang/mruby/src/vm.c:1193:11\n\t\t#9 0x4f98ee in mrb_vm_run /home/x/Desktop/test/clang/mruby/src/vm.c:820:10\n\t\t#10 0x4f3010 in main /home/x/Desktop/test/clang/mruby/mrbgems/mruby-bin-mirb/tools/mirb/mirb.c:549:18\n\t\t#11 0x7fddf073bec4 in __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:287\n\t\t#12 0x41a575 in _start (/home/x/Desktop/test/clang/mruby/bin/mirb+0x41a575)\n\n\t0x60d00000ba01 is located 0 bytes to the right of 129-byte region [0x60d00000b980,0x60d00000ba01)\n\tfreed by thread T0 here:\n\t\t#0 0x4c4590 in free (/home/x/Desktop/test/clang/mruby/bin/mirb+0x4c4590)\n\t\t#1 0x525ecb in mrb_default_allocf /home/x/Desktop/test/clang/mruby/src/state.c:56:5\n\t\t#2 0x5306bc in mrb_free /home/x/Desktop/test/clang/mruby/src/gc.c:268:3\n\t\t#3 0x50828a in mrb_gc_free_str /home/x/Desktop/test/clang/mruby/src/string.c:247:5\n\t\t#4 0x530bfd in obj_free /home/x/Desktop/test/clang/mruby/src/gc.c:787:5\n\t\t#5 0x5329c7 in incremental_sweep_phase /home/x/Desktop/test/clang/mruby/src/gc.c:1030:11\n\t\t#6 0x532331 in incremental_gc /home/x/Desktop/test/clang/mruby/src/gc.c:1096:20\n\t\t#7 0x5316fd in incremental_gc_step /home/x/Desktop/test/clang/mruby/src/gc.c:1122:15\n\t\t#8 0x531370 in mrb_incremental_gc /home/x/Desktop/test/clang/mruby/src/gc.c:1166:5\n\t\t#9 0x5311e8 in mrb_obj_alloc /home/x/Desktop/test/clang/mruby/src/gc.c:507:5\n\t\t#10 0x507ef3 in str_new /home/x/Desktop/test/clang/mruby/src/string.c:59:7\n\t\t#11 0x5080e5 in mrb_str_new_cstr /home/x/Desktop/test/clang/mruby/src/string.c:215:7\n\t\t#12 0x523842 in exc_inspect /home/x/Desktop/test/clang/mruby/src/error.c:167:11\n\t\t#13 0x4f8539 in mrb_funcall_with_block /home/x/Desktop/test/clang/mruby/src/vm.c:444:13\n\t\t#14 0x4f7d68 in mrb_funcall_argv /home/x/Desktop/test/clang/mruby/src/vm.c:461:10\n\t\t#15 0x504b55 in mrb_method_missing /home/x/Desktop/test/clang/mruby/src/kernel.c:926:12\n\t\t#16 0x4fb0ce in mrb_vm_exec /home/x/Desktop/test/clang/mruby/src/vm.c:1193:11\n\t\t#17 0x4f98ee in mrb_vm_run /home/x/Desktop/test/clang/mruby/src/vm.c:820:10\n\t\t#18 0x4f3010 in main /home/x/Desktop/test/clang/mruby/mrbgems/mruby-bin-mirb/tools/mirb/mirb.c:549:18\n\t\t#19 0x7fddf073bec4 in __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:287\n\n\tpreviously allocated by thread T0 here:\n\t\t#0 0x4c4c7d in realloc (/home/x/Desktop/test/clang/mruby/bin/mirb+0x4c4c7d)\n\t\t#1 0x525ee5 in mrb_default_allocf /home/x/Desktop/test/clang/mruby/src/state.c:60:12\n\t\t#2 0x53024c in mrb_realloc_simple /home/x/Desktop/test/clang/mruby/src/gc.c:201:8\n\t\t#3 0x530404 in mrb_realloc /home/x/Desktop/test/clang/mruby/src/gc.c:215:8\n\t\t#4 0x5305b3 in mrb_malloc /home/x/Desktop/test/clang/mruby/src/gc.c:236:10\n\t\t#5 0x507d32 in mrb_str_buf_new /home/x/Desktop/test/clang/mruby/src/string.c:115:28\n\t\t#6 0x513735 in join_ary /home/x/Desktop/test/clang/mruby/src/array.c:1031:12\n\t\t#7 0x51362e in mrb_ary_join /home/x/Desktop/test/clang/mruby/src/array.c:1075:10\n\t\t#8 0x521c07 in mrb_vformat /home/x/Desktop/test/clang/mruby/src/error.c:362:12\n\t\t#9 0x522d6d in mrb_no_method_error /home/x/Desktop/test/clang/mruby/src/error.c:526:13\n\t\t#10 0x504cb0 in mrb_method_missing /home/x/Desktop/test/clang/mruby/src/kernel.c:935:3\n\t\t#11 0x4fb0ce in mrb_vm_exec /home/x/Desktop/test/clang/mruby/src/vm.c:1193:11\n\t\t#12 0x4f98ee in mrb_vm_run /home/x/Desktop/test/clang/mruby/src/vm.c:820:10\n\t\t#13 0x4f3010 in main /home/x/Desktop/test/clang/mruby/mrbgems/mruby-bin-mirb/tools/mirb/mirb.c:549:18\n\t\t#14 0x7fddf073bec4 in __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:287\n\n\tSUMMARY: AddressSanitizer: heap-use-after-free (/home/x/Desktop/test/clang/mruby/bin/mirb+0x45d031) in __interceptor_memcpy\n\tShadow bytes around the buggy address:\n\t  0x0c1a7fff96e0: fa fa fd fd fd fd fd fd fd fd fd fd fd fd fd fd\n\t  0x0c1a7fff96f0: fd fd fd fa fa fa fa fa fa fa fa fa fd fd fd fd\n\t  0x0c1a7fff9700: fd fd fd fd fd fd fd fd fd fd fd fd fd fa fa fa\n\t  0x0c1a7fff9710: fa fa fa fa fa fa fd fd fd fd fd fd fd fd fd fd\n\t  0x0c1a7fff9720: fd fd fd fd fd fd fd fa fa fa fa fa fa fa fa fa\n\t=>0x0c1a7fff9730:[fd]fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd\n\t  0x0c1a7fff9740: fd fa fa fa fa fa fa fa fa fa fd fd fd fd fd fd\n\t  0x0c1a7fff9750: fd fd fd fd fd fd fd fd fd fd fd fa fa fa fa fa\n\t  0x0c1a7fff9760: fa fa fa fa fd fd fd fd fd fd fd fd fd fd fd fd\n\t  0x0c1a7fff9770: fd fd fd fd fd fa fa fa fa fa fa fa fa fa fd fd\n\t  0x0c1a7fff9780: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fa\n\tShadow byte legend (one shadow byte represents 8 application bytes):\n\t  Addressable:           00\n\t  Partially addressable: 01 02 03 04 05 06 07 \n\t  Heap left redzone:       fa\n\t  Heap right redzone:      fb\n\t  Freed heap region:       fd\n\t  Stack left redzone:      f1\n\t  Stack mid redzone:       f2\n\t  Stack right redzone:     f3\n\t  Stack partial redzone:   f4\n\t  Stack after return:      f5\n\t  Stack use after scope:   f8\n\t  Global redzone:          f9\n\t  Global init order:       f6\n\t  Poisoned by user:        f7\n\t  Container overflow:      fc\n\t  Array cookie:            ac\n\t  Intra object redzone:    bb\n\t  ASan internal:           fe\n\t  Left alloca redzone:     ca\n\t  Right alloca redzone:    cb\n\t==8172==ABORTING",
+  "weakness": {
+    "id": 2,
+    "name": "Memory Corruption - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 168671,
+      "file_name": "test_str_buf_cat.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/168/671/30b128e6d8edfe8381e81b5453ecf5664457819f/test_str_buf_cat.rb?response-content-disposition=attachment%3B%20filename%3D%22test_str_buf_cat.rb%22%3B%20filename%2A%3DUTF-8%27%27test_str_buf_cat.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063642Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=663f50e92e0e237806c6297084fe05b943ba7a55412088815bce0fab7f132a5e",
+      "file_size": 599,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-04-27T21:18:12.795Z",
+  "allow_singular_disclosure_after": -290164709.2241701,
+  "singular_disclosure_allowed": true,
+  "vote_count": 5,
+  "voters": [
+    "apapedulimu",
+    "eveeez",
+    "linkks",
+    "spetr0x",
+    "yunusahmed"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "213255",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2017-04-27T21:18:22.658Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:36:42.141598",
+    "source": "https://hackerone.com/reports/213255.json",
+    "report_id": 213255
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTMyNTU=",
+    "databaseId": "213255",
+    "title": "SIGSEGV in str_buf_cat",
+    "url": "https://hackerone.com/reports/213255",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-04-27T21:18:22.638Z",
+    "created_at": "2017-03-14T00:01:24.059Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI=",
+      "name": "Memory Corruption - Generic",
+      "external_id": "cwe-119"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "ston3"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NDY3OQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-03-28T21:18:05.931Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxMzI1NQ==",
+    "_id": "213255",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2017-04-27T21:18:22.658Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTMyNTU=",
+      "databaseId": "213255",
+      "title": "SIGSEGV in str_buf_cat",
+      "url": "https://hackerone.com/reports/213255",
+      "disclosed_at": "2017-04-27T21:18:22.638Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

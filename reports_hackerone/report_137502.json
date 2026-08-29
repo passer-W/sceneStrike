@@ -1,0 +1,195 @@
+{
+  "id": 137502,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzc1MDI=",
+  "url": "https://hackerone.com/reports/137502",
+  "title": "All Vimeo Private videos disclosure via Authorization Bypass",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-05-10T14:50:25.496Z",
+  "submitted_at": "2016-05-10T14:50:25.496Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "opnsec",
+    "url": "/opnsec",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/871/17ffe7f89623315912b4a69a6441247262583484_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 56,
+    "url": "https://hackerone.com/vimeo",
+    "handle": "vimeo",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/056/c3188aa0fc4a95fd486b5ee1f4b2d0b90da111d3_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/056/c3188aa0fc4a95fd486b5ee1f4b2d0b90da111d3_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Vimeo",
+      "twitter_handle": "vimeo",
+      "website": "https://vimeo.com",
+      "about": "Make life worth watching"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-07-29T12:03:07.183Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-06-29T12:03:00.547Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello,\n\nThere is a vulnerability in `https://vimeo.com/[VIDEO_ID]?action=share` that makes all Vimeo private videos available to anybody.\n\nPOC link :\nhttp://opnsec.com/vimeo/vl/videoLeak.php?video=[VIDEO_ID]\n\nPOC requirements :\n- No need to be logged in Vimeo\n- Because of sensitivity of this, I put a password on the POC :\nusername : vimeo\npassword : aS3cr3tP4$$wrD7854123\n\nPOC instructions :\n1. Open the POC link replacing `[VIDEO_ID]` by any Vimeo private video id (I believe all type of private videos are vulnerable)\n2. Enter the username and password as per requirements \n3. If the Vimeo video id is correct, no matter the status of the video, the video should start playing.\n\n---------\n\nTechnical description :\n\n`https://vimeo.com/[VIDEO_ID]?action=share` is an Ajax link used to ask Vimeo for the \"Share\" code to embed the video\nBecause it is Ajax, the server is only replying if the `Header X-Requested-With is set to XMLHttpRequest`.\n\nIf the Attacker send this request with a [VIDEO_ID] of a private video that he don't have access to, the server reply with an error message. However, this message contains the link to the `config` file of the private video including a `token parameter s=[SECRET]` which will grant the attacker access to the config file.\nThe config file contains all the info about the video including the actual video file links, video title, owner vimeo account, ... which means that the attacker has complete access to the video.\n\nExample of config file with `token parameter s=[SECRET] `\n```\nhttps://player.vimeo.com/video/165266592/config?autoplay=0&byline=0&bypass_privacy=1&context=Vimeo%5CController%5CClipController.main&default_to_hd=1&portrait=0&title=0&s=bb016a22af815053eb54XXXXXXX019d8_1462989197\n```\n------\nVulnerability Mitigation \n\nTo resolve this issue, the `https://vimeo.com/[VIDEO_ID]?action=share` server should not include the token parameter `s=[SECRET]` of the config file in the error response of `https://vimeo.com/[VIDEO_ID]?action=share`if the user doesn't have right to access the video.\nThere is a good chance this vulnerability is present in other links, especially other Ajax links.\n\nIn addition, if that is possible, the `https://player.vimeo.com/video/[VIDEO_ID]/config` config file server should also check that the user has valid right to access the video even if he has a correct `s=[SECRET]` token\n\n-------------\n\nHere is the source code of `http://opnsec.com/vimeo/vl/videoLeak.php`\n\nIf you need more info or if the POC doesn't work feel free to contact me.\n\nRegards,\n\nEnguerran Gillier\n&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;\n&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;&#x2588;",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 92502,
+      "file_name": "videoLeak.php",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/092/502/bce33e94210d6674e694a1cd07227941eabb5dc8/videoLeak.php?response-content-disposition=attachment%3B%20filename%3D%22videoLeak.php%22%3B%20filename%2A%3DUTF-8%27%27videoLeak.php&response-content-type=text%2Fx-php&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRIIZPUV4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIF1g%2BCVqusdY3nXdaciIRQTsmwm917LaAMvnjzLPOjTlAiEA1vs3r0aBeoRRGpMX92%2B1FZCdUr8ReBwCPk8kca%2BZNAYqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCxzFfcpgOvmvpagyyqOBdBjAbquoOWRMFL%2F3ay4gywYomEch52Eb2uwoAmulvnIXxrO%2FpS5u%2BE1fOMvqLDhQ2%2Fq3trafWU9P%2FD%2F8TSlrO44EtrkJbZ0jdQbk7DtqOaqELJU2KwwulXZlQZmu%2FPvczfKc7SfKbvszH8JRsyjoJLrYROa8g41HhLqNs1r8WIvTg%2BNEnQ1KVJ5m5s5q7lPjZJDShcav%2Fpxf0Yef4B1OSGUF8kBQgNnkj6lm9Palzk%2FDA7JhjM8A4V6pQVi10aHv592vRgBwSaLDTNFE3QDC4SfaGcvyPmg5xcH3PLfN2%2F08%2FT9Ch%2FzFFqro%2F80TM9XseiyatP106PdqzZxVUkyZmOtfQrHDU15OWxVERZgmevOypIddg3BhzI0SmRBmqGBmqP8TsiDrjYacYzu6ON0%2BhgX80ne38LuuQcJs2KjAEG7ze4xyAF%2B2%2FkOeYzxLcKcaX22fihrD3KzI54Yz%2BNSDrlDgqG2vKX5Gnh47AqNI9RnLnZ6BwgrwyHVe%2BqnzvnbFrlcGpjT5GAgXSgDB21HzG7huaOvy9ZzVcPqKAYFHbh9nEhjAUrIXHKJ%2Fqrh23i0Ne7ZoHl73shLr%2Fe%2FVC%2FXmifFbFiwqllOGitOVysDzSAwMfQo10ENL9LxjzkiXr3vGdrSrRNZNx8DWWFwVX56no%2BrRDLWWoL5nFGiLBjpLOBE83LA22ULHhLXtMOKCcBclj1LQy96isrSqei74fgePBtD7JkRT70Y6MqP4dJvOURPzJ8JIOP%2BhhpqjiIVTgQ5B2fCVyBDb0pmahGmdTTB4Zo9YukUuZWO6vMQRqmab2v2fgNmWYZiK7JAFwJySCM5%2FcBhN2ITR8czYaIDGo46Au8EFgfc4TigXX9g42sQ4DDz4bfSBjqxAY63LBAwjLyFzy7JmoFe5zIu3OXKaNgy1XuVPGpsQWxO2p5aNwM9TWtRCh0ERh5c1MLTCipckcoXtYoIIJskoE6NZjV46m%2BK7O4uBO2cuSU2cBDYuBpsjtTmG7vLVnmztVUH%2F5z%2Fq7TfV1qmS%2FafPI2NHO0r%2BUgLsYseLMYOUGORsZwEuJ1TlJIRxsSd%2Bf146HWAzUQH9KiF2Au5YVftnHpjwim0ItnvWivSGDkijFXWgQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5f1d8e93eb4b4db11e58f5cf16bb4f593883a27efb13f393645b124522ae660f",
+      "file_size": 2955,
+      "type": "text/x-php",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-07-29T12:03:00.787Z",
+  "allow_singular_disclosure_after": -313699967.3266941,
+  "singular_disclosure_allowed": true,
+  "vote_count": 35,
+  "voters": [
+    "wargsec",
+    "mizzle",
+    "sourc7",
+    "hunter",
+    "spam404",
+    "thalaivar304",
+    "lucky_sen",
+    "opnsec",
+    "jutsuce",
+    "zombiehelp54",
+    "and 25 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "137502",
+  "votes": 35,
+  "latest_disclosable_activity_at": "2016-07-29T12:03:07.300Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:55:48.371238",
+    "source": "https://hackerone.com/reports/137502.json",
+    "report_id": 137502
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzc1MDI=",
+    "databaseId": "137502",
+    "title": "All Vimeo Private videos disclosure via Authorization Bypass",
+    "url": "https://hackerone.com/reports/137502",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-07-29T12:03:07.183Z",
+    "created_at": "2016-05-10T14:50:25.496Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "opnsec"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU2",
+      "handle": "vimeo",
+      "name": "Vimeo",
+      "url": "https://hackerone.com/vimeo",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMzA5Ng==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-05-10T16:45:19.023Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzNzUwMg==",
+    "_id": "137502",
+    "disclosed": true,
+    "votes": 35,
+    "latest_disclosable_activity_at": "2016-07-29T12:03:07.300Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzc1MDI=",
+      "databaseId": "137502",
+      "title": "All Vimeo Private videos disclosure via Authorization Bypass",
+      "url": "https://hackerone.com/reports/137502",
+      "disclosed_at": "2016-07-29T12:03:07.183Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU2",
+      "handle": "vimeo",
+      "name": "Vimeo",
+      "url": "https://hackerone.com/vimeo",
+      "currency": "usd"
+    }
+  }
+}

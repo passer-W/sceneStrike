@@ -1,0 +1,225 @@
+{
+  "id": 1040166,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDQwMTY2",
+  "url": "https://hackerone.com/reports/1040166",
+  "title": "CVE-2020-8284: trusting FTP PASV responses",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2020-11-21T13:57:43.758Z",
+  "submitted_at": "2020-11-21T13:57:43.803Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "vepe",
+    "url": "/vepe",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8284"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-02-09T15:53:42.531Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-02-09T15:52:09.227Z",
+  "team_member_agreed_on_going_public_at": "2021-02-09T15:53:42.423Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThe issue here arises from the fact that curl by default has the option CURLOPT_FTP_SKIP_PASV_IP disabled by default.\nAs a result, an attacker controlling the URL used by curl, can perform port scanning on behalf of the server where curl is running.\nThis can be achieved by setting up a custom FTP server that would setup the data channel through the PASV command using the port scanning target IP and port in the PASV connection info. \nOne good target for this issue are web applications vulnerable to SSRF.\n\n\n\n## Steps To Reproduce:\nSo we can differentiate between open, closed and filtered ports with the following:\n1. Open ports\ncurl will reply with TYPE after the PASV command\nexample:\nReceived: USER anonymous in 5\nReceived: PASS ftp@example.com in 5\nReceived: PWD in 5ms\nReceived: EPSV in 6ms\nReceived: PASV in 6ms\n**Received: TYPE I in 6ms**\nReceived: SIZE whatever in 5ms\nReceived: RETR whatever in 5ms\n\n2. Filtered\ncurl will timeout after the PASV command\nexample:\nReceived: USER anonymous in 6\nReceived: PASS ftp@example.com in 5\nReceived: PWD in 5ms\nReceived: EPSV in 6ms\nReceived: PASV in 5ms\nReceived:  in **1011ms**\n\n3. Closed\ncurl will close the control channel connection immediately after PASV\nexample:\nReceived: USER anonymous in 6ms\nReceived: PASS ftp@example.com in 6ms\nReceived: PWD in 5ms\nReceived: EPSV in 5ms\nReceived: PASV in 5ms\nReceived:  in **5ms**\n\nIn the attachments, I have included an ftp server  (F1088885) that automates these steps.\nUsage:\n./ssrf_pasvaggresvftp.sh -t 127.0.0.1/31 -p 80,8000-8100 -x ./ftp_curl.sh -vv\n\nthe file included in the -x option is supposed to trigger the ssrf on the target server that would lead to the call of curl with the attacker's URL. In this case we simulate the issue by calling curl locally. The attachment F1088859 is the script used in the example.\n\n## Impact\n\nThrough the port scanning, an attacker could uncover  services running in the internal network.\nIt could also be possible to perform version enumeration or other information disclosure if the attacker can get back the results of curl.\nFor example, an attacker points curl at host:22 for the data channel . If an ssh server is running on that host, then it will reply with its version which is then disclosed to the attacker.\n\nUltimately, this issue can be used as a stepping stone to launch further attacks on the vulnerable server.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1088859,
+      "file_name": "ftp_curl.sh",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/mr2b6d2ktr0a5ls7ri8zhsezhedz?response-content-disposition=attachment%3B%20filename%3D%22ftp_curl.sh%22%3B%20filename%2A%3DUTF-8%27%27ftp_curl.sh&response-content-type=application%2Fx-shellscript&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064506Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=60dff8b9fa7cb32a86e0352d14fc7f0043a43e797581b4cce12d046630deca77",
+      "file_size": 79,
+      "type": "application/x-shellscript",
+      "moderated": null
+    },
+    {
+      "id": 1088876,
+      "file_name": "ftp_scanner.gif",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/w7a28p2upw7okndg9mof7h41ns2j?response-content-disposition=attachment%3B%20filename%3D%22ftp_scanner.gif%22%3B%20filename%2A%3DUTF-8%27%27ftp_scanner.gif&response-content-type=image%2Fgif&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064506Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=51df0e3b202b38b26db1533c1274738e5a4ea7aaabad802e53657e48b331522c",
+      "file_size": 34110,
+      "type": "image/gif",
+      "moderated": null
+    },
+    {
+      "id": 1088885,
+      "file_name": "ssrf_pasvaggresvftp.sh",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5stnrp5l29x7kuae8vof5efeqea9?response-content-disposition=attachment%3B%20filename%3D%22ssrf_pasvaggresvftp.sh%22%3B%20filename%2A%3DUTF-8%27%27ssrf_pasvaggresvftp.sh&response-content-type=application%2Fx-shellscript&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064506Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9281e9d2d90733582c0ebf04d9e145485ab7189c964054e1f4baa6d31f6e9ca1",
+      "file_size": 11041,
+      "type": "application/x-shellscript",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-03-11T15:52:09.366Z",
+  "allow_singular_disclosure_after": -167583177.18711582,
+  "singular_disclosure_allowed": true,
+  "vote_count": 30,
+  "voters": [
+    "foobar7",
+    "ali",
+    "h4x0r_dz",
+    "f_m",
+    "yamii",
+    "zimmer75",
+    "hackerruchika",
+    "cyph3r_001",
+    "wilson",
+    "cyber112",
+    "and 20 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1040166",
+  "votes": 30,
+  "latest_disclosable_activity_at": "2021-02-09T15:53:42.561Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:45:06.668776",
+    "source": "https://hackerone.com/reports/1040166.json",
+    "report_id": 1040166
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDQwMTY2",
+    "databaseId": "1040166",
+    "title": "CVE-2020-8284: trusting FTP PASV responses",
+    "url": "https://hackerone.com/reports/1040166",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-02-09T15:53:42.531Z",
+    "created_at": "2020-11-21T13:57:43.758Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "vepe"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNjEzNjY=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-11-26T07:06:09.338Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwNDAxNjY=",
+    "_id": "1040166",
+    "disclosed": true,
+    "votes": 30,
+    "latest_disclosable_activity_at": "2021-02-09T15:53:42.561Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDQwMTY2",
+      "databaseId": "1040166",
+      "title": "CVE-2020-8284: trusting FTP PASV responses",
+      "url": "https://hackerone.com/reports/1040166",
+      "disclosed_at": "2021-02-09T15:53:42.531Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

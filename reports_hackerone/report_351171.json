@@ -1,0 +1,218 @@
+{
+  "id": 351171,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTExNzE=",
+  "url": "https://hackerone.com/reports/351171",
+  "title": "Stored XXS @ https://steamcommunity.com/search/users/#text= via Profile Name",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-05-13T17:41:15.480Z",
+  "submitted_at": "2018-05-13T17:41:15.480Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "osintopsec",
+    "url": "/osintopsec",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23363,
+    "url": "https://hackerone.com/valve",
+    "handle": "valve",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Valve",
+      "twitter_handle": "",
+      "website": "https://www.valvesoftware.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-05-24T21:57:17.440Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-05-16T08:37:41.399Z",
+  "team_member_agreed_on_going_public_at": "2018-05-24T21:57:17.350Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Dear Valve security staff,\n\n\nShort description\n---------------------\n\nThere is a stored cross-site-scripting vulnerability present at the user search endpoint which can be exploited by modifying profile name of the would be attacking account. See POC picture.\n\n\nSteps to reproduce\n---------------------\n\n1. Obtain a account to act as a attacker and log in\n2. Go to https://steamcommunity.com/profiles/PROFILE_NUMBER/edit\n3. Edit field \"Profile Name\" to contain short name, and the payload. For example: \"__NAME'); alert(document.cookie+'__\", without the outermost double quotes\n4. With another browser or session, obtain a account to act as a victim and log in\n5. Navigate to https://steamcommunity.com/search/users/#text=\n6. Using the search field, search for the attacking account \"__NAME'); alert(document.cookie+'__\" without the outermost double quotes\n7. Click \"ADD AS FRIEND\" button next to the profile name\n8. Verify that clicking the button launches the payload and pops an alert dialog\n\n\nWhy is it there\n---------------------\n\nAll culminates on AddFriend-function call on the following line of code in user search html and the fact, that the function call can be escaped. The payload is \"__NAME'); alert(document.cookie+'__\" without the outermost quotes in the snippet.\n```\n<a href=\"#\" onclick=\"AddFriend(false,'PROFILE_NUMBER','NAME'); alert(document.cookie+''); $J(this).hide(); return false;\" class=\"btnv6_blue_hoverfade btn_small btn_uppercase\" style=\"display: none;\">\n    <span>Add as friend</span>\n</a>\n```\n\nImpact and assesment\n---------------------\n\nAs on any cross-site-scripting vulnerability. The top line would be that the attacker might steals cookies to abuse users session. For this particular vulnerability only by it self, successful exploiting is a bit more tricky, as currently the Profile Name -field only accepts 32 characters and it requires the victim to click on the button. Payloads can also utilize jQuery on the domain context.\n\nAs a mitigation of this, and vulnerabilities like this: addition to <, > and &, characters such as ' ; $ ( and ) should also be encoded when retrieved from the database, or even better, could be stored encoded.\n\nPS. It was funny to see that many users had tried to exploit the Profile Name -field previously, as they show on the search when searching for \"__alert(...)__\". I hope I'm in time not to be on the duplicate pool!\n\n## Impact\n\nAs on any cross-site-scripting vulnerability. The top line would be that the attacker might steals cookies to abuse users session. For this particular vulnerability only by it self, successful exploiting is a bit more tricky, as currently the Profile Name -field only accepts 32 characters and it requires the victim to click on the button.\n\nAs a mitigation of this, and vulnerabilities like this: characters such as ' ; $ ( and ) should also be encoded when retrieved from the database, or even better, could be stored encoded.\n\nThe hacker selected the **Cross-site Scripting (XSS) - Stored** weakness. This vulnerability type requires contextual information from the hacker. They provided the following answers:\n\n**URL**\nhttps://steamcommunity.com/search/users/#text=\n\n**Verified**\nYes\n\n",
+  "bounty_amount": "750.0",
+  "formatted_bounty": "$750",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 296949,
+      "file_name": "alert_document_cookie.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/296/949/eecd9c5627906ed263bab2e1e9b3ed8c195992af/alert_document_cookie.png?response-content-disposition=attachment%3B%20filename%3D%22alert_document_cookie.png%22%3B%20filename%2A%3DUTF-8%27%27alert_document_cookie.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUWLV4OK2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060554Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIE3cd3d%2Bzmz6tm9ddF8CRLLZkTj2esjbFZLlk5OHsY32AiA9Z%2FLP3GO1NqCuKiXfE4JHWOs6ia%2FzQyg0%2BgfhJA93wyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMdsORBCE8E0pNYsS2Ko4F9KKRL5OIjMDqNsrOgygJddBNzS1HLJYQ8VaYyX4AFk9Fy6NvlOaFF4VQFHcFVgyUKMH%2B8FMz9Htyn%2FydclwctDYuERrCyt0lOGzJDpP0w7rySFp4IKYzIG2HhhkSI%2Ft28H%2F99kj6NqEGlr%2Bzug%2B9qd%2Bo%2FlGPDw99zoAxp8VJN3VMOvFIIQ4bsjshHnfLxlWU9SMYb0xWC40Bt939F7oik8NGVJbRN48mwBHv6PDeYQhSnI6zabGGA7CY0gIS%2F2oATbYmjpQmjTw171wo%2FVVn0zfnFgC7y5yfL%2F8cpuGcc2nUfMqEqjShQRizXe%2BPT8JjSKASBDx4SQe76JOHtQ9POcRHPGCjgvxePIKuwv4JeyCF%2Bro6rC6O%2BmWtJ8lGijz%2BtP%2F%2BwW0JRVni91xIWNhfZuZl8Ss0ADqpMBjoIcC4c%2Bh8BLgbcUMspM1XmbjBOD9LszBxjcOQOMnsRSi%2Bt3LtmMUKZSLKX9iHC5inmOPGXnotPsZaTOSp833V3z%2BfxgTZOFTOUgBW1fokjVC51RZaPoZn4%2BYkSYFHO4q97%2F4r3pLAjgvQNLqa3X1aSbAIvDZgX%2FDBrjflwqweIjrBW7cw9Zyhepwvp5Ej0gDeygmLkl6gOVohjDYI6NgqCkPSWagHcsvlRRaycOheH%2FuO46r7S28ZQb1sIR223JFKghYrVLwfkWcTRj4xSxuMOu2yS8FtJoiyQpnaNC0QB4ixgLV%2Fx34oQP4YLXqrOe6QfV%2FPDfnYFrbc52Dvs5%2FBUYDTuXGAGIxdwHFCo3ORRr%2Bjt44N3SYLredhmZif%2Fu1SY5PUO8EK5guV6Lnon3EE8fVWq84kwoVNOZq5TeJME2VwpdjxuqMKNvp%2BviaU0SLt5XtGMOPCt9IGOrIB99NB04IqLaTXs1qCZS8rsBfN9LYaNKx5%2Fqvk7mGY03T2yxmb1%2BejVoKg0%2BHErsDe92301T3qsC5jiiY5X23D5UOyT%2BRjDXIvuFu%2BLpfNGAqG0ZP73crzEN4WVbHbpKEOCv8M3SDa4bC0MzxLylsgo9Bhpc2Slz85UJigH64gnGEW5Pc6%2BRUEF98Wg6Hooh%2F00dYlqi0r0X728o1rrj%2B0EOXsG2KjCSfYrvK6hQ2Kxk8IWA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6db08af87e7a8ff031f3f5b54082c55a1408647bf778dec581c6fbd0ab4c72ff",
+      "file_size": 83047,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 40,
+  "voters": [
+    "jokebookservice1",
+    "k0ns0l",
+    "hx01",
+    "sp1d3rs",
+    "osintopsec",
+    "base_64",
+    "bogdantc",
+    "mvc",
+    "bl4de",
+    "spam404",
+    "and 30 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 2430,
+    "asset_type": "URL",
+    "asset_identifier": "steamcommunity.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "351171",
+  "votes": 40,
+  "latest_disclosable_activity_at": "2018-05-24T21:57:17.473Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:05:54.414393",
+    "source": "https://hackerone.com/reports/351171.json",
+    "report_id": 351171
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTExNzE=",
+    "databaseId": "351171",
+    "title": "Stored XXS @ https://steamcommunity.com/search/users/#text= via Profile Name",
+    "url": "https://hackerone.com/reports/351171",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-05-24T21:57:17.440Z",
+    "created_at": "2018-05-13T17:41:15.480Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.5
+    },
+    "reporter": {
+      "username": "osintopsec"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS84MzMwMw==",
+            "amount": "750.00",
+            "awarded_amount": "750.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-05-15T23:49:55.221Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1MTE3MQ==",
+    "_id": "351171",
+    "disclosed": true,
+    "votes": 40,
+    "latest_disclosable_activity_at": "2018-05-24T21:57:17.473Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTExNzE=",
+      "databaseId": "351171",
+      "title": "Stored XXS @ https://steamcommunity.com/search/users/#text= via Profile Name",
+      "url": "https://hackerone.com/reports/351171",
+      "disclosed_at": "2018-05-24T21:57:17.440Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    }
+  }
+}

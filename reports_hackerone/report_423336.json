@@ -1,0 +1,198 @@
+{
+  "id": 423336,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MjMzMzY=",
+  "url": "https://hackerone.com/reports/423336",
+  "title": "Email Spoofing Possible on torproject.org Email Domain",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "medium",
+  "readable_substate": "N/A",
+  "created_at": "2018-10-13T13:52:20.135Z",
+  "submitted_at": "2018-10-13T13:52:20.135Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "greenwolf",
+    "url": "/greenwolf",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/367/843/95ce1166f2f3d48a4133dc0210c03ccc15f385a2_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1800,
+    "url": "https://hackerone.com/torproject",
+    "handle": "torproject",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/001/800/6e575d0a9127b91e83833cf4a9e6be6e8b30cbc3_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/001/800/6e575d0a9127b91e83833cf4a9e6be6e8b30cbc3_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Tor",
+      "twitter_handle": "torproject",
+      "website": "https://www.torproject.org/",
+      "about": "Anonymity Online"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-10-16T08:26:23.333Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-10-15T13:16:35.912Z",
+  "team_member_agreed_on_going_public_at": "2018-10-16T08:26:23.269Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:** Due to a missing SPF and DMARC record it is possible to spoof emails from torproject.org. This could potentially be used to trick employees or users via phishing emails.  \n\n**Description:** Mail servers rely on both SPF and DMARC to properly deal with email spoofing. SPF shows what servers are allowed to send emails for the current domain. However when a mail does not originate from one of the listed IP's or domains it does not automatically get rejected. What happens to the spoofed email relies of the DMARC policy of the domain. If there is no DMARC policy or the DMARC policy contains 'p=none;' then no action is taken and the email is accepted, even though SPF has failed. \n\n## Steps To Reproduce:\n\n  1.  You can verify there is no SPF or DMARC policy with the following commands on Linux or OSX:\n$ dig torproject.org txt\nVerify there is not SPF record.\n$ dig _dmarc.torproject.org txt\nVerify there is no DMARC record.\n\n## Supporting Material/References:\n\n  * I have attached an image of a spoofed email from security@torproject.org to my outlook account called 'Spoofed-Email.png'. \n  * I have attached an image of some OSINT output, showing that a number of [company] employees use this email domain. 'OSINT-Showing-Primary-Domain.png'\n  * I have attached a small sendgrid script for you to test the spoofing called 'spooftest.sh'.\n\n## Impact\n\nBy exploiting this issue, attackers can spoof emails from your domain, which could be used to target your customers or employees with phishing emails. \n\nAs 90% of security breaches and compromises start with Phishing emails, allowing your domain to be spoofed removes an additional layer of protection for your customers, as they will see a legitimate from address at the top of a non legitimate email. This means an attacker doesn't have to rely on techniques such as character replacement which users have been trained to spot. E.g goggle.com or microsift.com.\n\nTo fix the issue, a DMARC record containing 'p=reject;' should be added, which will cause spoofed emails to be rejected by the recipients mailbox. \n\nFurther Reading: https://blog.detectify.com/2016/06/20/misconfigured-email-servers-open-the-door-to-spoofed-emails-from-top-domains/\nhttps://posts.specterops.io/gathering-open-source-intelligence-bee58de48e05\n> This may sound like a small thing, but it can be a severe issue when misunderstood. Once, while working with a client, they had to respond to a nasty phishing incident. The attacker was, very convincingly, spoofing their email addresses to employees and other organizations. This simple check for DMARC and SPF records helped them understand what had happened. They thought SPF and vendor-provided email security solutions had spoofing on lockdown, so they moved to the next logical assumption, that the accounts had been compromised. However, they had never setup a DMARC record. Spoofing is a deceitfully difficult thing for many organizations because email security is so frequently misunderstood and so many exceptions are made for marketing, PR, automated alert emails, and other situations where spoofed emails are being used legitimately.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 359972,
+      "file_name": "OSINT-Showing-Primary-Email-Domain.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/359/972/287e3e8f95d2217679f021992b1968004463f910/OSINT-Showing-Primary-Email-Domain.png?response-content-disposition=attachment%3B%20filename%3D%22OSINT-Showing-Primary-Email-Domain.png%22%3B%20filename%2A%3DUTF-8%27%27OSINT-Showing-Primary-Email-Domain.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055840Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3f3c0049f2a717e3487f733259087be175d2f36fb308abc066114bb9ffe007b5",
+      "file_size": 185124,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 359973,
+      "file_name": "Spoofed-Email.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/359/973/693572bec52747ad70880fe2e5c80a9321cc5bec/Spoofed-Email.png?response-content-disposition=attachment%3B%20filename%3D%22Spoofed-Email.png%22%3B%20filename%2A%3DUTF-8%27%27Spoofed-Email.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055840Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a8b52364749a65451320707535e5823d35dc25699ad817d01cd796fca72bb2af",
+      "file_size": 191220,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 359974,
+      "file_name": "spooftest.sh",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/359/974/e24b4c5946d33c1bce481328230f4b1fe6430584/spooftest.sh?response-content-disposition=attachment%3B%20filename%3D%22spooftest.sh%22%3B%20filename%2A%3DUTF-8%27%27spooftest.sh&response-content-type=text%2Fx-shellscript&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055840Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=63fc211df1b3a15b899cd7493546bc8118997994f8441035493f4057fb5513da",
+      "file_size": 674,
+      "type": "text/x-shellscript",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 3,
+  "voters": [
+    "cryptographer",
+    "sairam-one",
+    "yasida"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "423336",
+  "votes": 3,
+  "latest_disclosable_activity_at": "2018-10-16T08:26:23.350Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:58:40.198694",
+    "source": "https://hackerone.com/reports/423336.json",
+    "report_id": 423336
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MjMzMzY=",
+    "databaseId": "423336",
+    "title": "Email Spoofing Possible on torproject.org Email Domain",
+    "url": "https://hackerone.com/reports/423336",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2018-10-16T08:26:23.333Z",
+    "created_at": "2018-10-13T13:52:20.135Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "greenwolf"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4MDA=",
+      "handle": "torproject",
+      "name": "Tor",
+      "url": "https://hackerone.com/torproject",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQyMzMzNg==",
+    "_id": "423336",
+    "disclosed": true,
+    "votes": 3,
+    "latest_disclosable_activity_at": "2018-10-16T08:26:23.350Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MjMzMzY=",
+      "databaseId": "423336",
+      "title": "Email Spoofing Possible on torproject.org Email Domain",
+      "url": "https://hackerone.com/reports/423336",
+      "disclosed_at": "2018-10-16T08:26:23.333Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4MDA=",
+      "handle": "torproject",
+      "name": "Tor",
+      "url": "https://hackerone.com/torproject",
+      "currency": "usd"
+    }
+  }
+}

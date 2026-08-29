@@ -1,0 +1,202 @@
+{
+  "id": 678727,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82Nzg3Mjc=",
+  "url": "https://hackerone.com/reports/678727",
+  "title": "potential RCE and XSS via file upload requiring user account and default settings",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-08-21T19:18:14.807Z",
+  "submitted_at": "2019-08-21T19:18:14.807Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "rcejules",
+    "url": "/rcejules",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-04-01T08:50:37.020Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2020-03-02T08:50:35.654Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "#potential RCE and XSS via file upload requiring user account and default settings\n\n##Requirements\n1. User account that can upload files (NO admin)\n2. User account name on creation (usually the same as on creation/displayed name)\n3. data directory inside of nextcloud server folder (suggested by /var/www/nextcloud/config/config.sample.php)\n\n##Tested on\ncurrent release\nVersion 16.0.4.1\nstable\nBuild: '2019-08-14T18:57:27+00:00 a1a245e88202d834f08f4c2e4451dcbe9baee3aa'\n\n##Basic idea\nOn nextcloud php files can be uploaded, but when clicked they are only shown in a text editor. If the URL to our skript is known, we get code execution. \nA RCE will work if the server has set it's data directory inside the nextcloud server folder and the username is known. \n\n##config example\nThe following is located in /var/www/nextcloud/config/config.sample.php:\n[https://github.com/nextcloud/server/blob/master/config/config.sample.php]\n~~~~\n *\n * Default to ``data/`` in the Nextcloud directory.\n */\n'datadirectory' => '/var/www/nextcloud/data',\n~~~~\nIf this config is used, RCE is possible.\n\n##Attack scenario: \nShort video attached.\n(To reproduce use a nextcloud instance and setup a user named attacker. Use any php script called shell.php, and set the datadirectory to /var/www/nextcloud/data)\n\n1. Login to obtained user account (assume his name is \"attacker\")\n2. upload malicious php script. (assume it is called \"shell.php\")\n3. navigate to https://www.ournextclouddomain.com/data/attacker/files/shell.php\n4. see some shells poppin\n\nThis is possible since we know the direct path to our php script.\n\nNote: This can also be used for XSS since we can upload any html file!\n\n##Prevention\n1. user accounts could extend a seed on their foldername like attacker-19320143158015\n2. usage of a custom seed inside the data directory.\n3. different config than on the example\n\n## Impact\n\nRCE, extract ser data or modify config file (if no special permissions are set), take over the server, also XSS is possible",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 561526,
+      "file_name": "nextcloudPOCRCEXSS-2019-08-21_20.01.37.mkv",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/HWkbxGSLpGYNCmCEtpdzucP9?response-content-disposition=attachment%3B%20filename%3D%22nextcloudPOCRCEXSS-2019-08-21_20.01.37.mkv%22%3B%20filename%2A%3DUTF-8%27%27nextcloudPOCRCEXSS-2019-08-21_20.01.37.mkv&response-content-type=video%2Fx-matroska&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051120Z&X-Amz-Expires=1804&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b129cce7997a1a1961dfd7dd10c60febdf4bcc3798d4c8b50562438edde35176",
+      "file_size": 1862815,
+      "type": "video/x-matroska",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-04-01T08:50:35.724Z",
+  "allow_singular_disclosure_after": -197756444.69285658,
+  "singular_disclosure_allowed": true,
+  "vote_count": 5,
+  "voters": [
+    "he4am",
+    "854424",
+    "sudev",
+    "defectstar",
+    "rcejules"
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 13,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/server",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "678727",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2020-04-01T08:50:37.055Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:11:20.521527",
+    "source": "https://hackerone.com/reports/678727.json",
+    "report_id": 678727
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82Nzg3Mjc=",
+    "databaseId": "678727",
+    "title": "potential RCE and XSS via file upload requiring user account and default settings",
+    "url": "https://hackerone.com/reports/678727",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-04-01T08:50:37.020Z",
+    "created_at": "2019-08-21T19:18:14.807Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.8
+    },
+    "reporter": {
+      "username": "rcejules"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY3ODcyNw==",
+    "_id": "678727",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2020-04-01T08:50:37.055Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82Nzg3Mjc=",
+      "databaseId": "678727",
+      "title": "potential RCE and XSS via file upload requiring user account and default settings",
+      "url": "https://hackerone.com/reports/678727",
+      "disclosed_at": "2020-04-01T08:50:37.020Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

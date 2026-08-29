@@ -1,0 +1,188 @@
+{
+  "id": 3306475,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA2NDc1",
+  "url": "https://hackerone.com/reports/3306475",
+  "title": "curl leaks destination IP via glibc getaddrinfo() UDP connect, bypassing SOCKS5/Tor",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "readable_substate": "N/A",
+  "created_at": "2025-08-20T08:18:43.775Z",
+  "submitted_at": "2025-08-20T08:18:43.897Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "robert_min1",
+    "url": "/robert_min1",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-08-20T08:37:15.185Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-08-20T08:29:12.386Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nWhen using curl with a SOCKS5 proxy (e.g. Tor on 127.0.0.1:9050), glibc getaddrinfo() performs direct UDP connect() probes to the target’s IP:443. These syscalls bypass the proxy and expose the user’s route to the destination, breaking anonymity expectations.\nThe IPs I got in my case:\n`116.202.120.181:443`\n`[64:ff9b::74ca:78b5]:443`\n\nNo AI was used in the report\n\n## Affected version\nCurl 7.88.1\nDebian 13.0\n\n## Steps To Reproduce:\n1. Run Tor locally on port 9050.\n2. Lauch curl with the tor proxy, with tracing, using strace or sockstrace to monitor the connect syscalls:\n```\nstrace: strace -f -e trace=connect curl --proxy socks5://localhost:9050 https://check.torproject.org\n```\n```\nsockstrace: go run main.go curl --args \"--proxy\" --args \"socks5://localhost:9050\" --args \"https://check.torproject.org/\" --logleaks\n```\nObserve that a connect() syscall is made to:\n```\n116.202.120.181:443\n[64:ff9b::74ca:78b5]:443\n```\n## Supporting Material/References:\nBacktrace shows leak originates in glibc/getaddrinfo.c: try_connect() (attached)\n\n## Impact\n\n## Summary:\nThis issue allows the destination server (or any network observer) to learn the user’s real IP address even when curl is configured to use a SOCKS5 proxy such as Tor. The leak occurs before the proxied TCP connection is established, meaning anonymity is compromised. Any user relying on curl with Tor or other SOCKS5 proxies for privacy or censorship circumvention can be deanonymized.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4696834,
+      "file_name": "stacktrace_curl.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/r00c7pt8yorwdwzhnh6i9kzdfbho?response-content-disposition=attachment%3B%20filename%3D%22stacktrace_curl.txt%22%3B%20filename%2A%3DUTF-8%27%27stacktrace_curl.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042820Z&X-Amz-Expires=684&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=09e8637f7e8d679f8924e1da0ba4ad76770496cb390efa7263f8d44534557621",
+      "file_size": 1311,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 28,
+  "voters": [
+    "xven1c3",
+    "k0ns0l",
+    "corrupted_bytes",
+    "clearlovefanboi",
+    "thalaivar304",
+    "2026",
+    "ek3nk4r",
+    "antedeeeguemon",
+    "mai91",
+    "sniperl96",
+    "and 18 more..."
+  ],
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3306475",
+  "votes": 28,
+  "latest_disclosable_activity_at": "2025-08-20T08:37:15.058Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:28:21.145894",
+    "source": "https://hackerone.com/reports/3306475.json",
+    "report_id": 3306475
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA2NDc1",
+    "databaseId": "3306475",
+    "title": "curl leaks destination IP via glibc getaddrinfo() UDP connect, bypassing SOCKS5/Tor",
+    "url": "https://hackerone.com/reports/3306475",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-08-20T08:37:15.185Z",
+    "created_at": "2025-08-20T08:18:43.775Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "robert_min1"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzMDY0NzU=",
+    "_id": "3306475",
+    "disclosed": true,
+    "votes": 28,
+    "latest_disclosable_activity_at": "2025-08-20T08:37:15.058Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA2NDc1",
+      "databaseId": "3306475",
+      "title": "curl leaks destination IP via glibc getaddrinfo() UDP connect, bypassing SOCKS5/Tor",
+      "url": "https://hackerone.com/reports/3306475",
+      "disclosed_at": "2025-08-20T08:37:15.185Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

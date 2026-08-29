@@ -1,0 +1,225 @@
+{
+  "id": 1051192,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDUxMTky",
+  "url": "https://hackerone.com/reports/1051192",
+  "title": "Code Injection via Insecure Yaml.load",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2020-12-05T14:20:39.616Z",
+  "submitted_at": "2020-12-05T14:20:39.660Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "r44mb00",
+    "url": "/r44mb00",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39386,
+    "url": "https://hackerone.com/kubernetes",
+    "handle": "kubernetes",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Kubernetes",
+      "twitter_handle": "kubernetesio",
+      "website": "https://kubernetes.io/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-05-01T18:00:28.868Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2021-04-01T18:00:26.507Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Report Submission Form\n\n## Summary:\nThe Kubernetes repo and tool, [test-infra](https://github.com/kubernetes/test-infra), uses the insecure yaml.load() function to set or update the `Gubernator` configuration with a yaml file which allows for code injection.\nVulnerable Line of Code:\n[https://github.com/kubernetes/test-infra/blob/master/gubernator/main.py#L36](https://github.com/kubernetes/test-infra/blob/master/gubernator/main.py#L36)\n[https://github.com/kubernetes/test-infra/blob/master/gubernator/update_config.py#L35](https://github.com/kubernetes/test-infra/blob/master/gubernator/update_config.py#L35)\n[https://github.com/kubernetes/test-infra/blob/master/gubernator/update_config.py#L48](https://github.com/kubernetes/test-infra/blob/master/gubernator/update_config.py#L48)  \nVulnerable Files and functions: main.py:get_app_config()\n                                                                         update_config.py:main()\n\n## Kubernetes Version:\nLatest version: Master branch on Github\n\n## Component Version:\nLatest version: Master branch on Github\n\n## Steps To Reproduce:\n\n  1. Install the `Gubernator` frontend.\n  2. save the provided `config.yaml` file as the configuration file for Guberator, keep the same name.\n  3. Once you update the configuration the poc should be executed and a `ls` should be executed. \n\nTo Facilitate the process I have created a poc.py script in which I extracted the vulnerable code blocks from the test-infra repository to simulate the tools behaviour (Only from the main.py to illustrate the concept, same applies to the other occurence). \n### Steps to run the PoC:\n   1. Save the `poc.py` script. \n   2. Save the `config.yaml` file in the same folder as the script. \n   3. Run the script using `python3 poc.py`. \n   4. The command `ls` should be executed. Note that any other command can be executed. \n\n### Important Exploit Conditions:\nThe extent of the exploitability of this vulnerability is limited by the version of PyYaml that the victim has installed.\nFor versions of PyYaml => 5.1 the only way to achieve command execution is to have `Gubernator` running embedded in a component that previously imports the subprocess module. For example Flask.\nFor versions of PyYaml < 5.1 the vulnerability is always exploitable and command execution can always be achieved.\nNote that the former is always the case for the `test-infra/Gubernator` repo given that the requirements set `PyYAML > 5.1`. For this reason I have checked the `Attack Complexity` of the CVSS score as high. Exploitability is difficult but still possible in the worst case scenario. \n\nSolution:\nAs a possible solution I suggest changing the vulnerable and deprecated function for its secure equivalent, `safe_load()`.\n\n## Supporting Material/References:\nDetails on the vulnerability and how to exploit in general can be found in this great [article](https://www.exploit-db.com/docs/english/47655-yaml-deserialization-attack-in-python.pdf)\n  * `poc.py`: Python3 script with the proof of concept. \n  * `config.yaml`: Payload file for the PoC.\n  * `evidence.png`: Screenshot of the script ran on my local machine.\n\n## Impact\n\nAn attacker can exploit this vulnerability by crafting a malicious YAML file in order to execute system commands. An attacker can either find a way to load a malicious configuration file or entice a victim into loading it. This results in Command Execution.\nFor this reason I have marked the `User Interaction` of the CVSS score as required.",
+  "bounty_amount": "250.0",
+  "formatted_bounty": "$250",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1105115,
+      "file_name": "evidence.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/1kwu32z5h89cwitgs22pdw5wv267?response-content-disposition=attachment%3B%20filename%3D%22evidence.png%22%3B%20filename%2A%3DUTF-8%27%27evidence.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2L5C3AE6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063925Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJIMEYCIQCJairBBhoHE%2BDFuW%2FxtdcU%2FnWLTKqtVgRF4ms7wq%2F4yAIhAPy2p%2FExrZE1Yftituzx5XVpz4wrHZdbSzsCnea8QZhIKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igw%2FUd3I0z5gMISWK7QqjgUAPqJG1TiAvNBsZ74JOu52exT%2FhTxLCM9KtQsfiKazDC%2Fo8EunK2mGmpSOQ8OhwLnzJlvaQGko7uHMHyzT6coY9YBqWs%2FhFG65P%2FW8Slh2FetmZjgK8bebI0O3XR1q0cTPPMDpW7N4ZinhyaBVa7wQpLaFl7Qsewpbu5m4T2rZ%2Fnd4mFDjezXWaW%2FhUOeaPyDbnCn5xohLKAQYbwHpwQgvzEapTCNs9VVTZFKZGNEcX%2FcYjRf%2B%2Bmc45XGcoiU4QjpXQKFpjks7QUTREP0IJ%2FMxxPNxo%2Bv619cjaN9ngrM1mGRLNhMw9la1NCRss27jlTgzV9FlLGCGbxmrPl1bPRH22pl%2F9ZpI3p54IfpM4IwV5dT3CuOKHPzXcIN0R0SXynbG4Qn8YTQ1FKOGvGU7qoYBkkRm6BlZHBQphiz%2FI3ubiMiB6gD%2BMl0KtB1cTK4YfxJ9R0VOCkAvryGD%2BtutG4%2B2bPY%2BmwyAhn58NfgbWjT%2F5maaYOIQ19zG4FeOahyY9cL0u%2FBiIIhVkyyq4ErGuvbI7JPVN0jRps1guiciUO8StaKxnYIQ6DRpLUeAXHGa4VNjULkfUpzZ%2BEoTjk%2FT7FnQM3nO%2B059qpxcnI2kv0RFb%2BylAGFKrA6FGbry7wZzgHMtaO2KfRtE4X0TUkD9P1TXNhnqX8pjyf9UaDc%2FNLBruKdZ1%2FBj9%2BjRVnABsvLdIBp1CL6Y%2Bvo%2B8CrY%2BO9CfYnMDbYFP5s2%2FIYA1WZGskRc%2BPw3rHvy42QSmozvEsB5cqY21%2BKZvzPOv054uZ8QJHud4mTm6FO2iDYu6MaUf9MbpfmIaV933CHGS7otKfGOl8Y7efObhonsbiSC4Ql2k%2FEzKyy5g9dxMwjQIp5o6acwsqid0gY6sAHlruaFMv1Hie694BEmiNFdOMlYVoKIJNd5jh%2BtQYmz8z2sEOMHgJaF17GluedDYxO%2FPkF4i5OUM1okI5R2tfDXq9EO30r0lg5BAQ%2BWoO%2FhJdrP5t6zSb6CeUYct0LNt7Hgz%2FTnaEYpKRnFSoAQcteJV4ehpHrzv3AG2ZB8oEMqg8xkBevdHC2Igq4ScxYcO%2BNpe6rRLwJgAwYR60QjCi%2Fs5VZhQhDIXd3ooxugHuJW1g%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d9a005622b746a4b35bcd75b8e481e5449e5d5b885cbd4aba2358d277908ee81",
+      "file_size": 33455,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1105116,
+      "file_name": "config.yaml",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/54a654jak48c383s3bmdmdvtpzba?response-content-disposition=attachment%3B%20filename%3D%22config.yaml%22%3B%20filename%2A%3DUTF-8%27%27config.yaml&response-content-type=application%2Fx-yaml&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2L5C3AE6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063925Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJIMEYCIQCJairBBhoHE%2BDFuW%2FxtdcU%2FnWLTKqtVgRF4ms7wq%2F4yAIhAPy2p%2FExrZE1Yftituzx5XVpz4wrHZdbSzsCnea8QZhIKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igw%2FUd3I0z5gMISWK7QqjgUAPqJG1TiAvNBsZ74JOu52exT%2FhTxLCM9KtQsfiKazDC%2Fo8EunK2mGmpSOQ8OhwLnzJlvaQGko7uHMHyzT6coY9YBqWs%2FhFG65P%2FW8Slh2FetmZjgK8bebI0O3XR1q0cTPPMDpW7N4ZinhyaBVa7wQpLaFl7Qsewpbu5m4T2rZ%2Fnd4mFDjezXWaW%2FhUOeaPyDbnCn5xohLKAQYbwHpwQgvzEapTCNs9VVTZFKZGNEcX%2FcYjRf%2B%2Bmc45XGcoiU4QjpXQKFpjks7QUTREP0IJ%2FMxxPNxo%2Bv619cjaN9ngrM1mGRLNhMw9la1NCRss27jlTgzV9FlLGCGbxmrPl1bPRH22pl%2F9ZpI3p54IfpM4IwV5dT3CuOKHPzXcIN0R0SXynbG4Qn8YTQ1FKOGvGU7qoYBkkRm6BlZHBQphiz%2FI3ubiMiB6gD%2BMl0KtB1cTK4YfxJ9R0VOCkAvryGD%2BtutG4%2B2bPY%2BmwyAhn58NfgbWjT%2F5maaYOIQ19zG4FeOahyY9cL0u%2FBiIIhVkyyq4ErGuvbI7JPVN0jRps1guiciUO8StaKxnYIQ6DRpLUeAXHGa4VNjULkfUpzZ%2BEoTjk%2FT7FnQM3nO%2B059qpxcnI2kv0RFb%2BylAGFKrA6FGbry7wZzgHMtaO2KfRtE4X0TUkD9P1TXNhnqX8pjyf9UaDc%2FNLBruKdZ1%2FBj9%2BjRVnABsvLdIBp1CL6Y%2Bvo%2B8CrY%2BO9CfYnMDbYFP5s2%2FIYA1WZGskRc%2BPw3rHvy42QSmozvEsB5cqY21%2BKZvzPOv054uZ8QJHud4mTm6FO2iDYu6MaUf9MbpfmIaV933CHGS7otKfGOl8Y7efObhonsbiSC4Ql2k%2FEzKyy5g9dxMwjQIp5o6acwsqid0gY6sAHlruaFMv1Hie694BEmiNFdOMlYVoKIJNd5jh%2BtQYmz8z2sEOMHgJaF17GluedDYxO%2FPkF4i5OUM1okI5R2tfDXq9EO30r0lg5BAQ%2BWoO%2FhJdrP5t6zSb6CeUYct0LNt7Hgz%2FTnaEYpKRnFSoAQcteJV4ehpHrzv3AG2ZB8oEMqg8xkBevdHC2Igq4ScxYcO%2BNpe6rRLwJgAwYR60QjCi%2Fs5VZhQhDIXd3ooxugHuJW1g%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=833d83479831ea8d3aabd6a08fb816696cd5433222902c52232d5d45400f175c",
+      "file_size": 43,
+      "type": "application/x-yaml",
+      "moderated": null
+    },
+    {
+      "id": 1105117,
+      "file_name": "poc.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2m983d5zhf02aov46h80hl9hoqo7?response-content-disposition=attachment%3B%20filename%3D%22poc.py%22%3B%20filename%2A%3DUTF-8%27%27poc.py&response-content-type=text%2Fx-python-script&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2L5C3AE6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063925Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJIMEYCIQCJairBBhoHE%2BDFuW%2FxtdcU%2FnWLTKqtVgRF4ms7wq%2F4yAIhAPy2p%2FExrZE1Yftituzx5XVpz4wrHZdbSzsCnea8QZhIKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igw%2FUd3I0z5gMISWK7QqjgUAPqJG1TiAvNBsZ74JOu52exT%2FhTxLCM9KtQsfiKazDC%2Fo8EunK2mGmpSOQ8OhwLnzJlvaQGko7uHMHyzT6coY9YBqWs%2FhFG65P%2FW8Slh2FetmZjgK8bebI0O3XR1q0cTPPMDpW7N4ZinhyaBVa7wQpLaFl7Qsewpbu5m4T2rZ%2Fnd4mFDjezXWaW%2FhUOeaPyDbnCn5xohLKAQYbwHpwQgvzEapTCNs9VVTZFKZGNEcX%2FcYjRf%2B%2Bmc45XGcoiU4QjpXQKFpjks7QUTREP0IJ%2FMxxPNxo%2Bv619cjaN9ngrM1mGRLNhMw9la1NCRss27jlTgzV9FlLGCGbxmrPl1bPRH22pl%2F9ZpI3p54IfpM4IwV5dT3CuOKHPzXcIN0R0SXynbG4Qn8YTQ1FKOGvGU7qoYBkkRm6BlZHBQphiz%2FI3ubiMiB6gD%2BMl0KtB1cTK4YfxJ9R0VOCkAvryGD%2BtutG4%2B2bPY%2BmwyAhn58NfgbWjT%2F5maaYOIQ19zG4FeOahyY9cL0u%2FBiIIhVkyyq4ErGuvbI7JPVN0jRps1guiciUO8StaKxnYIQ6DRpLUeAXHGa4VNjULkfUpzZ%2BEoTjk%2FT7FnQM3nO%2B059qpxcnI2kv0RFb%2BylAGFKrA6FGbry7wZzgHMtaO2KfRtE4X0TUkD9P1TXNhnqX8pjyf9UaDc%2FNLBruKdZ1%2FBj9%2BjRVnABsvLdIBp1CL6Y%2Bvo%2B8CrY%2BO9CfYnMDbYFP5s2%2FIYA1WZGskRc%2BPw3rHvy42QSmozvEsB5cqY21%2BKZvzPOv054uZ8QJHud4mTm6FO2iDYu6MaUf9MbpfmIaV933CHGS7otKfGOl8Y7efObhonsbiSC4Ql2k%2FEzKyy5g9dxMwjQIp5o6acwsqid0gY6sAHlruaFMv1Hie694BEmiNFdOMlYVoKIJNd5jh%2BtQYmz8z2sEOMHgJaF17GluedDYxO%2FPkF4i5OUM1okI5R2tfDXq9EO30r0lg5BAQ%2BWoO%2FhJdrP5t6zSb6CeUYct0LNt7Hgz%2FTnaEYpKRnFSoAQcteJV4ehpHrzv3AG2ZB8oEMqg8xkBevdHC2Igq4ScxYcO%2BNpe6rRLwJgAwYR60QjCi%2Fs5VZhQhDIXd3ooxugHuJW1g%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bd2bf9ffb65eb82dd16a0316186aee4d67d5d4958c3cc0c7b07e1bf97af7c556",
+      "file_size": 461,
+      "type": "text/x-python-script",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-05-01T18:00:26.611Z",
+  "allow_singular_disclosure_after": -163168739.01722583,
+  "singular_disclosure_allowed": true,
+  "vote_count": 17,
+  "voters": [
+    "drsniper",
+    "ali",
+    "sudi",
+    "akashhamal0x01",
+    "h4x0r_dz",
+    "0nlymohammed",
+    "khizer47",
+    "cryptographer",
+    "azzam_1",
+    "meispi",
+    "and 7 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 32522,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/kubernetes/test-infra",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1051192",
+  "votes": 17,
+  "latest_disclosable_activity_at": "2021-05-01T18:00:28.925Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:39:25.733031",
+    "source": "https://hackerone.com/reports/1051192.json",
+    "report_id": 1051192
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDUxMTky",
+    "databaseId": "1051192",
+    "title": "Code Injection via Insecure Yaml.load",
+    "url": "https://hackerone.com/reports/1051192",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-05-01T18:00:28.868Z",
+    "created_at": "2020-12-05T14:20:39.616Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "r44mb00"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNzM1MzI=",
+            "amount": "100.00",
+            "awarded_amount": "100.00",
+            "awarded_bonus_amount": "150.00",
+            "created_at": "2021-01-27T19:49:57.704Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwNTExOTI=",
+    "_id": "1051192",
+    "disclosed": true,
+    "votes": 17,
+    "latest_disclosable_activity_at": "2021-05-01T18:00:28.925Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDUxMTky",
+      "databaseId": "1051192",
+      "title": "Code Injection via Insecure Yaml.load",
+      "url": "https://hackerone.com/reports/1051192",
+      "disclosed_at": "2021-05-01T18:00:28.868Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    }
+  }
+}

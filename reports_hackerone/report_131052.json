@@ -1,0 +1,177 @@
+{
+  "id": 131052,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzEwNTI=",
+  "url": "https://hackerone.com/reports/131052",
+  "title": "XSS in uber oauth",
+  "state": "Closed",
+  "substate": "informative",
+  "readable_substate": "Informative",
+  "created_at": "2016-04-15T10:57:56.042Z",
+  "submitted_at": "2016-04-15T10:57:56.042Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "zombiehelp54",
+    "url": "/zombiehelp54",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/mevfgipw1pc7n4wy86swdq1yaeuq/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 314,
+    "url": "https://hackerone.com/uber",
+    "handle": "uber",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/314/24ea21370a71b18eafb5722d5855825ab622b5dd_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/314/24ea21370a71b18eafb5722d5855825ab622b5dd_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Uber",
+      "twitter_handle": "",
+      "website": "https://www.uber.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-07-26T00:27:22.726Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-06-29T17:10:40.292Z",
+  "team_member_agreed_on_going_public_at": "2016-07-26T00:27:22.596Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi , I have found that when setting a `redirect_uri` for an application you validate for the presence of `://` in the beginning of the url , but you don't validate for the protocol and you don't block malicious protocols such as `javascript:` pseudo protocol and `data:` URIs.\nAlthough the redirecting is done through `location` header , there still some cases in which this can be harmful to users and can be used to hijack users' accounts , moreover , `data:` URIs work on some modern browsers such as firefox. \nThis also can be very harmful to users who chose to disable 302 redirection on their browser.\n\n#PoC:\n\nThis PoC will work on latest version of opera mini mobile browser and it will also work on firefox with 302 redirection disabled. \n\n- Go to https://login.uber.com/oauth/authorize?client_id=MXeE1dl-5R3yTCbufMHsfz3KhfY2UGyS&response_type=code&scope=profile&redirect_uri=javascript:%2F%2Fgoog.com%2F%250Aalert%28document.domain%29%3B%2F%2F\n- Click the Allow or the Deny button\n- The response will be:\n \n```\n<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<title>Redirecting...</title>\n<h1>Redirecting...</h1>\n<p>You should be redirected automatically to target URL: <a href=\"javascript://goog.com/%0Aalert(document.domain);//?error=access_denied#_\">javascript://goog.com/%0Aalert(document.domain);//?error=access_denied#_</a>.  If not click the link.\n```\n- As you can see , this will trigger XSS . \nI have attached a screenshot of XSS triggered on firefox (latest version) with 302 redirection disabled. \n\nThe PoC will also work on old Mozilla and opera browsers , in browsers Mozilla 1.7.x (and previous versions) and Mozilla Firefox 3.0.12 , The browser will show “Object Moved” page. click on the link “here” and the code will execute.\n\nThanks\n\n",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 85789,
+      "file_name": "uber_oauth_xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/085/789/b3e6edc589f267e162083fa958443cc3da10cdb9/uber_oauth_xss.png?response-content-disposition=attachment%3B%20filename%3D%22uber_oauth_xss.png%22%3B%20filename%2A%3DUTF-8%27%27uber_oauth_xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUBZL3SMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065618Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC0vd9qwWGGlJ5R6u1w%2FJDTEgxnnEX%2F66Z0y%2FDYDIrKogIhAMmNkpSlsAfDjpOMsGnPN%2FfULnz8pf6lMWaQAHeNhfKJKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgysijxSd9ouNs36KaUqjwUD0hBxjr%2FslcqCGno5SyyxVHX7ZsWXMYXblgWRxlnYMv2sVGB7P0GPCL0Q%2BgNF9E2XuWdW1Q7EIfU9Dun6GivHAYADWtlEnvYCmCnArQPyewGkBRHPJ8s1dmAAWer7c2sEs4jy0PxKNKQGcov0hq2jTDCUo%2Baxi2sz5MpKAjnC26Da1Lr%2B29NQjvWcBTyJCUUR3NvkN2UD44OL1wXIoV3JYeLh2x8qh0GJTWHkxerxRxME1IunjIshD5fjFlc2LQM16pi%2Bjs8sPolrf4lWgWM8D7ivQPEo%2Fq8gbt24Qrs8XDlERppmJmz%2FuYOSN2gqmaAyzD7Eu6o88%2Fpu9GBkda7RjG2%2FCX8%2B76t07zz1UTAh1MYxOc4lcY%2BYvJKWzz%2F8DNoBlvcA1mVFaW9NQeZhsm8XpdUdVqiXvwfyBYHVqPrN%2FBFewhyIuyjkeF17nWyCfSJn6tz%2BXH83FAEYHY67r2Tlp5F9wfBDWaW5gbxZLaWnjOAGJPmHFup%2FuQBSQYqhHGHcM%2FXT2hdZTxiRiQq4wFVhRrrzrpEaVb771%2B%2FwEBg%2Bs1NrFFBa1hzy%2F5oLOHVpk7GBIHJVVqrFgrFlXH8z7K4hNHvcvf5KSU97hLPE2OM1n%2FgozkWNSYh%2BTeGv0dmhM1Di32Gs1TLuJmfracd2zO5tcfL9U1dLR02F6OmtFvx7B8Yo1I5ahbvv%2BiKK25akKqT%2BOuQCGkxOTfmMlZ1Gw0lQ7fMj0H%2B9w%2FIZhy%2Bah9OqcwEvuaBGJ62GpNpR2Vw79O1TWtybkP9SWj8EHrrG96oEMkfdfRQURtwWNVSc4Dnp7iRVTNkAJW5jIObwNohK9qnON8iRS9V6tRlAicG3ZcWtZQ3kutBiP9fP4TJX9rJ2MKzLt9IGOrABTXz5zSXYJEpkSFwGSgTe1z%2FJz01I3KATBTQ6qV3JoMW0ktzuiCH6rDLfhJ04qfCeEzmk4cPqSGYcJOpIMMuV0dt2InOF37EP678V1J3jqnTxHbtFOaQb7MJ%2B1UPOJS6i9bjMKau8QswoHyj1vXaaMa7ZBAIWnLRcJhPFHp3frrjOemsArtrg4fkriDp4mPK3xZgX9iLmty2VPJFjfO407HcC0pNZ0WHeauSCnSAk6v8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0dceeeb764eca8367a80a2ed2d6b8718e8ce5959fb8d7fc3c785f38733b11653",
+      "file_size": 80158,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 5,
+  "voters": [
+    "pr0f0x01",
+    "leet-boy",
+    "sumit7",
+    "spetr0x",
+    "dyabla"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "131052",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2016-07-26T00:27:22.753Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:56:18.320771",
+    "source": "https://hackerone.com/reports/131052.json",
+    "report_id": 131052
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzEwNTI=",
+    "databaseId": "131052",
+    "title": "XSS in uber oauth",
+    "url": "https://hackerone.com/reports/131052",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2016-07-26T00:27:22.726Z",
+    "created_at": "2016-04-15T10:57:56.042Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "zombiehelp54"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxNA==",
+      "handle": "uber",
+      "name": "Uber",
+      "url": "https://hackerone.com/uber",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzMTA1Mg==",
+    "_id": "131052",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2016-07-26T00:27:22.753Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzEwNTI=",
+      "databaseId": "131052",
+      "title": "XSS in uber oauth",
+      "url": "https://hackerone.com/reports/131052",
+      "disclosed_at": "2016-07-26T00:27:22.726Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxNA==",
+      "handle": "uber",
+      "name": "Uber",
+      "url": "https://hackerone.com/uber",
+      "currency": "usd"
+    }
+  }
+}

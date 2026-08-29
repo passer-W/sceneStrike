@@ -1,0 +1,209 @@
+{
+  "id": 398285,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTgyODU=",
+  "url": "https://hackerone.com/reports/398285",
+  "title": "[serve] XSS via HTML tag injection in directory lisiting page",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-08-22T19:24:44.393Z",
+  "submitted_at": "2018-08-22T19:24:44.393Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "skyn3t",
+    "url": "/skyn3t",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/224/816/14988b1087907275d769481dc45fe6576ce0d206_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-10-19T07:53:01.485Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2018-10-19T07:52:51.798Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report HTML injection in serve module.\nIt allows malicious HTML tags injection and execution of arbitrary JS code\n\n# Module\n\n**module name:** serve\n**version:** 9.6.0\n**npm page:** `https://www.npmjs.com/package/serve`\n\n## Module Description\nAssuming you would like to serve a static site, single page application or just a static file (no matter if on your device or on the local network), this package is just the right choice for you.\n\nIt behaves exactly like static deployments on Now, so it's perfect for developing your static project. Then, when it's time to push it into production, you deploy it.\n\nFurthermore, it provides a neat interface for listing the directory's contents:\n\n## Module Stats\n\n95,383 weekly downloads\n\n# Vulnerability\n\n## Vulnerability Description\n\n`serve` module provides a neat directory listing feature in it's HTTP server but it does'nt sanitize the filename hence a malicious payload in the filename cane be used to invoke an XSS. For example a file can be strategically named as `<img src=x onerror=alert('XSS')>` and we can see the XSS executing in the browser.\n\nAlternatively a file can be created containing `iframe` tag with `src` attribute pointing to a malicious html which executes javascript on loading as pointed out in https://hackerone.com/reports/355458\n\n## Steps To Reproduce:\n\n* Install `serve`\n\n`yarn global add serve`\n\nor\n\n`npm i serve -g`\n\n* Create a file and name it\n\n `<img src=x onerror='alert(\"XSS\")'>`\n\nor\n\n`\"><iframe src=\"malware_frame.html\">`\n\n* Start `serve` in the folder containing the payload file\n\n`serve`\n\n* Open up `localhost:5000` in browser\n\n## Patch\n\nIn `serve-handler` the file `directory.js` takes in a list of all files in directory and adds it in `<a>` tag without sanitizing.\n\n```\nvar out = '<!DOCTYPE ............. \n.\n.\n.\nout += ' <a href=\"/<a' + (value.url) + '\">' + (value.name) + '</a> '\n```\n\nFixing this here might mitigate the issue IMO\n\n## Supporting Material/References:\n\n- Ubuntu 16.04\n- Node v10.9.0\n- npm v6.2.0\n- Firefox 61.0.1\n\n# Wrap up\n\n- I contacted the maintainer to let them know: N\n- I opened an issue in the related repository: N\n\n## Impact\n\nAn attacker is able to execute malicious JavaScript in context of other user's browser.",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 336636,
+      "file_name": "frame.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/336/636/0409b4f74577df68f76f82698a499239862ff71c/frame.png?response-content-disposition=attachment%3B%20filename%3D%22frame.png%22%3B%20filename%2A%3DUTF-8%27%27frame.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055833Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=adca0b7c00689ca477bd5d731d21fd6a0731ac97f244d7e066756ee7f354fb3b",
+      "file_size": 12672,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 336637,
+      "file_name": "xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/336/637/816d7b2bb59202b4f79a6603e96048092d914c50/xss.png?response-content-disposition=attachment%3B%20filename%3D%22xss.png%22%3B%20filename%2A%3DUTF-8%27%27xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055833Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6665586eb7c6780e665ab7c1b84406019d0c9f2d04bd3d5ca6e7bef6096a2d41",
+      "file_size": 14264,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-11-18T07:52:51.883Z",
+  "allow_singular_disclosure_after": -240962741.50138715,
+  "singular_disclosure_allowed": true,
+  "vote_count": 4,
+  "voters": [
+    "bl4de",
+    "skyn3t",
+    "eveeez",
+    "12345abcd"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.5,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 5006,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "serve",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "398285",
+  "votes": 4,
+  "latest_disclosable_activity_at": "2018-10-19T07:53:01.391Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:58:33.510788",
+    "source": "https://hackerone.com/reports/398285.json",
+    "report_id": 398285
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTgyODU=",
+    "databaseId": "398285",
+    "title": "[serve] XSS via HTML tag injection in directory lisiting page",
+    "url": "https://hackerone.com/reports/398285",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-10-19T07:53:01.485Z",
+    "created_at": "2018-08-22T19:24:44.393Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.5
+    },
+    "reporter": {
+      "username": "skyn3t"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM5ODI4NQ==",
+    "_id": "398285",
+    "disclosed": true,
+    "votes": 4,
+    "latest_disclosable_activity_at": "2018-10-19T07:53:01.391Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTgyODU=",
+      "databaseId": "398285",
+      "title": "[serve] XSS via HTML tag injection in directory lisiting page",
+      "url": "https://hackerone.com/reports/398285",
+      "disclosed_at": "2018-10-19T07:53:01.485Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

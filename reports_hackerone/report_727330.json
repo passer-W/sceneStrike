@@ -1,0 +1,215 @@
+{
+  "id": 727330,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MjczMzA=",
+  "url": "https://hackerone.com/reports/727330",
+  "title": "Header modification results in disclosure of Slack infra metadata to unauthorized parties",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2019-11-01T08:49:07.107Z",
+  "submitted_at": "2019-11-01T08:49:07.107Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "showuon",
+    "url": "/showuon",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/DEqKpZqWqSpQz733wfjrHRMa/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 69,
+    "url": "https://hackerone.com/slack",
+    "handle": "slack",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Slack",
+      "twitter_handle": "slackhq",
+      "website": "https://slack.com",
+      "about": "All your team communication in one place, instantly searchable, and available wherever you go."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-06-09T02:21:07.522Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-05-10T02:20:58.167Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I found *files.slack.com* domain will honor the **X-Forwarded-Host** header, instead of host header. Although file.slack.com has host validation to return 500 Internal server error when host is not files.slack.com, I can bypass the validation by appending @ at the end of host name. Also, the server will send request to the host in X-Forwarded-Host. And, we can see the server sent request is not the front end server (not from cloudfront.net), it is from the back end server(from amazonaws.com). So, with the blind SSRF vulnerability, the attackers can send arbitrary requests to the intranet, ex: port scanning by identifying the response delay time, to know 169.265.169.254:443 is closed, 169.265.169.254:80 is opened...and so on.\n\n**Reproduce steps:**\n\n1. upload a file onto the slack, find the original image path via Open original. Intercept this original path (i.e. https://files.slack.com/files-pri/TNXC4JD70-FPSL307RB/test.png) on burp suite\n2. Send to repeater, make sure it works fine by clicking send directly\n3. Add a header X-Forwarded-Host: xxx.com, make sure server returned 500 error\n{F623016}\n\n4. Update header to X-Forwarded-Host: files.slack.com@YOUR_DOMAIN, make sure server response with 302, and the location is YOUR_DOMAIN/files-pri/....\n{F623017}\n\n5. Make sure the request did sent to your domain, and the server is from xxx.amazonaws.com\n6. change *YOUR_DOMAIN* into intranet ip, ex: 169.254.169.254:PORT, change the port to check the response delay time.\n\nHere's the demo video: https://youtu.be/j5_WicLwwC4\n\n## Impact\n\nWith the blind SSRF vulnerability, the attackers can send arbitrary requests to the intranet, ex: port scanning by identifying the response delay time. To mitigate it, the server should always honor the **Host** header, not others. Thank you.",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 623016,
+      "file_name": "web_cache_500_error.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/oBk1DPDQL9MNiyAhgHXR59mL?response-content-disposition=attachment%3B%20filename%3D%22web_cache_500_error.png%22%3B%20filename%2A%3DUTF-8%27%27web_cache_500_error.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ62PR2B3C%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063658Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIHjlYn8lptl7%2FJmZ9mJyBSgkCKSYjjxK0BoR7LLWBZzvAiB6NFyMqUDPmFLmEBi0kacwCfUzgsc7bwZlhovKrZebKyqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMKR46kAYv1GWvpVDQKo4FGE1%2FppYXUVpTbz%2FgdvoadfFvUS2j9q7PREQB1u%2BEE7KTi7v7ttxjVzH375WOFyKXw%2FkkPSl5CiQJ7bYgOSjET8BQVAJsUGuzP%2Bk9g3Qr8iZ3rB%2FLaj6fn6XmSv1lBisxfLODZDFvH1b1ilRF3E%2FdkeJ8Jx8QJsFlPwV0TL6MF60jblKgIBeiZs8sFJzsmsMc7%2Fgwo4CXUs%2FdBx9SRDi2xhXxwaHpQTOMEtqPqCKiqP2C3pRbbUNhaneHatSftHEN9dcF9b6%2Fshk1Yyv%2FEuca6EwgF4f6qdli6PWateSyV%2B1cwWJTlTVXvD%2FRu3UWcLTuUZlMp7jh6uvO8nSbC6wsC87S5RFvFWGbgCwZ1HDIL3mvakn4VLX%2Fn5WYYEtmA2RBrnG%2BH24%2B7aoNvQ4x64x6NSwdSro65F5DF25UcKdcOIzvklJeLZ82TTCPhyAv6SNH5ysBu2IyjNIH5%2F16BGUviwLKeT9Nj58BmxksKDhI2pB7EOyw8C06gnI4KmtVd3v9Uf4BuiUK3yYH0X7nnF9MkE%2BEchSEEY%2BbMiC15G5Q0Rxluwgh7KPi9uiGBmPb%2BXFQhSMyMyVJE3rvS9hH9ywna657EJ5%2Bu71s3%2FhsLnHPL7Q2ocZUzJxcrkgK1z2kMgd6K9PDXu0D%2BadZZxa1pxUfCykZxiO1vCtiR%2BJv3nxzx%2FSaWUHyzP3CNHLbmHXyDwXvS8uhhlWE3S1302Yqm9hJt%2B%2FPsInJoLejuWmBbKJh%2F45vJLgEaCBa8OgHdFq8ausZpTQGZk4YC0qyhc210Z09Q9u7FVe4Sk%2BUTT1ZEKB5KslIexrnvpzIN07eOleW4rRQlhz9XLe%2BukGvWEJAMxd02Fg4M%2FISPBJoIMxzRaAgMI2fndIGOrIB%2Be9EkT4S5A5wCrHa4kiz%2FwX7B0y6DZkuWtRvC%2FzKMtBQxt4OuTSQC68twzxxIDNjgct%2BPzj6Mbiyr%2BwbohlXBSllzdTob2OLhi0YfgCwA6fmwEBmC%2BgdyJ3n0DZVjnHwJJsUbHD3buKjGVtL5DlTBFSbcyk1YxEPRUxu4E%2FNG3EcIvDp8ltBgF%2Bnc6ahN9yQVdjVVqUSedWzTHe%2BZlwfek5QnqqFQyHdbbdXxcT2OXEgCg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=834b2db1b3288b60828c8434078164c29f9a357526771130cae2acf4b1db5e93",
+      "file_size": 118369,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 623017,
+      "file_name": "web_cache_poisionable_result.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/CNLfG2nJ573Mv38HA7Hb6ZEy?response-content-disposition=attachment%3B%20filename%3D%22web_cache_poisionable_result.png%22%3B%20filename%2A%3DUTF-8%27%27web_cache_poisionable_result.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ62PR2B3C%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063658Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIHjlYn8lptl7%2FJmZ9mJyBSgkCKSYjjxK0BoR7LLWBZzvAiB6NFyMqUDPmFLmEBi0kacwCfUzgsc7bwZlhovKrZebKyqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMKR46kAYv1GWvpVDQKo4FGE1%2FppYXUVpTbz%2FgdvoadfFvUS2j9q7PREQB1u%2BEE7KTi7v7ttxjVzH375WOFyKXw%2FkkPSl5CiQJ7bYgOSjET8BQVAJsUGuzP%2Bk9g3Qr8iZ3rB%2FLaj6fn6XmSv1lBisxfLODZDFvH1b1ilRF3E%2FdkeJ8Jx8QJsFlPwV0TL6MF60jblKgIBeiZs8sFJzsmsMc7%2Fgwo4CXUs%2FdBx9SRDi2xhXxwaHpQTOMEtqPqCKiqP2C3pRbbUNhaneHatSftHEN9dcF9b6%2Fshk1Yyv%2FEuca6EwgF4f6qdli6PWateSyV%2B1cwWJTlTVXvD%2FRu3UWcLTuUZlMp7jh6uvO8nSbC6wsC87S5RFvFWGbgCwZ1HDIL3mvakn4VLX%2Fn5WYYEtmA2RBrnG%2BH24%2B7aoNvQ4x64x6NSwdSro65F5DF25UcKdcOIzvklJeLZ82TTCPhyAv6SNH5ysBu2IyjNIH5%2F16BGUviwLKeT9Nj58BmxksKDhI2pB7EOyw8C06gnI4KmtVd3v9Uf4BuiUK3yYH0X7nnF9MkE%2BEchSEEY%2BbMiC15G5Q0Rxluwgh7KPi9uiGBmPb%2BXFQhSMyMyVJE3rvS9hH9ywna657EJ5%2Bu71s3%2FhsLnHPL7Q2ocZUzJxcrkgK1z2kMgd6K9PDXu0D%2BadZZxa1pxUfCykZxiO1vCtiR%2BJv3nxzx%2FSaWUHyzP3CNHLbmHXyDwXvS8uhhlWE3S1302Yqm9hJt%2B%2FPsInJoLejuWmBbKJh%2F45vJLgEaCBa8OgHdFq8ausZpTQGZk4YC0qyhc210Z09Q9u7FVe4Sk%2BUTT1ZEKB5KslIexrnvpzIN07eOleW4rRQlhz9XLe%2BukGvWEJAMxd02Fg4M%2FISPBJoIMxzRaAgMI2fndIGOrIB%2Be9EkT4S5A5wCrHa4kiz%2FwX7B0y6DZkuWtRvC%2FzKMtBQxt4OuTSQC68twzxxIDNjgct%2BPzj6Mbiyr%2BwbohlXBSllzdTob2OLhi0YfgCwA6fmwEBmC%2BgdyJ3n0DZVjnHwJJsUbHD3buKjGVtL5DlTBFSbcyk1YxEPRUxu4E%2FNG3EcIvDp8ltBgF%2Bnc6ahN9yQVdjVVqUSedWzTHe%2BZlwfek5QnqqFQyHdbbdXxcT2OXEgCg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=48e121daa8e970c3b05ae0e1a469d0198a1b4d28db8b143d40ffe74054c949d6",
+      "file_size": 128529,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-06-09T02:20:58.309Z",
+  "allow_singular_disclosure_after": -159855360.23746902,
+  "singular_disclosure_allowed": true,
+  "vote_count": 95,
+  "voters": [
+    "0x800700e1",
+    "loaymorad",
+    "orange303",
+    "aagat_sh",
+    "drsniper",
+    "w31rd0",
+    "osman1337",
+    "goodperson",
+    "tayn",
+    "ali",
+    "and 85 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 38317,
+    "asset_type": "URL",
+    "asset_identifier": "app.slack.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "727330",
+  "votes": 95,
+  "latest_disclosable_activity_at": "2021-06-09T02:21:07.599Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:36:58.636377",
+    "source": "https://hackerone.com/reports/727330.json",
+    "report_id": 727330
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MjczMzA=",
+    "databaseId": "727330",
+    "title": "Header modification results in disclosure of Slack infra metadata to unauthorized parties",
+    "url": "https://hackerone.com/reports/727330",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-06-09T02:21:07.522Z",
+    "created_at": "2019-11-01T08:49:07.107Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "showuon"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNzQ1Mzk=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-11-21T22:39:38.297Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzcyNzMzMA==",
+    "_id": "727330",
+    "disclosed": true,
+    "votes": 95,
+    "latest_disclosable_activity_at": "2021-06-09T02:21:07.599Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MjczMzA=",
+      "databaseId": "727330",
+      "title": "Header modification results in disclosure of Slack infra metadata to unauthorized parties",
+      "url": "https://hackerone.com/reports/727330",
+      "disclosed_at": "2021-06-09T02:21:07.522Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    }
+  }
+}

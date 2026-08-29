@@ -1,0 +1,187 @@
+{
+  "id": 145392,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDUzOTI=",
+  "url": "https://hackerone.com/reports/145392",
+  "title": "Response Header injection using redirect_uri together with PHP that utilizes Header Folding according to RFC1945 and Internet Explorer 11",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-06-17T13:20:10.321Z",
+  "submitted_at": "2016-06-17T13:20:10.321Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "fransrosen",
+    "url": "/fransrosen",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/001/634/6569f1cff6ac26c01a91db469d8707228965f09f_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2015-8935"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2016-08-17T07:27:52.561Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-08-17T07:27:52.364Z",
+  "team_member_agreed_on_going_public_at": "2016-08-07T09:02:55.599Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\nI noticed that the `redirect_uri` used to redirect users to any location on the page, passes in all data into a `header(\"Location..` without any validation. The problem is that PHP (current PHP-versions of Debian/Ubuntu, there seem to be a patch properly in place in other dists) actually built the header-function according to RFC1945 which says:\n\n```\nHTTP/1.0 headers may be folded onto multiple lines if each\ncontinuation line begins with a space or horizontal tab. All linear\nwhitespace, including folding, has the same semantics as SP.\n```\nRef: https://tools.ietf.org/html/rfc1945#page-11\n\nThis means that doing the following request:\n\nhttp://nextcloud/index.php?redirect_url=/%3f%0d%0a%09set-cookie:+hello=yoyoo\n\nWill result in the following response:\n```\nLocation: http://nextcloud/?\n\tset-cookie: hello=yoyoo\n```\n\nThe problem is that IE is actually not caring at all about that rule from RFC1945 and will strip the tab-character from that header and listen to it:\n\n{F99965}\n\nYou should most likely disallow this character sequence completely so the failed backported versions of PHP won't do this. Properly secured PHP versions will fail doing the request due to new-lines in the header.\n\nRegards,\nFrans",
+  "weakness": {
+    "id": 57,
+    "name": "Violation of Secure Design Principles"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 99965,
+      "file_name": "Screen_Shot_2016-06-17_at_15.18.36.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/099/965/94e13ba212b589eca016a39b56ac71ad5a058f1c/Screen_Shot_2016-06-17_at_15.18.36.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-06-17_at_15.18.36.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-06-17_at_15.18.36.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065442Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=dba199c34b5e668328ff82adf36448957bb3fe48851839d917bbe6f1b66215c3",
+      "file_size": 9710,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-09-06T09:02:55.676Z",
+  "allow_singular_disclosure_after": -310341106.79491144,
+  "singular_disclosure_allowed": true,
+  "vote_count": 18,
+  "voters": [
+    "lukasreschke",
+    "arneswinnen",
+    "wh0ru",
+    "mashoud1122",
+    "nischalxd",
+    "spam404",
+    "pr0f0x01",
+    "r3y",
+    "abdullah",
+    "japz",
+    "and 8 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "145392",
+  "votes": 18,
+  "latest_disclosable_activity_at": "2016-08-17T07:27:52.611Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:54:42.584427",
+    "source": "https://hackerone.com/reports/145392.json",
+    "report_id": 145392
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDUzOTI=",
+    "databaseId": "145392",
+    "title": "Response Header injection using redirect_uri together with PHP that utilizes Header Folding according to RFC1945 and Internet Explorer 11",
+    "url": "https://hackerone.com/reports/145392",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-08-17T07:27:52.561Z",
+    "created_at": "2016-06-17T13:20:10.321Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU3",
+      "name": "Violation of Secure Design Principles",
+      "external_id": "cwe-657"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "fransrosen"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0NTM5Mg==",
+    "_id": "145392",
+    "disclosed": true,
+    "votes": 18,
+    "latest_disclosable_activity_at": "2016-08-17T07:27:52.611Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDUzOTI=",
+      "databaseId": "145392",
+      "title": "Response Header injection using redirect_uri together with PHP that utilizes Header Folding according to RFC1945 and Internet Explorer 11",
+      "url": "https://hackerone.com/reports/145392",
+      "disclosed_at": "2016-08-17T07:27:52.561Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

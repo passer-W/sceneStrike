@@ -1,0 +1,245 @@
+{
+  "id": 128114,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjgxMTQ=",
+  "url": "https://hackerone.com/reports/128114",
+  "title": "Administrator access to a Django Administration Panel on *.sc-corp.net via bruteforced credentials",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-04T06:29:31.452Z",
+  "submitted_at": "2016-04-04T06:29:31.452Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "shubs",
+    "url": "/shubs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/012/263/fd6f8bc73c2df718da5aad1a941eef1ed9989c52_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 513,
+    "url": "https://hackerone.com/snapchat",
+    "handle": "snapchat",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/513/87067c5c4ed63c2c07a522ca3198d2310e2a14c6_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/513/87067c5c4ed63c2c07a522ca3198d2310e2a14c6_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Snapchat",
+      "twitter_handle": "",
+      "website": "https://www.snapchat.com/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-07-14T21:08:01.443Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-07-14T13:12:45.367Z",
+  "team_member_agreed_on_going_public_at": "2016-07-14T21:08:01.332Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hey team,\n\nWhile doing some recon for Snapchat's domains, I came across a particular domain of interest - `sc-corp.net`. It seems that this domain hosts a lot of Snapchat's internal tools, web applications and staging environments such as Phabricator and other administration panels.\n\nFrom analyzing SSL certificates, I came across the following IP address which contained a wild card common name of `*.sc-corp.net`:\n\n`https://146.148.42.38/`\n\nUpon visiting the above IP address, I was prompted with a basic authentication prompt. Even though I clicked cancel and did not authenticate to the panel, the Django REST API panel was returned - albeit in an unauthenticated state.\n\nIn order to gain authenticated access to the REST API and the Django administration panels, I ran a small scale bruteforce against the login endpoint located at `https://146.148.42.38/api-auth/login/`. The following HTTP request was used to perform the bruteforce attack in Burp Intruder:\n\n```\nPOST /api-auth/login/ HTTP/1.1\nHost: 146.148.42.38\nConnection: close\nContent-Length: 108\nCache-Control: max-age=0\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\nOrigin: https://146.148.42.38\nUpgrade-Insecure-Requests: 1\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36\nContent-Type: application/x-www-form-urlencoded\nDNT: 1\nReferer: https://146.148.42.38/api-auth/login/\nAccept-Encoding: gzip, deflate\nAccept-Language: en-US,en;q=0.8\nCookie: csrftoken=Gt5IRFhlh8BekC11btkUdo8doBniN2pJ\n\ncsrfmiddlewaretoken=Gt5IRFhlh8BekC11btkUdo8doBniN2pJ&next=%2F&username=admin&password=§password§&submit=Log+in\n```\n\nWith a password list of approximately 10,000, I was able to determine the credentials for the Django administration panel after a total of 2459 requests. I've attached a screenshot of the Burp Intruder window showing the successful bruteforce attack (burp_intruder_snapchat_django.png).\n\nSince I now had the credentials (username: `admin` and password: `research`), I was then able to use them to access the Django administration panel located at `https://146.148.42.38/admin/`.\n\nI've attached some screenshots to show the level of access I obtained to the administration panel (snapchat_django_admin_panel_[0-3].png).\n\nAdditionally, with the credentials bruteforced, I was able to interact with the Django REST API without any restrictions - i.e. I was able to add new users and groups via the API. Screenshots attached (snapchat_django_rest_api_[0-3].png).\n\nI made no further attempts to escalate privileges on the machine, nor attempted to gain a reverse shell.\n\nI believe that since this machine's SSL certificate's CNAME was `*.sc-corp.net`, it's likely that there is an actual subdomain that is pointing to this IP. While I was unable to determine the subdomain's name via bruteforcing or enumeration, if there is a valid subdomain pointing to this IP, the severity of this issue could be much higher.\n\nI also assume that since it's most likely within the `sc-corp.net` scope, the machine itself might have privileged access to the Snapchat internal network on Google Cloud. If I were a malicious attacker, I would attempt to first gain a shell on this machine using my now privileged access and then attempt to pivot onto the Snapchat internal network.\n\nAn alternate attack route would be to gain persistent cross-site scripting on the machine with my administrative access and then perform phishing / cookie stealing attacks for applications that run on a subdomain of `sc-corp.net`. For example, there's Phabricator running on `ph.sc-corp.net` and this would be a prime target for an attacker to gain access to. This would require the attacker to know the subdomain on `sc-corp.net` that points to `146.148.42.38`.\n\nPlease don't hesitate if there are any questions or if you require any further information.\n\nCheers\nShubs\n\n",
+  "bounty_amount": "1000.0",
+  "formatted_bounty": "$1,000",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 83042,
+      "file_name": "burp_intruder_snapchat_django.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/042/f7accad24ef21dd7a498694bf21a20c6ce4fd191/burp_intruder_snapchat_django.png?response-content-disposition=attachment%3B%20filename%3D%22burp_intruder_snapchat_django.png%22%3B%20filename%2A%3DUTF-8%27%27burp_intruder_snapchat_django.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=316b481fb1328751d97bfc0a2968148ed7041c7b42265d1219d5f906512c2ca9",
+      "file_size": 18911,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 83046,
+      "file_name": "snapchat_django_admin_panel_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/046/679dbcfcbe025cd46c04638f9c789b3fe84f538b/snapchat_django_admin_panel_2.png?response-content-disposition=attachment%3B%20filename%3D%22snapchat_django_admin_panel_2.png%22%3B%20filename%2A%3DUTF-8%27%27snapchat_django_admin_panel_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c4ce7cb286e7afcfb7de46becf5205dbb0bd41f183ef9c36da336895220ee68d",
+      "file_size": 46995,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 83047,
+      "file_name": "snapchat_django_admin_panel_3.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/047/67a2a7b1f26e49a3b24962d785e93e1d58627238/snapchat_django_admin_panel_3.png?response-content-disposition=attachment%3B%20filename%3D%22snapchat_django_admin_panel_3.png%22%3B%20filename%2A%3DUTF-8%27%27snapchat_django_admin_panel_3.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=718fd9b77d6d37f8c42b9105a57a70741169f3090f4a320ea7b0ea30eead4484",
+      "file_size": 71341,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 83048,
+      "file_name": "snapchat_django_admin_panel_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/048/1ebcebbcb4f25294d9cf96ffa41f1aa5619b1f46/snapchat_django_admin_panel_1.png?response-content-disposition=attachment%3B%20filename%3D%22snapchat_django_admin_panel_1.png%22%3B%20filename%2A%3DUTF-8%27%27snapchat_django_admin_panel_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=80b2ea74b68bd69e993cc0a02a5dc40e3fde4fd5ccbad4be4a00e098026a3ca2",
+      "file_size": 42586,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 83049,
+      "file_name": "snapchat_django_rest_api_3.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/049/b280ad1500287530ff9455dc68d80846885ffbab/snapchat_django_rest_api_3.png?response-content-disposition=attachment%3B%20filename%3D%22snapchat_django_rest_api_3.png%22%3B%20filename%2A%3DUTF-8%27%27snapchat_django_rest_api_3.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e89dd05015c1615e2d76585e106d18373ea27d478f719520d3eebf1c37745b17",
+      "file_size": 72673,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 83050,
+      "file_name": "snapchat_django_rest_api_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/050/c360f56fe127b087ba0c9accf48fd9920c6f08b6/snapchat_django_rest_api_2.png?response-content-disposition=attachment%3B%20filename%3D%22snapchat_django_rest_api_2.png%22%3B%20filename%2A%3DUTF-8%27%27snapchat_django_rest_api_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e66d3ba059c1eccd29864b71d25cbf3215527a369fbfeb571570a2c90ecbe51c",
+      "file_size": 96808,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 83051,
+      "file_name": "snapchat_django_rest_api_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/051/30822df0c31d6cd90ea9da055c64057bbed09df4/snapchat_django_rest_api_1.png?response-content-disposition=attachment%3B%20filename%3D%22snapchat_django_rest_api_1.png%22%3B%20filename%2A%3DUTF-8%27%27snapchat_django_rest_api_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065716Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=04bbc5f498674bb8b304b268f82799705c876dddd6de571dae59b68ca164bb5f",
+      "file_size": 38278,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-08-13T13:12:45.560Z",
+  "allow_singular_disclosure_after": -312399870.5726629,
+  "singular_disclosure_allowed": true,
+  "vote_count": 54,
+  "voters": [
+    "smither",
+    "lukasreschke",
+    "taha",
+    "daehee",
+    "achabi7",
+    "thaivu",
+    "zonduu",
+    "bogdantc",
+    "shailesh4594",
+    "tess",
+    "and 44 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "128114",
+  "votes": 54,
+  "latest_disclosable_activity_at": "2016-07-14T21:08:01.483Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:57:16.233687",
+    "source": "https://hackerone.com/reports/128114.json",
+    "report_id": 128114
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjgxMTQ=",
+    "databaseId": "128114",
+    "title": "Administrator access to a Django Administration Panel on *.sc-corp.net via bruteforced credentials",
+    "url": "https://hackerone.com/reports/128114",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-07-14T21:08:01.443Z",
+    "created_at": "2016-04-04T06:29:31.452Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "shubs"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUxMw==",
+      "handle": "snapchat",
+      "name": "Snapchat",
+      "url": "https://hackerone.com/snapchat",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjMwMg==",
+            "amount": "1000.00",
+            "awarded_amount": "1000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-04-21T21:41:39.495Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEyODExNA==",
+    "_id": "128114",
+    "disclosed": true,
+    "votes": 54,
+    "latest_disclosable_activity_at": "2016-07-14T21:08:01.483Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjgxMTQ=",
+      "databaseId": "128114",
+      "title": "Administrator access to a Django Administration Panel on *.sc-corp.net via bruteforced credentials",
+      "url": "https://hackerone.com/reports/128114",
+      "disclosed_at": "2016-07-14T21:08:01.443Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUxMw==",
+      "handle": "snapchat",
+      "name": "Snapchat",
+      "url": "https://hackerone.com/snapchat",
+      "currency": "usd"
+    }
+  }
+}

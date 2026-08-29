@@ -1,0 +1,219 @@
+{
+  "id": 3638715,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjM4NzE1",
+  "url": "https://hackerone.com/reports/3638715",
+  "title": "Use-After-Free race condition in url_move_hostname() via shared connection pool",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "medium",
+  "readable_substate": "N/A",
+  "created_at": "2026-03-30T21:50:08.647Z",
+  "submitted_at": "2026-03-30T21:50:09.150Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "h3xb1tx",
+    "url": "/h3xb1tx",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-03-31T20:09:32.825Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-03-31T20:09:32.382Z",
+  "team_member_agreed_on_going_public_at": "2026-03-31T05:37:11.657Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nIn lib/url.c, url_conn_reuse_adjust() calls url_move_hostname() which\nfrees conn->host.rawalloc and conn->host.encalloc via Curl_safefree()\nand Curl_free_idnconverted_hostname() after Curl_cpool_find() has\nalready released the connection pool lock. A second thread doing a\nconcurrent pool lookup still holds that lock and reads conn->host.name\ninside url_match_destination() via curl_strequal() — racing with the\nfree. This is not triggered by a malicious server — it is triggered by\nnormal concurrent use of the documented CURLSH API.\n\n## Affected version:\n\ncurl 8.19.0 (x86_64-pc-linux-gnu) libcurl/8.19.0 OpenSSL/3.6.1\nRelease-Date: 2026-03-11\nPlatform: Arch Linux x86_64\nBuildId: ab8272972e08f105716dc8989cb8d3afa27753a6\n\n## Steps To Reproduce:\n\n1. Install dependencies:\n   sudo pacman -S gcc curl\n\n2. Save the two attached files race_poc.c and curl_min.h\n   in the same directory.\n\n3. Compile with ThreadSanitizer:\n   gcc -g -O1 -pthread -fsanitize=thread \\\n       -I. race_poc.c -o race_tsan \\\n       /usr/lib/libcurl.so.4 -Wl,-rpath,/usr/lib\n\n4. Run TSAN:\n   TSAN_OPTIONS=\"halt_on_error=0:history_size=4\" \\\n   timeout 15 ./race_tsan 2>&1\n\n   Expected: libcurl.so.4+0x360d2 (curl_strequal\n   in url_match_destination) racing with libcurl.so.4+0x3770a\n   (hostname swap in url_conn_reuse_adjust).\n\n5. Compile with AddressSanitizer:\n   gcc -g -O1 -pthread -fsanitize=address \\\n       -I. race_poc.c -o race_asan \\\n       /usr/lib/libcurl.so.4 -Wl,-rpath,/usr/lib\n\n6. Run ASAN:\n   ASAN_OPTIONS=\"halt_on_error=0:detect_leaks=0\" \\\n   timeout 15 ./race_asan 2>&1\n\n   Expected: SIGSEGV crash inside libcurl.so.4 on most runs.\n\n## Root cause in lib/url.c:\n\nurl_move_hostname() frees the old hostname without any lock:\n\n  Curl_safefree(dest->rawalloc);           // frees conn->host.rawalloc\n  Curl_free_idnconverted_hostname(dest);   // frees conn->host.encalloc\n  *dest = *src;\n  memset(src, 0, sizeof(*src));\n\nThis runs inside url_conn_reuse_adjust() AFTER Curl_cpool_find()\nreleased the pool lock. A concurrent thread inside Curl_cpool_find()\nholds the lock and reads conn->host.name (pointing into the freed\nrawalloc block) inside url_match_destination() via curl_strequal().\n\nurl_conn_reuse_adjust() also does this without the lock:\n\n  curlx_free(conn->user);\n  curlx_free(conn->passwd);\n  conn->user = needle->user;\n  conn->passwd = needle->passwd;\n\nOn a multiplexed HTTP/2 connection where a concurrent transfer is\nmid-authentication reading conn->user, this is a second race on\ncredentials.\n\nCURLOPT_CONNECT_TO is NOT required to trigger this. url_move_hostname()\nis called unconditionally on every connection reuse. Any two threads\nsharing a CURLSH handle with CURL_LOCK_DATA_CONNECT hitting the\nconnection reuse path simultaneously will trigger the race.\n\n## Impact\n\nAny multi-threaded application using CURLSH with CURL_LOCK_DATA_CONNECT\nis affected. This is a standard documented libcurl pattern.\n\n- Thread T3: memcmp read at libcurl.so.4+0x360d2\n  (curl_strequal inside url_match_destination)\n- Thread T2: memcpy write at libcurl.so.4+0x3770a\n  (hostname swap inside url_conn_reuse_adjust)\n- Both on the same 58-byte heap block allocated inside libcurl\n\nASAN produced a hard SIGSEGV on most runs \n\nThe PoC only calls curl_easy_perform() via the standard public API.\nIt never calls free() directly. The non-deterministic crash addresses\nacross runs confirm real unpredictable heap corruption  different\nmemory layouts produce different crash manifestations from the same\nroot cause.\n\nConfirmed impact: reliable crash in any application\nusing the affected pattern.\n\nSecondary potential impact: conn->user and conn->passwd are freed and\nreplaced in the same function without the lock. On a multiplexed\nconnection where authentication is in progress on a concurrent thread,\nwrong or stale credentials could be used for that auth exchange.",
+  "weakness": {
+    "id": 50,
+    "name": "Use After Free"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5640753,
+      "file_name": "asan.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tnihw756zbzeoozlq7nve4oou9jr?response-content-disposition=attachment%3B%20filename%3D%22asan.txt%22%3B%20filename%2A%3DUTF-8%27%27asan.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042031Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=57fc0847f3c43b1d33aed8d1c443d4352dfc969d78e7e27f3401a77d92f227a3",
+      "file_size": 2023,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 5640754,
+      "file_name": "tsan.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/1e3psvl6xyyrhmfuzbs68uzo8hqo?response-content-disposition=attachment%3B%20filename%3D%22tsan.txt%22%3B%20filename%2A%3DUTF-8%27%27tsan.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042031Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f803864010d81de5e7eb69a89a31842f2d50f55a133b339bce07b9d13af95ac9",
+      "file_size": 7884,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 5640755,
+      "file_name": "race_poc.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/pp013vd0g7k6do42fu640y3dclzr?response-content-disposition=attachment%3B%20filename%3D%22race_poc.c%22%3B%20filename%2A%3DUTF-8%27%27race_poc.c&response-content-type=text%2Fx-csrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042031Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=889bc8369f68d7d11fb26c897a1172603fcc818dffbd53e4b430cbed6546f72d",
+      "file_size": 5754,
+      "type": "text/x-csrc",
+      "moderated": null
+    },
+    {
+      "id": 5640758,
+      "file_name": "curl_min.h",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/za9dpjzzrcpju8ro8fsls3tha71k?response-content-disposition=attachment%3B%20filename%3D%22curl_min.h%22%3B%20filename%2A%3DUTF-8%27%27curl_min.h&response-content-type=text%2Fx-chdr&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042031Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c184be4a0bcedbc01cd5fc4e3d0c5d365bcf5ad309ef59c72253769df312976c",
+      "file_size": 1857,
+      "type": "text/x-chdr",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "2026",
+    "dpixls",
+    "port1337",
+    "msgnoki",
+    "neuron_ray",
+    "wh0car3s",
+    "feonixid",
+    "n0n1",
+    "omid_haidari01",
+    "deivid20mb",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3638715",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2026-03-31T20:09:33.381Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:20:31.399021",
+    "source": "https://hackerone.com/reports/3638715.json",
+    "report_id": 3638715
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjM4NzE1",
+    "databaseId": "3638715",
+    "title": "Use-After-Free race condition in url_move_hostname() via shared connection pool",
+    "url": "https://hackerone.com/reports/3638715",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2026-03-31T20:09:32.825Z",
+    "created_at": "2026-03-30T21:50:08.647Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUw",
+      "name": "Use After Free",
+      "external_id": "cwe-416"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "h3xb1tx"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2Mzg3MTU=",
+    "_id": "3638715",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2026-03-31T20:09:33.381Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjM4NzE1",
+      "databaseId": "3638715",
+      "title": "Use-After-Free race condition in url_move_hostname() via shared connection pool",
+      "url": "https://hackerone.com/reports/3638715",
+      "disclosed_at": "2026-03-31T20:09:32.825Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "id": 195842,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTU4NDI=",
+  "url": "https://hackerone.com/reports/195842",
+  "title": "Segmentation fault - mrb_gc_mark",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-01-04T23:29:13.164Z",
+  "submitted_at": "2017-01-04T23:29:13.164Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "alanbugz",
+    "url": "/alanbugz",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/037/666/fe06d788665a18746d781583291bdb6f7b6de9c5_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-03-09T01:26:11.671Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2017-02-07T01:25:59.214Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "```\n# gdb /root/mruby-engine/ext/mruby_engine/mruby/bin/mirb\nGNU gdb (Ubuntu 7.11.1-0ubuntu1~16.04) 7.11.1\nCopyright (C) 2016 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.  Type \"show copying\"\nand \"show warranty\" for details.\nThis GDB was configured as \"x86_64-linux-gnu\".\nType \"show configuration\" for configuration details.\nFor bug reporting instructions, please see:\n<http://www.gnu.org/software/gdb/bugs/>.\nFind the GDB manual and other documentation resources online at:\n<http://www.gnu.org/software/gdb/documentation/>.\nFor help, type \"help\".\nType \"apropos word\" to search for commands related to \"word\"...\nReading symbols from /root/mruby-engine/ext/mruby_engine/mruby/bin/mirb...done.\n(gdb) run 3.rb\nStarting program: /root/mruby-engine/ext/mruby_engine/mruby/bin/mirb 3.rb\nmirb - Embeddable Interactive Ruby Shell\n\n => [300000, 8]\nline 2: syntax error, unexpected tIDENTIFIER, expecting keyword_do or '{' or '('\nline 3: syntax error, unexpected tAMPER\n\nProgram received signal SIGSEGV, Segmentation fault.\nmrb_gc_mark (mrb=0x6cf010, obj=0x305c3030325c3737) at /root/mruby-engine/ext/mruby_engine/mruby/src/gc.c:696\n696       if (!is_white(obj)) return;\n(gdb) x/1i $rip\n=> 0x410f75 <mrb_gc_mark+5>:    movzbl 0x1(%rsi),%eax\n(gdb) list *$rip\n0x410f75 is in mrb_gc_mark (/root/mruby-engine/ext/mruby_engine/mruby/src/gc.c:696).\n691\n692     MRB_API void\n693     mrb_gc_mark(mrb_state *mrb, struct RBasic *obj)\n694     {\n695       if (obj == 0) return;\n696       if (!is_white(obj)) return;\n697       mrb_assert((obj)->tt != MRB_TT_FREE);\n698       add_gray_list(mrb, &mrb->gc, obj);\n699     }\n700\n(gdb) bt\n```",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 149311,
+      "file_name": "3.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/149/311/9877a95d78b2db7e0bc656723725775f6f36d075/3.rb?response-content-disposition=attachment%3B%20filename%3D%223.rb%22%3B%20filename%2A%3DUTF-8%27%273.rb&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUWLV4OK2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064109Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIE3cd3d%2Bzmz6tm9ddF8CRLLZkTj2esjbFZLlk5OHsY32AiA9Z%2FLP3GO1NqCuKiXfE4JHWOs6ia%2FzQyg0%2BgfhJA93wyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMdsORBCE8E0pNYsS2Ko4F9KKRL5OIjMDqNsrOgygJddBNzS1HLJYQ8VaYyX4AFk9Fy6NvlOaFF4VQFHcFVgyUKMH%2B8FMz9Htyn%2FydclwctDYuERrCyt0lOGzJDpP0w7rySFp4IKYzIG2HhhkSI%2Ft28H%2F99kj6NqEGlr%2Bzug%2B9qd%2Bo%2FlGPDw99zoAxp8VJN3VMOvFIIQ4bsjshHnfLxlWU9SMYb0xWC40Bt939F7oik8NGVJbRN48mwBHv6PDeYQhSnI6zabGGA7CY0gIS%2F2oATbYmjpQmjTw171wo%2FVVn0zfnFgC7y5yfL%2F8cpuGcc2nUfMqEqjShQRizXe%2BPT8JjSKASBDx4SQe76JOHtQ9POcRHPGCjgvxePIKuwv4JeyCF%2Bro6rC6O%2BmWtJ8lGijz%2BtP%2F%2BwW0JRVni91xIWNhfZuZl8Ss0ADqpMBjoIcC4c%2Bh8BLgbcUMspM1XmbjBOD9LszBxjcOQOMnsRSi%2Bt3LtmMUKZSLKX9iHC5inmOPGXnotPsZaTOSp833V3z%2BfxgTZOFTOUgBW1fokjVC51RZaPoZn4%2BYkSYFHO4q97%2F4r3pLAjgvQNLqa3X1aSbAIvDZgX%2FDBrjflwqweIjrBW7cw9Zyhepwvp5Ej0gDeygmLkl6gOVohjDYI6NgqCkPSWagHcsvlRRaycOheH%2FuO46r7S28ZQb1sIR223JFKghYrVLwfkWcTRj4xSxuMOu2yS8FtJoiyQpnaNC0QB4ixgLV%2Fx34oQP4YLXqrOe6QfV%2FPDfnYFrbc52Dvs5%2FBUYDTuXGAGIxdwHFCo3ORRr%2Bjt44N3SYLredhmZif%2Fu1SY5PUO8EK5guV6Lnon3EE8fVWq84kwoVNOZq5TeJME2VwpdjxuqMKNvp%2BviaU0SLt5XtGMOPCt9IGOrIB99NB04IqLaTXs1qCZS8rsBfN9LYaNKx5%2Fqvk7mGY03T2yxmb1%2BejVoKg0%2BHErsDe92301T3qsC5jiiY5X23D5UOyT%2BRjDXIvuFu%2BLpfNGAqG0ZP73crzEN4WVbHbpKEOCv8M3SDa4bC0MzxLylsgo9Bhpc2Slz85UJigH64gnGEW5Pc6%2BRUEF98Wg6Hooh%2F00dYlqi0r0X728o1rrj%2B0EOXsG2KjCSfYrvK6hQ2Kxk8IWA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=60e191537b1983dbe57c8df0facdb7d8eb65d847e59d2722e4fba64112552bfd",
+      "file_size": 259,
+      "type": "application/octet-stream",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-03-09T01:25:59.248Z",
+  "allow_singular_disclosure_after": -294470110.0146808,
+  "singular_disclosure_allowed": true,
+  "vote_count": 3,
+  "voters": [
+    "mpz",
+    "eveeez",
+    "spetr0x"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "195842",
+  "votes": 3,
+  "latest_disclosable_activity_at": "2017-03-09T01:26:11.689Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:41:09.401366",
+    "source": "https://hackerone.com/reports/195842.json",
+    "report_id": 195842
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTU4NDI=",
+    "databaseId": "195842",
+    "title": "Segmentation fault - mrb_gc_mark",
+    "url": "https://hackerone.com/reports/195842",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-03-09T01:26:11.671Z",
+    "created_at": "2017-01-04T23:29:13.164Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "alanbugz"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTY0OA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-02-07T01:25:53.266Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE5NTg0Mg==",
+    "_id": "195842",
+    "disclosed": true,
+    "votes": 3,
+    "latest_disclosable_activity_at": "2017-03-09T01:26:11.689Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTU4NDI=",
+      "databaseId": "195842",
+      "title": "Segmentation fault - mrb_gc_mark",
+      "url": "https://hackerone.com/reports/195842",
+      "disclosed_at": "2017-03-09T01:26:11.671Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

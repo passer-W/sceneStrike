@@ -1,0 +1,211 @@
+{
+  "id": 297181,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTcxODE=",
+  "url": "https://hackerone.com/reports/297181",
+  "title": "Common response suggestion is sent to Google Analytics when user accepts duplicate comment Genius suggestion",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-12-12T06:40:35.325Z",
+  "submitted_at": "2017-12-12T06:40:35.325Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bigbug",
+    "url": "/bigbug",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/193/109/585fd367d9fe6feb8fb35840fdadb04d16004b0b_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-01-22T00:20:53.640Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-01-20T02:43:58.419Z",
+  "team_member_agreed_on_going_public_at": "2018-01-22T00:20:53.446Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary**\n\nIt was found that although the `referrer-policy` header for https://hackerone.com/hacktivity was set to `strict-origin-when-cross-origin\n`, a request to https://www.hackerone.com/blog contains full url path of the the hackivity page as the `referer` header eg. `https://hackerone.com/hacktivity?sort_type=popular&filter=type%3Aall&page=1&range=forever`. The `www.hackerone.com` being hosted on a third party, this can lead to private url information being passed to third party.    \n\n**Description**\n\nA `referrer policy` header is set on all pages including **/hacktivity** to `strict-origin-when-cross-origin` wherein the full path of the url will be set as the `referer` only if the request is `same-origin`. But it was seen that although this header being set at /hacktivity page, it still sends a full url to an different origin ie `www.hackerone.com`. www.hackerone.com being hosted on a third party and also even after setting the referrer-policy header the hacktivity page sends full url in the referer header. This is something serious here. \n\n\n**Steps to reproduce**\n\n+ Sign-in to hackerone.\n+ Start a web debugging proxy like burp to capture the request.\n+ Click on hacktivity tab -  https://hackerone.com/hacktivity. The url will contain filter parameters that are set default eg `https://hackerone.com/hacktivity?sort_type=popular&filter=type%3Aall&page=1&range=forever`. This is the `popular` hackivity page with default filters. capture the request and response. The response looks like this.\n\n\n```:status:                           200\ndate:                              Tue, 12 Dec 2017 05:42:21 GMT\ncontent-type:                      text/html; charset=utf-8\ncache-control:                     private, no-cache, no-store, must-revalidate\ncontent-disposition:               inline; filename=\"response.html\"\nx-request-id:                      d7905553-8780-4731-93b8-021b4761817a\nset-cookie:                        __Host-session=<Redacted value>; path=/; secure; HttpOnly\nstrict-transport-security:         max-age=31536000; includeSubDomains; preload\nexpect-ct:                         enforce, max-age=86400\ncontent-security-policy:           <Redacted as long for clarity>\nreferrer-policy:                   strict-origin-when-cross-origin\nx-content-type-options:            nosniff\nx-download-options:                noopen\nx-frame-options:                   DENY\nx-permitted-cross-domain-policies: none\nx-xss-protection:                  1; mode=block\nserver:                            cloudflare-nginx\ncf-ray:                            3cbe5c199a952db5-BOM\ncontent-encoding:                  gzip```\n\n**Note** - If we look at the `referrer-policy:` header it is set to `strict-origin-when-cross-origin`.\n\n+ Click on `blog` link at the bottom of the page and capture the request. The request looks like this. \n\n```:method:         GET\n:path:           /blog\n:authority:      www.hackerone.com\n:scheme:         https\nuser-agent:      Mozilla/5.0 (Windows NT 6.3; rv:46.0) Gecko/20100101 Firefox/46.0\naccept:          text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\naccept-language: en-US,en;q=0.5\naccept-encoding: gzip, deflate, br\nreferer:         https://hackerone.com/hacktivity?sort_type=popular&filter=type%3Aall&page=1&range=forever\ncookie:          <Redacted cookie values>\nif-none-match:   \"1513035467\"```\n\n**Note** - The `referer:` header contains the full url path inspite of referrer-policy header being set to strict-origin-when-cross-origin. This is a security violation as www.hackerone.com is not a `same-origin` and also hosted on a third party.\n\n## Impact\n\nThe hackivity url does not contain any private or hidden paths. But even after a strict header being set, this behaviour is a threat as it violates the policy. If a header is set, the policy must be followed and enforced. This is to be ensured for better security.",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 57,
+    "name": "Violation of Secure Design Principles"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2018-02-19T02:43:58.512Z",
+  "allow_singular_disclosure_after": -264482917.0917685,
+  "singular_disclosure_allowed": true,
+  "vote_count": 37,
+  "voters": [
+    "jokebookservice1",
+    "muon4",
+    "flashdisk",
+    "harrymg",
+    "nitishshah",
+    "r3y",
+    "mpz",
+    "muhammad_uwais",
+    "whitesector",
+    "eveeez",
+    "and 27 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 2.6,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "297181",
+  "votes": 37,
+  "latest_disclosable_activity_at": "2018-01-22T00:20:53.683Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:12:35.734826",
+    "source": "https://hackerone.com/reports/297181.json",
+    "report_id": 297181
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTcxODE=",
+    "databaseId": "297181",
+    "title": "Common response suggestion is sent to Google Analytics when user accepts duplicate comment Genius suggestion",
+    "url": "https://hackerone.com/reports/297181",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-01-22T00:20:53.640Z",
+    "created_at": "2017-12-12T06:40:35.325Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU3",
+      "name": "Violation of Secure Design Principles",
+      "external_id": "cwe-657"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 2.6
+    },
+    "reporter": {
+      "username": "bigbug"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82ODMyMA==",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-01-05T18:23:22.795Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5NzE4MQ==",
+    "_id": "297181",
+    "disclosed": true,
+    "votes": 37,
+    "latest_disclosable_activity_at": "2018-01-22T00:20:53.683Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTcxODE=",
+      "databaseId": "297181",
+      "title": "Common response suggestion is sent to Google Analytics when user accepts duplicate comment Genius suggestion",
+      "url": "https://hackerone.com/reports/297181",
+      "disclosed_at": "2018-01-22T00:20:53.640Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

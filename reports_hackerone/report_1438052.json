@@ -1,0 +1,254 @@
+{
+  "id": 1438052,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDM4MDUy",
+  "url": "https://hackerone.com/reports/1438052",
+  "title": "Race condition in faucet when using starport",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2021-12-30T08:45:02.135Z",
+  "submitted_at": "2021-12-30T08:45:02.218Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cyberboy",
+    "url": "/cyberboy",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/pQbrCr2dJysJYTjJvvMUiMdr/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 24626,
+    "url": "https://hackerone.com/cosmos",
+    "handle": "cosmos",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/l8innmct0qu74b6xv2jzvh5lk5ap/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/l8innmct0qu74b6xv2jzvh5lk5ap/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Cosmos",
+      "twitter_handle": "cosmos",
+      "website": "https://cosmoslabs.io",
+      "about": "The Internet of Blockchains."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-07-26T17:47:40.549Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-07-26T15:59:55.753Z",
+  "team_member_agreed_on_going_public_at": "2022-07-26T17:47:40.425Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi team, \nI and Aditya sent this bug over email on Wed, 29 Dec, 17:45 IST. Later we noticed that security reports are accepted via the HackerOne program. So, I am sending a copy of the bug report here. \n\n## Summary:\nWe were testing an application and we found a race condition bug in the faucet Implementation of Starport. \nhttps://github.com/tendermint/starport\n\n## Steps To Reproduce:\n1. Start a starport with the below configuration. Note the \"coins_max\" has been set to 11 tokens and hence a user cannot fetch more after the 11 token limits.\n\n```\naccounts:\n  - name: alice\n    coins: [\"0token\", \"200000000stake\"]\n  - name: bob\n    coins: [\"500token\", \"100000000stake\"]\nvalidator:\n  name: alice\n  staked: \"100000000stake\"\nclient:\n  openapi:\n    path: \"docs/static/openapi.yml\"\n  vuex:\n    path: \"vue/src/store\"\nfaucet:\n  name: bob\n  coins: [\"5token\", \"100000stake\"]  \n  coins_max: [\"11token\", \"100000stake\"]\n```\n\n2. Now call the request manually  with 5 tokens per request as in our configuration after 2 requests and 10 tokens in total Alice won't be able to fetch more tokens from the faucet\n\n```\nPOST / HTTP/1.1\nHost: 172.105.41.242:4500\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:95.0) Gecko/20100101 Firefox/95.0\nAccept: application/json\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nReferer: http://172.105.41.242:4500/\nContent-Type: application/json\nOrigin: http://172.105.41.242:4500\nContent-Length: 63\nConnection: close\n{\n  \"address\": \"ALICE_ADDRESS\"}\n\n```\n\nNow we can confirm Alice cannot have more than 11 tokens. \n\n3.  Now regenerate the server and instead of sending a single request send a concurrent request to fetch tokens in Alice address.  We used 50 requests concurrently.\n\n{F1563051}\n\n4. Now when we check Alice balance it is 30 which should have not been more than 11\n\n{F1563052}\n\nWe believe the root cause of the issues is the go mapping which is not advised for concurrency \nhttps://github.com/tendermint/starport/blob/develop/starport/pkg/cosmosfaucet/transfer.go#L59\n\n## Supporting Material/References:\nhttps://cwe.mitre.org/data/definitions/362.html\n\n## Impact\n\nA malicious user can send concurrent requests to fetch more tokes from faucets than the \"max-credit limit\" which allows.",
+  "bounty_amount": "5000.0",
+  "formatted_bounty": "$5,000",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1563051,
+      "file_name": "Screenshot_2021-12-29_at_5.41.56_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/4pj9n1y11kneguz4cmnqimw1ledd?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-12-29_at_5.41.56_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-12-29_at_5.41.56_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050911Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f1cfd4d504a6f3a78d804fed5315a8e4a429e4c44d459c714a9e7fb7f97f253f",
+      "file_size": 126005,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1563052,
+      "file_name": "Screenshot_2021-12-29_at_5.43.09_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/elyc2hli46v65e31q84ew4vc2lfq?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-12-29_at_5.43.09_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-12-29_at_5.43.09_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050911Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=da080614d691b7e2bd6e3b23c3ca122e10eeeeee8dd041191928911afdef0350",
+      "file_size": 81938,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-08-25T15:59:55.795Z",
+  "allow_singular_disclosure_after": -121612155.47987522,
+  "singular_disclosure_allowed": true,
+  "vote_count": 59,
+  "voters": [
+    "tikidude",
+    "jumpydata",
+    "mksyi",
+    "loaymorad",
+    "n1m0",
+    "drsniper",
+    "thruster",
+    "zy9ard3",
+    "rzx007x",
+    "yassinek3ch",
+    "and 49 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 7037,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/cometbft/cometbft",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 179011,
+      "category": "researcher",
+      "content": "The proper writeup of the bug can be found here at our blogpost https://blog.credshields.com/race-condition-in-tendermints-starport-7cebe176d935\n\nThe root cause of the bug was in function “Transfer” at\nhttps://github.com/tendermint/starport/blob/7812125/starport/pkg/cosmosfaucet/transfer.go#L50-L74\nWe can notice in the code that each request to the faucet causes two actions to be made; one for querying the account’s balance and the other for sending tokens. When sending concurrent requests to the faucet, in the time of querying the balance, for some requests, this check happens at the same time and ends up seeing less balance in the account because sending the tokens action has not been finalized for the previous requests.",
+      "updated_at": "2022-07-27T11:10:10.555Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1006,
+        "username": "cyberboy",
+        "name": "Shashank",
+        "bio": "I have 5 years of experience in penetration testing of diverse web, mobile application, desktop application frameworks. Now speciziled in Smart contract and blockchain security.  ",
+        "cleared": true,
+        "verified": true,
+        "website": "https://blog.shashank.co",
+        "location": "Banglore",
+        "created_at": "2013-11-08T13:10:16.527Z",
+        "url": "https://hackerone.com/cyberboy",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/pQbrCr2dJysJYTjJvvMUiMdr/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/pQbrCr2dJysJYTjJvvMUiMdr/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/pQbrCr2dJysJYTjJvvMUiMdr/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "1438052",
+  "votes": 59,
+  "latest_disclosable_activity_at": "2022-07-26T17:47:40.607Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T13:09:11.459921",
+    "source": "https://hackerone.com/reports/1438052.json",
+    "report_id": 1438052
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDM4MDUy",
+    "databaseId": "1438052",
+    "title": "Race condition in faucet when using starport",
+    "url": "https://hackerone.com/reports/1438052",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-07-26T17:47:40.549Z",
+    "created_at": "2021-12-30T08:45:02.135Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "critical",
+      "score": 9.3
+    },
+    "reporter": {
+      "username": "cyberboy"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI0NjI2",
+      "handle": "cosmos",
+      "name": "Cosmos",
+      "url": "https://hackerone.com/cosmos",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTAzNTI=",
+            "amount": "2500.00",
+            "awarded_amount": "2500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-07-26T15:49:07.690Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTAzNTM=",
+            "amount": "2500.00",
+            "awarded_amount": "2500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-07-26T15:49:07.922Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0MzgwNTI=",
+    "_id": "1438052",
+    "disclosed": true,
+    "votes": 59,
+    "latest_disclosable_activity_at": "2022-07-26T17:47:40.607Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDM4MDUy",
+      "databaseId": "1438052",
+      "title": "Race condition in faucet when using starport",
+      "url": "https://hackerone.com/reports/1438052",
+      "disclosed_at": "2022-07-26T17:47:40.549Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI0NjI2",
+      "handle": "cosmos",
+      "name": "Cosmos",
+      "url": "https://hackerone.com/cosmos",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "id": 622170,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MjIxNzA=",
+  "url": "https://hackerone.com/reports/622170",
+  "title": "Arbitrary code execution in desktop client via OpenSSL config",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2019-06-20T15:20:18.124Z",
+  "submitted_at": "2019-06-20T15:20:18.124Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "l00ph0le",
+    "url": "/l00ph0le",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/012/963/cbd75f8c49a36b6f3bdb9d8ac16a57611f6a5975_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8224"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-08-05T08:50:35.655Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-07-29T11:56:54.635Z",
+  "team_member_agreed_on_going_public_at": "2020-08-05T08:50:35.567Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Summary: \nThe nextcloud windows desktop application utilizes a precompiled OpenSSL library called libeay32.dll. This OpenSSL library attempts to load c:\\usr\\local\\ssl\\openssl.cnf when the nextcloud windows application is launched. The c:\\usr\\local\\ssl\\openssl.cnf file does not exist. By default, on windows systems, authenticated users can create under the c: drive. A user with low privileges can create the file c:\\usr\\local\\ssl\\openssl.cnf configuration file to load a nefarious .dll library, resulting in arbitrary code execution when the nextcloud windows application is launched (by any user including an administrator).\n\nDescription: \nIf you download sys internals process monitor, you can see the “nextcloud.exe” binary trying to read the files “c:\\usr\\local\\ssl\\openssl.cnf” and getting a result of “PATH NOT FOUND”. See attached openssl-not-found.png screenshot.\n\nThe root cause of the issue is when the OpenSSL library (libeay32.dll) was compiled, the parameter “--openssldir” was not specified. If this parameter is not specified, a default of “/usr/local/ssl” is used. This is a real directory in linux, but in windows it translates to c:\\usr\\local\\ssl\\.\n\nIf a low privilege user creates the directory structure c:\\usr\\local\\ssl\\, copies an openssl.cnf file and malicious .dll library inside it will result is arbitrary code execution when the nextcloud application is executed. If the nextcloud application is executed by an administrator, it will result in privilege escalation.\n\nI’ve included two example exploits;\n\nExploit example 1\ncalc.c – source code of my .dll file to execute calc.exe\ncalc.dll – compiled version of the calc.exe library\nopenssl-calc.cnf – openssl configuration file that calls the calc.dll\n\nExploit example 2\nbackdoor.c – source code my .dll file to create a local administrator, this uses a known uac bypass\nbackdoor.dll – compiled version of the local admin backdoor library\nopenssl-backdoor.cnf – openssl configuration file that calls the backdoor.dll\n\nPlatform(s) Affected: \nAll supported windows platforms that support Nextcloud Desktop 2.5.2\n\nSteps To Reproduce:\nDownload and Install Nextcloud desktop 2.5.2 (https://nextcloud.com/install/#install-clients)\n\nExploit 1 – calc.exe – See attached video calc.mp4\n1.\tLogin with a low privileged user (part of Users group)\n2.\tOpen a cmd.exe and issue command: mkdir c:\\usr\\local\\ssl\n3.\tCopy calc.dll and openssl-calc.cnf to c:\\usr\\local\\ssl directory\n4.\tRename c:\\usr\\local\\ssl\\openssl-calc.cnf to c:\\usr\\local\\ssl\\openssl.cnf\n5.\tLogout of low privledged user.\n6.\tLogin with local administrator.\n7.\tLaunch Nextcloud application.\n8.\tCalc.exe with execute.\n\n\n\n\n\nExploit 2 – create a local admin user (uac bypass) – See attached video backdoor.mp4\n\n1.\tLogin with a low privileged user (part of Users group)\n2.\tOpen a cmd.exe and issue command: mkdir c:\\usr\\local\\ssl\n3.\tCopy calc.dll and openssl-backdoor.cnf to c:\\usr\\local\\ssl directory\n4.\tRename c:\\usr\\local\\ssl\\openssl-backdoor.cnf to c:\\usr\\local\\ssl\\openssl.cnf\n5.\tLogout of low privledged user.\n6.\tLogin with local administrator.\n7.\tLaunch Nextcloud application.\n8.\tOpen “Computer Management”\n9.\tNavigate to “System Tools” -> “Local Users and Groups” -> “Users”\n10.\tA new user of “backdoor” with a password of “backdoor” was added.\n11.\tRight click on “backdoor” and click “Properties”, then click “Member Of”. \n12.\tThe “backdoor” user is part of the local administrator group.\n\nSupporting Material/References:\nhttps://wiki.openssl.org/index.php/Compilation_and_Installation#PREFIX_and_OPENSSLDIR\n\nHow can the system be exploited with this bug?\nDLL Hi-jacking can be used for many nefarious purposes. It can be used by malware to propagate and establish persistence on a workstation. It can be used to privilege escalation in the post exploitation phases of an attack.\n\nHow did you come across this bug ?\nI can across this while looking for programs that utilize the windows openssl (libeay32.dll) library. \nRecommendations for fix\nRecompile the openssl library (libeay32.dll), and specify the parameter “—openssldir”. Set the directory to something a low privledge user can’t edit for example “C:\\Program Files (x86)\\Nextcloud”. Use the link in the support material / references part of this report.\n\n## Impact\n\nImpact\nThe impact is high. Successful exploitation leads to arbitrary code execution on the windows system. There are many actions a nefarious individual could accomplish with this vulnerability. In addition to post-exploitation privilege escalation, another example could be ransomware, or other malware.",
+  "bounty_amount": "100.0",
+  "formatted_bounty": "$100",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 513310,
+      "file_name": "backdoor-uac.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/310/680ea7637b8128640b7cf6103b192b1273cba983/backdoor-uac.c?response-content-disposition=attachment%3B%20filename%3D%22backdoor-uac.c%22%3B%20filename%2A%3DUTF-8%27%27backdoor-uac.c&response-content-type=text%2Fx-c&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c318a3d70a0f300fc0191d1797b00046baa87029dd3d6da14e899e4ecb4464d5",
+      "file_size": 1403,
+      "type": "text/x-c",
+      "moderated": null
+    },
+    {
+      "id": 513311,
+      "file_name": "backdoor-uac.dll",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/311/4294001fcf116d2a02225d8c3270cfb4fc2d920f/backdoor-uac.dll?response-content-disposition=attachment%3B%20filename%3D%22backdoor-uac.dll%22%3B%20filename%2A%3DUTF-8%27%27backdoor-uac.dll&response-content-type=application%2Fx-dosexec&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=722c122b2e1ed6394680b19b8c735f57a1cc0923f60827834c9945540039e156",
+      "file_size": 287795,
+      "type": "application/x-dosexec",
+      "moderated": null
+    },
+    {
+      "id": 513312,
+      "file_name": "calc.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/312/817e3c993132344324ecf80f974d4279cb66c35d/calc.c?response-content-disposition=attachment%3B%20filename%3D%22calc.c%22%3B%20filename%2A%3DUTF-8%27%27calc.c&response-content-type=text%2Fx-c&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=623c987b7d27b6568ba0d1986480989a812297ae4ac1718b9a6b326108d26853",
+      "file_size": 577,
+      "type": "text/x-c",
+      "moderated": null
+    },
+    {
+      "id": 513313,
+      "file_name": "calc.dll",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/313/96110744435894351355346c3e78dd7053890ad3/calc.dll?response-content-disposition=attachment%3B%20filename%3D%22calc.dll%22%3B%20filename%2A%3DUTF-8%27%27calc.dll&response-content-type=application%2Fx-dosexec&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e0de495d0616e8b9ef6fec3eca65594a088121a2e8c282ea4e3e0cc1356eed38",
+      "file_size": 287283,
+      "type": "application/x-dosexec",
+      "moderated": null
+    },
+    {
+      "id": 513314,
+      "file_name": "backdoor.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/314/aa66a9e2059fce806b1f0f292bfc4aeddf00fccd/backdoor.mp4?response-content-disposition=attachment%3B%20filename%3D%22backdoor.mp4%22%3B%20filename%2A%3DUTF-8%27%27backdoor.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=81fe43f8489dad1e41867c50efdd34e84c4bd75bc5445219b48bc889337319eb",
+      "file_size": 3821339,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 513315,
+      "file_name": "openssl-backdoor.cnf",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/315/bfccb7340dbf64d685081002fa025b005edc5aeb/openssl-backdoor.cnf?response-content-disposition=attachment%3B%20filename%3D%22openssl-backdoor.cnf%22%3B%20filename%2A%3DUTF-8%27%27openssl-backdoor.cnf&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a0330e4c4677cfa3e49586bbc3a90cb248ea869dcc17021474a68c4094a4f81a",
+      "file_size": 231,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 513316,
+      "file_name": "openssl-calc.cnf",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/316/538dfab41d524996593ca6fbe1a5f13f5f68780c/openssl-calc.cnf?response-content-disposition=attachment%3B%20filename%3D%22openssl-calc.cnf%22%3B%20filename%2A%3DUTF-8%27%27openssl-calc.cnf&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=33bee0f23bbe91d81cba9f11c31ffed9620124326af088a120224d859be29836",
+      "file_size": 223,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 513317,
+      "file_name": "calc.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/317/978a1a2b0500b0709d9968d4b7c754fe2317bf6c/calc.mp4?response-content-disposition=attachment%3B%20filename%3D%22calc.mp4%22%3B%20filename%2A%3DUTF-8%27%27calc.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c757d6e559bcc584e323a09b93a563ec6af51d6e383b7a10648f410690442a24",
+      "file_size": 3224453,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 513318,
+      "file_name": "openssl-not-found.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/513/318/9a56318ef0380bbc4c02bb16b58a13624d627726/openssl-not-found.png?response-content-disposition=attachment%3B%20filename%3D%22openssl-not-found.png%22%3B%20filename%2A%3DUTF-8%27%27openssl-not-found.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050045Z&X-Amz-Expires=2278&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d0231c71ae9e6237b6279791065dac019a7adf84d7dc92244a70a9c8cffd3e3f",
+      "file_size": 836814,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-08-28T11:56:54.702Z",
+  "allow_singular_disclosure_after": -184871030.51754537,
+  "singular_disclosure_allowed": true,
+  "vote_count": 59,
+  "voters": [
+    "i_yuzhanin",
+    "grimnir",
+    "xploiterr",
+    "vapour",
+    "mashoud1122",
+    "foobar7",
+    "0xbeefed",
+    "ali",
+    "m00n_knight",
+    "dark_warlord14",
+    "and 49 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 77,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "Desktop Client",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "622170",
+  "votes": 59,
+  "latest_disclosable_activity_at": "2020-08-17T10:07:30.509Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:00:45.351986",
+    "source": "https://hackerone.com/reports/622170.json",
+    "report_id": 622170
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MjIxNzA=",
+    "databaseId": "622170",
+    "title": "Arbitrary code execution in desktop client via OpenSSL config",
+    "url": "https://hackerone.com/reports/622170",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-08-05T08:50:35.655Z",
+    "created_at": "2019-06-20T15:20:18.124Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.8
+    },
+    "reporter": {
+      "username": "l00ph0le"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMzg2MDA=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-08-17T10:07:30.503Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzYyMjE3MA==",
+    "_id": "622170",
+    "disclosed": true,
+    "votes": 59,
+    "latest_disclosable_activity_at": "2020-08-17T10:07:30.509Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MjIxNzA=",
+      "databaseId": "622170",
+      "title": "Arbitrary code execution in desktop client via OpenSSL config",
+      "url": "https://hackerone.com/reports/622170",
+      "disclosed_at": "2020-08-05T08:50:35.655Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

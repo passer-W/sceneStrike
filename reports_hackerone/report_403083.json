@@ -1,0 +1,202 @@
+{
+  "id": 403083,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDMwODM=",
+  "url": "https://hackerone.com/reports/403083",
+  "title": "Authenticated Code Execution through Phar deserialization in CSV Importer as Shop manager in WooCommerce",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-08-30T16:37:09.891Z",
+  "submitted_at": "2018-08-30T16:37:09.891Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "simonscannell",
+    "url": "/simonscannell",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/HvE5FGgP56eXFMNMr4rwmunu/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 111,
+    "url": "https://hackerone.com/automattic",
+    "handle": "automattic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Automattic",
+      "twitter_handle": "",
+      "website": "https://automattic.com",
+      "about": "WordPress.com, WooCommerce, WordPress VIP, Jetpack, Beeper, Texts, Akismet, Gravatar, Crowdsignal, Tumblr and more!"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-12-19T14:26:02.746Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-11-19T14:26:00.303Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "This vulnerability is based on the following exploitation technique:\n\nhttps://blog.ripstech.com/2018/new-php-exploitation-technique/\n\nIt is easier to explain this vulnerability by having watched the PoC first:\nhttps://www.youtube.com/watch?v=mr3bAOIUwd4\n\nHere is what's happening:\n\n1. Since a valid phar file needs o be uploaded to the server (the extension doesn't matter) I upload the poc.jpg via the media uploader\n2. I begin the Import process with a valid CSV file\n3.  The importer asks if I am sure that I want to run the import on these files\n4. I confirm and modify the  POST parameter to my phar:// wrapper and deserialize the file\n5. The PHP code executes\n\nThe source of the vulnerability within the source code lies in the /woocommerce/includes/import/class-wc-product-csv-importer.php:\n\n```\n\tpublic function __construct( $file, $params = array() ) {\n\t\t$default_args = array(\n\t\t\t'start_pos'        => 0, // File pointer start.\n\t\t\t'end_pos'          => -1, // File pointer end.\n\t\t\t'lines'            => -1, // Max lines to read.\n\t\t\t'mapping'          => array(), // Column mapping. csv_heading => schema_heading.\n\t\t\t'parse'            => false, // Whether to sanitize and format data.\n\t\t\t'update_existing'  => false, // Whether to update existing items.\n\t\t\t'delimiter'        => ',', // CSV delimiter.\n\t\t\t'prevent_timeouts' => true, // Check memory and time usage and abort if reaching limit.\n\t\t\t'enclosure'        => '\"', // The character used to wrap text in the CSV.\n\t\t\t'escape'           => \"\\0\", // PHP uses '\\' as the default escape character. This is not RFC-4180 compliant. This disables the escape character.\n\t\t);\n\n\t\t$this->params = wp_parse_args( $params, $default_args );\n\t\t$this->file   = $file;\n\n\t\tif ( isset( $this->params['mapping']['from'], $this->params['mapping']['to'] ) ) {\n\t\t\t$this->params['mapping'] = array_combine( $this->params['mapping']['from'], $this->params['mapping']['to'] );\n\t\t}\n\n\t\t$this->read_file();\n\t}\n\n\t/**\n\t * Read file.\n\t */\n\tprotected function read_file() {\n\t\t$handle = fopen( $this->file, 'r' ); // @codingStandardsIgnoreLine.\n\n\t\tif ( false !== $handle ) {\n\t\t\t$this->raw_keys = version_compare( PHP_VERSION, '5.3', '>=' ) ? fgetcsv( $handle, 0, $this->params['delimiter'], $this->params['enclosure'], $this->params['escape'] ) : fgetcsv( $handle, 0, $this->params['delimiter'], $this->params['enclosure'] ); // @codingStandardsIgnoreLine\n\n...\n```\n\nAs can be seen, the constructor calls read_file, which in turn calls fopen without any checks, which leads to the deserialization of the Phar object.\n\nI recommend to check the file parameter and see if it actually is a CSV file before calling fopen on it.\n\nI have attached the poc.jpg that worked for my PHP version.\n\n## Impact\n\nI only displayed the contents of the /etc/passwd file in the PoC video. However, since I can execute arbitrary PHP code, a complete compromise of the WordPress installation is possible. If an attacker can gain access to a Shop manager account, he can easily and without restrictions take over the server.",
+  "weakness": {
+    "id": 52,
+    "name": "Deserialization of Untrusted Data"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 340061,
+      "file_name": "poc.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/340/061/0979cc385adeebe32a96dd6b225b073e1d9f4d13/poc.jpg?response-content-disposition=attachment%3B%20filename%3D%22poc.jpg%22%3B%20filename%2A%3DUTF-8%27%27poc.jpg&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051658Z&X-Amz-Expires=1305&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=47f44bc831335d3e1e91392cafbd99c39b17d84e5881d01a8e07f7f8542f06da",
+      "file_size": 351,
+      "type": "application/octet-stream",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-12-19T14:26:00.352Z",
+  "allow_singular_disclosure_after": -206722258.2125166,
+  "singular_disclosure_allowed": true,
+  "vote_count": 84,
+  "voters": [
+    "k0z3r0",
+    "redeyehere",
+    "cinzinga",
+    "snorlhax",
+    "p1stachios",
+    "mashoud1122",
+    "foobar7",
+    "base_64",
+    "ali",
+    "tess",
+    "and 74 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "403083",
+  "votes": 84,
+  "latest_disclosable_activity_at": "2019-12-19T14:26:02.762Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:16:58.765938",
+    "source": "https://hackerone.com/reports/403083.json",
+    "report_id": 403083
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDMwODM=",
+    "databaseId": "403083",
+    "title": "Authenticated Code Execution through Phar deserialization in CSV Importer as Shop manager in WooCommerce",
+    "url": "https://hackerone.com/reports/403083",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-12-19T14:26:02.746Z",
+    "created_at": "2018-08-30T16:37:09.891Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUy",
+      "name": "Deserialization of Untrusted Data",
+      "external_id": "cwe-502"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "simonscannell"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMDUyODU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-10-19T23:50:06.533Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQwMzA4Mw==",
+    "_id": "403083",
+    "disclosed": true,
+    "votes": 84,
+    "latest_disclosable_activity_at": "2019-12-19T14:26:02.762Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDMwODM=",
+      "databaseId": "403083",
+      "title": "Authenticated Code Execution through Phar deserialization in CSV Importer as Shop manager in WooCommerce",
+      "url": "https://hackerone.com/reports/403083",
+      "disclosed_at": "2019-12-19T14:26:02.746Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    }
+  }
+}

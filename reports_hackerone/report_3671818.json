@@ -1,0 +1,197 @@
+{
+  "id": 3671818,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjcxODE4",
+  "url": "https://hackerone.com/reports/3671818",
+  "title": "CVE-2026-6276: stale custom cookie host causes cookie leak",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2026-04-14T05:45:10.893Z",
+  "submitted_at": "2026-04-14T05:45:11.207Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "arkss",
+    "url": "/arkss",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2026-6276"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-29T07:14:49.126Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-29T06:08:15.157Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nlibcurl keeps a stale `data->state.aptr.cookiehost` after a request that uses a custom `Host:` header. On later requests on the same easy handle, when no custom `Host:` is used, libcurl still reuses that stale value for outgoing cookie selection (`lib/http.c:2560-2563`) and incoming `Set-Cookie` attribution (`lib/http.c:3561-3567`). The stale state is set from the custom-`Host:` path in `lib/http.c:2030-2065` and is not cleared in the non-custom-host path at `lib/http.c:2075-2089`. I reproduced this on `curl 8.19.0 / libcurl 8.19.0` on x86_64 Linux. In the attached PoC, a cookie seeded for `victim.internal` is leaked to `attacker.test`, the attacker injects `poison=EVIL` into the victim jar, and that poisoned cookie is then replayed back to `victim.internal` on a third request. A ZIP with the PoC source, server script, captured logs, and a fuller write-up is attached.\n\n## Affected version\nReproduced on:\n`curl 8.19.0 (x86_64-pc-linux-gnu) libcurl/8.19.0 OpenSSL/3.5.5 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 libssh2/1.11.1 nghttp2/1.68.1 ngtcp2/1.21.0 nghttp3/1.15.0 librtmp/2.3 mit-krb5/1.22.1 OpenLDAP/2.6.10`\nPlatform:\n`Linux x86_64`\n\n## Steps To Reproduce:\n1. Start the attached local server:\n   `python3 -u stale_cookiehost_server.py 18083`\n2. Build the attached PoC:\n   `cc poc_stale_cookiehost.c -o poc_stale_cookiehost $(curl-config --cflags --libs)`\n3. Run the PoC:\n   `./poc_stale_cookiehost`\n4. The PoC uses one easy handle with an in-memory cookie jar, sends request 1 with `Host: victim.internal`, removes that custom header for request 2 to `attacker.test`, and then sends request 3 back to `victim.internal`.\n5. Observe the server log:\n   `{\"host\": \"victim.internal\", \"path\": \"/seed\", \"cookie\": null}`\n   `{\"host\": \"attacker.test:18083\", \"path\": \"/attack\", \"cookie\": \"sid=SECRET123\"}`\n   `{\"host\": \"victim.internal:18083\", \"path\": \"/check\", \"cookie\": \"poison=EVIL; sid=SECRET123\"}`\n6. Observe the cookie jar output:\n   after request 1: `sid=SECRET123` is stored for `victim.internal`\n   after request 2: `poison=EVIL` is also stored for `victim.internal`\n   after request 3: the poisoned cookie is replayed back to `victim.internal`\n\n## Impact\n\n## Summary:\nThis breaks cookie origin isolation across reused easy handles. An attacker-controlled origin can receive cookies that belong to a different origin, inject its own cookies into that victim origin's jar, and have those attacker-controlled cookies replayed back to the victim on subsequent requests. This is both a confidentiality break and an integrity break.",
+  "weakness": {
+    "id": 700,
+    "name": "Exposure of Data Element to Wrong Session"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5729701,
+      "file_name": "curl_stale_cookiehost_evidence.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/k9ei164y2hgckxnzdhzuo1i1xxc3?response-content-disposition=attachment%3B%20filename%3D%22curl_stale_cookiehost_evidence.zip%22%3B%20filename%2A%3DUTF-8%27%27curl_stale_cookiehost_evidence.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQVTJUZBG4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041927Z&X-Amz-Expires=453&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJHMEUCIDsKUGJKywN7zRb7DwqYKDNkeF6tpfE724%2BHa7JEBuU5AiEA8ISY1PM3%2FSu8yV6JR7%2Bk2Tjyt91JoZQEnYBq5WSnmgkquwUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDEKfTR7XDzD0GTTAFCqPBc3eERbwkBbAVFxNZ%2BYih4O6taefKOsuagbF7m3U4gJ5DIczHGKZ3m5pJgTgkZhLP%2F1ovDduCnyi439KuJ%2FAbPZFUsTsWqweWfZ8QzFqvf2dwLJNZqGivtoc6WKxJl5aZYrnBQ9ok07RjyloypSWsnU0mlUNl7JLr3J5OSgibsOxD%2BpOAv%2BNc5jw7rMNCezCuQksBrs%2Bmpb7PGCwvQlb8oKjSsTSQG2FYibbajt1E7dBgMbIIXKza%2B3eQLhyhwqcy6WM5V28P73G1xCIuoKv4Hrx2nHGOQdQ2FSRHKSruV%2Bqn4BObvH0JcR6R5SvthZ30gLD1kepTmSdrD21EYkIMmFCJDX59wB6I4BlXm23NBXZhs4UAWP602Far8J0lIRShet6E%2B%2FVecxHeWOlvseZA8TQFHLe7eH7wc7xrgC2wIiWdyRLFLgwjquoWKlSiGQbW%2FWLW0DXXfIB9Y7U6VvcuqP1yUy%2Fcpjk0rOcZ7PDAg7Pb8Q5PytDm1yEZThwQEdPTcMM3VuzueYXtNgaLLGaS58N3zTByYp%2FZIoPUk39BPqrGzXfjjPmiZbjFju%2BfxMb6A0jHdIyG4eawVdbyvl9bpcK%2BtIlVJlfwXnrohLBgX36Kt7r8Vq6tdsIIKa6LPJwW1LtkBDtJy1kGFOTQ6uc9S3u%2BLrQIeUWPMoHtXvUyAu7SyzzmciM6Nc3J9dkgiQCwZ1CRgmbcTJwgKspXmG6QwSHeq0Z7x7E8XDhg8V7wzTbRNQNfi0o332QbCzW5GUUGhfsBkM%2BC06LrTkiSnBtRnXxqeWUoSr0g%2Fb1%2BhdKBek3KF2VLzCzS5FbqEWIB%2FZLxexiGzetYQS%2BUi4xoHNPOLum14U7N4Sr5bOKXwP8QQMwlMCb0gY6sQFZXPKQtOEtyCYwSVYxL3g3u83hfRPDwm0kZfhkMM%2BpwwNrAItx1wU8V692iuLZSrRfmdsMbQZIBqVSgWl1sYh8w9pollJQ4FTWwp6Ynf4MW%2FAJYdSN77vTXhrMJVUA%2BZLA25L5dvGA1nG9Xq6PO2JtXchPF1MFPFQQXLbRVJtkp5F%2BILFkE2N0Cld7JNZKqVTGK%2F34LZf1gPpl7W%2FV9e%2BxowqhBLf2gaYXc1VFiF0BblM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=42e8d38c0292ed6b837ebfd25bb87b2d6b78c9a5e24b1639209b228e57898474",
+      "file_size": 12129,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 24,
+  "voters": [
+    "m2r1",
+    "eddym69",
+    "ogspacejam22",
+    "cicada-bug",
+    "rcsye",
+    "hanselwhispered",
+    "astrocosmos",
+    "teamerr404",
+    "maasher",
+    "0xterrifier",
+    "and 14 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3671818",
+  "votes": 24,
+  "latest_disclosable_activity_at": "2026-04-29T07:14:48.686Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:27.849729",
+    "source": "https://hackerone.com/reports/3671818.json",
+    "report_id": 3671818
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjcxODE4",
+    "databaseId": "3671818",
+    "title": "CVE-2026-6276: stale custom cookie host causes cookie leak",
+    "url": "https://hackerone.com/reports/3671818",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-04-29T07:14:49.126Z",
+    "created_at": "2026-04-14T05:45:10.893Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcwMA==",
+      "name": "Exposure of Data Element to Wrong Session",
+      "external_id": "cwe-488"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "arkss"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2NzE4MTg=",
+    "_id": "3671818",
+    "disclosed": true,
+    "votes": 24,
+    "latest_disclosable_activity_at": "2026-04-29T07:14:48.686Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjcxODE4",
+      "databaseId": "3671818",
+      "title": "CVE-2026-6276: stale custom cookie host causes cookie leak",
+      "url": "https://hackerone.com/reports/3671818",
+      "disclosed_at": "2026-04-29T07:14:49.126Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

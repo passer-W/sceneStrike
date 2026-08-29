@@ -1,0 +1,183 @@
+{
+  "id": 176116,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzYxMTY=",
+  "url": "https://hackerone.com/reports/176116",
+  "title": "Weak Forgot Password implementation",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2016-10-16T09:36:26.873Z",
+  "submitted_at": "2016-10-16T09:36:26.873Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "pavanw3b",
+    "url": "/pavanw3b",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/038/280/46fd940624527eb674a6bbc0c1affe8448757fed_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 2367,
+    "url": "https://hackerone.com/revive_adserver",
+    "handle": "revive_adserver",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/367/4f47a5b4a364515d4bbdc17550d67ea5415363cd_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/002/367/4f47a5b4a364515d4bbdc17550d67ea5415363cd_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Revive Adserver",
+      "twitter_handle": "",
+      "website": "https://www.revive-adserver.com",
+      "about": "Revive Adserver is a free open source ad serving system"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-08-02T05:58:25.063Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-07-03T05:58:11.309Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**\"Cricetinae\"** :)\n\n###Short Description\nThe Forgot Password is missing a several industry best practices. I strongly believe due to the level of the access given after a successful exploitation, the implementation could have been better.\n\n###Vulnerability Details\nReferring to OWASP Standards and guidelines [https://www.owasp.org/index.php/Forgot_Password_Cheat_Sheet], I see the following risks in the Forgot Password implementation:\n* Invalidate or provide an option to invalidate existing sessions after password has been reset\n* Invalidate the current session and redirect to login after successful password reset.\n\nAlso consider:\n* Do not allow the old the password as the new one.\n* Provide an option to set up Security Questions for admin accounts.\n\nI'm not sure about the above two points as they sound more like features rather than bugs.\n\n### Steps to Reproduce\n* Login as a admin on **Browser A** & keep it.\n* Open **Browser B** (or incognito/private). Go to Password Recovery page by clicking `Forgot your password?` from the login page.\n* Note the `sessionID` cookie. Enter the email address and `Proceed >`.\n* Open the reset link received by email on **Browser B**. Note that the `sessionID` remained the same. Change the password. Note that the user have logged to dashboard without invalidating the current session and the `sessionID` remained the same.\n* Come back to **Browser A** and note that the user session is still valid.\n\n### Attack vector\n* **Invalidating other existing session:** The `sessionID` cookie which drives everything about user accounts, is set to expire on `Session` which means until the user explicitly clicks the `Logout` or the browser/tab is closed. Thus if an attacker some how (phishing or brute force) compromised an user account, the hacked session remained the same even though the account owner resets the password or change the email address.\n* **Invalidating the current session after the password recovery:** Attacker with physical access to the user's computer, leaves the Revive Adserver login page open by noting down the `sessionID`. User comes, resets the password and logged in. As the attacker knows the `sessionID`, he can use that in logging in as the user. This works even the attacker not having admin access on the system to install a keylogger and valid until the user logs out and the session is destroyed.\n\n### Test Environment Details\nVersion: Latest as on Oct 16: revive-adserver-4.0.0 downloaded from the official source\nSetup type: local\nBrowser: Firefox 47.0\nOS: Mac OS X\n\n\nCheers,\nPavan\n",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2017-08-02T05:58:11.363Z",
+  "allow_singular_disclosure_after": -281838465.08880705,
+  "singular_disclosure_allowed": true,
+  "vote_count": 17,
+  "voters": [
+    "tess",
+    "shubham_srt",
+    "pr0f0x01",
+    "eveeez",
+    "zerodaykb",
+    "bb00x",
+    "japz",
+    "pavanw3b",
+    "silv3rpoision",
+    "sumit7",
+    "and 7 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "176116",
+  "votes": 17,
+  "latest_disclosable_activity_at": "2017-08-02T05:58:25.082Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:25:56.560146",
+    "source": "https://hackerone.com/reports/176116.json",
+    "report_id": 176116
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzYxMTY=",
+    "databaseId": "176116",
+    "title": "Weak Forgot Password implementation",
+    "url": "https://hackerone.com/reports/176116",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-08-02T05:58:25.063Z",
+    "created_at": "2016-10-16T09:36:26.873Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "pavanw3b"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjM2Nw==",
+      "handle": "revive_adserver",
+      "name": "Revive Adserver",
+      "url": "https://hackerone.com/revive_adserver",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3NjExNg==",
+    "_id": "176116",
+    "disclosed": true,
+    "votes": 17,
+    "latest_disclosable_activity_at": "2017-08-02T05:58:25.082Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzYxMTY=",
+      "databaseId": "176116",
+      "title": "Weak Forgot Password implementation",
+      "url": "https://hackerone.com/reports/176116",
+      "disclosed_at": "2017-08-02T05:58:25.063Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjM2Nw==",
+      "handle": "revive_adserver",
+      "name": "Revive Adserver",
+      "url": "https://hackerone.com/revive_adserver",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "id": 2051224,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDUxMjI0",
+  "url": "https://hackerone.com/reports/2051224",
+  "title": "fs.statfs bypasses Permission Model",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2023-07-05T15:16:06.056Z",
+  "submitted_at": "2023-07-05T15:16:06.182Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "rafaelgss",
+    "url": "/rafaelgss",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/03cmza9kg8sgdwaepi579m4hvctl/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22984,
+    "url": "https://hackerone.com/nodejs",
+    "handle": "nodejs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js",
+      "twitter_handle": "nodejs",
+      "website": "https://nodejs.org",
+      "about": "The Node.js JavaScript Runtime"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": true,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2023-32005"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-09-10T15:26:01.801Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-08-11T15:25:59.197Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:**\n\n`fs.statfs` is not limited by the permission model check\n\n**Description:**\n\n`fs.statfs` doesn't throw ERR_ACCESS_DENIED when accessing an restricted path, being able to get stat information of the file\n\n## Steps To Reproduce:\n\n```console\ntouch ./test.js\n```\n\n```js\n// index.js\nconst fs = require('fs')\n\nfs.statfs('./test.js', (err, stats) => {\n  console.log('stats', stats)\n})\n```\n\n```\n$ node --experimental-permission --allow-fs-read=/path/to/index.js\n(node:756097) ExperimentalWarning: Permission is an experimental feature\n(Use `node --trace-warnings ...` to show where the warning was created)\nstats StatFs {\n  type: 61267,\n  bsize: 4096,\n  blocks: 56377128,\n  bfree: 27380986,\n  bavail: 24498982,\n  files: 14393344,\n  ffree: 12478020\n}\n```\n\n## Impact\n\nEven though it can't read the file contents, it's still can perform I/O against that file to retrieve file stats and to check if a file exists.",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2023-09-10T15:25:59.333Z",
+  "allow_singular_disclosure_after": -88694686.3160308,
+  "singular_disclosure_allowed": true,
+  "vote_count": 8,
+  "voters": [
+    "zy9ard3",
+    "mohaned0101",
+    "neilx",
+    "eminfidan",
+    "red_zone",
+    "destinedtohack",
+    "amr4l44",
+    "dantes96"
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 3.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 666,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/nodejs/node",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 320155,
+      "category": "team",
+      "content": "A vulnerability has been identified in Node.js version 20, affecting users of the experimental permission model when the --allow-fs-read flag is used with a non-* argument.\n\nThis flaw arises from an inadequate permission model that fails to restrict file stats through the `fs.statfs` API. As a result, malicious actors can retrieve stats from files that they do not have explicit read access to.\n\nThis vulnerability affects all users using the experimental permission model in Node.js 20.\n\nPlease note that at the time this CVE was issued, the permission model is an experimental feature of Node.js.\n",
+      "updated_at": "2023-07-14T14:03:00.441Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 2195374,
+        "username": "rafaelgss",
+        "name": "Rafael Gonzaga",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "https://rafaelgss.dev",
+        "location": "",
+        "created_at": "2022-01-27T23:52:59.861Z",
+        "url": "https://hackerone.com/rafaelgss",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/03cmza9kg8sgdwaepi579m4hvctl/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/03cmza9kg8sgdwaepi579m4hvctl/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/03cmza9kg8sgdwaepi579m4hvctl/eab7e558a2bc3ec841c51b96524419e712978d371ddb665048a3154ab05197fc"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2051224",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2023-09-10T15:26:02.205Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:50:45.782423",
+    "source": "https://hackerone.com/reports/2051224.json",
+    "report_id": 2051224
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDUxMjI0",
+    "databaseId": "2051224",
+    "title": "fs.statfs bypasses Permission Model",
+    "url": "https://hackerone.com/reports/2051224",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-09-10T15:26:01.801Z",
+    "created_at": "2023-07-05T15:16:06.056Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.3
+    },
+    "reporter": {
+      "username": "rafaelgss"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIwNTEyMjQ=",
+    "_id": "2051224",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2023-09-10T15:26:02.205Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDUxMjI0",
+      "databaseId": "2051224",
+      "title": "fs.statfs bypasses Permission Model",
+      "url": "https://hackerone.com/reports/2051224",
+      "disclosed_at": "2023-09-10T15:26:01.801Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    }
+  }
+}

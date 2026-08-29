@@ -1,0 +1,216 @@
+{
+  "id": 203726,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDM3MjY=",
+  "url": "https://hackerone.com/reports/203726",
+  "title": "Open Redirect in <customer>.greenhouse.io",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-02-06T09:14:17.418Z",
+  "submitted_at": "2017-02-06T09:14:17.418Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cyneox",
+    "url": "/cyneox",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/067/003/c96df31290c414a7ee40cf1011f248ef9618f403_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 312,
+    "url": "https://hackerone.com/greenhouse",
+    "handle": "greenhouse",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hoqjkry2eprkz6vwyizdw59ry7ps/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hoqjkry2eprkz6vwyizdw59ry7ps/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Greenhouse.io",
+      "twitter_handle": "",
+      "website": "https://app.greenhouse.io",
+      "about": "Software to optimize your entire recruiting and onboarding process."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-07-08T09:12:59.363Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-06-08T09:12:55.703Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Open Redirect in scout24.greenhouse.io\n\nThe **Scout24 Security Team** did a penetration test against `scout24.greenhouse.io` in order to verify how Scout24 relevant data is protected against common attack vectors. Basically we have tested the (web) application against [OWASP Top 10](https://www.owasp.org/index.php/Category:OWASP_Top_Ten_Project) using industry common metholodogies. \n\n## Reproduction steps\n\n* Visit https://boards.greenhouse.io/scout24 and click on some job offer (I chosed [this one](https://boards.greenhouse.io/scout24/jobs/503488))\n* After completing your personal information, you can *upload* some documents\n\t* Click `Attach` both under *Resume/CV* and *Cover Letter*\n\t* Upload some PDF files from your local host (in my case the file uwas called `neu.pdf`)\n* In the end you send your application by clicking on `Submit Application`\n\nUsing a HTTP proxy (in my case that was [Burp](https://portswigger.net/burp/)) I was able to intercept the `POST` request made by the browser before being sent to the `greenhouse.io` API. This is some sample request:\n\n### Proof-of-Concept (PoC)\n\n```.http\nPOST /scout24/jobs/503488 HTTP/1.1\nHost: boards.greenhouse.io\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0\nAccept: text/html, */*; q=0.01\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate, br\nX-NewRelic-ID: VQ4PWFNbGwIFU1dbAgcB\nX-CSRF-Token: zF19Ky8GR0J/ZP7aLfFiN+p8Udc+X8ikPyk0cX7LlzgS0i4wWFIchmqcmsR3aXA0T1XSNrXSWdrVb47bGjGrEg==\nX-Requested-With: XMLHttpRequest\nReferer: https://boards.greenhouse.io/scout24/jobs/503488\nContent-Length: 4086\nContent-Type: multipart/form-data; boundary=---------------------------844282227400113298508475861\nCookie: __utma=44269810.1998188318.1484665255.1484837763.1484901247.18; __utmz=44269810.1484837763.17.11.utmcsr=scout24.eu.auth0.com|utmccn=(referral)|utmcmd=referral|utmcct=/login/callback; __zlcmid=edg9prI9rr6P3K; __utmc=44269810; __utmb=44269810.15.9.1484902626060; __atuvc=4%7C3; __atuvs=5881cd5b6c1ca704003; _jbs=7897bb31a3e984da1f15ec3b3f0e8129; __utmt=1\nConnection: close\n\n[...]\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[resume_url]\"\n\nhttps://grnhse-prod-jben-us-east-1.s3.amazonaws.com/applications%2Fresumes%2F1484902660983-1663bnwl7dt-b044057e6364840cde6c41d55de3a1e1%2Fneu.pdf\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[resume_url_filename]\"\n\nneu.pdf\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[cover_letter_url]\"\n\nhttps://grnhse-prod-jben-us-east-1.s3.amazonaws.com/applications%2Fresumes%2F1484902672335-lpk5xur1na-67346266367805828242f31b3887e539%2Fneu.pdf\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[cover_letter_url_filename]\"\n\nneu.pdf\n-----------------------------844282227400113298508475861--\n```\n\nAs you can notice the files have been already uploaded to `AWS` and therfore a S3 bucket links are \nused within the requests. \n\n## Exploitability\n\nUsing a browser and a HTTP proxy the request can be easily intercepted. In the **original** request the `Content-Disposition` parameter `job_application[cover_letter_url]` in the `POST` request contains a S3 bucket link. However, after tampering the request, the parameters values can be changed. In our specific case the value (basically an URL) could be changed to:\n\n* a phishing site\n* a site containing some malware\n\nAfter intercepting the request, the parameter was modified like this:\n\n```.http\nPOST /scout24/jobs/503488 HTTP/1.1\nHost: boards.greenhouse.io\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0\nAccept: text/html, */*; q=0.01\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate, br\nX-NewRelic-ID: VQ4PWFNbGwIFU1dbAgcB\nX-CSRF-Token: zF19Ky8GR0J/ZP7aLfFiN+p8Udc+X8ikPyk0cX7LlzgS0i4wWFIchmqcmsR3aXA0T1XSNrXSWdrVb47bGjGrEg==\nX-Requested-With: XMLHttpRequest\nReferer: https://boards.greenhouse.io/scout24/jobs/503488\nContent-Length: 4086\nContent-Type: multipart/form-data; boundary=---------------------------844282227400113298508475861\nCookie: __utma=44269810.1998188318.1484665255.1484837763.1484901247.18; __utmz=44269810.1484837763.17.11.utmcsr=scout24.eu.auth0.com|utmccn=(referral)|utmcmd=referral|utmcct=/login/callback; __zlcmid=edg9prI9rr6P3K; __utmc=44269810; __utmb=44269810.15.9.1484902626060; __atuvc=4%7C3; __atuvs=5881cd5b6c1ca704003; _jbs=7897bb31a3e984da1f15ec3b3f0e8129; __utmt=1\nConnection: close\n[...]\n\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[resume_url]\"\n\nhttps://google.com\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[resume_url_filename]\"\n\nneu.pdf\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[cover_letter_url]\"\n\nhttp://google.com\n-----------------------------844282227400113298508475861\nContent-Disposition: form-data; name=\"job_application[cover_letter_url_filename]\"\n```\n\nWhenever the hiring manager will try to view the uploaded content, the application will not be able to render the content. Instead the person will then try to **download** the file by clicking on `Download` (left upper corner). Although the browser shows that the URL points to some specific `AWS` domain, the content is actually loaded from somewhere else (in this case from [https://google.com](https://google.com)). \n\nAgain, an attacker could then submit some URL containing malicious content or some phishing site. Only for the purpose of this report, something unspectacular like [https://google.com](https://google.com) has been chosen. \n\n## Impact\n\nThe attack can be conducted in multiple scenarios:\n\n* anonymous person applies for some jobs and manipulates the parameters (like described above)\n* internal employee adds referal for some person and also manipulates the parameters\n\nIn both cases the hiring manager would then unknowingly access the manipulated links which could then lead to:\n\n* installation of trojan horses / ransomeware (in general malicious content)\n* a phishing site where e.g. AD credentials are claimed to be required\n* CSRF (Cross-Site Request Forgery) [attacks](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF))\n\n## Remediation\n\nThe affected parameter should be first validated against some regular expression (e.g. allow only links that point to `grnhse-prod-jben-*.s3.amazonaws.com`). \n\n\n\n\n\n",
+  "weakness": {
+    "id": 53,
+    "name": "Open Redirect"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 157687,
+      "file_name": "Selection_120.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/157/687/d6c73e432e61f9db572701ac148d4eed040301b9/Selection_120.png?response-content-disposition=attachment%3B%20filename%3D%22Selection_120.png%22%3B%20filename%2A%3DUTF-8%27%27Selection_120.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062755Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=49e1750a6c894d309628c2bc41e6a11b2374e5ba527d83578daeaf0ede48ff79",
+      "file_size": 83007,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 157688,
+      "file_name": "Selection_121.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/157/688/fd94ca3f2c417651b6adae7f74d9d6e729f389fe/Selection_121.png?response-content-disposition=attachment%3B%20filename%3D%22Selection_121.png%22%3B%20filename%2A%3DUTF-8%27%27Selection_121.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062755Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5ad7ec57d52a39bccce1bfec74213fb4bc924e9155f73d9f529b8368973b76f1",
+      "file_size": 32428,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 157689,
+      "file_name": "Selection_119.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/157/689/2df9683c5a82b8b228d4de6bc69cb2da2d706b79/Selection_119.png?response-content-disposition=attachment%3B%20filename%3D%22Selection_119.png%22%3B%20filename%2A%3DUTF-8%27%27Selection_119.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062755Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c375262714afbf519b8a8304f54939787b1754eedaa3c1a5cee938692b9c2964",
+      "file_size": 42798,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-07-08T09:12:55.750Z",
+  "allow_singular_disclosure_after": -283986900.06028426,
+  "singular_disclosure_allowed": true,
+  "vote_count": 9,
+  "voters": [
+    "thalaivar304",
+    "003random",
+    "eveeez",
+    "japz",
+    "zerotoone",
+    "spetr0x",
+    "v1per",
+    "oneguy",
+    "cyneox"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "203726",
+  "votes": 9,
+  "latest_disclosable_activity_at": "2017-07-08T09:12:59.400Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:27:55.930504",
+    "source": "https://hackerone.com/reports/203726.json",
+    "report_id": 203726
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDM3MjY=",
+    "databaseId": "203726",
+    "title": "Open Redirect in <customer>.greenhouse.io",
+    "url": "https://hackerone.com/reports/203726",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-07-08T09:12:59.363Z",
+    "created_at": "2017-02-06T09:14:17.418Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUz",
+      "name": "Open Redirect",
+      "external_id": "cwe-601"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "cyneox"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxMg==",
+      "handle": "greenhouse",
+      "name": "Greenhouse.io",
+      "url": "https://hackerone.com/greenhouse",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80ODM0OA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-05-30T15:16:54.981Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIwMzcyNg==",
+    "_id": "203726",
+    "disclosed": true,
+    "votes": 9,
+    "latest_disclosable_activity_at": "2017-07-08T09:12:59.400Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDM3MjY=",
+      "databaseId": "203726",
+      "title": "Open Redirect in <customer>.greenhouse.io",
+      "url": "https://hackerone.com/reports/203726",
+      "disclosed_at": "2017-07-08T09:12:59.363Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxMg==",
+      "handle": "greenhouse",
+      "name": "Greenhouse.io",
+      "url": "https://hackerone.com/greenhouse",
+      "currency": "usd"
+    }
+  }
+}

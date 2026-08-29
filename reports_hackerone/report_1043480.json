@@ -1,0 +1,297 @@
+{
+  "id": 1043480,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDQzNDgw",
+  "url": "https://hackerone.com/reports/1043480",
+  "title": "Remote hacker can download all the files of master branch in public projects where everything is members only.",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-11-25T15:24:46.115Z",
+  "submitted_at": "2020-11-25T15:24:46.224Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "anshraj_srivastava",
+    "url": "/anshraj_srivastava",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hxq89m6o5acgdqm8fyjg0johvzpf/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-02-15T14:45:11.257Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-02-11T11:15:36.802Z",
+  "team_member_agreed_on_going_public_at": "2021-02-15T14:45:11.090Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary\n\nHi team,\nI found this weird behavior which I thought I should report, a malicious hacker can remotely download files of any branch in a public project where all permissions are ==member-only==, Gitlab uses a link to download files of a branch, normally ==an unauthenticated user will not be able to download the files through the link, he would be shown an error message,== however, the weird behavior is that if ==the admin or someone with the permission to download the files of the branch, clicks on the link, then for a few moments afterward, anyone on the internet can download the file through the link .==\n\nThe link to download files is like this - https://gitlab.com/photographyknavel/my-private-proj-3/-/archive/master/my-private-proj-3-master.zip and ==it can be easily constructed.==\n\n### Steps to reproduce\n\n1.Create a public project and ==change every permission to members-only.==\n\n{F1093574}\n\n2.Upload some files in the repository-\n\n{F1093575}\n\n3.Go to \"Branches\" and ==try opening the link to download a branch in an incognito tab-==\n\n{F1093579}\n\n+ As you can see, it shows an error.\n\n4.Now go back to the project and click on the link, no need to download it right now and then go to the incognito window and try opening the link again-\n\n+ This time ==the link opens and we can download the file== from the incognito window even though we are not authenticated-\n\n{F1093584}\n\n+ To confirm this bug, ==you can try opening the link on another device too, make sure you do it right after clicking the link from the admin account-==\n\n{F1093592}\n\n(This video is from my iPad, ==which was on a completely different network and the Gitlab account wasn't related to the project at all==)\n\n###Practical Attack scenario-\nNow, as you may be wondering that even though the bug exists, the chances of a malicious hacker clicking the link right after an admin does are next to none, ==well this problem can easily be bypassed and the hacker can gain access to the files-==\n\n1.Let's say that I am a malicious hacker and I discover this project, which has almost all features restricted to members only and as mentioned above, I can't download the files by clicking on the link-\n\n{F1093593}\n\n2.However, I am aware of this bug,==so I use a web automation software like Selenium IDE (https://www.selenium.dev/selenium-ide/ )==. I can program a script to refresh this page - https://gitlab.com/photographyknavel/my-private-proj-3/-/archive/master/my-private-proj-3-master.zip automatically, so if the victim ever clicks the download button,==I will be able to download the file since the page is being refreshed frequently and the script will stop if the link is executed.==\n\n##Selenium Script (also attached as Gitlab.side in the attachments)-\n```\n{\n  \"id\": \"e4cd88a3-0530-4596-b497-88b2de68115b\",\n  \"version\": \"2.0\",\n  \"name\": \"Gitlab-3\",\n  \"url\": \"\",\n  \"tests\": [{\n    \"id\": \"f3bbf89a-47e1-47e9-959c-7beebaf6226c\",\n    \"name\": \"hhh\",\n    \"commands\": [{\n      \"id\": \"f0eb0ad5-60db-4fdc-89ac-4f397416d931\",\n      \"comment\": \"\",\n      \"command\": \"times\",\n      \"target\": \"9999\",\n      \"targets\": [],\n      \"value\": \"\"\n    }, {\n      \"id\": \"2e11e74e-f01d-4679-8148-fc3a380df1ca\",\n      \"comment\": \"\",\n      \"command\": \"open\",\n      \"target\": \"https://gitlab.com/photographyknavel/my-private-proj-3/-/archive/master/my-private-proj-3-master.zip\",\n      \"targets\": [],\n      \"value\": \"\"\n    }, {\n      \"id\": \"aa98d614-88f2-4812-a67e-60d33949d672\",\n      \"comment\": \"\",\n      \"command\": \"end\",\n      \"target\": \"\",\n      \"targets\": [],\n      \"value\": \"\"\n    }]\n  }],\n  \"suites\": [{\n    \"id\": \"ac71892f-28e5-4c5f-8f83-78ba310b1664\",\n    \"name\": \"Default Suite\",\n    \"persistSession\": false,\n    \"parallel\": false,\n    \"timeout\": 300,\n    \"tests\": [\"f3bbf89a-47e1-47e9-959c-7beebaf6226c\"]\n  }],\n  \"urls\": [],\n  \"plugins\": []\n}\n```\n==NOTE-==\n\n+ The script is basically a loop that runs for a large number of times, in this case, I have kept it ``9999`` but it can be increased.\n+ ==Do change the URL of the target from https://gitlab.com/photographyknavel/my-private-proj-3/-/archive/master/my-private-proj-3-master.zip to the URL of the project you are targeting.==\n\n##Screenshots and videos-\n\n+ Victim POV-\n\n{F1093820}\n\n+ Hacker POV-\n\n{F1093818}\n\nThe script that was refreshing the page automatically, ==it stops doing so as soon as the victim clicks the download project option and now the hacker can download the files.==\n\n## Impact\n\nThe clear security impact is that a malicious hacker is able to ==access files stored in a branch even though he's not authorized to do so, this leads to a data leak.==",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1093574,
+      "file_name": "recording-1606307452409.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dpa2zlz9s9q44uw8r4ct7a8ddpvd?response-content-disposition=attachment%3B%20filename%3D%22recording-1606307452409.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606307452409.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=cd71f4e13053dea4639b3a2b12f39abbde5c305b26196a66bcd2f69e9303e9c7",
+      "file_size": 3109302,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093575,
+      "file_name": "recording-1606307515401.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/efmy808ctkhb1kc2pl5xk8rhzslq?response-content-disposition=attachment%3B%20filename%3D%22recording-1606307515401.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606307515401.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9490cd2d03e12cfacf968d0442f37372ee8deec8c3a5deaeefc2d4c9682dde04",
+      "file_size": 1789709,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093579,
+      "file_name": "recording-1606307568402.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/wb5uce4lquje3pvawpupcm9j36ju?response-content-disposition=attachment%3B%20filename%3D%22recording-1606307568402.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606307568402.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=db2b784378900e9c1b68a5484828ed1cb14fa699763f6a82326ab978ca638d31",
+      "file_size": 1010463,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093584,
+      "file_name": "recording-1606307655412.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ile52x2mk2docqqk2254y54lmvlz?response-content-disposition=attachment%3B%20filename%3D%22recording-1606307655412.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606307655412.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=084869be63c3974cb4b8ea1841d95d0edf668ffce369055574ce97b369b1ce0c",
+      "file_size": 2882908,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093592,
+      "file_name": "Gitlab-vid.MP4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/p9i009xgiuhbmej8qnc94uzu5uw2?response-content-disposition=attachment%3B%20filename%3D%22Gitlab-vid.MP4%22%3B%20filename%2A%3DUTF-8%27%27Gitlab-vid.MP4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=934776e4877e24555912bc5d51757f9f461b00f7bae3d5b282552abdaf60b01b",
+      "file_size": 16501423,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 1093593,
+      "file_name": "recording-1606308245405.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/yawzp241h9lbkifipy3g4phrymkp?response-content-disposition=attachment%3B%20filename%3D%22recording-1606308245405.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606308245405.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=847c351b2fa11ff3ddab8a2238ea9e640ee7f8cf33159c9002a4e5d3ef8c78d2",
+      "file_size": 447533,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093594,
+      "file_name": "recording-1606308424343.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9nof5du8tt3q9z7o76m0zpltibl0?response-content-disposition=attachment%3B%20filename%3D%22recording-1606308424343.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606308424343.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fe58c87d53a35f57d8cc1ad39f7f31e69eb16e656ed1b8a46c041ce53fa3931a",
+      "file_size": 1229237,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093798,
+      "file_name": "Gitlab.side",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/hukuq1nga08y5p8riftb2w704fya?response-content-disposition=attachment%3B%20filename%3D%22Gitlab.side%22%3B%20filename%2A%3DUTF-8%27%27Gitlab.side&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=60cb3ebf4de4b8cb57a9e2075cde8939ba18005b807505401aee9582da7f96b4",
+      "file_size": 1070,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 1093818,
+      "file_name": "recording-1606317336409.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/swygu2ti7wkdjuv3tie0hj3vdvo5?response-content-disposition=attachment%3B%20filename%3D%22recording-1606317336409.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1606317336409.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bda71f0c5a24206cacdf47c5ad15c32475bfe4bf028075e357d9546882d3ffa3",
+      "file_size": 2153187,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1093820,
+      "file_name": "Gitlab_victim.MP4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/wtxv4ixndunpdm1ud9zgjcje9gq6?response-content-disposition=attachment%3B%20filename%3D%22Gitlab_victim.MP4%22%3B%20filename%2A%3DUTF-8%27%27Gitlab_victim.MP4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3VEV4OIB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064427Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJGMEQCICSFmkKe2RZBZsaBReE6KVf3msjEvhPHnauXtPJTkOfaAiAUfDYuSZPgn91rC77Dr6mMr26YP0zhzdo9YGeI7qGYjCqxBQgIEAMaDDAxMzYxOTI3NDg0OSIM6bJhu%2FWiAeOWbHSJKo4FL1P1A%2BFx9%2FeYk50lvLIqas9DjkH%2FNXw02h8TnZqtF74ANY%2FHEfP8%2BEcNHYezFt78sO13E09Ew1U%2BiinWaVSwyuh7pRrijVCsMQoPzXujWQhzD7zu22b%2FRKISlc9L3kGPt4uoo%2FnEkO1dUCDXNhHOru3ri8LP7ojUg5RMdvL9Y7GKrrMQaS0uIhZYaDOC%2FHCegrfbv5ppU4I5o1BOnY%2Bp0ASjsjZWtJfmsP4SaX6SuehYPLU7HktlhhqXKAwpv9kvMNSmU5%2FJ12OOyLqBo15qLAVYeTBttW9%2BiVYoldrrDImJgo%2B35sw%2BWgFrH%2BlgS6zE5r9DJ5LgXciqlyE91xYX785P4XZLOat%2BaMpsBHaKFQB7hoxaQMvFA8XwYnOWoq5kr0N9brM14PDt8u0Bb2%2Bimap%2BYdTO5Qy60nu%2BXGgTj9YNi5D%2FznIsgWFPl0ItJoORL7ux8Zshm9P7E7tLA2wVB0zQoLL3kS%2BFohEN0tVJ1SZTLOZpaFbo7Pf3KDhcIVptloOIs8WGTmfuSmOasXsgHFZnjeqXoqHWWsoC8pxzpvid0ayGaSP0H4hv3G5E8wUjReS%2F0aKBolUyTkPh1j9A%2FAW3Jmx0QE2HUYkf4icnu0bM5dgI1l5QXf%2FjVVaBRkF%2BP2KBN70SkMtri4UJkn2T0o6Dhxv9iGjQ%2ByQvZDQrmHMnSFovJKYSYXCdgYrzm4b5SKntOADHtC8wV%2F7ELbS2MYS5ZqiBLBD1cUt9Y8ZnM4ePljKP%2BNjrYYqW6qJJ9XtAJgddhtJuCI8WkI91vzA2rYIWoBbFO4zkwlyH7orJAb%2F4%2BJ9kQ%2FIA%2BRkHMJYGRMpBMDIB5%2FpcVFhjV3hINyoO%2F5EP16MP9jLq6WOYj0TSMMmqndIGOrIB3sGGMDtxqbAQqYBna0U38XKrdTtsqa5cHk6EC9h2eCNfuefFOwD8s%2Bm%2FCaSQlZvMkgKNQdAMxCnbJY8RHNheY7c1M9GcZPMTZdN7U7NqkvVYonyz0mBQ49vv2dwdH03U3ROMlQ7GiAMGDD2gfnSX1NJH5y6Keotwcj5HagZ1l6TT%2FaFNlTKBWWy7qVdoMDTG4z5ld6ubfiJfTGYxbKgy76w7CzukIfgh7hPy5yP8oLkWDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=246fd92f4dc455b6e643b33171c8caab407958a8dde1c03d839423e1dceb70e8",
+      "file_size": 4483035,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 31,
+  "voters": [
+    "muthu_prakash",
+    "cengaver",
+    "tess",
+    "nightm4re",
+    "akashhamal0x01",
+    "term1nal",
+    "f1ras",
+    "n4d",
+    "anshraj_srivastava",
+    "hitman_47",
+    "and 21 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 18138,
+    "asset_type": "URL",
+    "asset_identifier": "gitlab.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1043480",
+  "votes": 31,
+  "latest_disclosable_activity_at": "2021-02-15T14:45:11.803Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:44:27.455078",
+    "source": "https://hackerone.com/reports/1043480.json",
+    "report_id": 1043480
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDQzNDgw",
+    "databaseId": "1043480",
+    "title": "Remote hacker can download all the files of master branch in public projects where everything is members only.",
+    "url": "https://hackerone.com/reports/1043480",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-02-15T14:45:11.257Z",
+    "created_at": "2020-11-25T15:24:46.115Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "anshraj_srivastava"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNjIwMTk=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-11-30T21:42:47.402Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNzAxODA=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-01-08T17:05:09.094Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwNDM0ODA=",
+    "_id": "1043480",
+    "disclosed": true,
+    "votes": 31,
+    "latest_disclosable_activity_at": "2021-02-15T14:45:11.803Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDQzNDgw",
+      "databaseId": "1043480",
+      "title": "Remote hacker can download all the files of master branch in public projects where everything is members only.",
+      "url": "https://hackerone.com/reports/1043480",
+      "disclosed_at": "2021-02-15T14:45:11.257Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

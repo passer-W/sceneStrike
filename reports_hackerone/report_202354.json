@@ -1,0 +1,200 @@
+{
+  "id": 202354,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDIzNTQ=",
+  "url": "https://hackerone.com/reports/202354",
+  "title": "Stored XSS / Bypassing .htaccess protection in http://nodebb.ubnt.com/",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-01-31T13:34:43.035Z",
+  "submitted_at": "2017-01-31T13:34:43.035Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "inhibitor181",
+    "url": "/inhibitor181",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/iK9ytFYT28QM6G5xrCaphqnv/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 800,
+    "url": "https://hackerone.com/ui",
+    "handle": "ui",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fpqjzgms7de9639u414bw6vid1be/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fpqjzgms7de9639u414bw6vid1be/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Ubiquiti Inc.",
+      "twitter_handle": "ubiquiti",
+      "website": "https://ui.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-09-28T07:23:26.659Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-08-29T07:23:24.206Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello,\n\nWhile I was looking at your renewn SSL certificated, I have noticed the following link : http://nodebb.ubnt.com/\n\nI have seen that this link was protected by htaccess password, but I have decided to run a nmap scan. By running the following :\n\n```\nsudo nmap -sSV -p- 104.131.159.88 -oA stage_ph -T4\n```\n\none of the open ports was this : `4567/tcp open   tram?`\n\nAnd, to my surprise the ip `104.131.159.88:4567`, as well as `http://nodebb.ubnt.com:4567/` were available from internet and unprotected.\n\nHere, I have found a nodeBB instance and I have managed to create a persisted XSS by using the  upload API, that does not properly sanitize the file names and automatically sets wrong mime types. \n\nNormally, it seems that the user is allowed to upload only images, but the stored XSS was possible by injecting malicious html in the exif data and changing the file name to .html.\n\nI have attached a video with the POC, as well as the exif image.\n\nI have not managed to RCE, but it is also worth noting that uploading the file with the .php extension and writing php content using exif IS possible.\n\n",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 156302,
+      "file_name": "exif.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/156/302/01e6a2517e0c9f93fb3c04654f9c34b2c8037818/exif.jpg?response-content-disposition=attachment%3B%20filename%3D%22exif.jpg%22%3B%20filename%2A%3DUTF-8%27%27exif.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQT4GE5VBD%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062033Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCICl%2BICaLUvKtNHVRXufKR3MXBRiwtRMbcyZDfPiL3tzQAiEAiXabzDlW8ZZJxeYiFj2%2F7woYV8xmGwB50Nj0UDm8TsAqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDJ887aTwSAcju455diqPBZghfagCEAPmvJ%2B4Ya0zqBg41EFkk8DeK4QSPKCP2j5lO060izFJ%2F2MnW1llU3xKqCdyBQFdRGaxogt6UrXC25KUM5S%2Fv%2BQ0acAOwZwb0U2BKTFfpEqvYL2cww5qaNdKoLd%2F%2Bf7IzScO2sIdoZ5kxsVMNevATROSUP0Q%2Fu5rYvmzEAOq%2B72LxcxuaI0MR0pvCVzngenkTX7UAxMvDoiMmgVDL7nspAjDRMm0Yr8egvFJJJ4oDXzSZOBYHeEJcmkQelFI8ypf3tvNqJWNLGivgQGCewaBgUEGRGiIRJas6dTcSI6KgUWkbAQt%2BXRIFA%2FpXq1KghoklsdXO%2BEDHxIdbIaujAZDTEP0C%2FJDKNnnmtJXR5qhUcOavklBo%2B8mKz1P4PnqTXF2rxUHbgF7PTWQRK86zkXvP1stwerbPeEg%2B71KNAoo2cTpRb5k32d8gU1gQz26JT8zwCopx9cqPOS5Bng%2FcE9BaXgCPdgSPAdmOGsYS6xn9dO8V5aTwYvFGKtKUb5SrUQAMyBB40J1XnCrrIezq6yi13tGi%2FnqRobX1P6OxZl0t8VA9EJcAr%2B%2F2qM6Ax%2F7vGVnPrILhKiad1HLHBG0TNe3k0Q7zjurk8r1inpBpEMuNRXA2gV1YJkZd73ckRNfZzQLBPwHWkhSy3DD7OykIVn0QhhkpqSXZKnYsidPqd%2By524bqbx6o8c91vLSKa6Y7vPKkzRrcJn%2FHP%2BJ5UL055t8mPLq5tjLCoTr69m0V7b%2B0vf4Qu2XfsJNY9UoKdnJ0WnmurGgqlmVviwizS7ZYe29ZKJPF%2BFmRswG404tWSvRJ%2Bxk2xeO6EgTKEYOh6F7nOh0U62vybuAfPx8FyGpmeLyjlRfz3SlPZwLZ1kw7dS30gY6sQG4VgC7K3ik6nnY%2BcEU9ULTuMAYWpdJgIjUhE8siHnZExPtr%2FkHtxDcFozMZnkPGuPHBJK4nehCyRSKribp%2FPgkV6u0HG4ikJROZ19C8my5YbVoylN2Z9kloWy4bCCVrpTtj7GSaDAUtLqKljYMCOsijEMSodVK%2F1mlNnEyYc6hChnlw3o7J1BdS%2BGXXWX%2FtFZ%2Bl6NCt3nU200cHJEZGgnM80zZLIeroS0fYuvp6AYbJP4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ec3db2920ef0dd4710388754dc1f3164d6ec4217f0db48b1950e318482ebfc6d",
+      "file_size": 11515,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-09-28T07:23:24.237Z",
+  "allow_singular_disclosure_after": -276908229.5860383,
+  "singular_disclosure_allowed": true,
+  "vote_count": 9,
+  "voters": [
+    "jensec",
+    "bl4de",
+    "vijay_kumar",
+    "michan",
+    "r3y",
+    "eveeez",
+    "t4ym",
+    "mr_r3boot",
+    "spetr0x"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "202354",
+  "votes": 9,
+  "latest_disclosable_activity_at": "2017-09-28T07:23:26.678Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:20:33.995783",
+    "source": "https://hackerone.com/reports/202354.json",
+    "report_id": 202354
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDIzNTQ=",
+    "databaseId": "202354",
+    "title": "Stored XSS / Bypassing .htaccess protection in http://nodebb.ubnt.com/",
+    "url": "https://hackerone.com/reports/202354",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-09-28T07:23:26.659Z",
+    "created_at": "2017-01-31T13:34:43.035Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "inhibitor181"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgwMA==",
+      "handle": "ui",
+      "name": "Ubiquiti Inc.",
+      "url": "https://hackerone.com/ui",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTE0NQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-02-01T14:29:19.231Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIwMjM1NA==",
+    "_id": "202354",
+    "disclosed": true,
+    "votes": 9,
+    "latest_disclosable_activity_at": "2017-09-28T07:23:26.678Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDIzNTQ=",
+      "databaseId": "202354",
+      "title": "Stored XSS / Bypassing .htaccess protection in http://nodebb.ubnt.com/",
+      "url": "https://hackerone.com/reports/202354",
+      "disclosed_at": "2017-09-28T07:23:26.659Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgwMA==",
+      "handle": "ui",
+      "name": "Ubiquiti Inc.",
+      "url": "https://hackerone.com/ui",
+      "currency": "usd"
+    }
+  }
+}

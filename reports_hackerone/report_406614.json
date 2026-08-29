@@ -1,0 +1,258 @@
+{
+  "id": 406614,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDY2MTQ=",
+  "url": "https://hackerone.com/reports/406614",
+  "title": "Resource Consumption DOS on Edgemax v1.10.6",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-09-06T21:13:32.532Z",
+  "submitted_at": "2018-09-06T21:13:32.532Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "grampae",
+    "url": "/grampae",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/061/805/fac5743057c4434b9f550a99f2d8d4481395aaec_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 800,
+    "url": "https://hackerone.com/ui",
+    "handle": "ui",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fpqjzgms7de9639u414bw6vid1be/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fpqjzgms7de9639u414bw6vid1be/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Ubiquiti Inc.",
+      "twitter_handle": "ubiquiti",
+      "website": "https://ui.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-08-04T15:12:07.986Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-07-05T15:12:05.839Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Resource consumption Denial of service.\n\n1: The request below shows that when you feed the beaker.session.id cookie variable a payload of 250 characters or more, the web management portal will produce an error page showing full path disclosure and more as shown in screenshots error1.png and error2.png.  \n\nGET / HTTP/1.1\nHost: 192.168.1.100\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nCookie: beaker.session.id=v8iG24fDKn8x5uD3V2uICZA1FJEoUJpqH5VTa03xB5blDRNOe5AfFp2GNIBpDX8th1IO8sS5ejsz4Swm175nUvipwU211S4n4RtCv0A6r18fsgJbrrbmhFT9k2cAXF3yyg0Uu0B0wPOWP7BOrMVnXp44aHoXSfJ06ZXk7HrD5J5R9AZIgQLmGutM9ESNxw3CVJtW4Rfxeh7JE2AD04B3g78FxRgBxY82I2Gzf6ZPMsc39d37LM90dd9cFA\nConnection: close\nUpgrade-Insecure-Requests: 1\nCache-Control: max-age=0\n-----------------------------------------------------------\n\n2: When providing a valid length payload of 249 characters or less it will be stored as a *.cache filename in the /var/run/beaker/container_file/ directory,this can easily be turned in to a denial of service by filling up the space of the device with unique beaker.session.id requests.  The web portal will display either a 500 error as shown in DOS1.png or a python error screen as shown in DOS2.1.png and DOS2.2.png.  Typically the web portal will stop functioning after the /run mount has reached 50% by sending requests using iterations of 1-15681 as a beaker.session.id variable, however any length of payload can be used up to 249 characters.  This can be recovered from by deleting all files within the /var/run/beaker/container_file/ directory.\n\n\nAlthough once the /run mount can not accept any more files /var/log will start to fill up with complaints about not being able to write to /var/run/beaker/container_file/, then after /var/log fills up the device will stop responding all together until it has been power cycled.  \n\n3: I have created a video showing you how it is accomplished, I stopped the video at only 7% resources consumed on the /run mount as the video would be pretty long if we waited until the edgerouter went offline.  I am hoping this is enough for you to be able to reproduce this.  I am thinking that this could be fairly bad if made in to a python script along with google dorks and automation.  Or even a python script that someone has to only enter in an IP address and it will take the router offline in about 5 minutes or so until the router owner unplugs and plugs it back in.\n\n## Impact\n\nAny resources served by the edgemax device will be unavailable until the physical device has it's power cycled, then it should function as normal.  However it would be easy to just perform the attack again after it has been brought back online.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 343155,
+      "file_name": "out.ogv",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/343/155/2a9f6536d4cfcd10d02ec3b3718060866fc6f2e1/out.ogv?response-content-disposition=attachment%3B%20filename%3D%22out.ogv%22%3B%20filename%2A%3DUTF-8%27%27out.ogv&response-content-type=video%2Fogg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052954Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8dedd8680bf2a57f0238567b8b338e28cd73f3580e8a2f573365f784838db8d4",
+      "file_size": 26775747,
+      "type": "video/ogg",
+      "moderated": null
+    },
+    {
+      "id": 343156,
+      "file_name": "Dos2.2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/343/156/e9f0dfc978fded80bc6c7b5aacccefe072c079c2/Dos2.2.png?response-content-disposition=attachment%3B%20filename%3D%22Dos2.2.png%22%3B%20filename%2A%3DUTF-8%27%27Dos2.2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052954Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6dbeb1af8c157a558fbd0e9725e10b0c0f31047d555fa7a1f28aeb8522de1560",
+      "file_size": 146646,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 343157,
+      "file_name": "DOS2.1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/343/157/a0800d76659cb79c341871db75f9ab2c867f0960/DOS2.1.png?response-content-disposition=attachment%3B%20filename%3D%22DOS2.1.png%22%3B%20filename%2A%3DUTF-8%27%27DOS2.1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052954Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=93e205205da1d8b51cb14de1ec77aba0d62ecda61af07f6187186d64f6b25c38",
+      "file_size": 239951,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 343158,
+      "file_name": "DOS1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/343/158/8edcad277159845d025826d68ee393aa96476fe6/DOS1.png?response-content-disposition=attachment%3B%20filename%3D%22DOS1.png%22%3B%20filename%2A%3DUTF-8%27%27DOS1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052954Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5e12ab38875faf3e483af14556e89ff0dd3acde745b1421967ca7f614345f60c",
+      "file_size": 20405,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 343159,
+      "file_name": "EdgeosError2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/343/159/95076a99ba5614eb5914ab1aea84f4a90a33436e/EdgeosError2.png?response-content-disposition=attachment%3B%20filename%3D%22EdgeosError2.png%22%3B%20filename%2A%3DUTF-8%27%27EdgeosError2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052954Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2bc375587ff647acc4e8a68fa6f021f54401dbc0fda2f031076e643c9415290a",
+      "file_size": 200301,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 343160,
+      "file_name": "EdgeosError1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/343/160/0b344b872323a56eddbaaf072c27b82d7d39d681/EdgeosError1.png?response-content-disposition=attachment%3B%20filename%3D%22EdgeosError1.png%22%3B%20filename%2A%3DUTF-8%27%27EdgeosError1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052954Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b7b207b9b031f2d5ea84055dd08c30241c2c6c8a300963e6144e94ec271f4826",
+      "file_size": 235781,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-08-04T15:12:05.977Z",
+  "allow_singular_disclosure_after": -218557068.91860703,
+  "singular_disclosure_allowed": true,
+  "vote_count": 15,
+  "voters": [
+    "securitychops",
+    "ali",
+    "sameerphad72",
+    "sudi",
+    "grampae",
+    "cr4xerbik4sh",
+    "cryptographer",
+    "z41b1337_",
+    "tester092004",
+    "0619",
+    "and 5 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "adjacent",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 4123,
+    "asset_type": "HARDWARE",
+    "asset_identifier": "EdgeMAX",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "406614",
+  "votes": 15,
+  "latest_disclosable_activity_at": "2019-08-04T15:12:08.013Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:29:55.125822",
+    "source": "https://hackerone.com/reports/406614.json",
+    "report_id": 406614
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDY2MTQ=",
+    "databaseId": "406614",
+    "title": "Resource Consumption DOS on Edgemax v1.10.6",
+    "url": "https://hackerone.com/reports/406614",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-08-04T15:12:07.986Z",
+    "created_at": "2018-09-06T21:13:32.532Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.3
+    },
+    "reporter": {
+      "username": "grampae"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgwMA==",
+      "handle": "ui",
+      "name": "Ubiquiti Inc.",
+      "url": "https://hackerone.com/ui",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMDAxOTU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-09-11T11:16:55.746Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQwNjYxNA==",
+    "_id": "406614",
+    "disclosed": true,
+    "votes": 15,
+    "latest_disclosable_activity_at": "2019-08-04T15:12:08.013Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDY2MTQ=",
+      "databaseId": "406614",
+      "title": "Resource Consumption DOS on Edgemax v1.10.6",
+      "url": "https://hackerone.com/reports/406614",
+      "disclosed_at": "2019-08-04T15:12:07.986Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgwMA==",
+      "handle": "ui",
+      "name": "Ubiquiti Inc.",
+      "url": "https://hackerone.com/ui",
+      "currency": "usd"
+    }
+  }
+}

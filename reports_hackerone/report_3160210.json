@@ -1,0 +1,206 @@
+{
+  "id": 3160210,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTYwMjEw",
+  "url": "https://hackerone.com/reports/3160210",
+  "title": "Improper Authentication Throttling Allows Attacker-Controlled Account Lockouts ",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2025-05-23T14:55:48.840Z",
+  "submitted_at": "2025-05-23T14:55:49.281Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "closec4ll",
+    "url": "/closec4ll",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 48242,
+    "url": "https://hackerone.com/lichess",
+    "handle": "lichess",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/CbR2hQEVmv82Z9L1cfqd9SFQ/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/CbR2hQEVmv82Z9L1cfqd9SFQ/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Lichess",
+      "twitter_handle": "",
+      "website": "https://lichess.org",
+      "about": "The free chess server. No paywall, no tracking, no ads. Just the good stuff. Source code: https://lichess.org/source"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-06-13T06:25:39.511Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-06-12T15:49:03.291Z",
+  "team_member_agreed_on_going_public_at": "2025-06-13T06:25:38.856Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The application lacks sufficient safeguards in its authentication throttling logic. It permits arbitrary users to trigger lockouts on any account by submitting multiple failed login attempts using a known or guessed username. Because the system does not verify the request origin or impose intelligent rate-limiting tied to session/IP/fingerprint, an attacker can intentionally lock out legitimate users — impacting their access to the application.\n\n## Steps To Reproduce:\n[add details for how we can reproduce the issue]\n\n1. **Obtain a valid username**\nUsernames are publicly available via the platform's user directory, leaderboard, or other public features.\n\n1. **Attempt multiple failed logins**\nSubmit several login attempts using the valid username with incorrect passwords.\n\n1. **Observe the account lockout**\nAfter a specific number of failed attempts (e.g., 5–10), the application prevents further login for that user\n\n## PoC:\nDemonstrating that sending multiple failed login requests targeting a specific username results in that account being locked out. \n{F4378063}\n\n**I verified this by attempting to log into my own account from a different IP address using the correct password, and I was rate limited** — confirming that the lockout mechanism is based **solely on the username**, not on the **IP address** or **session context**.\n\nThis demonstrates that an attacker can remotely prevent legitimate users from accessing their accounts without needing valid credentials, resulting in a loss of account availability for targeted individuals.\n\n## Impact\n\n- Enables unauthorized control over another user's account availability.\n\n- May disrupt access for legitimate users, causing support overhead, trust degradation, or account compromise attempts.",
+  "weakness": {
+    "id": 31,
+    "name": "Improper Restriction of Authentication Attempts"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4378063,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tjo194xkz51x15g3kovluy54zts3?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWOJULU53%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043047Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCTNMVoCifyCn8WJ8JwMfFiJ%2FLCTXwm7M3dbIwkFMSGZgIhAMefstDeDJSQhR4pI110audLMS8XHg0319%2BTwBZjbCJPKrEFCAUQAxoMMDEzNjE5Mjc0ODQ5Igxc30ZsRB%2B1bWzNCpgqjgXKpC6oRJJ8%2BebmJTZ%2FeC5ZcpL%2F8gbRcaJ5Efhp30rAK5Q0r39Ua%2BPLEMBnAU9eWV%2FVXMbSoxpjGR72E2F5BgsreXiT5j2IFjaz8UrDI4IZI428azbpBLxLj6Qwwxiyg1a1a7EXMiafcUPOUizNA7S0M24P%2FSOXvT%2Fp2%2F0irmtfSnnA1DX%2FGNrBGnH%2FRT5b9ct6uoQjqs%2BtyK4EerMxue1KbTaIeJRfMIZMHUtU%2FqCJ5EcWDOTkj3CDOux9djff926EILty9Wdh8VSmJHCWr43qYRHZ%2FMzyrWR3RWuSb7huq5bqgokqn20WWtR8kQY1AVI%2FqLvZbAujLbXbGYzt00MsM7DZGuAaemhbWC%2FWrf5t3LpJfZJdTmdwgvynD2IpTeHUQMw5f4wtZykJCPJtDWSG%2BTw7rtBV6dqRKZCdVy%2Bz12tUAvKCZ2yNkOZKVC0l2gAoSkZGcj5LpwtuMVtWLTmuUEFF6AOidg7xFkqc5k%2BI98IhFz17qFDaTc2igd0LMkV45SlboHqjdU4uT5zpU2WL1xcTJPREwe6%2FFnC%2B5kpv2oTfy8d9wnu3T7h0VDL%2FavYo%2Br%2BuIH61E%2B%2BcH5WeIuQKqE%2B%2BuelX%2FgkblAYkcXesRaOcUr6w8UDGgaGlC6ptoGaWeqGegwhlspZgCLncaDv2yCUPOPZ3Wvuk3dRkuWvJttvBjgsHI6KHvq%2FW60vyrMim4P88Dz%2FJOmBFYZp8z9xP%2FBwHxOcFmSMyFjWhgPoKVI36EOdgeSGN%2B1dwAkXcxgOABOuyYe7hQre6xUnn5YOTXstQqAY7NlznAXkBc30TfI%2BoRsDLzllw%2FaQfcS%2FXAeBVs6qXxAaF4USzYeS7od1iWpEa002Q2P7r0u%2FDAD0wp%2B2c0gY6sAEPlJ8Fr35DtA2TKKCFzP8d6EJ330wwedtQWHACM2zJUFtj%2F2CtJJhlPU4hPMb8YfyapNlGdZSbjeLMZIYp872n137cxisT25vXHF7q1pJr5KRRT5lgg4bzsF%2BfZ1nD5h7UMntuVqaTqb7QFDe3sB5K67Oq4aSQ%2FwswCKk2Ayskk9YIi6J9rCLhqE%2F8a78fuSuQIDcQV7vYgBdQWiEesggHv16Jb2bCCI1X5AMmgW%2B7JQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2784242983d3cf99b0ac2f72a6d1603bbf8c97a41062fe22ea0a8b50e41376cf",
+      "file_size": 154695,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 91,
+  "voters": [
+    "orange303",
+    "baehelprichard",
+    "rejection",
+    "ryel",
+    "cy4n1de",
+    "ivoabreu",
+    "7amzar",
+    "mohaned0101",
+    "thalaivar304",
+    "cosmossec",
+    "and 81 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.1,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 50173,
+    "asset_type": "URL",
+    "asset_identifier": "lichess.org",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3160210",
+  "votes": 91,
+  "latest_disclosable_activity_at": "2025-06-13T06:25:40.142Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:30:48.153314",
+    "source": "https://hackerone.com/reports/3160210.json",
+    "report_id": 3160210
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTYwMjEw",
+    "databaseId": "3160210",
+    "title": "Improper Authentication Throttling Allows Attacker-Controlled Account Lockouts ",
+    "url": "https://hackerone.com/reports/3160210",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-06-13T06:25:39.511Z",
+    "created_at": "2025-05-23T14:55:48.840Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzMx",
+      "name": "Improper Restriction of Authentication Attempts",
+      "external_id": "cwe-307"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.1
+    },
+    "reporter": {
+      "username": "closec4ll"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDgyNDI=",
+      "handle": "lichess",
+      "name": "Lichess",
+      "url": "https://hackerone.com/lichess",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMxNjAyMTA=",
+    "_id": "3160210",
+    "disclosed": true,
+    "votes": 91,
+    "latest_disclosable_activity_at": "2025-06-13T06:25:40.142Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTYwMjEw",
+      "databaseId": "3160210",
+      "title": "Improper Authentication Throttling Allows Attacker-Controlled Account Lockouts ",
+      "url": "https://hackerone.com/reports/3160210",
+      "disclosed_at": "2025-06-13T06:25:39.511Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDgyNDI=",
+      "handle": "lichess",
+      "name": "Lichess",
+      "url": "https://hackerone.com/lichess",
+      "currency": "usd"
+    }
+  }
+}

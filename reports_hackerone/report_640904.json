@@ -1,0 +1,207 @@
+{
+  "id": 640904,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NDA5MDQ=",
+  "url": "https://hackerone.com/reports/640904",
+  "title": "Yarn transfers npm credentials over unencrypted http connection",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-07-12T11:31:20.661Z",
+  "submitted_at": "2019-07-12T11:31:20.661Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "chalker",
+    "url": "/chalker",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/068/907/abd483931dad2c93e376707dd59719cc277309cd_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2019-5448"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2019-08-14T11:27:55.400Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2019-07-15T11:27:50.320Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Module\n\n**module name:** yarn\n**version:** 1.16.0\n**npm page:** `https://www.npmjs.com/package/yarn`\n\n## Module Description\n\n> Fast, reliable, and secure dependency management.\n\n## Module Stats\n\n> Replace stats below with numbers from npm’s module page:\n\n166 703 downloads in the last day\n849 928 downloads in the last week\n3 772 290 downloads in the last month\n\n# Vulnerability\n\n## Vulnerability Description\n\nFor scoped packages that are listed as `resolved \"http://registry.npmjs.org/@...` in yarn.lock, yarn trasfers npm credentials (i.e. `_authToken`) over unencrypted http connection. This allows any MitM (for example, a proxy or a VPN) to sniff out npm credentials, given that the developer in question performs `yarn install` on such a yarn.lock file.\n\nA quick search shows that there is a number of `yarn.lock` files affected by this on GitHub, some examples:\n * https://github.com/EC-Nordbund/ec-verwaltungs-app/blob/ab961352d5dd53834a51793d6e2c4bc69a2b22d4/packages/api/yarn.lock#L36\n *  https://github.com/nujabes403/boilerplate2/blob/61613e526aec02c5dd4227457deb8676d66780d0/yarn.lock#L7\n\nThere seem to be __many of those__ on GitHub.\n\nLooks like not only it was possible to craft a yarn.lock with a malicious intent, but also this seems to be a common pattern that yarn created itself at some point or under some circumstances and that gets persistent from older versions.\n\n## Steps To Reproduce:\n\n1. Perform an `npm login` or just write `//registry.npmjs.org/:_authToken=38bb8d1f-a39b-47d1-a78e-3bf0626ff77e` (which is the format npm uses) to ~/.npmrc. **Doing this from your own account would leak your npm credentials on next steps, so better just use a placeholder.**\n2. Create an empty package with a single dependency on `\"@babel/core\": \"^7.5.4\"`\n3. Perform `yarn install`\n4. Replace all occurances of `https://registry.yarnpkg.com` with `http://registry.npmjs.org/` in the generated `yarn.lock`\n    \n    Alternatively to steps 2-4 -- just use an already existing yarn.lock with `resolved \"http://registry.npmjs.org/@` in it (lots of those on GitHub), but be careful with that.\n5. Clear yarn cache and node_modules: `rm -rf ~/.cache/yarn/ node_modules`. Let's assume you just downloaded an affected yarn.lock on your clean machine.\n6. Start wireshark with `tcp dst port 80` filter.\n7. Run `yarn install`\n\nObserved result is attached on a screenshot.\n\n## Supporting Material/References:\n\n- `Linux yoga 5.1.5-arch1-2-ARCH #1 SMP PREEMPT Mon May 27 03:37:39 UTC 2019 x86_64 GNU/Linux`\n- Node.js v12.6.0\n- npm 6.10.1\n\n# Wrap up\n\n> Select Y or N for the following statements:\n\n- I contacted the maintainer to let them know: N \n- I opened an issue in the related repository: N\n\n## Impact\n\nAttacker (MitM) being able to:\n* Impersonate the affected account\n* Publish packages from the affected account that could also get used by the affected account/company in the future (for protected packages) and by anyone in the ecosystem (for public packages)\n* Perform logout and break installs of protected packages",
+  "weakness": {
+    "id": 84,
+    "name": "Missing Encryption of Sensitive Data"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 527543,
+      "file_name": "Screenshot_20190712_142351.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/527/543/ce4b280cdc06cd143e6f5d6ef490d20c986d996c/Screenshot_20190712_142351.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_20190712_142351.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_20190712_142351.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052937Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1249de2f5bdd2c865f7eccc6d83bdfd1ee06b1e76d72b6cdd0da2d81fcbdcc79",
+      "file_size": 466082,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-08-14T11:27:50.462Z",
+  "allow_singular_disclosure_after": -217706507.0002949,
+  "singular_disclosure_allowed": true,
+  "vote_count": 8,
+  "voters": [
+    "optimus90",
+    "bl4de",
+    "armansameer",
+    "eperstu",
+    "rajivshah",
+    "wilkin27",
+    "saboteurr",
+    "salex"
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.2,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "low",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 2986,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Other module",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "640904",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2019-08-14T11:27:55.462Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:29:37.561459",
+    "source": "https://hackerone.com/reports/640904.json",
+    "report_id": 640904
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NDA5MDQ=",
+    "databaseId": "640904",
+    "title": "Yarn transfers npm credentials over unencrypted http connection",
+    "url": "https://hackerone.com/reports/640904",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-08-14T11:27:55.400Z",
+    "created_at": "2019-07-12T11:31:20.661Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg0",
+      "name": "Missing Encryption of Sensitive Data",
+      "external_id": "cwe-311"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.2
+    },
+    "reporter": {
+      "username": "chalker"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY0MDkwNA==",
+    "_id": "640904",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2019-08-14T11:27:55.462Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NDA5MDQ=",
+      "databaseId": "640904",
+      "title": "Yarn transfers npm credentials over unencrypted http connection",
+      "url": "https://hackerone.com/reports/640904",
+      "disclosed_at": "2019-08-14T11:27:55.400Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

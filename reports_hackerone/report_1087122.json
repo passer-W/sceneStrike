@@ -1,0 +1,275 @@
+{
+  "id": 1087122,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDg3MTIy",
+  "url": "https://hackerone.com/reports/1087122",
+  "title": "[h1-2102] HTML injection in packing slips can lead to physical theft",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2021-01-25T23:51:32.461Z",
+  "submitted_at": "2021-01-25T23:51:32.561Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "intidc",
+    "url": "/intidc",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/322/cb30ac31b7653e73d6dd5a0f0e2cfeed113d2feb_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-07-11T21:35:25.241Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-07-11T21:35:25.189Z",
+  "team_member_agreed_on_going_public_at": "2022-07-11T19:23:06.967Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nA HTML injection vulnerability exists in the packing slip generator, allowing customers to alter the logistical process of their and other's orders for shops that choose to display the user's e-mail address on the packing slip. The success rate depends on the shops setup and can result in financial losses for the affected stores.\n\n###Background - how stores use the packing slip\nOnce an order comes in, the packing slips and shipping labels get printed to be processed. From my understanding, when preparing orders, logistical teams don't go back and forth between the Shopify orders, but print the packing slips in bulk (hence the new ability to print in bulk), fill the boxes in the warehouse with whatever is on the packing slip, put on a shipping label on the box and send it off.\nShould the customer be able to alter these packing slips upon printing, it could be possible to alter what (and how many) items will be in their box. It is observed that this is possible using some CSS tweaks and a HTML injection in the e-mail field.\n\n## Prerequisites\n\n- You'll need a store with a product that you can order. You can either work with a bogus payment gateway, or set the price of the product to 0 and mark it as a non-physical good so there's no shipping costs involved.\n\n## Steps To Reproduce:\n-  Go to admin > delivery and set a packing slip template that displays the user's e-mail address in the billing / checkout info. **You can use the one in the attachment** (packingslip.txt). The example should look like this:\n\n{F1171862}\n\n- As a customer, go to the store and check out the item. **Buy only one**, we'll alter the amount through this bug as a PoC.\n\n{F1171898}\n\n- Enter the following e-mail (yes, this is a valid e-mail address, see  [RFC3696](https://tools.ietf.org/html/rfc3696)):\n\n> \"<style>.flex-line-item-quantity>p{font-size:0}.flex-line-item-quantity:after{content:'1337\\0000a0of\\0000a01337';margin-left:420px;}</style>\"@gmail.com\n\n{F1171899}\n\n- Complete your order:\n\n{F1171900}\n\n- You're done! Now wait and profit!\n\n**From the shop employee's perspective, go to orders. You have a new order, yay!**\n\nFree product has been ordered one time. Great! Let's print the packing slip (in big stores this would be printed in bulk, so people wouldn't really notice anything):\n\n{F1171902}\n\nNotice that the packing slip looks like this:\n\n{F1171903}\n\nSeems like the logistics team will be shipping *1337* items in instead of 1. We only paid for 1.\nWe could also alter other stuff, like the actual item, or when printed in bulk, we could alter _other_ people's packing slip. The sky is the limit! This won't work for all shops, but when it does, the impact will be very effective.\n\n## Impact\n\n- Literally steal goods\n- Alter other people's stuff as well if they use the bulk printer (e.g. add a special note, put your return address on the slip instead of the shop's, etc...)",
+  "bounty_amount": "900.0",
+  "formatted_bounty": "$900",
+  "weakness": {
+    "id": 112,
+    "name": "Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1171861,
+      "file_name": "packingslip.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/g7j19r6pyue8eqbnxuzikh1l5kuq?response-content-disposition=attachment%3B%20filename%3D%22packingslip.txt%22%3B%20filename%2A%3DUTF-8%27%27packingslip.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=401e1568098532f6ec690b19d083986555796d47883edef37e93ffa1a2e66efd",
+      "file_size": 8826,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 1171862,
+      "file_name": "Screenshot_2021-01-25_at_23.46.30.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/uhpschbo7ztffj4w074c7ler29qs?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-01-25_at_23.46.30.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-01-25_at_23.46.30.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=87ddfeb9f9fec2b568e8a47a25ab1a357ec272dd42d949bb6a9b1c286a0b1edc",
+      "file_size": 238059,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1171898,
+      "file_name": "Screenshot_2021-01-26_at_00.30.51.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/6rsgvefsmv8fux2u578t1rtdlq9t?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-01-26_at_00.30.51.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-01-26_at_00.30.51.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9ef948fca69a0b9419909d3d168bf56c393360d1b9d37359049f933ff68dee6c",
+      "file_size": 117302,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1171899,
+      "file_name": "Screenshot_2021-01-26_at_00.31.16.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xx5gqzw72kniantq7xi70xglggt9?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-01-26_at_00.31.16.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-01-26_at_00.31.16.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f5a60e38fe69c91695dd922c46126c7d476c1375e45a9f5685909718821ec1d2",
+      "file_size": 239632,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1171900,
+      "file_name": "Screenshot_2021-01-26_at_00.31.27.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ir7hxqpch3pr6pm68i8aebk3ea2x?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-01-26_at_00.31.27.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-01-26_at_00.31.27.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c8ffe47c3723229e42922735924569ceb53b4fe6d050451aacd3b12ff3878df6",
+      "file_size": 209804,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1171902,
+      "file_name": "Screenshot_2021-01-26_at_00.45.53.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/y00g84bmczjjhl6uf04eun27cdhz?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-01-26_at_00.45.53.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-01-26_at_00.45.53.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=90366cb9b9fe39936a9cc3e793b3d1eac7608ac599c86d815017f01e44824ef4",
+      "file_size": 91666,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1171903,
+      "file_name": "Screenshot_2021-01-26_at_00.46.37.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9dsx5u5qjqutgsmimswqxrbpiedt?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-01-26_at_00.46.37.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-01-26_at_00.46.37.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050949Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e197a46b23b5af91fa8454a0d9f36578de8ff8bb5e9219d480e924667dbb05a2",
+      "file_size": 147763,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 22,
+  "voters": [
+    "hicham_gtr",
+    "loaymorad",
+    "mr-medi",
+    "gankd",
+    "drsniper",
+    "zy9ard3",
+    "abdellah29",
+    "mirhat",
+    "run_win",
+    "shreyaschavhan",
+    "and 12 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 3.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 413,
+    "asset_type": "URL",
+    "asset_identifier": "your-store.myshopify.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1087122",
+  "votes": 22,
+  "latest_disclosable_activity_at": "2022-07-11T21:35:25.289Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:09:49.860092",
+    "source": "https://hackerone.com/reports/1087122.json",
+    "report_id": 1087122
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDg3MTIy",
+    "databaseId": "1087122",
+    "title": "[h1-2102] HTML injection in packing slips can lead to physical theft",
+    "url": "https://hackerone.com/reports/1087122",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-07-11T21:35:25.241Z",
+    "created_at": "2021-01-25T23:51:32.461Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzExMg==",
+      "name": "Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)",
+      "external_id": "cwe-80"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.7
+    },
+    "reporter": {
+      "username": "intidc"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNzQxOTU=",
+            "amount": "600.00",
+            "awarded_amount": "600.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-01-31T16:10:33.680Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNzQxOTY=",
+            "amount": "300.00",
+            "awarded_amount": "300.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-01-31T16:33:32.900Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwODcxMjI=",
+    "_id": "1087122",
+    "disclosed": true,
+    "votes": 22,
+    "latest_disclosable_activity_at": "2022-07-11T21:35:25.289Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDg3MTIy",
+      "databaseId": "1087122",
+      "title": "[h1-2102] HTML injection in packing slips can lead to physical theft",
+      "url": "https://hackerone.com/reports/1087122",
+      "disclosed_at": "2022-07-11T21:35:25.241Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

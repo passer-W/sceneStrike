@@ -1,0 +1,245 @@
+{
+  "id": 1578400,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTc4NDAw",
+  "url": "https://hackerone.com/reports/1578400",
+  "title": "New /add_contacts /remove_contacts quick commands susseptible to XSS from Customer Contact firstname/lastname fields",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2022-05-22T19:55:10.780Z",
+  "submitted_at": "2022-05-22T19:55:10.820Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cryptopone",
+    "url": "/cryptopone",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/uk6jjk1a2i1dp04zz14k6a4wp4o4/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2022-1948"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-11-16T01:07:35.198Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-11-08T16:24:13.690Z",
+  "team_member_agreed_on_going_public_at": "2022-11-16T01:07:34.999Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary\n\nIn Gitlab 15.0.0 a new Customer Relations feature was added that allows us to use quick actions to find the contact we wish to select.\n\nHowever, I noticed that if I set the contact's first name or last name to <script>alert(document.domain)</script> we can get the XSS to trigger when we are attempting to use the quick commands to add/remove a contact.\n\n### Steps to reproduce\n\n1. Create a new group.\n1. Once the group is created, navigate to the Settings -> General options for the group.\n1. Expand the section \"Permissions and group features\" and under \"Customer Relations\" make sure \"Enable customer relations\" is selected.\n1. Return back to the group page. On the left side of the screen a new menu option will appear titled \"Customer relations\". Select it.\n1. Create a new contact with \"First name\" set to \"`<script>alert(document.domain)</script>`\" and \"Last name\" set to \"`<script>alert(document.domain)</script>`\". Provide an email address and save your changes.\n1. The user you created in the previous step should now appear as a contact on the Customer Relations page.\n1. Go to the create new project URL (https://gitlab.com/projects/new#blank_project) and under Project URL, select the Group you created earlier. Give the project a name Ex. \"CustomerProject\".\n1. Once the project has been created on the left side of the project page select \"Issues\" and then click \"New Issue\".\n1. In the description pane type \"/add_contacts\" so the popup appears, then press \"enter\" to trigger the XSS.\n\n### Impact\n\nUsers attempting to utilize the quick commands /add_contacts or /remove_contacts could inadvertently trigger XSS while attempting to add/remove a customer to an issue.\n\n### Examples\n\nThis bug was discovered originally on my self-hosted 15.0.0 but is reproducible on gitlab.com.\n\nCreate a contact with the payload in firstname and lastname fields\n{F1740002}\n\nCreate a new issue and type \"/add_contacts\" in the markdown text area to trigger the popup to appear\n{F1740003}\n\nPress enter, which will trigger the XSS when attempting to load the list of contacts\n{F1740004}\n\n### What is the current *bug* behavior?\nThe HTML special characters are not escaped, allowing an iframe to be injected into the page with XSS.\n\n### What is the expected *correct* behavior?\n\nThe HTML special characters would be escaped and shown in the diagram.\n\n### Output of checks\n\nThis bug is reproducible on Gitlab.com\n\n#### Results of GitLab environment info\n\n```System information\nSystem:         Ubuntu 20.04\nProxy:          no\nCurrent User:   git\nUsing RVM:      no\nRuby Version:   2.7.5p203\nGem Version:    3.1.4\nBundler Version:2.2.33\nRake Version:   13.0.6\nRedis Version:  6.2.6\nSidekiq Version:6.4.0\nGo Version:     unknown\n\nGitLab information\nVersion:        15.0.0-ee\nRevision:       3b397c17532\nDirectory:      /opt/gitlab/embedded/service/gitlab-rails\nDB Adapter:     PostgreSQL\nDB Version:     12.10\nURL:            http://gitlab-pentest4.example.com\nHTTP Clone URL: http://gitlab-pentest4.example.com/some-group/some-project.git\nSSH Clone URL:  git@gitlab-pentest4.example.com:some-group/some-project.git\nElasticsearch:  no\nGeo:            no\nUsing LDAP:     no\nUsing Omniauth: yes\nOmniauth Providers:\n\nGitLab Shell\nVersion:        14.3.0\nRepository storage paths:\n- default:      /var/opt/gitlab/git-data/repositories\nGitLab Shell path:              /opt/gitlab/embedded/service/gitlab-shell```\n\n## Impact\n\nJavaScript execution as the authenticated user when the user attempts to add or remove a contact for the new customer relations feature.",
+  "bounty_amount": "13950.0",
+  "formatted_bounty": "$13,950",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1740002,
+      "file_name": "Customer_Contact.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xazoywypzmqfkyhagdjjwklu53of?response-content-disposition=attachment%3B%20filename%3D%22Customer_Contact.png%22%3B%20filename%2A%3DUTF-8%27%27Customer_Contact.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSE4JRXLH%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050309Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQCahW5Pvme6LQLJNUnszMUIGQ9U15B1nQmBsk7ZNotX5wIgVmUirf8pKU9rE8jWj0rSPJbqGXd6r5oBWs%2BW2qchL9AqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDN8L5ngoo2gfY%2Fq7MCqPBbXUxHU9%2FJ4B2oCEmvA0gOTQLkq%2FUdZN1fVBW2mvdhL8vPpnXRRm7G3XyWQKeu44BOYOhswea3NCuvUBp1of8i9i0TEdv7I0HsZwWavlTydfQ%2FslXXpHn%2Fgf8rSuJyAxh5204qA6voLl1EuQ%2BcbdIKiq6nIEbkSrnRAHMLYNWrQvSl4HEPXKjKb6SrgoB0VH06Dd0Q2XMNUFx8DSAZLTIPpTF%2BxW15rj6Gp22BCNwlb58hIBSRQpCDCFAlrwn0QyCIBvXyeQP0O8AEFzM02lB2khwfiPJGQP9W%2BlUvN8Hrg76TqXCQer2K5iYHMcnjG%2FYaLEKcUsUzYFXUsrkMk2VqK3cp35vfGdIu5XwwmZOjNEEy8PoukpY4CKUXbqidsVBF3bHTlFywoJNK27L%2Fvu4OtsJL1pI4cSHBhFnYJfzzdfZrkJVxENin7%2FxZBoddf2YFflWQi%2FeyHag07IQoNRwcfUxhKlfZauZ836IJm3XyUuQingUkTmrdsP0dsk84nS952vtafWS64dD8oizDrQ7SC2DoLxTG1%2BYmqRfSnt6ahrankXlx44Nc7qzok%2FRNlsq6MzTflKvVEqELmlMg%2BZglUwE%2FEgetJzPsDbNlbGuWwwm7uy0G23%2FN8R88TMtX9E6%2BYKZcb2V6svrzA1ZRazBtzMu7yI%2BWV4wDG85iLPU%2BxDg9KNVUS31YTBpvhV57YCZ1tp20c3Zj8tmggrKzU01OLFEgRGcxxYG%2BR9JQgzjismiHANK86SBoYBheIXaUO%2BKHm03qOTd8F9Cc%2B6tpsrPUjRIIEPWrcafUsP0B3qO0re7IT%2FZvOli6%2FOT%2Bfv31jtw4UmTUDx9geTl%2BH06AVCqeafKQAYkKPebK%2BqgWZzfGcwxfGc0gY6sQFgWYUO4eBs%2BtLBy9OA%2BpD%2Bv981%2F%2FDrNTNGmHzFFhMKg0reURQ2lF3WRF3YtTVagdBLanhbf%2BIb%2BPahzTmbRKwzBoFLIHzuGqj9%2BtcMQ9WlFckj05LRL0KqM2RRR9lcjuxALFBYsy3Txk6%2Fq57ehiYWKgzXTf0URZLXpYQBD3sp96tMPnvUplEP7iNqTjkYk0sSQneSVBYfKL%2FHxs0X7ELncqK36GZVY2LjtqUMewACPnQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6e87b560314be2690e99ba93d6beecfe34389183a7d802c9242b9f006d2caa8d",
+      "file_size": 47607,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1740003,
+      "file_name": "add_contacts_popup.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xn1518gpry1y5pcc8ypluhok8g7n?response-content-disposition=attachment%3B%20filename%3D%22add_contacts_popup.png%22%3B%20filename%2A%3DUTF-8%27%27add_contacts_popup.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSE4JRXLH%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050309Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQCahW5Pvme6LQLJNUnszMUIGQ9U15B1nQmBsk7ZNotX5wIgVmUirf8pKU9rE8jWj0rSPJbqGXd6r5oBWs%2BW2qchL9AqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDN8L5ngoo2gfY%2Fq7MCqPBbXUxHU9%2FJ4B2oCEmvA0gOTQLkq%2FUdZN1fVBW2mvdhL8vPpnXRRm7G3XyWQKeu44BOYOhswea3NCuvUBp1of8i9i0TEdv7I0HsZwWavlTydfQ%2FslXXpHn%2Fgf8rSuJyAxh5204qA6voLl1EuQ%2BcbdIKiq6nIEbkSrnRAHMLYNWrQvSl4HEPXKjKb6SrgoB0VH06Dd0Q2XMNUFx8DSAZLTIPpTF%2BxW15rj6Gp22BCNwlb58hIBSRQpCDCFAlrwn0QyCIBvXyeQP0O8AEFzM02lB2khwfiPJGQP9W%2BlUvN8Hrg76TqXCQer2K5iYHMcnjG%2FYaLEKcUsUzYFXUsrkMk2VqK3cp35vfGdIu5XwwmZOjNEEy8PoukpY4CKUXbqidsVBF3bHTlFywoJNK27L%2Fvu4OtsJL1pI4cSHBhFnYJfzzdfZrkJVxENin7%2FxZBoddf2YFflWQi%2FeyHag07IQoNRwcfUxhKlfZauZ836IJm3XyUuQingUkTmrdsP0dsk84nS952vtafWS64dD8oizDrQ7SC2DoLxTG1%2BYmqRfSnt6ahrankXlx44Nc7qzok%2FRNlsq6MzTflKvVEqELmlMg%2BZglUwE%2FEgetJzPsDbNlbGuWwwm7uy0G23%2FN8R88TMtX9E6%2BYKZcb2V6svrzA1ZRazBtzMu7yI%2BWV4wDG85iLPU%2BxDg9KNVUS31YTBpvhV57YCZ1tp20c3Zj8tmggrKzU01OLFEgRGcxxYG%2BR9JQgzjismiHANK86SBoYBheIXaUO%2BKHm03qOTd8F9Cc%2B6tpsrPUjRIIEPWrcafUsP0B3qO0re7IT%2FZvOli6%2FOT%2Bfv31jtw4UmTUDx9geTl%2BH06AVCqeafKQAYkKPebK%2BqgWZzfGcwxfGc0gY6sQFgWYUO4eBs%2BtLBy9OA%2BpD%2Bv981%2F%2FDrNTNGmHzFFhMKg0reURQ2lF3WRF3YtTVagdBLanhbf%2BIb%2BPahzTmbRKwzBoFLIHzuGqj9%2BtcMQ9WlFckj05LRL0KqM2RRR9lcjuxALFBYsy3Txk6%2Fq57ehiYWKgzXTf0URZLXpYQBD3sp96tMPnvUplEP7iNqTjkYk0sSQneSVBYfKL%2FHxs0X7ELncqK36GZVY2LjtqUMewACPnQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=dfc5083a2b4fc5898f7779e59b1aaf9d9048f2b1a65d707c0a925dbc9a098b43",
+      "file_size": 75013,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1740004,
+      "file_name": "add_contact.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rqqfvjq6764po2knam5qf8c35rnc?response-content-disposition=attachment%3B%20filename%3D%22add_contact.png%22%3B%20filename%2A%3DUTF-8%27%27add_contact.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSE4JRXLH%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050309Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQCahW5Pvme6LQLJNUnszMUIGQ9U15B1nQmBsk7ZNotX5wIgVmUirf8pKU9rE8jWj0rSPJbqGXd6r5oBWs%2BW2qchL9AqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDN8L5ngoo2gfY%2Fq7MCqPBbXUxHU9%2FJ4B2oCEmvA0gOTQLkq%2FUdZN1fVBW2mvdhL8vPpnXRRm7G3XyWQKeu44BOYOhswea3NCuvUBp1of8i9i0TEdv7I0HsZwWavlTydfQ%2FslXXpHn%2Fgf8rSuJyAxh5204qA6voLl1EuQ%2BcbdIKiq6nIEbkSrnRAHMLYNWrQvSl4HEPXKjKb6SrgoB0VH06Dd0Q2XMNUFx8DSAZLTIPpTF%2BxW15rj6Gp22BCNwlb58hIBSRQpCDCFAlrwn0QyCIBvXyeQP0O8AEFzM02lB2khwfiPJGQP9W%2BlUvN8Hrg76TqXCQer2K5iYHMcnjG%2FYaLEKcUsUzYFXUsrkMk2VqK3cp35vfGdIu5XwwmZOjNEEy8PoukpY4CKUXbqidsVBF3bHTlFywoJNK27L%2Fvu4OtsJL1pI4cSHBhFnYJfzzdfZrkJVxENin7%2FxZBoddf2YFflWQi%2FeyHag07IQoNRwcfUxhKlfZauZ836IJm3XyUuQingUkTmrdsP0dsk84nS952vtafWS64dD8oizDrQ7SC2DoLxTG1%2BYmqRfSnt6ahrankXlx44Nc7qzok%2FRNlsq6MzTflKvVEqELmlMg%2BZglUwE%2FEgetJzPsDbNlbGuWwwm7uy0G23%2FN8R88TMtX9E6%2BYKZcb2V6svrzA1ZRazBtzMu7yI%2BWV4wDG85iLPU%2BxDg9KNVUS31YTBpvhV57YCZ1tp20c3Zj8tmggrKzU01OLFEgRGcxxYG%2BR9JQgzjismiHANK86SBoYBheIXaUO%2BKHm03qOTd8F9Cc%2B6tpsrPUjRIIEPWrcafUsP0B3qO0re7IT%2FZvOli6%2FOT%2Bfv31jtw4UmTUDx9geTl%2BH06AVCqeafKQAYkKPebK%2BqgWZzfGcwxfGc0gY6sQFgWYUO4eBs%2BtLBy9OA%2BpD%2Bv981%2F%2FDrNTNGmHzFFhMKg0reURQ2lF3WRF3YtTVagdBLanhbf%2BIb%2BPahzTmbRKwzBoFLIHzuGqj9%2BtcMQ9WlFckj05LRL0KqM2RRR9lcjuxALFBYsy3Txk6%2Fq57ehiYWKgzXTf0URZLXpYQBD3sp96tMPnvUplEP7iNqTjkYk0sSQneSVBYfKL%2FHxs0X7ELncqK36GZVY2LjtqUMewACPnQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=460c5b4a28f9bbd2f75abb1c375744ae6301f73b367abbe4109d6e5a1f9e04d4",
+      "file_size": 60075,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 92,
+  "voters": [
+    "anhiu102",
+    "ra5h",
+    "colonel007",
+    "bulldawg",
+    "viridian_40826d",
+    "jumpydata",
+    "orange303",
+    "n1m0",
+    "tolga",
+    "zy9ard3",
+    "and 82 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 18138,
+    "asset_type": "URL",
+    "asset_identifier": "gitlab.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1578400",
+  "votes": 92,
+  "latest_disclosable_activity_at": "2022-11-16T01:07:35.284Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:03:09.253738",
+    "source": "https://hackerone.com/reports/1578400.json",
+    "report_id": 1578400
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTc4NDAw",
+    "databaseId": "1578400",
+    "title": "New /add_contacts /remove_contacts quick commands susseptible to XSS from Customer Contact firstname/lastname fields",
+    "url": "https://hackerone.com/reports/1578400",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-11-16T01:07:35.198Z",
+    "created_at": "2022-05-22T19:55:10.780Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.7
+    },
+    "reporter": {
+      "username": "cryptopone"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zOTMwMTE=",
+            "amount": "1000.00",
+            "awarded_amount": "1000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-05-24T05:51:22.014Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zOTkyMDU=",
+            "amount": "12950.00",
+            "awarded_amount": "12950.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-06-16T18:12:13.743Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE1Nzg0MDA=",
+    "_id": "1578400",
+    "disclosed": true,
+    "votes": 92,
+    "latest_disclosable_activity_at": "2022-11-16T01:07:35.284Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTc4NDAw",
+      "databaseId": "1578400",
+      "title": "New /add_contacts /remove_contacts quick commands susseptible to XSS from Customer Contact firstname/lastname fields",
+      "url": "https://hackerone.com/reports/1578400",
+      "disclosed_at": "2022-11-16T01:07:35.198Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

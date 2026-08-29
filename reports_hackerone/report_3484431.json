@@ -1,0 +1,217 @@
+{
+  "id": 3484431,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDg0NDMx",
+  "url": "https://hackerone.com/reports/3484431",
+  "title": "HTTP Request Smuggling and SSRF via CRLF Injection in Curl_add_custom_headers",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2026-01-02T01:51:16.457Z",
+  "submitted_at": "2026-01-02T01:51:16.822Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "n12d11n",
+    "url": "/n12d11n",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/yhf1hyegfz3fch6ufod65gty707m/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-01-02T10:50:01.847Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-01-02T10:34:13.184Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nA lack of CRLF validation in `Curl_add_custom_headers` at `lib/http.c:1761` allows users to inject arbitrary HTTP headers. This violation of RFC 7230 §3.2.4 leads to HTTP Request Smuggling and potential SSRF bypass. **AI Disclosure:** I utilized an AI assistant to aid in the initial code analysis and patch generation, but I have manually verified all claims using hex dumps and proxy simulations to ensure technical accuracy.\n\n## Affected version\n\n* **curl/libcurl version:** 8.18.0-DEV and 8.15.0\n* **Platform:** Linux (Kali Linux)\n* **curl -V output:** `curl 8.18.0-DEV (x86_64-pc-linux-gnu) libcurl/8.18.0-DEV OpenSSL/3.5.4`\n\n## Steps To Reproduce:\n\n1. Start a listener to capture raw traffic: `nc -l -p 8080 > raw_http.txt`.\n2. Execute a `libcurl` application (or curl CLI) that appends a custom header containing CRLF: `curl -H \"X-Injected: Value\\r\\nInjected-Header: Malicious\" http://localhost:8080`.\n3. Inspect the captured output: `hexdump -C raw_http.txt`.\n4. Observe that the CRLF bytes (`0d 0a`) are transmitted unsanitized, causing the receiver to interpret the injected string as a separate, valid HTTP header.\n\n## Supporting Material/References:\n\n* **Hexdump Proof:** The hex dump shows `0d 0a` at offset `0x49`, confirming request splitting at the protocol level.\n* **Suggested Patch:** A verification patch using `strchr` to reject `\\r` and `\\n` in `lib/http.c` successfully mitigates the issue.\n\n---\n\n## Impact\n\n> The lack of CRLF validation in `libcurl`'s header handling allows for **HTTP Request Smuggling**, enabling an attacker to bypass security boundaries and perform **Server-Side Request Forgery (SSRF)**. As `libcurl` is a foundational library used by countless applications and backends, this vulnerability poses a systemic risk. Specifically, injected headers persist across redirects (`-L`), which significantly increases the attack surface and allows for the potential exposure of isolated internal services or cache poisoning.\n\n---",
+  "weakness": {
+    "id": 86,
+    "name": "HTTP Request Smuggling"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5177100,
+      "file_name": "poc_libcurl.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/chsvwg86a3w50jwcjc55w7daskjb?response-content-disposition=attachment%3B%20filename%3D%22poc_libcurl.c%22%3B%20filename%2A%3DUTF-8%27%27poc_libcurl.c&response-content-type=text%2Fx-c%2B%2Bsrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZUPUI6QS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042419Z&X-Amz-Expires=1729&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCICo3ZTegXwlWEPGPXPxh2eIgGiEAhWCuu29979ET4796AiA11ET%2F7klVhLZLB7Z0p9H%2BGi%2BkFQVz8DTyNPza8ReMXiqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMmAio%2BqVuXV19MEmcKo4FZGSZH%2FHTzJo4aKp3%2FvcV5F0uSO3pYUfnO2djbsW%2FK3C5HNBMbaZTCKi2pVnJN4vlyMVhqYD5gRvzo3iC259isbO%2BzFqGcan%2FFLYq2nD%2BRNuac6vSJirhfCNQC%2FvhViJV%2B6abpam2ZWbUvJi3glgTwjytbjooiG%2BRR2FpptO5dgL%2FrdDaZul2ADTmuWMNQqcKpmPKo8E9eG4BlCbHNnPMPRjJu%2Flr1RtM1pUmE5ukkCHC2n%2BuUhxG4HrQUhDwepyBz23idR4cFDnWvQazRGxlaVTLUiAWJPLypM%2FrjKACWOEP4dnhBXeP45mqhiM2OefdS0DVzSTDwb52OFENr1xwcuRWKRA9nsDx3HJrd944%2BuztzSqBoLTWZjjiyTO%2F5Y7cV2%2Fm3WJUNtuSy3bMEpbQ0p%2FNwTjIVnx9KpUXR66705Z1SEXiS8l9Wn2OtbBO3OrNtHHnXSJWbpaG6ImBpWoa2kFSlrGP8MNE8Is7LDsCyOpojLaBGX7CefOM0VjpGjvCA7Wu8otBkpVRli4E09SWNzxqglSz8YdKxz%2F9gfxqL%2BYDhf829FmflazIcWSWx%2B9saWJ80xYqvfFzorGpfpFAWFD5lhD6eU1BRP8K4yhExw5tdg6N%2BEIdIbRKZa9dx154InbzLTl%2BWKoHwQJYGHOgcacF92omMnguI3%2Bk2szo6hvY7PV8RgWo2SAsNtmGoQjBN7pt3OTF8D6E9cfhuAuyi5oVkX%2FK00ipqG8VXjlqOxdtrNpY3jCMLvoZHC121ZKrNCKiV8xykqKzEftyz%2FRbW9uBnu9cfUD16ee2eAntyA0Iw92lDMtLxccs4Wg9lbqms6SLc%2Fw5L7ALmBYpB%2FpydAXDNauSiS7wvXFJ4KWJMPnKm9IGOrIB1JxgviJfTucW%2BrjugxTYVRbf4LReRgadvA3sEosiLmVKIXfYLr3dSfCH7HzE%2Bv%2BphP%2BWd4wPu2nFqrurDPuoBCd%2BE0NzeRo9zxjC2ROWs7O5yvpKER9x05gs%2B1EGcdBTlzy3JHtqCz30xIbfu864yAMoKegFDI4Az0WVxaORniMcz0FJgECaKm38plPcYpp7696Q961AdZ%2BapX1pG5PvSjG2vtKvQmnlsof1ftqHMhbvSQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=cc56358bc8a0ee6ffd81ebff5b1c1ebe270cac0b836869ee901da6b9ef339df9",
+      "file_size": 3839,
+      "type": "text/x-c++src",
+      "moderated": null
+    },
+    {
+      "id": 5177102,
+      "file_name": "ssrf_internal_capture.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/f7o0zanzr4rhhrhy6305u7ezu6vt?response-content-disposition=attachment%3B%20filename%3D%22ssrf_internal_capture.log%22%3B%20filename%2A%3DUTF-8%27%27ssrf_internal_capture.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZUPUI6QS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042419Z&X-Amz-Expires=1729&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCICo3ZTegXwlWEPGPXPxh2eIgGiEAhWCuu29979ET4796AiA11ET%2F7klVhLZLB7Z0p9H%2BGi%2BkFQVz8DTyNPza8ReMXiqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMmAio%2BqVuXV19MEmcKo4FZGSZH%2FHTzJo4aKp3%2FvcV5F0uSO3pYUfnO2djbsW%2FK3C5HNBMbaZTCKi2pVnJN4vlyMVhqYD5gRvzo3iC259isbO%2BzFqGcan%2FFLYq2nD%2BRNuac6vSJirhfCNQC%2FvhViJV%2B6abpam2ZWbUvJi3glgTwjytbjooiG%2BRR2FpptO5dgL%2FrdDaZul2ADTmuWMNQqcKpmPKo8E9eG4BlCbHNnPMPRjJu%2Flr1RtM1pUmE5ukkCHC2n%2BuUhxG4HrQUhDwepyBz23idR4cFDnWvQazRGxlaVTLUiAWJPLypM%2FrjKACWOEP4dnhBXeP45mqhiM2OefdS0DVzSTDwb52OFENr1xwcuRWKRA9nsDx3HJrd944%2BuztzSqBoLTWZjjiyTO%2F5Y7cV2%2Fm3WJUNtuSy3bMEpbQ0p%2FNwTjIVnx9KpUXR66705Z1SEXiS8l9Wn2OtbBO3OrNtHHnXSJWbpaG6ImBpWoa2kFSlrGP8MNE8Is7LDsCyOpojLaBGX7CefOM0VjpGjvCA7Wu8otBkpVRli4E09SWNzxqglSz8YdKxz%2F9gfxqL%2BYDhf829FmflazIcWSWx%2B9saWJ80xYqvfFzorGpfpFAWFD5lhD6eU1BRP8K4yhExw5tdg6N%2BEIdIbRKZa9dx154InbzLTl%2BWKoHwQJYGHOgcacF92omMnguI3%2Bk2szo6hvY7PV8RgWo2SAsNtmGoQjBN7pt3OTF8D6E9cfhuAuyi5oVkX%2FK00ipqG8VXjlqOxdtrNpY3jCMLvoZHC121ZKrNCKiV8xykqKzEftyz%2FRbW9uBnu9cfUD16ee2eAntyA0Iw92lDMtLxccs4Wg9lbqms6SLc%2Fw5L7ALmBYpB%2FpydAXDNauSiS7wvXFJ4KWJMPnKm9IGOrIB1JxgviJfTucW%2BrjugxTYVRbf4LReRgadvA3sEosiLmVKIXfYLr3dSfCH7HzE%2Bv%2BphP%2BWd4wPu2nFqrurDPuoBCd%2BE0NzeRo9zxjC2ROWs7O5yvpKER9x05gs%2B1EGcdBTlzy3JHtqCz30xIbfu864yAMoKegFDI4Az0WVxaORniMcz0FJgECaKm38plPcYpp7696Q961AdZ%2BapX1pG5PvSjG2vtKvQmnlsof1ftqHMhbvSQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ff7714e7a57de1eea5628c0370d66912a0bef93308ab10cabdecca94eda2474c",
+      "file_size": 80,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 5177103,
+      "file_name": "raw_http_hexdump.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/uxf1r1k2qkhbtm9jfcyiq89gswqx?response-content-disposition=attachment%3B%20filename%3D%22raw_http_hexdump.txt%22%3B%20filename%2A%3DUTF-8%27%27raw_http_hexdump.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZUPUI6QS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042419Z&X-Amz-Expires=1729&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCICo3ZTegXwlWEPGPXPxh2eIgGiEAhWCuu29979ET4796AiA11ET%2F7klVhLZLB7Z0p9H%2BGi%2BkFQVz8DTyNPza8ReMXiqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMmAio%2BqVuXV19MEmcKo4FZGSZH%2FHTzJo4aKp3%2FvcV5F0uSO3pYUfnO2djbsW%2FK3C5HNBMbaZTCKi2pVnJN4vlyMVhqYD5gRvzo3iC259isbO%2BzFqGcan%2FFLYq2nD%2BRNuac6vSJirhfCNQC%2FvhViJV%2B6abpam2ZWbUvJi3glgTwjytbjooiG%2BRR2FpptO5dgL%2FrdDaZul2ADTmuWMNQqcKpmPKo8E9eG4BlCbHNnPMPRjJu%2Flr1RtM1pUmE5ukkCHC2n%2BuUhxG4HrQUhDwepyBz23idR4cFDnWvQazRGxlaVTLUiAWJPLypM%2FrjKACWOEP4dnhBXeP45mqhiM2OefdS0DVzSTDwb52OFENr1xwcuRWKRA9nsDx3HJrd944%2BuztzSqBoLTWZjjiyTO%2F5Y7cV2%2Fm3WJUNtuSy3bMEpbQ0p%2FNwTjIVnx9KpUXR66705Z1SEXiS8l9Wn2OtbBO3OrNtHHnXSJWbpaG6ImBpWoa2kFSlrGP8MNE8Is7LDsCyOpojLaBGX7CefOM0VjpGjvCA7Wu8otBkpVRli4E09SWNzxqglSz8YdKxz%2F9gfxqL%2BYDhf829FmflazIcWSWx%2B9saWJ80xYqvfFzorGpfpFAWFD5lhD6eU1BRP8K4yhExw5tdg6N%2BEIdIbRKZa9dx154InbzLTl%2BWKoHwQJYGHOgcacF92omMnguI3%2Bk2szo6hvY7PV8RgWo2SAsNtmGoQjBN7pt3OTF8D6E9cfhuAuyi5oVkX%2FK00ipqG8VXjlqOxdtrNpY3jCMLvoZHC121ZKrNCKiV8xykqKzEftyz%2FRbW9uBnu9cfUD16ee2eAntyA0Iw92lDMtLxccs4Wg9lbqms6SLc%2Fw5L7ALmBYpB%2FpydAXDNauSiS7wvXFJ4KWJMPnKm9IGOrIB1JxgviJfTucW%2BrjugxTYVRbf4LReRgadvA3sEosiLmVKIXfYLr3dSfCH7HzE%2Bv%2BphP%2BWd4wPu2nFqrurDPuoBCd%2BE0NzeRo9zxjC2ROWs7O5yvpKER9x05gs%2B1EGcdBTlzy3JHtqCz30xIbfu864yAMoKegFDI4Az0WVxaORniMcz0FJgECaKm38plPcYpp7696Q961AdZ%2BapX1pG5PvSjG2vtKvQmnlsof1ftqHMhbvSQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8c5b33f638251ffa33a95ac21a7632af7be300e9987457891aa87cc9dea0719a",
+      "file_size": 779,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 5177104,
+      "file_name": "crlf_mitigation.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ygwzq4itcqxf9b6yw6aowsnrk8jj?response-content-disposition=attachment%3B%20filename%3D%22crlf_mitigation.patch%22%3B%20filename%2A%3DUTF-8%27%27crlf_mitigation.patch&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZUPUI6QS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042419Z&X-Amz-Expires=1729&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCICo3ZTegXwlWEPGPXPxh2eIgGiEAhWCuu29979ET4796AiA11ET%2F7klVhLZLB7Z0p9H%2BGi%2BkFQVz8DTyNPza8ReMXiqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMmAio%2BqVuXV19MEmcKo4FZGSZH%2FHTzJo4aKp3%2FvcV5F0uSO3pYUfnO2djbsW%2FK3C5HNBMbaZTCKi2pVnJN4vlyMVhqYD5gRvzo3iC259isbO%2BzFqGcan%2FFLYq2nD%2BRNuac6vSJirhfCNQC%2FvhViJV%2B6abpam2ZWbUvJi3glgTwjytbjooiG%2BRR2FpptO5dgL%2FrdDaZul2ADTmuWMNQqcKpmPKo8E9eG4BlCbHNnPMPRjJu%2Flr1RtM1pUmE5ukkCHC2n%2BuUhxG4HrQUhDwepyBz23idR4cFDnWvQazRGxlaVTLUiAWJPLypM%2FrjKACWOEP4dnhBXeP45mqhiM2OefdS0DVzSTDwb52OFENr1xwcuRWKRA9nsDx3HJrd944%2BuztzSqBoLTWZjjiyTO%2F5Y7cV2%2Fm3WJUNtuSy3bMEpbQ0p%2FNwTjIVnx9KpUXR66705Z1SEXiS8l9Wn2OtbBO3OrNtHHnXSJWbpaG6ImBpWoa2kFSlrGP8MNE8Is7LDsCyOpojLaBGX7CefOM0VjpGjvCA7Wu8otBkpVRli4E09SWNzxqglSz8YdKxz%2F9gfxqL%2BYDhf829FmflazIcWSWx%2B9saWJ80xYqvfFzorGpfpFAWFD5lhD6eU1BRP8K4yhExw5tdg6N%2BEIdIbRKZa9dx154InbzLTl%2BWKoHwQJYGHOgcacF92omMnguI3%2Bk2szo6hvY7PV8RgWo2SAsNtmGoQjBN7pt3OTF8D6E9cfhuAuyi5oVkX%2FK00ipqG8VXjlqOxdtrNpY3jCMLvoZHC121ZKrNCKiV8xykqKzEftyz%2FRbW9uBnu9cfUD16ee2eAntyA0Iw92lDMtLxccs4Wg9lbqms6SLc%2Fw5L7ALmBYpB%2FpydAXDNauSiS7wvXFJ4KWJMPnKm9IGOrIB1JxgviJfTucW%2BrjugxTYVRbf4LReRgadvA3sEosiLmVKIXfYLr3dSfCH7HzE%2Bv%2BphP%2BWd4wPu2nFqrurDPuoBCd%2BE0NzeRo9zxjC2ROWs7O5yvpKER9x05gs%2B1EGcdBTlzy3JHtqCz30xIbfu864yAMoKegFDI4Az0WVxaORniMcz0FJgECaKm38plPcYpp7696Q961AdZ%2BapX1pG5PvSjG2vtKvQmnlsof1ftqHMhbvSQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e97f3bdd91c6b3d9605fad835c1ca27e3b14bdf6577527937b77154281d5538b",
+      "file_size": 604,
+      "type": "text/x-diff",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 9,
+  "voters": [
+    "2026",
+    "aleksandr129",
+    "chirag_soni",
+    "edgeshark117",
+    "vroomking750",
+    "m355i",
+    "tat2creed",
+    "mhd01",
+    "stableexo"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3484431",
+  "votes": 9,
+  "latest_disclosable_activity_at": "2026-01-02T10:50:01.697Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:24:19.964309",
+    "source": "https://hackerone.com/reports/3484431.json",
+    "report_id": 3484431
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDg0NDMx",
+    "databaseId": "3484431",
+    "title": "HTTP Request Smuggling and SSRF via CRLF Injection in Curl_add_custom_headers",
+    "url": "https://hackerone.com/reports/3484431",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2026-01-02T10:50:01.847Z",
+    "created_at": "2026-01-02T01:51:16.457Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg2",
+      "name": "HTTP Request Smuggling",
+      "external_id": "cwe-444"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "n12d11n"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0ODQ0MzE=",
+    "_id": "3484431",
+    "disclosed": true,
+    "votes": 9,
+    "latest_disclosable_activity_at": "2026-01-02T10:50:01.697Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDg0NDMx",
+      "databaseId": "3484431",
+      "title": "HTTP Request Smuggling and SSRF via CRLF Injection in Curl_add_custom_headers",
+      "url": "https://hackerone.com/reports/3484431",
+      "disclosed_at": "2026-01-02T10:50:01.847Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

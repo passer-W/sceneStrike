@@ -1,0 +1,195 @@
+{
+  "id": 3434510,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDM0NTEw",
+  "url": "https://hackerone.com/reports/3434510",
+  "title": "Out-of-bounds read in HTTP method handling causes undefined behavior and potential crash This is sharp, Gaurav. We’ve got a real memory-safety bug ins",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2025-11-20T03:47:40.650Z",
+  "submitted_at": "2025-11-20T03:47:41.112Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "gaurav_7777",
+    "url": "/gaurav_7777",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-11-20T09:20:56.480Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-11-20T09:18:00.611Z",
+  "team_member_agreed_on_going_public_at": "2025-11-20T09:20:56.088Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Summary\n-​‍​‌‍​‍‌​‍​‌‍​‍‌ Component: libcurl core HTTP handling (HTTP/2 request translation and CONNECT detection)\n- Type: out-of-bounds read resulting from missing null-termination\n- Impact: Behavior not defined by the specification, the program can crash (DoS) and CONNECT requests can be misclassified\n- Root cause: The method string was copied without a null ​‍​‌‍​‍‌​‍​‌‍​‍‌termin\n\nAffected​‍​‌‍​‍‌​‍​‌‍​‍‌ code paths\n- Struct layout:\n- struct httpreq { ... char method[1]; }\n- Allocation and copy (no NUL):\n- req = calloc(1, sizeof(*req) + m_len);\n- memcpy(req->method, method, m_len);\n\n- Unsafe uses:\n- strcmp(\"CONNECT\", req->method) — assumes null-terminated string\n- strlen(req->method) — sizes HTTP/2 pseudo-header :method\n\nDirect risk: Both strcmp and strlen may access memory beyond what has been allocated if req->method[m_len] is out-of-bounds. The impact varies with the allocator/layout; ASan will always detect ​‍​‌‍​‍‌​‍​‌‍​‍‌this.\n\nSteps​‍​‌‍​‍‌​‍​‌‍​‍‌ to reproduce (concise)\n\n- Prereqs: make sure CMake and nghttp2 are installed\n- What version outputs are you having:\n```bash\n cmake --version \n```\n```text\n→ 3.26.2\n```\n\n```bash\npkg-config --modversion libnghttp2 \n```\n```text\n→ 1.52.0\n```\n\nBuild curl with ASan + HTTP/2:\n\n\n```bash\nmkdir -p build && cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS='-O1 -g -fsanitize=address' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address' -DCURL_USE_NGHTTP2=ON\n```\n```bash\ncmake --build build -j\"$(nproc)\"\n```\nVerify binary and features:\n\n```bash\n./src/curl ​‍​‌‍​‍‌​‍​‌‍​‍‌--version\n```\n{F5027206}\n\n## Impact\n\nImpact\n\n-​‍​‌‍​‍‌​‍​‌‍​‍‌ Denial of Service/crash: Out of bounds read occurring during the creation of HTTP/2 pseudo-headers or checking CONNECT logic.\n-​‍​‌‍​‍‌​‍​‌‍​‍‌ Logic flaw: The function for detecting CONNECT might behave differently due to a comparison of an uninitialized value being performed.\n\n- Trigger surface: Any path which produces a struct httpreq (e.g., custom methods) and then executes HTTP/2 translation or CONNECT ​‍​‌‍​‍‌​‍​‌‍​‍‌checks\n\nProposed​‍​‌‍​‍‌​‍​‌‍​‍‌ repair (minimal and robust)\n\n- In both creators, not only add a null terminator but also allocate memory for ​‍​‌‍​‍‌​‍​‌‍​‍‌it:\n\n```diff\n- req = calloc(1, sizeof(*req) + m_len);\n+ req = calloc(1, sizeof(*req) + m_len + 1);\n  if(!req) goto out;\n  memcpy(req->method, method, m_len);\n+ req->method[m_len] = '\\0';\n```\n\n-​‍​‌‍​‍‌​‍​‌‍​‍‌ Locations to change:\nCurl_http_req_make\nCurl_http_req_make2\nThis change removes local undefined reads without changing the logic. Optional hardening: replace ​‍​‌‍​‍‌​‍​‌‍​‍‌strcmp(\"CONNECT\",",
+  "weakness": {
+    "id": 9,
+    "name": "Buffer Over-read"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5027206,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/d6o578q1b962clm5q0d6mg443dlt?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042540Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b5cab3c27cc588103eb9b0c97a7a8e6399fc51a759a4afd5ac27a7d397e00818",
+      "file_size": 45308,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 28,
+  "voters": [
+    "nischalxd",
+    "2026",
+    "najjix",
+    "zerodaysec_xyz",
+    "esberat",
+    "gaurav_7777",
+    "madnessbrains",
+    "24h",
+    "neeljshah22",
+    "laumv",
+    "and 18 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3434510",
+  "votes": 28,
+  "latest_disclosable_activity_at": "2025-11-20T09:20:56.962Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:25:41.075091",
+    "source": "https://hackerone.com/reports/3434510.json",
+    "report_id": 3434510
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDM0NTEw",
+    "databaseId": "3434510",
+    "title": "Out-of-bounds read in HTTP method handling causes undefined behavior and potential crash This is sharp, Gaurav. We’ve got a real memory-safety bug ins",
+    "url": "https://hackerone.com/reports/3434510",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-11-20T09:20:56.480Z",
+    "created_at": "2025-11-20T03:47:40.650Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzk=",
+      "name": "Buffer Over-read",
+      "external_id": "cwe-126"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "gaurav_7777"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0MzQ1MTA=",
+    "_id": "3434510",
+    "disclosed": true,
+    "votes": 28,
+    "latest_disclosable_activity_at": "2025-11-20T09:20:56.962Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDM0NTEw",
+      "databaseId": "3434510",
+      "title": "Out-of-bounds read in HTTP method handling causes undefined behavior and potential crash This is sharp, Gaurav. We’ve got a real memory-safety bug ins",
+      "url": "https://hackerone.com/reports/3434510",
+      "disclosed_at": "2025-11-20T09:20:56.480Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

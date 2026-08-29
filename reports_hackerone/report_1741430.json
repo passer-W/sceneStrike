@@ -1,0 +1,252 @@
+{
+  "id": 1741430,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzQxNDMw",
+  "url": "https://hackerone.com/reports/1741430",
+  "title": "CSRF vulnerability in Nextcloud Desktop Client 3.6.1 on Windows when clicking malicious link ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-10-18T18:36:38.196Z",
+  "submitted_at": "2022-10-19T11:22:31.056Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "lukasreschke",
+    "url": "/lukasreschke",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/037/891/e7fea4d5383dc07d1fe767b02f3bda2bc7639c63_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2023-22472"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-01-11T09:27:50.372Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-01-11T09:27:50.257Z",
+  "team_member_agreed_on_going_public_at": "2023-01-09T05:49:01.043Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\nIt is possible to make a user send any POST request with an arbitrary body given they click on a malicious deep link. (e.g. in an email, chat link, etc)\n\nThis vulnerability was introduced in an attempt to fix #1720043. The patch however can be bypassed and also introduced a CSRF vulnerability.\n\n## Steps To Reproduce:\nThe following reproduction steps send a OCS API request to the `/ocs/v1.php/cloud/users` endpoint with the following post body: `path=/.\\&userid=hacker&password=h4ck3rPassw0Rd!&displayName=hacker&email=mail@example.com&groups[]=admin&\\..\\.owncloudsync.log`. If the victim is not an administrator, one would need to target another controller.\n\n  1. Open the following deeplink on a Windows machine with the Nextcloud Desktop Client installed. Make sure to adjust the victim username and instance URL: `nc://open/admin@pentest.cloud.wtf/.\\&userid=hacker&password=h4ck3rPassw0Rd!&displayName=hacker&email=mail@example.com&groups[]=admin&\\..\\.owncloudsync.log?token=../../../../../../../ocs/v1.php/cloud/users`\n  1. Verify that a user called \"hacker\" is created on the instance and added to the admin group.\n\n## Root cause\n\nThe attempt to fix #1720043 was done with https://github.com/nextcloud/desktop/pull/5055 and introduced the [following code](https://github.com/nextcloud/desktop/blob/2f6b56748a4f6a4097a1e11c147d4fd71db993d4/src/gui/folderman.cpp#L1498-L1500):\n\n```cpp\n    const auto checkTokenForEditLocally = new SimpleApiJob(accountFound->account(), QStringLiteral(\"/ocs/v2.php/apps/files/api/v1/openlocaleditor/%1\").arg(token));\n    checkTokenForEditLocally->setVerb(SimpleApiJob::Verb::Post);\n    checkTokenForEditLocally->setBody(QByteArray{\"path=/\"}.append(relPath.toUtf8()));\n```\n\nThere are two vulnerabilities here that can be chained together:\n\n-  **Token is not encoded**:`token` is concatenated directly into the URL and not properly encoded. Passing a `token` such like `?token=../../../../../../../ocs/v1.php/cloud/users` will make the request therefore go to `/ocs/v2.php/apps/files/api/v1/openlocaleditor/../../../../../../../ocs/v1.php/cloud/users` which means `/ocs/v1.php/cloud/users`.\n- **Relative file path is not encoded**: `relPath` is concatenated directly into the POST body and not properly encoded. Passing a path such as `.\\&userid=hacker&password=h4ck3rPassw0Rd!&displayName=hacker&email=mail@example.com&groups[]=admin&\\..\\.owncloudsync.log` will therefore create several request POST parameters. (Note: `./owncloudsync.log` is a default file which I use here to ensure the file exists check earlier in the code works)\n\n## Supporting Material/References:\n\n- Screenshot of the request: F1992646\n- Screenshot of the created user: F1992654\n\n\n## Disclosure Policy\nPlease note that all bugs reported by [Authentick GmbH](https://www.authentick.net/) will be publicly disclosed within 90 days of vendor notification. In extraordinary cases we may increase that upon request by the vendor.\n\n## Impact\n\nIt is possible to make a user send any POST request with an arbitrary body given they click on a malicious deep link. (e.g. in an email, chat link, etc)",
+  "weakness": {
+    "id": 45,
+    "name": "Cross-Site Request Forgery (CSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1992646,
+      "file_name": "exploit-request.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dvh7tg678xa66b7ivjpswxfjsu9d?response-content-disposition=attachment%3B%20filename%3D%22exploit-request.jpg%22%3B%20filename%2A%3DUTF-8%27%27exploit-request.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSG2HWLFY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050019Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCICRY1w%2BQLgL3MYOu7zFZAsTtwXLfLX%2FN6kdau1svJD%2F9AiEA6Zh0kA474SxKY2yv9OTfzFyWfO2kHNzDaNQt%2BzNwswUqsgUIBhADGgwwMTM2MTkyNzQ4NDkiDHEcXlAHw5CkBiOLAiqPBccfGBUZG5QfVFP7r75%2B4J0KqwgTSxuGDy84Jgf9csM%2B6HDtA05vHTLO%2F8OM%2FBC8htuBGB7cpSAwma2opci0yJxJJ7foImsUREMs7WHT4teGghQhzhWDn3bgSgoq%2F95Xdy3VHXjEdW4GFKIYcEqTwK8%2BsP8aThlRGqjwxw0LblJTSLwUgzN70Tf%2BFvRULw3tCF6FHyYu5fPef%2BJ8nAqSixMnamLZ65RYGBw5pGsFeUmrBd5HIU%2BW3AGpFG9h50TrZiaxipOC9vjGHbvDpagCc87unLFcqjRBrbTk6CBajJClJb3XRux0awOyAJ9G6ZS4vhVX0%2B9LSpQKxQ2NAiJpdD%2FEmwOggv%2BmdRsOi5jcS2q0VOnYmTAY8zzzjJXWPDWa8Z24rLWYfI3dzxyoxyRmAaJXRKR0qbynGzcdjo3KOr6OqKVdT1Hcf03xaNUmHuwXXUPA3xYBkXBk1TPjn2sIEuQpYdkrcoNQG%2BwQzos82ZY7ZEVNf4H8vkHUMVLHDNBSFwVmmJVd2C5Ar765TWmk%2F948uKDq3DTtj9D8RevVRdOXTvAAX3L%2Bu7EuFWUmm8udH%2FmHNu4qAxhApJ6rXCb679KGyVWlIA%2BgSySNmGlIzPQjiq6t3cCXwfO0buPm6RwDzras14JgXGg3VzCeWpwl9km9YjYcw%2F5e%2Bs%2BBvU7wlOxdKIe5N%2Bme81EnncYnX8s3Ptda4hXXMJG2qwHw3QFaHwVGBc8DLJtrZwAmkSrS1v3RwjeGuiBzVKwfulSBEZCQBo4VIvBM1vizxtYz4XcsxU5ZKoQjEVvDD1V6GEvMBVzC3bSPef6I8K%2F9QC9KwKczT65F9ruRMyYh5FE%2BjwAkZ20rJ6wpr1c44y2XhoCxnTQw8fuc0gY6sQHKS0blLXnQ7yNlNaF1SOVtawrWxpRHaXQ%2F4BOWHNQWHBiMarchFSZeCuOybyf%2Bm8peb%2Bw%2BRVxcuuCJGZlkTthvNwmzQGveiROlBKPILvBCeFvfC07tc51sV2AV7xo1U8BiNBLKmeyTI29wC%2BpYGREprhNSrr3N3fBoZMPpWhtVNvw9Zzyc6COpcqXK5VbgFoERUkVicTNWqFNg9w%2BEobcTPN7t3JEa6W4%2FoKB0RqFJpus%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8c6262be200f0c012c10a78b80c4d7ee1ec78a7b724f82edb79406be76ad682d",
+      "file_size": 251528,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 1992654,
+      "file_name": "created-user.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zcvf65ckfh9gtmar3d8ah2z9mygr?response-content-disposition=attachment%3B%20filename%3D%22created-user.png%22%3B%20filename%2A%3DUTF-8%27%27created-user.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSG2HWLFY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050019Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCICRY1w%2BQLgL3MYOu7zFZAsTtwXLfLX%2FN6kdau1svJD%2F9AiEA6Zh0kA474SxKY2yv9OTfzFyWfO2kHNzDaNQt%2BzNwswUqsgUIBhADGgwwMTM2MTkyNzQ4NDkiDHEcXlAHw5CkBiOLAiqPBccfGBUZG5QfVFP7r75%2B4J0KqwgTSxuGDy84Jgf9csM%2B6HDtA05vHTLO%2F8OM%2FBC8htuBGB7cpSAwma2opci0yJxJJ7foImsUREMs7WHT4teGghQhzhWDn3bgSgoq%2F95Xdy3VHXjEdW4GFKIYcEqTwK8%2BsP8aThlRGqjwxw0LblJTSLwUgzN70Tf%2BFvRULw3tCF6FHyYu5fPef%2BJ8nAqSixMnamLZ65RYGBw5pGsFeUmrBd5HIU%2BW3AGpFG9h50TrZiaxipOC9vjGHbvDpagCc87unLFcqjRBrbTk6CBajJClJb3XRux0awOyAJ9G6ZS4vhVX0%2B9LSpQKxQ2NAiJpdD%2FEmwOggv%2BmdRsOi5jcS2q0VOnYmTAY8zzzjJXWPDWa8Z24rLWYfI3dzxyoxyRmAaJXRKR0qbynGzcdjo3KOr6OqKVdT1Hcf03xaNUmHuwXXUPA3xYBkXBk1TPjn2sIEuQpYdkrcoNQG%2BwQzos82ZY7ZEVNf4H8vkHUMVLHDNBSFwVmmJVd2C5Ar765TWmk%2F948uKDq3DTtj9D8RevVRdOXTvAAX3L%2Bu7EuFWUmm8udH%2FmHNu4qAxhApJ6rXCb679KGyVWlIA%2BgSySNmGlIzPQjiq6t3cCXwfO0buPm6RwDzras14JgXGg3VzCeWpwl9km9YjYcw%2F5e%2Bs%2BBvU7wlOxdKIe5N%2Bme81EnncYnX8s3Ptda4hXXMJG2qwHw3QFaHwVGBc8DLJtrZwAmkSrS1v3RwjeGuiBzVKwfulSBEZCQBo4VIvBM1vizxtYz4XcsxU5ZKoQjEVvDD1V6GEvMBVzC3bSPef6I8K%2F9QC9KwKczT65F9ruRMyYh5FE%2BjwAkZ20rJ6wpr1c44y2XhoCxnTQw8fuc0gY6sQHKS0blLXnQ7yNlNaF1SOVtawrWxpRHaXQ%2F4BOWHNQWHBiMarchFSZeCuOybyf%2Bm8peb%2Bw%2BRVxcuuCJGZlkTthvNwmzQGveiROlBKPILvBCeFvfC07tc51sV2AV7xo1U8BiNBLKmeyTI29wC%2BpYGREprhNSrr3N3fBoZMPpWhtVNvw9Zzyc6COpcqXK5VbgFoERUkVicTNWqFNg9w%2BEobcTPN7t3JEa6W4%2FoKB0RqFJpus%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f5bd45801aba98d8194ee99987650ddd34f2b39125b87eb90fa9c65ad18499f1",
+      "file_size": 89166,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-02-08T05:49:01.191Z",
+  "allow_singular_disclosure_after": -107219478.16859137,
+  "singular_disclosure_allowed": true,
+  "vote_count": 25,
+  "voters": [
+    "rmrizki",
+    "zy9ard3",
+    "shreyaschavhan",
+    "shubham_srt",
+    "f_m",
+    "kerolesmagdy",
+    "shivammusic",
+    "metwallysec",
+    "hn21ak",
+    "jpmoban",
+    "and 15 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 77,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "Desktop Client",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 235727,
+      "category": "team",
+      "content": "Security advisory at https://github.com/nextcloud/security-advisories/security/advisories/GHSA-4gfv-xqpx-42qj",
+      "updated_at": "2023-01-05T12:09:31.959Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 89223,
+        "username": "nickvergessen",
+        "name": "Joas Schilling",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "Germany",
+        "created_at": "2016-07-01T08:17:59.061Z",
+        "url": "https://hackerone.com/nickvergessen",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1741430",
+  "votes": 24,
+  "latest_disclosable_activity_at": "2023-01-11T09:27:50.467Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:00:19.473878",
+    "source": "https://hackerone.com/reports/1741430.json",
+    "report_id": 1741430
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzQxNDMw",
+    "databaseId": "1741430",
+    "title": "CSRF vulnerability in Nextcloud Desktop Client 3.6.1 on Windows when clicking malicious link ",
+    "url": "https://hackerone.com/reports/1741430",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-01-11T09:27:50.372Z",
+    "created_at": "2022-10-18T18:36:38.196Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ1",
+      "name": "Cross-Site Request Forgery (CSRF)",
+      "external_id": "cwe-352"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.3
+    },
+    "reporter": {
+      "username": "lukasreschke"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NDg4MzE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2023-01-10T14:04:02.098Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3NDE0MzA=",
+    "_id": "1741430",
+    "disclosed": true,
+    "votes": 24,
+    "latest_disclosable_activity_at": "2023-01-11T09:27:50.467Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzQxNDMw",
+      "databaseId": "1741430",
+      "title": "CSRF vulnerability in Nextcloud Desktop Client 3.6.1 on Windows when clicking malicious link ",
+      "url": "https://hackerone.com/reports/1741430",
+      "disclosed_at": "2023-01-11T09:27:50.372Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "id": 185862,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODU4NjI=",
+  "url": "https://hackerone.com/reports/185862",
+  "title": "Twitter for android is exposing user's location to any installed android app",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2016-11-27T18:58:48.072Z",
+  "submitted_at": "2016-11-27T18:58:48.072Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mishre",
+    "url": "/mishre",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 61,
+    "url": "https://hackerone.com/x",
+    "handle": "x",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ikx4ept298unt534kpz4am2bd4zs/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/ikx4ept298unt534kpz4am2bd4zs/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "X / xAI",
+      "twitter_handle": "XSecurity",
+      "website": "https://x.com",
+      "about": "X helps you create and share ideas and information instantly, without barriers."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-01-13T17:48:00.938Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-12-14T17:47:48.738Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\n\nI have noticed that while a user is using the location feature in twitter's android application twitter is sending the user's location to all other locally installed applications without verifying the possible (malicious) receivers (By sending a broadcast). As a poc I have created an application (attached) which asks for no permissions from android and is just listening to location broadcasts sent by twitter. You can see both the application's apk and its code attached.\nI have also created a poc video which shows how to use it - I have used an android emulator but it can also be used by a real device. Here is the video: https://vimeo.com/193261287 pass is: twittergps121\nIt can be seen in the video that the moment twitter asks for(and receives) gps signal - my malicious application is receiving it due to twitter forwarding this location - also my app has no permissions assigned.\n\nNote: I am sending the coordinates to my emulator manually - but on a real device which allows twitter to use  location it is sent automatically.\n\nVulnerable code\n===\nThis is happening because of the following lines in your app's code: \n```\nparamLocation = new Intent(\"com.twitter.library.geo.LOCATION_CHANGED\").putExtra(\"com.twitter.library.geo.LOCATION_EXTRA\", paramLocation);\nthis.c.sendBroadcast(paramLocation);\n```\nSome variable names might be wrong due to obfuscation but the idea remains - you should probably add permission to the broadcast.\n\nImplications\n===\nAny malicious application installed on a user's device can track the user's location without any permissions if the user is allowing twitter to access his location.\n\n\n",
+  "bounty_amount": "560.0",
+  "formatted_bounty": "$560",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 137632,
+      "file_name": "MainActivity.java",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/137/632/facb27b1d324a3039452c0cbeb8c7085b07ccc12/MainActivity.java?response-content-disposition=attachment%3B%20filename%3D%22MainActivity.java%22%3B%20filename%2A%3DUTF-8%27%27MainActivity.java&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064445Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=52d99058c8135df5fab694173eda974786593c7dc68193a8c29f5d9a3931c82b",
+      "file_size": 951,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 137633,
+      "file_name": "TwitterGPSReceiver.java",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/137/633/cc17fba3c88430b15f212d56f9059367d54e6c6d/TwitterGPSReceiver.java?response-content-disposition=attachment%3B%20filename%3D%22TwitterGPSReceiver.java%22%3B%20filename%2A%3DUTF-8%27%27TwitterGPSReceiver.java&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064445Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3c39cacc4a550ab0ab3744ca62dbdb615019a9e0b991497ace074c5d249d23b1",
+      "file_size": 560,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 137634,
+      "file_name": "app-debug.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/137/634/6034517a7327c8211c091e0f1531e300b2dbf976/app-debug.apk?response-content-disposition=attachment%3B%20filename%3D%22app-debug.apk%22%3B%20filename%2A%3DUTF-8%27%27app-debug.apk&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064445Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=214a9f1cc99783f21a0256c1ecf7509371fc5262665928c034c4e6cd5af4c864",
+      "file_size": 1400440,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-01-13T17:47:48.792Z",
+  "allow_singular_disclosure_after": -299163416.35565287,
+  "singular_disclosure_allowed": true,
+  "vote_count": 23,
+  "voters": [
+    "ta8ahi",
+    "zeeshank",
+    "yipman",
+    "s3curient",
+    "pekafat",
+    "mpz",
+    "eveeez",
+    "khizer47",
+    "0xradi",
+    "c12316651",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "185862",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2017-01-13T17:48:00.952Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:44:45.255993",
+    "source": "https://hackerone.com/reports/185862.json",
+    "report_id": 185862
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODU4NjI=",
+    "databaseId": "185862",
+    "title": "Twitter for android is exposing user's location to any installed android app",
+    "url": "https://hackerone.com/reports/185862",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-01-13T17:48:00.938Z",
+    "created_at": "2016-11-27T18:58:48.072Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "mishre"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYx",
+      "handle": "x",
+      "name": "X / xAI",
+      "url": "https://hackerone.com/x",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNzkxNg==",
+            "amount": "560.00",
+            "awarded_amount": "560.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-12-02T22:06:22.054Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4NTg2Mg==",
+    "_id": "185862",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2017-01-13T17:48:00.952Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODU4NjI=",
+      "databaseId": "185862",
+      "title": "Twitter for android is exposing user's location to any installed android app",
+      "url": "https://hackerone.com/reports/185862",
+      "disclosed_at": "2017-01-13T17:48:00.938Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYx",
+      "handle": "x",
+      "name": "X / xAI",
+      "url": "https://hackerone.com/x",
+      "currency": "usd"
+    }
+  }
+}

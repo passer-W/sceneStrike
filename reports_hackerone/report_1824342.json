@@ -1,0 +1,216 @@
+{
+  "id": 1824342,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODI0MzQy",
+  "url": "https://hackerone.com/reports/1824342",
+  "title": "Users querying dim_hacker_reports table through Analytics API can determine data from dim_reports table using WHERE or HAVING query",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2023-01-05T23:14:14.834Z",
+  "submitted_at": "2023-01-05T23:14:15.031Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": true,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2023-02-22T22:01:36.026Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-02-22T21:59:30.341Z",
+  "team_member_agreed_on_going_public_at": "2023-02-22T22:01:35.819Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The query builder for the Analytics API is vulnerable to a confusion attack. The `dim_reports` and `dim_hacker_reports` tables both pull their data from the `Analytics::DimReport` model. When applying a `WHERE` clause or `HAVING` clause with a `FILTER` in the HackerOne Analytics Query Language (HAQL), an attacker can create references to columns outside of the HAQL table schema. Assume that there is a table looking as following:\n\n| report_id | is_triage_sla_missed |\n| --- | --- |\n| 27 | false |\n\nAnd the following two schema definitions:\n\n```ruby\n'dim_reports': {\n  'model': 'Analytics::DimReport',\n  'columns': {\n    'report_id': TYPE_NUMBER,\n    'is_triage_sla_missed': TYPE_BOOLEAN,\n  }\n}\n```\n\n```\n'dim_hacker_reports': {\n  'model': 'Analytics::DimReport',\n  'columns': {\n    'report_id': TYPE_NUMBER,\n  }\n}\n```\n\nThe `is_triage_sla_missed` column can only be queried through the `dim_reports` table, which reporters of a report do not have access to. However, when querying the `report_id` from either table, it results in the following SQL to being executed:\n\n```sql\nSELECT \n  \"analytics\".\"dim_reports\".\"report_id\" AS dim_hacker_reports__report_id \nFROM \n  \"analytics\".\"dim_reports\" \nWHERE \n  (\n    \"analytics\".\"dim_reports\".\"reporter_id\" = ?\n    AND \"analytics\".\"dim_reports\".\"reporter_id\" IS NOT NULL\n  ) \nLIMIT \n  1000 OFFSET 0\n```\n\nAs can be seen, there is no alias assigned to the `dim_reports` table. This can be used to confuse the query builder by using a reference to the `dim_reports` table, even though that table wasn't queried from. As an example:\n\n```\nquery {\n  analytics(queries: [\n    {\n      select: [\n        {\n          field: dim_hacker_reports__report_id\n        }\n      ]\n      from: dim_hacker_reports\n      where: {\n        predicates: [\n          {\n            left: {\n              ref: dim_reports__is_triage_sla_missed\n            }\n            function: eq\n            right: {\n              boolean: false\n            }\n          }\n        ]\n      }\n    }\n  ]) {\n    keys\n    values\n  }\n}\n```\n\nThe `dim_reports__is_triage_sla_missed` reference should fail to be used, because `dim_reports` isn't being selected from or joined into the query. However, it misses this check, allowing the column to be referenced even though it isn't present in the `dim_hacker_reports` schema. Based on whether the query returns the row, the value of the column can be obtained:\n\n**Data in column was guessed correctly**\n{F2107683}\n\n**Data in column does not match expectation**\n{F2107684}\n\n## Impact\n\nEven though there isn't any sensitive data that can be queried through the `dim_reports` table schema today, this may cause unauthorized access to sensitive data in the future.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2107683,
+      "file_name": "Screenshot_2023-01-05_at_3.12.24_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/j1s9imqidhol4xs71abl3aeeb26n?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2023-01-05_at_3.12.24_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2023-01-05_at_3.12.24_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045853Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=add5c2e4f2053806c868578f491cf462e60417623bb1e33dc90d1c81ad35ed3c",
+      "file_size": 205250,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 2107684,
+      "file_name": "Screenshot_2023-01-05_at_3.13.10_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/f65yg42y7u23ywhvl3y4g9dausbq?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2023-01-05_at_3.13.10_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2023-01-05_at_3.13.10_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045853Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fe77154f39ab34b41d23fe944d458d6ddcd3974eb53c63826bcd4202a0914053",
+      "file_size": 202259,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-03-24T21:59:30.603Z",
+  "allow_singular_disclosure_after": -103359562.82452446,
+  "singular_disclosure_allowed": true,
+  "vote_count": 21,
+  "voters": [
+    "drsniper",
+    "datph4m",
+    "zy9ard3",
+    "shreyaschavhan",
+    "raslanco",
+    "mohaned0101",
+    "shubham_srt",
+    "2026",
+    "mr_anksec",
+    "hunterr0x01",
+    "and 11 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.1,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1824342",
+  "votes": 21,
+  "latest_disclosable_activity_at": "2023-02-22T22:01:36.100Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:58:53.617048",
+    "source": "https://hackerone.com/reports/1824342.json",
+    "report_id": 1824342
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODI0MzQy",
+    "databaseId": "1824342",
+    "title": "Users querying dim_hacker_reports table through Analytics API can determine data from dim_reports table using WHERE or HAVING query",
+    "url": "https://hackerone.com/reports/1824342",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-02-22T22:01:36.026Z",
+    "created_at": "2023-01-05T23:14:14.834Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.1
+    },
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4MjQzNDI=",
+    "_id": "1824342",
+    "disclosed": true,
+    "votes": 21,
+    "latest_disclosable_activity_at": "2023-02-22T22:01:36.100Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODI0MzQy",
+      "databaseId": "1824342",
+      "title": "Users querying dim_hacker_reports table through Analytics API can determine data from dim_reports table using WHERE or HAVING query",
+      "url": "https://hackerone.com/reports/1824342",
+      "disclosed_at": "2023-02-22T22:01:36.026Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

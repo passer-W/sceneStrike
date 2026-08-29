@@ -1,0 +1,220 @@
+{
+  "id": 863979,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NjM5Nzk=",
+  "url": "https://hackerone.com/reports/863979",
+  "title": "Compromise of node can lead to compromise of pods on other nodes",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-05-01T12:26:35.494Z",
+  "submitted_at": "2020-05-01T12:26:35.494Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "wtm",
+    "url": "/wtm",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/088/197125731be3cf899a34f727af5f5d3f8c6891e9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39386,
+    "url": "https://hackerone.com/kubernetes",
+    "handle": "kubernetes",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Kubernetes",
+      "twitter_handle": "kubernetesio",
+      "website": "https://kubernetes.io/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8559"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-10-30T21:54:31.857Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-10-30T21:54:31.792Z",
+  "team_member_agreed_on_going_public_at": "2020-10-30T21:27:37.598Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi Kubernetes team, \n\n## Summary:\nIf an attacker manages to escape a (eg. privileged) container and gains access to the underlying node it can replace the Kubelet process listening on port 10250/10255 on the node. A fake Kubelet server issueing 301 redirects can trick 'kubectl' (or other clients) into issueing commands against a other pods in the cluster.  This attack bypasses firewalling configurations where nodes cannot talk directly to eachother on port 10250/10255 and also works when port 10250 requires authentication since kubectl is happy to resend the Authorization header / bearer token when a 301redirect is received. \n\n## Kubernetes Version:\n1.14.10\n\n## Component Version:\nkubelet/kubectl\n\n## Steps To Reproduce:\n\n  1. Attacker escapes container \n  2. Attacker issues a 'kill -9 `pidof kubelet`; python fakekubet.py  (see attachment)\n  3. Attacker waits for a /exec request coming in to the fakekubelet.py server, and redirects it (with an arbitrary command) to another node.  \n\nExample exec request for 'hello-app'  by kubectl:\n10.138.0.10 - - [01/May/2020 11:28:55] \"POST /exec/default/hello-server-7f8fd4d44b-j5rsc/hello-app?command=%2Fbin%2Fs&input=1&output=1&tty=1 HTTP/1.1\" 307 - \n\nExample response by the fakekubelet: \nHTTP/1.1 301 Redirect\nLocation: https://10.138.0.8/exec/default/victim-67c59cd9f4-vm5dl/nginx?command=/bin/arbitrary_command_here&error=1&input=1&output=1&tty=0\n\n  4. kubectl follows the redirect and contacts the victim node, requesting /exec as specified by fakekubelet.py (can also redirect to 'master')\n  5. arbitrary command is executed on the victim node\n\n\n## Supporting Material/References:\nattachment 1:  fakekubelet.py\nattachment 2: ugly_diagram.png\nrelated Kubelet code: https://github.com/kubernetes/kubernetes/blob/4a6935b31fcc4d1498c977d90387e02b6b93288f/pkg/kubelet/server/server.go#L257-L263\n\n\nI hope this helps!\n\nKind regards, \nOffensi.com\n\nWouter ter Maat\n\n## Impact\n\nexecute arbitrary command in victim's pod",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 810873,
+      "file_name": "fakekubelet.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/4pL6DL2P5J7VR5buPSiwVYcn?response-content-disposition=attachment%3B%20filename%3D%22fakekubelet.py%22%3B%20filename%2A%3DUTF-8%27%27fakekubelet.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUGN7XD4Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045538Z&X-Amz-Expires=3152&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIF%2B5%2BqpNMYJJlMLXTQB%2FNI5c1baiBprHteIHb1u%2FOfGlAiEApwVtVjeM46PngaVW2HuPeZb%2F0vzW72Wf4xM9ZO39WPQqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDBFBTX43IU35qXwehiqPBTSnEqpCs5a1y%2FTKasIRX8XuSerVPmZrxMIVK71yKlczvS0Ij0PQ7D66W588V76Gmjmtfugm2sOyR3gudfjXNY5ANaBAHkpphyRMqMPc07qHXIWZ%2Fd2o9qR2NQYona60DZYYWEqSv394ytm5nSGmfwTGb3T%2Fo%2FhOAIo7XtHWIAyRyaG%2Fgp%2FkpoZNOl3zplW1LkBPox13ptwikymGgUCInJMpg781s3u1%2Fu4%2BYGPqbumR0iIn0w4wCizRLyZjfTRSLqe3bbqIvvM90KpZl53RMqW0ePFb%2FLRDOltdUGdP4IFaBZuoeUOjGvJ3858A9Q%2B%2B98%2Fz9ZMx%2B0firSZZUW9gO6n%2BOtGjZfjiJrW6%2FIBvvODvtR6ToxoA8JeZGGWxggYqkJKKI0nEwtsrinBY7Oaa8nb%2BdM3OTsF%2BHCJWldD2tjwF9ovlsr9isp7CRPRTVRLPrzQlqnOiytmGUGKD9QKlEOuaCMJNbLefxcHaqjfbQVwei4KQWAS32dwZZl8VmCQRSfrHCf3r30y5JWGJBnfS5NGmdRnddL0e6qD%2FUXU9iqrQZTbPkv3A2qw17yKyq4p76icLxY4oaa1P8ErD3Z2DOi2tTGsr%2FuFM11wSCcRyjo0dK22v7L9mKJD%2Fq3F3UX9%2BIodBZm7%2FT0bNmG%2FC6lEwnl8Wp8dfMASgNU0uok93DIJIcZRZVUh%2FbUdZhWj%2BYwj%2F%2BalHLtF17KEc%2BXAm%2BOky0NJGmbpNj40wfpkSijUnOi2Pnu7qB%2BTvuhpcaY5UL58o6iWLwlFPrklhdPl9i4OxTRJ6ONkBU%2BdmAt0B%2FLmVY%2Bp71GfDBaI%2BeTQXLoPbRGJwkibE4pOdabL%2FIBkwa2%2BktfOJcKOHIidZHOGoQoGIiU0w8pK20gY6sQHK5YykznnJepz0LTyM%2FMEZGJy5ZBWU19MO5zwxpT7MOKrgPpBFtBB0ANinm2FNxr9asVpeZak35MEHxMfWE%2F%2BN97DnMzrznod5KkVcmDuC58i81J6g0%2FuciCmzEIVJcflRAZrbHBlnq3hzd7C2xvfHhxFfbNawLi5afmJslsFDH0k7HWXWz%2BgrnhJpVK7UByTR%2Bt1KDyVIVtuxP5ZJpGY2Jr1tKjgZnUcTL7frXQX72Vw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2aa8ef3a3438db576e413505d19e3e8cb784d213745591d88f6200e98e338430",
+      "file_size": 685,
+      "type": "text/x-python",
+      "moderated": null
+    },
+    {
+      "id": 810906,
+      "file_name": "ugly_diagram.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/GyVLT3S84jcqTBDhcxnvCkn6?response-content-disposition=attachment%3B%20filename%3D%22ugly_diagram.png%22%3B%20filename%2A%3DUTF-8%27%27ugly_diagram.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUGN7XD4Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045538Z&X-Amz-Expires=3152&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIF%2B5%2BqpNMYJJlMLXTQB%2FNI5c1baiBprHteIHb1u%2FOfGlAiEApwVtVjeM46PngaVW2HuPeZb%2F0vzW72Wf4xM9ZO39WPQqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDBFBTX43IU35qXwehiqPBTSnEqpCs5a1y%2FTKasIRX8XuSerVPmZrxMIVK71yKlczvS0Ij0PQ7D66W588V76Gmjmtfugm2sOyR3gudfjXNY5ANaBAHkpphyRMqMPc07qHXIWZ%2Fd2o9qR2NQYona60DZYYWEqSv394ytm5nSGmfwTGb3T%2Fo%2FhOAIo7XtHWIAyRyaG%2Fgp%2FkpoZNOl3zplW1LkBPox13ptwikymGgUCInJMpg781s3u1%2Fu4%2BYGPqbumR0iIn0w4wCizRLyZjfTRSLqe3bbqIvvM90KpZl53RMqW0ePFb%2FLRDOltdUGdP4IFaBZuoeUOjGvJ3858A9Q%2B%2B98%2Fz9ZMx%2B0firSZZUW9gO6n%2BOtGjZfjiJrW6%2FIBvvODvtR6ToxoA8JeZGGWxggYqkJKKI0nEwtsrinBY7Oaa8nb%2BdM3OTsF%2BHCJWldD2tjwF9ovlsr9isp7CRPRTVRLPrzQlqnOiytmGUGKD9QKlEOuaCMJNbLefxcHaqjfbQVwei4KQWAS32dwZZl8VmCQRSfrHCf3r30y5JWGJBnfS5NGmdRnddL0e6qD%2FUXU9iqrQZTbPkv3A2qw17yKyq4p76icLxY4oaa1P8ErD3Z2DOi2tTGsr%2FuFM11wSCcRyjo0dK22v7L9mKJD%2Fq3F3UX9%2BIodBZm7%2FT0bNmG%2FC6lEwnl8Wp8dfMASgNU0uok93DIJIcZRZVUh%2FbUdZhWj%2BYwj%2F%2BalHLtF17KEc%2BXAm%2BOky0NJGmbpNj40wfpkSijUnOi2Pnu7qB%2BTvuhpcaY5UL58o6iWLwlFPrklhdPl9i4OxTRJ6ONkBU%2BdmAt0B%2FLmVY%2Bp71GfDBaI%2BeTQXLoPbRGJwkibE4pOdabL%2FIBkwa2%2BktfOJcKOHIidZHOGoQoGIiU0w8pK20gY6sQHK5YykznnJepz0LTyM%2FMEZGJy5ZBWU19MO5zwxpT7MOKrgPpBFtBB0ANinm2FNxr9asVpeZak35MEHxMfWE%2F%2BN97DnMzrznod5KkVcmDuC58i81J6g0%2FuciCmzEIVJcflRAZrbHBlnq3hzd7C2xvfHhxFfbNawLi5afmJslsFDH0k7HWXWz%2BgrnhJpVK7UByTR%2Bt1KDyVIVtuxP5ZJpGY2Jr1tKjgZnUcTL7frXQX72Vw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b6d9c955dc146822805855b1dbbd89d3dac6b12638c2ad741798954990900c27",
+      "file_size": 29640,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-11-29T21:27:37.751Z",
+  "allow_singular_disclosure_after": -176801280.6946351,
+  "singular_disclosure_allowed": true,
+  "vote_count": 10,
+  "voters": [
+    "n1m0",
+    "ali",
+    "wtm",
+    "sa1tama0",
+    "mr-alienx-kurd",
+    "omespino",
+    "m0ti0nl3ss_",
+    "xenonm2r",
+    "jeyanthan",
+    "karca"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 32489,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/kubernetes/kubelet",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "863979",
+  "votes": 10,
+  "latest_disclosable_activity_at": "2020-10-30T21:54:31.888Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T12:55:38.555242",
+    "source": "https://hackerone.com/reports/863979.json",
+    "report_id": 863979
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NjM5Nzk=",
+    "databaseId": "863979",
+    "title": "Compromise of node can lead to compromise of pods on other nodes",
+    "url": "https://hackerone.com/reports/863979",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-10-30T21:54:31.857Z",
+    "created_at": "2020-05-01T12:26:35.494Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": 6.8
+    },
+    "reporter": {
+      "username": "wtm"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjg5MDU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-13T19:08:03.900Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg2Mzk3OQ==",
+    "_id": "863979",
+    "disclosed": true,
+    "votes": 10,
+    "latest_disclosable_activity_at": "2020-10-30T21:54:31.888Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NjM5Nzk=",
+      "databaseId": "863979",
+      "title": "Compromise of node can lead to compromise of pods on other nodes",
+      "url": "https://hackerone.com/reports/863979",
+      "disclosed_at": "2020-10-30T21:54:31.857Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    }
+  }
+}

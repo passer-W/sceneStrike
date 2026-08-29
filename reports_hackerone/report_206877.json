@@ -1,0 +1,205 @@
+{
+  "id": 206877,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDY4Nzc=",
+  "url": "https://hackerone.com/reports/206877",
+  "title": "HTML injection in Desktop Client",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-02-16T13:01:16.695Z",
+  "submitted_at": "2017-02-16T13:01:16.695Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "lukasreschke",
+    "url": "/lukasreschke",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/037/891/e7fea4d5383dc07d1fe767b02f3bda2bc7639c63_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 3059,
+    "url": "https://hackerone.com/owncloud",
+    "handle": "owncloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "ownCloud",
+      "twitter_handle": "ownCloud",
+      "website": "https://www.owncloud.com",
+      "about": "ownCloud GmbH is the company behind the ownCloud Project - the most downloaded open source project for data and file sync, share and view."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-05-23T07:29:33.250Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-05-22T21:54:43.884Z",
+  "team_member_agreed_on_going_public_at": "2017-05-23T07:29:33.199Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "#Problem\n\nThere are HTML injections throughout the ownCloud desktop client. A good example of this can be seen in [accountsettings.cpp line 641 to 705](https://github.com/owncloud/client/blob/172689d35cfae5137a316dfdee7dacc9667e1dcc/src/gui/accountsettings.cpp#L641-L705). For reference purposes this is a trimmed down and slightly commented version of the code:\n\n```cpp\nvoid AccountSettings::refreshSelectiveSyncStatus()\n{\n    QString msg;\n    int cnt = 0;\n    foreach (Folder *folder, FolderMan::instance()->map().values()) {\n    ...\n        foreach(const auto &it, undecidedList) {\n            ...\n            QString myFolder = (it);\n            ...\n            QModelIndex theIndx = _model->indexForPath(folder, myFolder);\n            if(theIndx.isValid()) {\n                // User supplied content is appended to msg\n                msg += QString::fromLatin1(\"<a href=\\\"%1?folder=%2\\\">%1</a>\").arg(myFolder).arg(folder->alias());\n            } else {\n                msg += myFolder; // no link because we do not know the index yet.\n            }\n        }\n    }\n\n    if (msg.isEmpty()) {\n       ...\n    } else {\n        ConfigFile cfg;\n        QString info =\n            !cfg.confirmExternalStorage() ? tr(\"There are folders that were not synchronized because they are too big: \") :\n            !cfg.newBigFolderSizeLimit().first ? tr(\"There are folders that were not synchronized because they are external storages: \") :\n            tr(\"There are folders that were not synchronized because they are too big or external storages: \");\n\n        ui->selectiveSyncNotification->setText(info + msg);\n        ui->selectiveSyncButtons->setVisible(false);\n        ui->bigFolderUi->setVisible(true);\n        shouldBeVisible = true;\n    }\n   ...\n}\n```\n\n`msg` is assigned `QString::fromLatin1(\"<a href=\\\"%1?folder=%2\\\">%1</a>\").arg(myFolder).arg(folder->alias());` whereas `myFolder` and `folder->alias()` are user-controlled content.\n\nIf an adversary on the instance now shares a folder with someone else that exceeds the \"ask for confirmation before synchronising limit\" (default: 500MB) this will lead into above execution path.  An example malicious folder name would be:\n\n> `\"><&#x2f;a><p><center><h1><strong>Important!<&#x2f;strong> Please go to nextcloud.com and relogin!<&#x2f;center><&#x2f;h1><&#x2f;p><!-- ` \n\nIn the user interface this will lead to following view in the 2.3.x client:\n\n{F161217}\n\n*Note that this is also exploitable on 2.2.x. For simplicity, I went with the 2.3.x client as this is the currently developed branch. Exploit has been tested on OS X and may need adjustments for other operating systems.*\n\n#Patch proposal\n\nThis kind of vulnerability can be addressed by escaping user-supplied content, in this case one approach to patch it would be:\n\n```diff\ndiff --git src/gui/accountsettings.cpp src/gui/accountsettings.cpp\nindex 0fb32cfbf..9c46ce9c1 100644\n--- src/gui/accountsettings.cpp\n+++ src/gui/accountsettings.cpp\n@@ -664,7 +664,7 @@ void AccountSettings::refreshSelectiveSyncStatus()\n             }\n             QModelIndex theIndx = _model->indexForPath(folder, myFolder);\n             if(theIndx.isValid()) {\n-                msg += QString::fromLatin1(\"<a href=\\\"%1?folder=%2\\\">%1</a>\").arg(myFolder).arg(folder->alias());\n+                msg += QString::fromLatin1(\"<a href=\\\"%1?folder=%2\\\">%1</a>\").arg(myFolder.toHtmlEscaped()).arg(folder->alias().toHtmlEscaped());\n             } else {\n                 msg += myFolder; // no link because we do not know the index yet.\n             }\n```\n\n#General recommendation\n\nA quick research on the client application shows that similar vulnerabilities can be found throughout the application. For example when hovering file names as can be seen in F161223. \n\nI'd highly recommend thus to review the whole codebase for similar vulnerabilities.",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 161217,
+      "file_name": "spoofed-error-message.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/161/217/a4c068bd8471848048c19b04cb47c4abac4bf1fa/spoofed-error-message.png?response-content-disposition=attachment%3B%20filename%3D%22spoofed-error-message.png%22%3B%20filename%2A%3DUTF-8%27%27spoofed-error-message.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUMVDC725%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063316Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCEKKFgyGotKu%2BMBbuu3IdV5Bmn0oLe07aHvoqK5pSC2gIgBwomP%2FOHAWvwUa4nxYjGiaXPBrBynDU1CeHT2y1Fy%2FUqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDNeu1uxObvN1D7nGvCqPBeFew5g%2BfW%2Bt0%2F6eqWED1NtlcPYqM5XpiJCsGaRxL%2BXlO%2FVm8rAYltM9o%2FdhVWaVlxPTY20DWCyBHbpNrBAv6%2B2EQNosrdt%2FQSXqa49D28uLWYYrHOg%2FZvNlN24RDTx0Bk%2FMpGNGB%2FqHjHMLjEoaeLH8hCsU7dGs3G7bF1IGw%2FCr8IAat1UK6KuHHM%2FvrW%2FbQ6HFUI20rU5kNZlYhz3d%2BgiAZqS10Av%2FccG7Y3ObtAl6xFgTjfra%2FMC%2BVK1vtyrfG0kYyL6cImUN%2FeGk%2FW2FctCQqXt1aCPo5Dxaj5xVy4WZlTWfs7ZzP4xxrjJ1NBmef2Fbbwxm6CCvWZkNnVFr9S%2F%2B5blv81eoeuJSmbfbfghm1flY9DOvx7atEUuBuyWsASV3QDVvg7U9bgeUMPcq2UxhrnKHXA31WK2FNpziwVAZyOHe9ycMgNWWc7%2BObTaWRmZ6PQ5o0gole3AFfJXnHVjAzgZ8jurR6i6tsqsH0f3sRD9YtKHN%2Bh9kQV3SgxpLkeSQZ042RzPhN9ta80YZ2t110iKK0gNcZGU321Sdxc1ih0hiwBxlYKBHl3lhf7quLEL7mjdjTz3bauPpaNNoZJAj7jXchwOiOttUgPh87QZbKXQn4x%2BjqViKqeyHxkRvomKavmOoXvtMD%2Bd3l8QsHKDG2ZXycGcDvmC1u2XCnudUlr9SbTIoeUHV0raCm6ecVqH4NWB5ORxfbRq1AgH2pPur0iMu01nSCD8ylLaENRlAW99kIHUnZGdrvsDBm0v0s4Vw5eqrzSs0KGklZRjRg3R2nPsk4hwpdAtngyCCSzWRmZwGBDwR8u5ChaZVXbLdyGd%2F1XGqFGlnrEQdq0PGHGPjvzlS6q8p7ZnJwlQveIQw4tK30gY6sQFwIu8jOKVvMzUYQQv1Qb3sRWRQeYg12htqDTKEKNd8M%2Fc3RkgKsdplgG%2BPHT5BqIzNR196O7JlZZwmCxNK0nRLstFMfYlwwogzAZD8aWv8D2ZkyeHu5bpRo0DvrO16l58JsjTRFfK5MlwRpBFvzFUcrg%2FZHMNi6tiBDyWLj%2BrfWj5%2Fq%2BCsFDAF3Hj%2Bjpq8MZVCfMfMFoJmC5hI2U77I2TmF4vLahRXe24CrCeMfOa6XfM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=97915a83a1c3d4c009cb17341febf6439d53854daa9973ed34d09c0540389b34",
+      "file_size": 301670,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 161223,
+      "file_name": "font-exploit.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/161/223/dd22834d5b4e602a7af623b0cc26ac76ae794163/font-exploit.png?response-content-disposition=attachment%3B%20filename%3D%22font-exploit.png%22%3B%20filename%2A%3DUTF-8%27%27font-exploit.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUMVDC725%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063316Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCEKKFgyGotKu%2BMBbuu3IdV5Bmn0oLe07aHvoqK5pSC2gIgBwomP%2FOHAWvwUa4nxYjGiaXPBrBynDU1CeHT2y1Fy%2FUqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDNeu1uxObvN1D7nGvCqPBeFew5g%2BfW%2Bt0%2F6eqWED1NtlcPYqM5XpiJCsGaRxL%2BXlO%2FVm8rAYltM9o%2FdhVWaVlxPTY20DWCyBHbpNrBAv6%2B2EQNosrdt%2FQSXqa49D28uLWYYrHOg%2FZvNlN24RDTx0Bk%2FMpGNGB%2FqHjHMLjEoaeLH8hCsU7dGs3G7bF1IGw%2FCr8IAat1UK6KuHHM%2FvrW%2FbQ6HFUI20rU5kNZlYhz3d%2BgiAZqS10Av%2FccG7Y3ObtAl6xFgTjfra%2FMC%2BVK1vtyrfG0kYyL6cImUN%2FeGk%2FW2FctCQqXt1aCPo5Dxaj5xVy4WZlTWfs7ZzP4xxrjJ1NBmef2Fbbwxm6CCvWZkNnVFr9S%2F%2B5blv81eoeuJSmbfbfghm1flY9DOvx7atEUuBuyWsASV3QDVvg7U9bgeUMPcq2UxhrnKHXA31WK2FNpziwVAZyOHe9ycMgNWWc7%2BObTaWRmZ6PQ5o0gole3AFfJXnHVjAzgZ8jurR6i6tsqsH0f3sRD9YtKHN%2Bh9kQV3SgxpLkeSQZ042RzPhN9ta80YZ2t110iKK0gNcZGU321Sdxc1ih0hiwBxlYKBHl3lhf7quLEL7mjdjTz3bauPpaNNoZJAj7jXchwOiOttUgPh87QZbKXQn4x%2BjqViKqeyHxkRvomKavmOoXvtMD%2Bd3l8QsHKDG2ZXycGcDvmC1u2XCnudUlr9SbTIoeUHV0raCm6ecVqH4NWB5ORxfbRq1AgH2pPur0iMu01nSCD8ylLaENRlAW99kIHUnZGdrvsDBm0v0s4Vw5eqrzSs0KGklZRjRg3R2nPsk4hwpdAtngyCCSzWRmZwGBDwR8u5ChaZVXbLdyGd%2F1XGqFGlnrEQdq0PGHGPjvzlS6q8p7ZnJwlQveIQw4tK30gY6sQFwIu8jOKVvMzUYQQv1Qb3sRWRQeYg12htqDTKEKNd8M%2Fc3RkgKsdplgG%2BPHT5BqIzNR196O7JlZZwmCxNK0nRLstFMfYlwwogzAZD8aWv8D2ZkyeHu5bpRo0DvrO16l58JsjTRFfK5MlwRpBFvzFUcrg%2FZHMNi6tiBDyWLj%2BrfWj5%2Fq%2BCsFDAF3Hj%2Bjpq8MZVCfMfMFoJmC5hI2U77I2TmF4vLahRXe24CrCeMfOa6XfM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=585f6bb4df7fe44d9019319d387ceb250936a15cf2f4e7b37b290f95d89df03d",
+      "file_size": 300070,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-06-21T21:54:43.966Z",
+  "allow_singular_disclosure_after": -285410312.6440434,
+  "singular_disclosure_allowed": true,
+  "vote_count": 5,
+  "voters": [
+    "ysx",
+    "eveeez",
+    "japz",
+    "demo--hacker",
+    "spetr0x"
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 3.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "206877",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2017-05-23T07:29:33.276Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:33:16.742194",
+    "source": "https://hackerone.com/reports/206877.json",
+    "report_id": 206877
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDY4Nzc=",
+    "databaseId": "206877",
+    "title": "HTML injection in Desktop Client",
+    "url": "https://hackerone.com/reports/206877",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-05-23T07:29:33.250Z",
+    "created_at": "2017-02-16T13:01:16.695Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.5
+    },
+    "reporter": {
+      "username": "lukasreschke"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIwNjg3Nw==",
+    "_id": "206877",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2017-05-23T07:29:33.276Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDY4Nzc=",
+      "databaseId": "206877",
+      "title": "HTML injection in Desktop Client",
+      "url": "https://hackerone.com/reports/206877",
+      "disclosed_at": "2017-05-23T07:29:33.250Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    }
+  }
+}

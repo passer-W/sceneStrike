@@ -1,0 +1,198 @@
+{
+  "id": 2627062,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjI3MDYy",
+  "url": "https://hackerone.com/reports/2627062",
+  "title": "Rate limit bypass on passport.acronis.work using X-Forwarded-For request header",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2024-07-27T00:21:01.932Z",
+  "submitted_at": "2024-07-27T00:21:02.547Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "analyz3r",
+    "url": "/analyz3r",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/jc3lypwfs36821qhlc30x7bk3ejz/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13428,
+    "url": "https://hackerone.com/acronis",
+    "handle": "acronis",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Acronis",
+      "twitter_handle": "Acronis",
+      "website": "https://www.acronis.com",
+      "about": "Complete integrated cybersecurity and data protection for MSPs and IT teams"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-11-28T16:07:19.291Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-11-28T16:07:19.142Z",
+  "team_member_agreed_on_going_public_at": "2024-10-31T13:18:21.119Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\nOn https://passport.acronis.work/ you cannot attempt to login even if you have a valid email address, and theres also a rate limit which can make it impossible to perform brute force attack to find valid emails, and even if you have a valid you still cannot attempt login since you are not from the same location of the victims location.\n\nWhile brute force attacks and user enumeration are both at out of scope, but please remember this vulnerability is actually an access control issue that allows the attackers to bypass the restriction of attempting logins, but it also allows attackers to spoof their ip addresses, spoofing ip addresses may allow attackers to use your employee ip addresses and act as them from un-authenticated endpoints.\n\nSince the malicious header allows attacker to bypass the rate limit, attackers may also be able to bypass the otp when trying to login to a victims account, while the otp is a 12 character otp, but its actually doesn't  mean attackers aren't able to send much requests, and this is can lead to takeover your employee accounts which is actually a critical vulnerability.\n\nSo just in case, if you wanted to close the report or not interested, please remember that this vulnerability is actually an access control vulnerability not only brute forcing or user enumeration.\n\n## Steps To Reproduce\nSteps to bypass the rate limit:\n1. try to attempt 10 failed logins, you must face the rate limit error, 429 status\n2. now simply add `X-Forwarded-For: 12.34.56.78` header which is a malicious header, and you see you are able to submit 10 more requests\n3. if you wanted to brute force the endpoint, you can use burp suites intruder, brute force both the ip address and the email, you see you are still able to submit requests even after 300 requests\n\nSteps to bypass the restriction on login with victims email addresses:\n1. in case you wanted to try to login to a victims account as attacker, such as `ab@acronis.com` which I found on snov.io you can't if you aren't from bulgaria, you will be restricted due to you are not from bulgaria and you see that error `ERR-B258C8`\n2. on burpsuite, visit proxy settings, match and replace settings, replace nothing with `X-Forwarded-For: 109.104.192.0 ` (the ip is from bulgaria)\n3. visit https://passport.acronis.work/login and try to login with the victims email, you see the restriction has been removed\n\nSame bypass can be used to bypass the rate limit on the otp submit endpoint.\n\n## Recommendations\nDisable `X-Forwarded-For` header\n\n# POC\n{F3472107}\n\n## Impact\n\nAttackers able to bypass rate limit, also bypass restriction on attempting to login to employee accounts due to allowing a malicious http header.\n\nPlease let me know if you need more information, Thanks.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3472107,
+      "file_name": "Screen_Recording_2024-07-27_at_3.16.42_AM.mov",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/x42fzlt0di1k3wf3f20ql7wmcmrj?response-content-disposition=attachment%3B%20filename%3D%22Screen_Recording_2024-07-27_at_3.16.42_AM.mov%22%3B%20filename%2A%3DUTF-8%27%27Screen_Recording_2024-07-27_at_3.16.42_AM.mov&response-content-type=video%2Fquicktime&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043613Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8347b1e3e1cf31380d11241fe9ad95837e1366d6340c2fe777571f43299f5e47",
+      "file_size": 23312975,
+      "type": "video/quicktime",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 105,
+  "voters": [
+    "neat_panda",
+    "0xcyborg",
+    "expression4865",
+    "k0ns0l",
+    "coder_mohammed",
+    "orange303",
+    "loaymorad",
+    "nyv0rn",
+    "almuntadhar0x01",
+    "1ncognitox",
+    "and 95 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 103067,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.acronis.work",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2627062",
+  "votes": 105,
+  "latest_disclosable_activity_at": "2024-11-28T16:07:19.542Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:36:14.055086",
+    "source": "https://hackerone.com/reports/2627062.json",
+    "report_id": 2627062
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjI3MDYy",
+    "databaseId": "2627062",
+    "title": "Rate limit bypass on passport.acronis.work using X-Forwarded-For request header",
+    "url": "https://hackerone.com/reports/2627062",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-11-28T16:07:19.291Z",
+    "created_at": "2024-07-27T00:21:01.932Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "analyz3r"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82MDc1ODg=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-08-14T09:00:11.497Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI2MjcwNjI=",
+    "_id": "2627062",
+    "disclosed": true,
+    "votes": 105,
+    "latest_disclosable_activity_at": "2024-11-28T16:07:19.542Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjI3MDYy",
+      "databaseId": "2627062",
+      "title": "Rate limit bypass on passport.acronis.work using X-Forwarded-For request header",
+      "url": "https://hackerone.com/reports/2627062",
+      "disclosed_at": "2024-11-28T16:07:19.291Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "id": 361337,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjEzMzc=",
+  "url": "https://hackerone.com/reports/361337",
+  "title": "Missing back-end user input validation can lead to DOS flaw",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2018-06-03T13:28:49.737Z",
+  "submitted_at": "2018-06-03T13:28:49.737Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "zuh4n",
+    "url": "/zuh4n",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/003co5s7ttfbvqi1zah9g22ny3wm/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 28411,
+    "url": "https://hackerone.com/liberapay",
+    "handle": "liberapay",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/t5bperr6a46huf3g9yn98it5zpfz/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/t5bperr6a46huf3g9yn98it5zpfz/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Liberapay",
+      "twitter_handle": "",
+      "website": "https://liberapay.com",
+      "about": "An open source platform designed to facilitate recurrent donations."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-06-05T12:13:33.373Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-06-05T12:13:33.293Z",
+  "team_member_agreed_on_going_public_at": "2018-06-05T12:12:07.862Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello Team,\n\nUsually such kind of reports are out of scope, however I still would like to report you the business logic weakness that should be eliminated, at least from my point of view. Due to missing user input validation it is can lead to application unavailability.\n\n**_Details:_**\nDuring brief review of Liberapay application I have noticed that under 'Profile' page it's allowed to change username + name data. The first thing that caught my eye - \"Name (optional) Maximum length is 64 `<input name=\"public_name\" class=\"form-control\" value=\"zzzzz\" maxlength=\"64\" placeholder=\"Name\">`\". It means that application has front-end user input validation, but what about back-end?\n\nIn case when the user exceeds the specified limit, the application server will return a response with the following status: 400 Bad Request + entire string that was inserted by user. Having this information in mind it was decided to check how the application server will handle the POST request that contains 100, 500, 10000, ... public_name value length.\n\nIn my case I simply changed the `maxlength` value directly at the DOM.\n\n**_PoC:_**\nThe usual response time for valid request is about ~150-200ms (65 public_name value length)\n{F304705}\n\nThis one for 500 public_name value length\n{F304706}\n\nThis one for 10000 public_name value length\n{F304707}\n\nThis one for 15000 public_name value length\n{F304708}\n\n**_Remediation:_**\n- The recommendation here is simple, before sending an actual processing request - the application need to double check the content-length at back end. _All_ user input input should be validated at back-end.\n\n## Impact\n\nThis surface is a good base for a planning a DDoS attack Liberapay with a small bot-net asset, i.e. small number of machines may cause a consuming of server's RAM.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 304705,
+      "file_name": "65_chars.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/304/705/4306d1996357fefd6c53ba91d14bf45fdbf8ca43/65_chars.jpg?response-content-disposition=attachment%3B%20filename%3D%2265_chars.jpg%22%3B%20filename%2A%3DUTF-8%27%2765_chars.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060510Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=211345e63814a60dbd8d23a37b539b7f159877b904428eecbf0a35c5c5c2399e",
+      "file_size": 109652,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 304706,
+      "file_name": "500_chars.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/304/706/e665ff8a7be731dfb3c985decf2db6a760bbed7a/500_chars.jpg?response-content-disposition=attachment%3B%20filename%3D%22500_chars.jpg%22%3B%20filename%2A%3DUTF-8%27%27500_chars.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060510Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=71be5ed542321311a80393ecfb40ef9e1bd5f2241043b783d3719e2e41380422",
+      "file_size": 112090,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 304707,
+      "file_name": "10000_chars.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/304/707/6f9548c0f0f16f00a4ce94155efca91ebe02bd3a/10000_chars.jpg?response-content-disposition=attachment%3B%20filename%3D%2210000_chars.jpg%22%3B%20filename%2A%3DUTF-8%27%2710000_chars.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060510Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5155ce29943f881b982d76b8bb0fe74128c2b7f1d6e0f2a97658c6e74faf52b3",
+      "file_size": 122612,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 304708,
+      "file_name": "15000_chars.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/304/708/0372ac45511aae2f86c2817e6e8dadc768a2c8d5/15000_chars.jpg?response-content-disposition=attachment%3B%20filename%3D%2215000_chars.jpg%22%3B%20filename%2A%3DUTF-8%27%2715000_chars.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4SYXBO4J%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060510Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIARPWvhLY%2FBF5mQGv15%2FBOapOaZWEr8SwXrmKHUnS%2F4KAiEA%2F61jAgKqhXuUAkvcE7AI78W5F4gCCuw4JeopBLh%2FhI0qsgUIfxADGgwwMTM2MTkyNzQ4NDkiDELb591HcWu0HijbBiqPBV4P1xpz8rUmaCfAdCGrm1Sf0toBW3PBHx44dBLQVqave%2FoWHzcIyFy3ilHHtsCuD4EI9gOKmZfsVnKFo%2B1QD3eA8Ji2TT1P9knGwxceCVnn3ZVUi13D%2FkGiFws8K0wn%2FqpSfpsneKKnaoq%2Feir2V6M8iGForRSWRtg06aE0Y1JFVJ6OR2Lw4h5hhO7JwtwPKrqXycEsrWyLvyYPEYOSME6bEJuaX%2F95Apzq1JKy%2BfzgyHnNeroziJQnQExKoS%2BZB9zV%2BzacRK3IEGpUXUzaGN1q27%2Bz7OEPQjc0BNE3WDCZehfCgFY2cvdaFgMlpRgwAboNWMP9QDWbGvrUuFEFItoh%2B%2Fcq6meS7uIU%2FFmwhPeiUy6vofJpDG38ShanOh6%2BDJWNS01dvxup26WFtz5TEsQ%2FZKzg1UO8mKkdS2ZS35d%2FmBI8MBhRqsr89tXcZDYd%2BGSAec8vwNgx9oSS5J1mhdid5N6NfxEpyInYaRNXXpx1I5rjKiv%2FsHKka%2FqXo1B5tTmCvkBM3jRwbYrSKWy9KFn28%2FAu9GHOu3y2f7AvniEquPMCWzP0YCA0HiNa711cp%2B8Qjw6%2BDJwJd5VB4RMiTqLwhGPofYLTcgwqwUc9AwxBkGr1Bh57z8Qc%2FgtGIMclpGb70J03y2yNX44SASk%2Bp1yGOEXmpLm0C8SyIUy2FZlisYokJi8MBUEmx0W7Qx4hKZET%2BGUCKY%2BDoR7A%2FBnfDPpRB1Vxfej7y%2FCgv01rWSe%2BQmICbg4%2F5fQx9%2By3JKuPm6r6CBrfzvwtN7qjwXDIUSXkpAxikqJWH5gFY%2F03yuazOPlGITCjSlpPK014fdXL9GjoDEZbmQsn7SFub31%2FgZmSX5dU22dOsx5Fb5w%2B8V8wsc630gY6sQEPKwp7IsQc4Ki6K8nI91fzhIvwUB1D7%2FXedtCF%2FShvzzrrc1DAqOg4vr2XcEZBAunyFcCpZTeLUZaTVozU1rKcoHzQgqcbMpiVDVzR50PXrMpZjaZF7hkh%2BEA9%2Bqqi4QY5Ueue0POHdYsWHfI59tF4qKt0xZ7VD1vDGwpAg%2BQ5qYiP%2BbXG4r3cX7QDpNjAxI4wstfwkmmBPvicpmMfLIPlyJl%2Fkvj5g%2FnB%2FGA0tooJ8o4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=610eabda9af10dc58e825b3bef404d71dc4ba1433f969c4f4e4ce20018ef1dc0",
+      "file_size": 109974,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-07-05T12:12:08.080Z",
+  "allow_singular_disclosure_after": -252697982.52310714,
+  "singular_disclosure_allowed": true,
+  "vote_count": 5,
+  "voters": [
+    "skyn3t",
+    "eveeez",
+    "aegil",
+    "japz",
+    "0x08"
+  ],
+  "structured_scope": {
+    "databaseId": 8926,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.liberapay.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "361337",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2018-06-05T12:13:33.403Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:05:10.708509",
+    "source": "https://hackerone.com/reports/361337.json",
+    "report_id": 361337
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjEzMzc=",
+    "databaseId": "361337",
+    "title": "Missing back-end user input validation can lead to DOS flaw",
+    "url": "https://hackerone.com/reports/361337",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-06-05T12:13:33.373Z",
+    "created_at": "2018-06-03T13:28:49.737Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "zuh4n"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI4NDEx",
+      "handle": "liberapay",
+      "name": "Liberapay",
+      "url": "https://hackerone.com/liberapay",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2MTMzNw==",
+    "_id": "361337",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2018-06-05T12:13:33.403Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjEzMzc=",
+      "databaseId": "361337",
+      "title": "Missing back-end user input validation can lead to DOS flaw",
+      "url": "https://hackerone.com/reports/361337",
+      "disclosed_at": "2018-06-05T12:13:33.373Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI4NDEx",
+      "handle": "liberapay",
+      "name": "Liberapay",
+      "url": "https://hackerone.com/liberapay",
+      "currency": "usd"
+    }
+  }
+}

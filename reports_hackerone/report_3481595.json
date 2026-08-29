@@ -1,0 +1,211 @@
+{
+  "id": 3481595,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgxNTk1",
+  "url": "https://hackerone.com/reports/3481595",
+  "title": "SMTP CRLF Injection & Protocol Desynchronization in libcurl",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "medium",
+  "readable_substate": "N/A",
+  "created_at": "2025-12-29T17:23:17.377Z",
+  "submitted_at": "2025-12-29T17:23:17.652Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ltl_professor",
+    "url": "/ltl_professor",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-12-29T21:28:53.922Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-12-29T21:28:53.758Z",
+  "team_member_agreed_on_going_public_at": "2025-12-29T21:27:49.607Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Executive Summary\nA critical security vulnerability has been identified in `libcurl`'s SMTP protocol handler. The vulnerability allows for **SMTP Command Smuggling** and **Protocol Desynchronization** by injecting CRLF sequences into email address fields. This can be exploited to bypass security controls, forge emails, and smuggle arbitrary commands into the SMTP stream.\n\n## Vulnerability Details\n\n**1. Root Cause: Insufficient Input Validation**\nThe function `smtp_parse_address` in `lib/smtp.c` is responsible for parsing email addresses for options like `CURLOPT_MAIL_FROM`, `CURLOPT_MAIL_RCPT`, and `CURLOPT_MAIL_AUTH`. \n\nUnlike other parts of the SMTP handler (e.g., custom requests), this function does **not** use Curl_urldecode with `REJECT_CTRL` and does not perform any validation for control characters. It allows `\\r\\n` to pass through into the `suffix` component, which is later concatenated into raw protocol commands sent via Curl_pp_sendf.\n\n**2. Protocol Desynchronization (Response Smuggling)**\nThe vulnerability is amplified by a failure in the SMTP state machine to detect \"extra\" responses from the server.\n\n`libcurl` uses a \"pingpong\" mechanism `lib/pingpong.c` where it sends one command and waits for one response. If an attacker injects multiple commands (e.g., `MAIL FROM:<addr>\\r\\nQUIT`), the server sends multiple responses.\n\n**Code-Level Evidence (lib/smtp.c):**\n- **VULNERABLE**: The handlers for `MAIL`, `RCPT`, and `DATA` responses (lines 1152, 1173, 1233) **fail to check** the `pp.overflow` flag. They read the first response and proceed to the next state, leaving the injected responses in the buffer to be consumed as the \"result\" of subsequent legitimate commands.\n- **PROTECTED**: The `STARTTLS` handler (line 930) correctly implements this check:\n  ```c\n  if(smtpc->pp.overflow)\n    return CURLE_WEIRD_SERVER_REPLY;\n  ```\nThe absence of this check in core mail-sending states allows an attacker to desynchronize the client-server state, causing curl to misinterpret the success or failure of later commands based on injected responses.\n\n## Proof of Concept (PoC)\n\n{F5166562}\n{F5166563}\n\n### Reproduction Steps\n\n### Step 1: Start the Mock SMTP Server\nRun the following command in a terminal to start the mock server. This server logs every command received and highlights when it processes smuggled instructions.\n{F5166566}\n\n```\npython3 smtp_repro.py\n```\n\n### Step 2: Run the Exploit Command\nIn a **different** terminal, run the following curl command. We use a specially crafted `--mail-from` that includes a smuggled `RCPT TO` and `DATA` block.\n\n```bash\ncurl -v smtp://localhost:2525 \\\n  --mail-from $'<attacker@example.com>\\r\\nRCPT TO:<victim@internal.trust>\\r\\nDATA\\r\\nSubject: Smuggled!\\r\\n\\r\\nThis email bypasses legitimate recipient lists!\\r\\n.\\r\\n' \\\n  --mail-rcpt \"legit@example.com\" \\\n  --upload-file /dev/null\n```\n\n### Step 3: Observe the Desynchronization\n\n### Server-Side Output (Terminal 1)\nThe Python server will show that it received a single block of data but interpreted it as **multiple independent SMTP commands**:\n```text\n[!] Received Data Block (potentially containing multiple commands):\n    [C->S] MAIL FROM:<attacker@example.com>\n    [C->S] RCPT TO:<victim@internal.trust>\n    [C->S] DATA\n    [C->S] Subject: Smuggled!\n...\n[!] EXPLOIT: Server is executing SMUGGLED command: RCPT TO:<victim@internal.trust>\n[!] EXPLOIT: Server is entering SMUGGLED DATA phase\n```\n\n### Protocol Desynchronization Proof\nWatch the final lines of the server log:\n1. curl sends its \"legitimate\" `RCPT TO:<legit@example.com>`.\n2. curl reads the next available bytes from the socket.\n3. Due to the injection, the **next response** in the socket is the `354` or `250` for the *injected* commands.\n4. curl treats this smuggled response as the validation for `legit@example.com`.\n\n**Actual `curl -v` Impact**:\ncurl logs will report that it successfully sent the mail to `legit@example.com`, but in reality, the response it verified was for the smuggled recipient `victim@trust.internal`. The legitimate email might even fail, yet curl could report success if the injected commands were crafted to align with the expected response codes.\n\n## Recommendations\n1.  **Implement `REJECT_CTRL`**: Update smtp_parse_address `curl-master/lib/smtp.c#1825-1906` to reject control characters.\n2.  **Universal Overflow Enforcement**: Add `pp.overflow` validation to all SMTP state response handlers (MAIL, RCPT, DATA, VRFY, EXPN) to ensure client-server state synchronization.\n\n## Impact\n\n- **Email Fraud/Spoofing**: Forge sender addresses and inject arbitrary headers.\n- **Unauthorized Distribution**: Send emails to undisclosed recipients by smuggling `RCPT TO` commands.\n- **Protocol Smuggling**: Use `curl-master/lib/urlapi.c#1271-1277` as an SSRF proxy to tunnel commands into internal SMTP relays.",
+  "weakness": {
+    "id": 69,
+    "name": "CRLF Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5166562,
+      "file_name": "Screenshot_2025-12-29_at_21.06.36.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/a6da3pqyuc25o6qc4o5xoful8iqh?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2025-12-29_at_21.06.36.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2025-12-29_at_21.06.36.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2SMZDL7H%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042428Z&X-Amz-Expires=925&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQD1SEzG4xUGm6jJeDXmIaSt4HEbBsRxntaxuhxlNuV29AIhANNtJmUGuTbAO2FmE6a5km13iFOn7xC9Gy1XbOy4SE%2F3KrsFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgxSyMrcjm46b6%2BREpMqjwVLWKCVvWOdURvGoCvmOO0URBHB8PT%2B%2BnyenTqhGtcFeS2h01Oo5D9kwxqV6qTANRcLwSGaIeLRptGuxLUIHtRdMt%2Ffta1GrcmhFuB8s1S3C9dbyvbwu0AtnNbwZCyTVsNrioWWrvwPSSpn%2BBlOj1GGTC9erm90%2F2zWFCsZXqPeakk%2FPhlBPJ3RMGdgKabWgEDlZkQ%2FO9nj40wkgwrjZox9lLL04gwIHVEVzTBeSZOgwd7RkHFwRulaywbVJQ4D3XpCLekmEii2fqCaEsafiCkTmsfuKKnagroJCXExI0zyX8cYCyVzCn3NHM2ESw87ejWguSoyi%2BdTTcKZp4fsizvDnbpvBrf5ZWzBmXIfjFXAbfGUvo6REfVcRcKqsSWbtxHU7CKgyV6TsqDQghHRuo0K2L%2BGf3zUulnjOySOJyKX2w8weOwr4k6MHcHlsHYkwrD31Qg88pb0L80OsZj3SkBRfVl%2BKJmcCurCs5%2F90rlPToTDrFKE2PnSKVi6HPkwN3i%2F609xMJkB%2FcNPh%2Bz2HFCbspbp%2FXH8YFvN0PrWn%2BxfsWu7t0B2l%2Bul6ue5EzPwxCSVegDAtyqsOWyeIqcN6Zqn2b4f3S4byVQem0gR9Cj818SfLOUQqfXwTUYfdCIttqz%2BEW%2FnUfKVrV3DY5Z8wV5xSrfZiqeWDR64n3LB5S6iBob0P%2BYYjBjfNs8E2LFnAqbAlKyb3fm5lCgT%2FijbZIYR79ddp27A3nVpAbGvD%2FWoB4lOhWwZ6FNNy2SGTpOUdgoGQlKY7ntQlQhfD71O4zEfYUQqATm1v9KLX%2B5ZI5RZcmtDliKBl3Nxn0YoauRswcE7SrBMo8REcXlljAfrs9cSFHaCbZG6nN6xsbL7TuGcMNjGm9IGOrABGNu2%2BYucoLMB5WhXeuxQuROCy60CJyIEyJV3UEryLF1z%2FoUqV5xnC0RKPiSgAljMTUKVkC83QiCFoPQNkxfpnGxJaeDcrz57oLRCICBpnkcIidZLmsoxnuwDKYoA34P%2BHPDNd%2BM9jjSD9%2FTjvaGlJh0qkh8WJZRsaM8%2BAWhMhqujNVuLjDthejTR7SD2sMmVsPGY4hEjgB13tpJstXbw35ScMujTb1y4Ri0Szuwgbhk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=08fb74f183720c4f4dd9f38eef7221e3fb50798a7e4424381472028e49cde8a5",
+      "file_size": 226887,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5166563,
+      "file_name": "Screenshot_2025-12-29_at_21.06.54.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/hozdtapv12p7hdjrm2f4wwzlyucn?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2025-12-29_at_21.06.54.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2025-12-29_at_21.06.54.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2SMZDL7H%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042428Z&X-Amz-Expires=925&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQD1SEzG4xUGm6jJeDXmIaSt4HEbBsRxntaxuhxlNuV29AIhANNtJmUGuTbAO2FmE6a5km13iFOn7xC9Gy1XbOy4SE%2F3KrsFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgxSyMrcjm46b6%2BREpMqjwVLWKCVvWOdURvGoCvmOO0URBHB8PT%2B%2BnyenTqhGtcFeS2h01Oo5D9kwxqV6qTANRcLwSGaIeLRptGuxLUIHtRdMt%2Ffta1GrcmhFuB8s1S3C9dbyvbwu0AtnNbwZCyTVsNrioWWrvwPSSpn%2BBlOj1GGTC9erm90%2F2zWFCsZXqPeakk%2FPhlBPJ3RMGdgKabWgEDlZkQ%2FO9nj40wkgwrjZox9lLL04gwIHVEVzTBeSZOgwd7RkHFwRulaywbVJQ4D3XpCLekmEii2fqCaEsafiCkTmsfuKKnagroJCXExI0zyX8cYCyVzCn3NHM2ESw87ejWguSoyi%2BdTTcKZp4fsizvDnbpvBrf5ZWzBmXIfjFXAbfGUvo6REfVcRcKqsSWbtxHU7CKgyV6TsqDQghHRuo0K2L%2BGf3zUulnjOySOJyKX2w8weOwr4k6MHcHlsHYkwrD31Qg88pb0L80OsZj3SkBRfVl%2BKJmcCurCs5%2F90rlPToTDrFKE2PnSKVi6HPkwN3i%2F609xMJkB%2FcNPh%2Bz2HFCbspbp%2FXH8YFvN0PrWn%2BxfsWu7t0B2l%2Bul6ue5EzPwxCSVegDAtyqsOWyeIqcN6Zqn2b4f3S4byVQem0gR9Cj818SfLOUQqfXwTUYfdCIttqz%2BEW%2FnUfKVrV3DY5Z8wV5xSrfZiqeWDR64n3LB5S6iBob0P%2BYYjBjfNs8E2LFnAqbAlKyb3fm5lCgT%2FijbZIYR79ddp27A3nVpAbGvD%2FWoB4lOhWwZ6FNNy2SGTpOUdgoGQlKY7ntQlQhfD71O4zEfYUQqATm1v9KLX%2B5ZI5RZcmtDliKBl3Nxn0YoauRswcE7SrBMo8REcXlljAfrs9cSFHaCbZG6nN6xsbL7TuGcMNjGm9IGOrABGNu2%2BYucoLMB5WhXeuxQuROCy60CJyIEyJV3UEryLF1z%2FoUqV5xnC0RKPiSgAljMTUKVkC83QiCFoPQNkxfpnGxJaeDcrz57oLRCICBpnkcIidZLmsoxnuwDKYoA34P%2BHPDNd%2BM9jjSD9%2FTjvaGlJh0qkh8WJZRsaM8%2BAWhMhqujNVuLjDthejTR7SD2sMmVsPGY4hEjgB13tpJstXbw35ScMujTb1y4Ri0Szuwgbhk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3fe8b0b144e91b8b908a493e89d2b5ecfe188ee8e25e6ed553feab6711cdd1b9",
+      "file_size": 482714,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5166566,
+      "file_name": "smtp_repro.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bdn7f28v9w5nzxrhivwbgrcw5sim?response-content-disposition=attachment%3B%20filename%3D%22smtp_repro.py%22%3B%20filename%2A%3DUTF-8%27%27smtp_repro.py&response-content-type=text%2Fx-python-script&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2SMZDL7H%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042428Z&X-Amz-Expires=925&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQD1SEzG4xUGm6jJeDXmIaSt4HEbBsRxntaxuhxlNuV29AIhANNtJmUGuTbAO2FmE6a5km13iFOn7xC9Gy1XbOy4SE%2F3KrsFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgxSyMrcjm46b6%2BREpMqjwVLWKCVvWOdURvGoCvmOO0URBHB8PT%2B%2BnyenTqhGtcFeS2h01Oo5D9kwxqV6qTANRcLwSGaIeLRptGuxLUIHtRdMt%2Ffta1GrcmhFuB8s1S3C9dbyvbwu0AtnNbwZCyTVsNrioWWrvwPSSpn%2BBlOj1GGTC9erm90%2F2zWFCsZXqPeakk%2FPhlBPJ3RMGdgKabWgEDlZkQ%2FO9nj40wkgwrjZox9lLL04gwIHVEVzTBeSZOgwd7RkHFwRulaywbVJQ4D3XpCLekmEii2fqCaEsafiCkTmsfuKKnagroJCXExI0zyX8cYCyVzCn3NHM2ESw87ejWguSoyi%2BdTTcKZp4fsizvDnbpvBrf5ZWzBmXIfjFXAbfGUvo6REfVcRcKqsSWbtxHU7CKgyV6TsqDQghHRuo0K2L%2BGf3zUulnjOySOJyKX2w8weOwr4k6MHcHlsHYkwrD31Qg88pb0L80OsZj3SkBRfVl%2BKJmcCurCs5%2F90rlPToTDrFKE2PnSKVi6HPkwN3i%2F609xMJkB%2FcNPh%2Bz2HFCbspbp%2FXH8YFvN0PrWn%2BxfsWu7t0B2l%2Bul6ue5EzPwxCSVegDAtyqsOWyeIqcN6Zqn2b4f3S4byVQem0gR9Cj818SfLOUQqfXwTUYfdCIttqz%2BEW%2FnUfKVrV3DY5Z8wV5xSrfZiqeWDR64n3LB5S6iBob0P%2BYYjBjfNs8E2LFnAqbAlKyb3fm5lCgT%2FijbZIYR79ddp27A3nVpAbGvD%2FWoB4lOhWwZ6FNNy2SGTpOUdgoGQlKY7ntQlQhfD71O4zEfYUQqATm1v9KLX%2B5ZI5RZcmtDliKBl3Nxn0YoauRswcE7SrBMo8REcXlljAfrs9cSFHaCbZG6nN6xsbL7TuGcMNjGm9IGOrABGNu2%2BYucoLMB5WhXeuxQuROCy60CJyIEyJV3UEryLF1z%2FoUqV5xnC0RKPiSgAljMTUKVkC83QiCFoPQNkxfpnGxJaeDcrz57oLRCICBpnkcIidZLmsoxnuwDKYoA34P%2BHPDNd%2BM9jjSD9%2FTjvaGlJh0qkh8WJZRsaM8%2BAWhMhqujNVuLjDthejTR7SD2sMmVsPGY4hEjgB13tpJstXbw35ScMujTb1y4Ri0Szuwgbhk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6444c42260875727b7a20892aa92e97c0a97165a62ff4a3764e6c179edec3c61",
+      "file_size": 2737,
+      "type": "text/x-python-script",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 16,
+  "voters": [
+    "2026",
+    "tw181802",
+    "trffnsec",
+    "i-amlogan",
+    "samujjal_001",
+    "ltl_professor",
+    "hoss_a",
+    "cyphervision",
+    "randomname7",
+    "isk_3",
+    "and 6 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3481595",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2025-12-29T21:28:54.165Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:24:29.123758",
+    "source": "https://hackerone.com/reports/3481595.json",
+    "report_id": 3481595
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgxNTk1",
+    "databaseId": "3481595",
+    "title": "SMTP CRLF Injection & Protocol Desynchronization in libcurl",
+    "url": "https://hackerone.com/reports/3481595",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-12-29T21:28:53.922Z",
+    "created_at": "2025-12-29T17:23:17.377Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY5",
+      "name": "CRLF Injection",
+      "external_id": "cwe-93"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "ltl_professor"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0ODE1OTU=",
+    "_id": "3481595",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2025-12-29T21:28:54.165Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgxNTk1",
+      "databaseId": "3481595",
+      "title": "SMTP CRLF Injection & Protocol Desynchronization in libcurl",
+      "url": "https://hackerone.com/reports/3481595",
+      "disclosed_at": "2025-12-29T21:28:53.922Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

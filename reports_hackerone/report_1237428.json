@@ -1,0 +1,216 @@
+{
+  "id": 1237428,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjM3NDI4",
+  "url": "https://hackerone.com/reports/1237428",
+  "title": "[dubsmash] Long String in 'shoutout' Parameter Leading Internal server Error on Popular hastags , Community and User Profile",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2021-06-18T05:37:20.175Z",
+  "submitted_at": "2021-06-18T05:37:20.276Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sandeep_rj49",
+    "url": "/sandeep_rj49",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/TbAGwNLNTZ8VauwPRotsxp8e/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35710,
+    "url": "https://hackerone.com/reddit",
+    "handle": "reddit",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/osci5oey0q0wkiom39bk5onv8p7q/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/osci5oey0q0wkiom39bk5onv8p7q/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Reddit",
+      "twitter_handle": "reddit",
+      "website": "https://www.reddit.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-12-13T22:48:03.944Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-08-21T03:47:33.066Z",
+  "team_member_agreed_on_going_public_at": "2021-12-13T22:48:03.767Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nIf the user input a long string in the 'shoutout' parameter of the 'CreateVideo' API then all the APIs where this video is supposed to appear (eg: hashtag API, community API, and user profile API) will throw 'internal server error' in the response. This will cause a denial of service attack for the hashtag API (if hashtags are used in the video), community API (if the video is uploaded in the community), and user profile API.\n\nSo, if the attacker uses all trending hashtags in the video then all other videos from the trending hashtags will disappear and API will respond with 200 OK HTTP status code but 'INTERNAL_SERVER_ERROR' in the response body. The hashtag activity tab will not display any other videos.\n\n## Steps To Reproduce:\n1. Open dubsmash ios app. \n2. Record any video. \n3. Use any hashtag in the description (use trending hashtags to cause a denial of service on the trending hashtags).\n4. Click on the post button and intercept the vulnerable request in the burp suite.\n5. Input any long string in the 'shoutout' parameter value. Example- 74692d5f38a34cb4b355cef784fe46aa\n6. Forward the request to the server and turn off the intercept.\n7. On the screen, if it is showing video not uploaded then click. on upload again. \n8. Wait for few minutes to reflect the video in the hashtag. \n9. Search for the used hashtag. \n10. You'll see your video thumbnail is appearing for the searched hashtag. But when you open a hashtag for accessing all the videos, it is not reflecting any API. \n11. Capture the TagUGC API, it will reflect \"INTERNAL SERVER ERROR\" in the response. \n\n\n## AFFECTED API:\nhashtag API:\n```\nPOST /graphql?build_number=52430&platform=ios HTTP/2\nHost: gateway-production.dubsmash.com\nContent-Type: application/json\nX-Device-Country: IN\nAccept: application/json\nAuthorization: Bearer xxxxxx\nX-Dubsmash-Device-Id: 8F15E960-B1C5-4C30-A100-CA0527827502\nX-Accept-Content-Language: en_IN\nAccept-Language: en-IN;q=1.0, hi-IN;q=0.9\nAccept-Encoding: gzip, deflate\nIf-None-Match: W/\"697-EM383iY/+yqkrvx/lSeRoGMBjWM\"\nX-Device-Language: en\nX-Build-Number: 52430\nX-Device-Timezone: 19800\nX-App-Version: 6.3.0\nX-Remote-Config-Values: []\nUser-Agent: Dopesmash/6.3.0 (com.mobilemotion.dubsmash; build:52430; iOS 14.0.1) Alamofire/5.4.1\nContent-Length: 4737\nConnection: close\n\n{\"query\":\"query TagUGC($name: String!, $page: String, $ranking: ContentRankingMethod) {\\n  tag(name: $name) {\\n    __typename\\n    num_objects\\n    objects(object_type: VIDEO, page_size: 9, offset: $page, ranking: $ranking) {\\n      __typename\\n      results {\\n        __typename\\n        ... on Video {\\n          ...VideoFragment\\n        }\\n      }\\n      next\\n    }\\n  }\\n}\\nfragment VideoFragment on Video {\\n  __typename\\n  uuid\\n  created_at\\n  creator {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n  video_type\\n  item_type\\n  video_data {\\n    __typename\\n    mobile {\\n      __typename\\n      video\\n      thumbnail\\n    }\\n    animated_thumbnail {\\n      __typename\\n      video\\n      thumbnail\\n    }\\n  }\\n  updated_at\\n  status\\n  liked\\n  caption: title\\n  original_sound: sound {\\n    __typename\\n    ...SoundFragment\\n  }\\n  num_views\\n  num_likes\\n  num_comments\\n  comments_allowed\\n  share_link\\n  width\\n  height\\n  duet_allowed\\n  privacy_level\\n  is_featured\\n  is_live\\n  community {\\n    __typename\\n    ...CommunityFragment\\n  }\\n  duet_with {\\n    __typename\\n    uuid\\n    title\\n    creator {\\n      __typename\\n      uuid\\n      username\\n    }\\n  }\\n  top_comments {\\n    __typename\\n    ...BasicCommentFragment\\n  }\\n  prompt {\\n    __typename\\n    ...PromptFragment\\n  }\\n  poll {\\n    __typename\\n    ...PollFragment\\n  }\\n  mentions {\\n    __typename\\n    ...MentionFragment\\n  }\\n  shoutout {\\n    __typename\\n    ...BasicShoutoutFragment\\n  }\\n}\\nfragment PublicUserFragment on User {\\n  __typename\\n  username\\n  uuid\\n  display_name\\n  blocked\\n  followed\\n  num_public_post_plays\\n  followsCount: num_follows\\n  followingsCount: num_followings\\n  share_link\\n  date_joined\\n  has_invite_badge\\n  badges\\n  profile_picture\\n  allow_video_download\\n  bio\\n  ... on User {\\n    gifts_offered: products_offered(product_type: GIFT) {\\n      __typename\\n      results {\\n        __typename\\n        product {\\n          __typename\\n          uuid\\n        }\\n      }\\n    }\\n    shoutouts_offered: products_offered(product_type: SHOUTOUT) {\\n      __typename\\n      results {\\n        __typename\\n        product {\\n          __typename\\n          uuid\\n        }\\n      }\\n    }\\n  }\\n}\\nfragment SoundFragment on Sound {\\n  __typename\\n  uuid\\n  created_at\\n  sound\\n  name\\n  waveform_raw_data\\n  liked\\n  soundStatus: status\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n  share_link\\n  num_likes\\n  num_videos\\n}\\nfragment ContentCreatorFragment on User {\\n  __typename\\n  username\\n  uuid\\n  date_joined\\n  followed\\n  has_invite_badge\\n  badges\\n  profile_picture\\n}\\nfragment CommunityFragment on Community {\\n  __typename\\n  uuid\\n  created_at\\n  updated_at\\n  name\\n  description\\n  member_count\\n  online_members\\n  post_count\\n  is_subscribed\\n  icon\\n  banner_image\\n}\\nfragment BasicCommentFragment on Comment {\\n  __typename\\n  uuid\\n  text\\n  likesCount: num_likes\\n  created_at\\n  liked\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n}\\nfragment PromptFragment on Prompt {\\n  __typename\\n  uuid\\n  created_at\\n  name\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n  liked\\n}\\nfragment PollFragment on Poll {\\n  __typename\\n  uuid\\n  title\\n  num_total_votes\\n  choices {\\n    __typename\\n    ...PollChoiceFragment\\n  }\\n  positioning {\\n    __typename\\n    ...StickerPositioningFragment\\n  }\\n  voted_for {\\n    __typename\\n    ...PollChoiceFragment\\n  }\\n}\\nfragment PollChoiceFragment on PollChoice {\\n  __typename\\n  uuid\\n  name\\n  num_votes\\n  index\\n}\\nfragment StickerPositioningFragment on StickerPositioning {\\n  __typename\\n  x\\n  y\\n  width\\n  height\\n  rotation\\n}\\nfragment MentionFragment on Mention {\\n  __typename\\n  object {\\n    __typename\\n    ... on User {\\n      ...PublicUserFragment\\n    }\\n    ... on Tag {\\n      ...TagFragment\\n    }\\n  }\\n  content_type\\n  positioning {\\n    __typename\\n    ...StickerPositioningFragment\\n  }\\n  interval {\\n    __typename\\n    start_time\\n    end_time\\n  }\\n}\\nfragment TagFragment on Tag {\\n  __typename\\n  uuid\\n  name\\n  num_objects\\n  num_plays\\n  subscribed\\n  top_videos {\\n    __typename\\n    ...TopVideoFragment\\n  }\\n}\\nfragment TopVideoFragment on Video {\\n  __typename\\n  uuid\\n  video_data {\\n    __typename\\n    mobile {\\n      __typename\\n      thumbnail\\n    }\\n  }\\n  creator {\\n    __typename\\n    uuid\\n    username\\n  }\\n}\\nfragment BasicShoutoutFragment on Shoutout {\\n  __typename\\n  uuid\\n  created_at\\n  updated_at\\n  requestor {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n  status\\n  creator {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n}\",\"variables\":{\"page\":null,\"ranking\":\"POPULARITY_HASHTAGS\",\"name\":\"hexagonalprism\"}}\n```\n\nUser profile API:\n```\nPOST /graphql?build_number=52430&platform=ios HTTP/2\nHost: gateway-production.dubsmash.com\nContent-Type: application/json\nX-Device-Country: IN\nAccept: application/json\nAuthorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkX2F0IjoxLjYyMzk1NDg2NGUrMDksImV4cCI6MTYyNDA0MTI2NCwiaGFzX3B1YmxpY19wcm9maWxlIjp0cnVlLCJwZXJtaXNzaW9uX2dyb3VwcyI6W10sInJlcXVlc3RfaWQiOiJkYjNhNWIxZi01ZWNlLTQ5YTctYWQwOS1kYjEyYmZlMTQ5ODUiLCJ1c2VybmFtZSI6IjMwNTIzZmEwYzE3MzQ3MDNiNzM4N2E1NjliZTA2MmNkIn0.aWVynW42kALTw18Z6IAfVuUFJmUS7lGW_1F7I2SjJUXsrH2HHsnw3R-gKSiTnW-U5kc11BZnGO3nqoAZwtqPJA\nX-Dubsmash-Device-Id: 8F15E960-B1C5-4C30-A100-CA0527827502\nX-Accept-Content-Language: en_IN\nAccept-Language: en-IN;q=1.0, hi-IN;q=0.9\nAccept-Encoding: gzip, deflate\nIf-None-Match: W/\"52-sxSZbTm01+no7htgkLGYqCFOwFk\"\nX-Device-Language: en\nX-Build-Number: 52430\nX-Device-Timezone: 19800\nX-App-Version: 6.3.0\nX-Remote-Config-Values: []\nUser-Agent: Dopesmash/6.3.0 (com.mobilemotion.dubsmash; build:52430; iOS 14.0.1) Alamofire/5.4.1\nContent-Length: 4707\nConnection: close\n\n{\"variables\":{\"next\":null,\"username\":\"test123458\",\"itemType\":\"POST\",\"pageSize\":9},\"query\":\"query UserUGC($username: String!, $itemType: VideoItemType!, $next: String, $pageSize: Int!) {\\n  user(username: $username) {\\n    __typename\\n    videos(next: $next, page_size: $pageSize, item_type: $itemType) {\\n      __typename\\n      results {\\n        __typename\\n        ...VideoFragment\\n      }\\n      next: next_page\\n    }\\n  }\\n}\\nfragment VideoFragment on Video {\\n  __typename\\n  uuid\\n  created_at\\n  creator {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n  video_type\\n  item_type\\n  video_data {\\n    __typename\\n    mobile {\\n      __typename\\n      video\\n      thumbnail\\n    }\\n    animated_thumbnail {\\n      __typename\\n      video\\n      thumbnail\\n    }\\n  }\\n  updated_at\\n  status\\n  liked\\n  caption: title\\n  original_sound: sound {\\n    __typename\\n    ...SoundFragment\\n  }\\n  num_views\\n  num_likes\\n  num_comments\\n  comments_allowed\\n  share_link\\n  width\\n  height\\n  duet_allowed\\n  privacy_level\\n  is_featured\\n  is_live\\n  community {\\n    __typename\\n    ...CommunityFragment\\n  }\\n  duet_with {\\n    __typename\\n    uuid\\n    title\\n    creator {\\n      __typename\\n      uuid\\n      username\\n    }\\n  }\\n  top_comments {\\n    __typename\\n    ...BasicCommentFragment\\n  }\\n  prompt {\\n    __typename\\n    ...PromptFragment\\n  }\\n  poll {\\n    __typename\\n    ...PollFragment\\n  }\\n  mentions {\\n    __typename\\n    ...MentionFragment\\n  }\\n  shoutout {\\n    __typename\\n    ...BasicShoutoutFragment\\n  }\\n}\\nfragment PublicUserFragment on User {\\n  __typename\\n  username\\n  uuid\\n  display_name\\n  blocked\\n  followed\\n  num_public_post_plays\\n  followsCount: num_follows\\n  followingsCount: num_followings\\n  share_link\\n  date_joined\\n  has_invite_badge\\n  badges\\n  profile_picture\\n  allow_video_download\\n  bio\\n  ... on User {\\n    gifts_offered: products_offered(product_type: GIFT) {\\n      __typename\\n      results {\\n        __typename\\n        product {\\n          __typename\\n          uuid\\n        }\\n      }\\n    }\\n    shoutouts_offered: products_offered(product_type: SHOUTOUT) {\\n      __typename\\n      results {\\n        __typename\\n        product {\\n          __typename\\n          uuid\\n        }\\n      }\\n    }\\n  }\\n}\\nfragment SoundFragment on Sound {\\n  __typename\\n  uuid\\n  created_at\\n  sound\\n  name\\n  waveform_raw_data\\n  liked\\n  soundStatus: status\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n  share_link\\n  num_likes\\n  num_videos\\n}\\nfragment ContentCreatorFragment on User {\\n  __typename\\n  username\\n  uuid\\n  date_joined\\n  followed\\n  has_invite_badge\\n  badges\\n  profile_picture\\n}\\nfragment CommunityFragment on Community {\\n  __typename\\n  uuid\\n  created_at\\n  updated_at\\n  name\\n  description\\n  member_count\\n  online_members\\n  post_count\\n  is_subscribed\\n  icon\\n  banner_image\\n}\\nfragment BasicCommentFragment on Comment {\\n  __typename\\n  uuid\\n  text\\n  likesCount: num_likes\\n  created_at\\n  liked\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n}\\nfragment PromptFragment on Prompt {\\n  __typename\\n  uuid\\n  created_at\\n  name\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n  liked\\n}\\nfragment PollFragment on Poll {\\n  __typename\\n  uuid\\n  title\\n  num_total_votes\\n  choices {\\n    __typename\\n    ...PollChoiceFragment\\n  }\\n  positioning {\\n    __typename\\n    ...StickerPositioningFragment\\n  }\\n  voted_for {\\n    __typename\\n    ...PollChoiceFragment\\n  }\\n}\\nfragment PollChoiceFragment on PollChoice {\\n  __typename\\n  uuid\\n  name\\n  num_votes\\n  index\\n}\\nfragment StickerPositioningFragment on StickerPositioning {\\n  __typename\\n  x\\n  y\\n  width\\n  height\\n  rotation\\n}\\nfragment MentionFragment on Mention {\\n  __typename\\n  object {\\n    __typename\\n    ... on User {\\n      ...PublicUserFragment\\n    }\\n    ... on Tag {\\n      ...TagFragment\\n    }\\n  }\\n  content_type\\n  positioning {\\n    __typename\\n    ...StickerPositioningFragment\\n  }\\n  interval {\\n    __typename\\n    start_time\\n    end_time\\n  }\\n}\\nfragment TagFragment on Tag {\\n  __typename\\n  uuid\\n  name\\n  num_objects\\n  num_plays\\n  subscribed\\n  top_videos {\\n    __typename\\n    ...TopVideoFragment\\n  }\\n}\\nfragment TopVideoFragment on Video {\\n  __typename\\n  uuid\\n  video_data {\\n    __typename\\n    mobile {\\n      __typename\\n      thumbnail\\n    }\\n  }\\n  creator {\\n    __typename\\n    uuid\\n    username\\n  }\\n}\\nfragment BasicShoutoutFragment on Shoutout {\\n  __typename\\n  uuid\\n  created_at\\n  updated_at\\n  requestor {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n  status\\n  creator {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n}\"}\n```\n\nCommunity API:\n```\nPOST /graphql?build_number=52430&platform=ios HTTP/2\nHost: gateway-production.dubsmash.com\nContent-Type: application/json\nX-Device-Country: IN\nAccept: application/json\nAuthorization: Bearer xxxxxxx\nX-Dubsmash-Device-Id: 8F15E960-B1C5-4C30-A100-CA0527827502\nX-Accept-Content-Language: en_IN\nAccept-Language: en-IN;q=1.0, hi-IN;q=0.9\nAccept-Encoding: gzip, deflate\nIf-None-Match: W/\"1c03-0+FK7TwWGvh/rKyVJ5n+lHkl05o\"\nX-Device-Language: en\nX-Build-Number: 52430\nX-Device-Timezone: 19800\nX-App-Version: 6.3.0\nX-Remote-Config-Values: []\nUser-Agent: Dopesmash/6.3.0 (com.mobilemotion.dubsmash; build:52430; iOS 14.0.1) Alamofire/5.4.1\nContent-Length: 4682\nConnection: close\n\n{\"variables\":{\"uuid\":\"db89458d693b49fdbdced90f3b5e2f90\",\"next\":null},\"query\":\"query CommunityPosts($uuid: String!, $next: String) {\\n  community(uuid: $uuid) {\\n    __typename\\n    ... on Community {\\n      posts(next: $next) {\\n        __typename\\n        next\\n        results {\\n          __typename\\n          ... on Video {\\n            ...VideoFragment\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\\nfragment VideoFragment on Video {\\n  __typename\\n  uuid\\n  created_at\\n  creator {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n  video_type\\n  item_type\\n  video_data {\\n    __typename\\n    mobile {\\n      __typename\\n      video\\n      thumbnail\\n    }\\n    animated_thumbnail {\\n      __typename\\n      video\\n      thumbnail\\n    }\\n  }\\n  updated_at\\n  status\\n  liked\\n  caption: title\\n  original_sound: sound {\\n    __typename\\n    ...SoundFragment\\n  }\\n  num_views\\n  num_likes\\n  num_comments\\n  comments_allowed\\n  share_link\\n  width\\n  height\\n  duet_allowed\\n  privacy_level\\n  is_featured\\n  is_live\\n  community {\\n    __typename\\n    ...CommunityFragment\\n  }\\n  duet_with {\\n    __typename\\n    uuid\\n    title\\n    creator {\\n      __typename\\n      uuid\\n      username\\n    }\\n  }\\n  top_comments {\\n    __typename\\n    ...BasicCommentFragment\\n  }\\n  prompt {\\n    __typename\\n    ...PromptFragment\\n  }\\n  poll {\\n    __typename\\n    ...PollFragment\\n  }\\n  mentions {\\n    __typename\\n    ...MentionFragment\\n  }\\n  shoutout {\\n    __typename\\n    ...BasicShoutoutFragment\\n  }\\n}\\nfragment PublicUserFragment on User {\\n  __typename\\n  username\\n  uuid\\n  display_name\\n  blocked\\n  followed\\n  num_public_post_plays\\n  followsCount: num_follows\\n  followingsCount: num_followings\\n  share_link\\n  date_joined\\n  has_invite_badge\\n  badges\\n  profile_picture\\n  allow_video_download\\n  bio\\n  ... on User {\\n    gifts_offered: products_offered(product_type: GIFT) {\\n      __typename\\n      results {\\n        __typename\\n        product {\\n          __typename\\n          uuid\\n        }\\n      }\\n    }\\n    shoutouts_offered: products_offered(product_type: SHOUTOUT) {\\n      __typename\\n      results {\\n        __typename\\n        product {\\n          __typename\\n          uuid\\n        }\\n      }\\n    }\\n  }\\n}\\nfragment SoundFragment on Sound {\\n  __typename\\n  uuid\\n  created_at\\n  sound\\n  name\\n  waveform_raw_data\\n  liked\\n  soundStatus: status\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n  share_link\\n  num_likes\\n  num_videos\\n}\\nfragment ContentCreatorFragment on User {\\n  __typename\\n  username\\n  uuid\\n  date_joined\\n  followed\\n  has_invite_badge\\n  badges\\n  profile_picture\\n}\\nfragment CommunityFragment on Community {\\n  __typename\\n  uuid\\n  created_at\\n  updated_at\\n  name\\n  description\\n  member_count\\n  online_members\\n  post_count\\n  is_subscribed\\n  icon\\n  banner_image\\n}\\nfragment BasicCommentFragment on Comment {\\n  __typename\\n  uuid\\n  text\\n  likesCount: num_likes\\n  created_at\\n  liked\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n}\\nfragment PromptFragment on Prompt {\\n  __typename\\n  uuid\\n  created_at\\n  name\\n  creator {\\n    __typename\\n    ...ContentCreatorFragment\\n  }\\n  liked\\n}\\nfragment PollFragment on Poll {\\n  __typename\\n  uuid\\n  title\\n  num_total_votes\\n  choices {\\n    __typename\\n    ...PollChoiceFragment\\n  }\\n  positioning {\\n    __typename\\n    ...StickerPositioningFragment\\n  }\\n  voted_for {\\n    __typename\\n    ...PollChoiceFragment\\n  }\\n}\\nfragment PollChoiceFragment on PollChoice {\\n  __typename\\n  uuid\\n  name\\n  num_votes\\n  index\\n}\\nfragment StickerPositioningFragment on StickerPositioning {\\n  __typename\\n  x\\n  y\\n  width\\n  height\\n  rotation\\n}\\nfragment MentionFragment on Mention {\\n  __typename\\n  object {\\n    __typename\\n    ... on User {\\n      ...PublicUserFragment\\n    }\\n    ... on Tag {\\n      ...TagFragment\\n    }\\n  }\\n  content_type\\n  positioning {\\n    __typename\\n    ...StickerPositioningFragment\\n  }\\n  interval {\\n    __typename\\n    start_time\\n    end_time\\n  }\\n}\\nfragment TagFragment on Tag {\\n  __typename\\n  uuid\\n  name\\n  num_objects\\n  num_plays\\n  subscribed\\n  top_videos {\\n    __typename\\n    ...TopVideoFragment\\n  }\\n}\\nfragment TopVideoFragment on Video {\\n  __typename\\n  uuid\\n  video_data {\\n    __typename\\n    mobile {\\n      __typename\\n      thumbnail\\n    }\\n  }\\n  creator {\\n    __typename\\n    uuid\\n    username\\n  }\\n}\\nfragment BasicShoutoutFragment on Shoutout {\\n  __typename\\n  uuid\\n  created_at\\n  updated_at\\n  requestor {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n  status\\n  creator {\\n    __typename\\n    ...PublicUserFragment\\n  }\\n}\"}\n```\n\nExploit:\n1. Serach for the #hexagonalprism in the hashtag search option. \n2. You'll observe 3/4 video's thumbnails in the hashtag search.\n3. Click on the hashtag to view all videos, the hashtag API will throw \"Internal Server Error\" and will not display any video.\n\n## Impact\n\nThe impact of this vulnerability is severe if the attackers use all trending hashtags in the description and upload the video then the other users will not be able to load the trending hashtags and view the videos. \n\nAlso, if the video is uploaded in the community then all other videos will not appear in that particular community tab as the community API stops responding properly.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1343205,
+      "file_name": "Screenshot_2021-06-18_at_11.06.57_AM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/mce1k8i8d5ajnn8mor3u4z7np08v?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2021-06-18_at_11.06.57_AM.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2021-06-18_at_11.06.57_AM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ54VOPKUF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054341Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDtBXHRUCtvwfTC6rES1dMnOFbqFHOvXQQKFkDxW%2BYXjAIhALpXttECOORO81V7bp7ku%2FeRfjeqdn0yH2IiB%2FI7xYJgKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgwpsTSN8J7xIArJ4oUqjwUih3t9U7fnw9OFuz58XbZU07XQUom005cirmukl8bFWPsMdKRMAMhXYVF31jprbAL%2BtzMTd3kRRiX9cT5B5uyNVcUuJC4iWhHRRKshk6DDoRD3dOVpkfFDqg%2FYNL%2BVtwS2Kl5EQXAZyhd%2BLBw7NGBszfIzaGU%2BX1s7Ru%2FoJfAdnEfso5k79jgccbDnUHnnA%2Ba5RoH7yFm98dd444ZO6YGVq8916QTe3Q%2Bi6LOgDaT69Zo%2BhOIMsqnFyRtrcOTHTTjcDjoXqPk1DXO7dqw1FuN0gpnJj%2Bq4FTHf8IC4sXMho66KLQ4Ha3dkgI32931olfzFkasmvBcDdv2gN5hKvEBsysGo5BfFQx%2Blo5XKULcP4xqPIHwCWKiN2viFHIzv49qoSysEQytMw5WtZyyD8Q989Xm4l0CHjvlf8I6JYFen8lFUybIBWlP8AbRIvC7wJOyKomX63HzTux2qbsr5EbexuBt3Jmx6xJvUNTcEVz9y4oHp3zk0yhcTkW%2F54JF76pqfLWlUYQDYN9G1Sq%2FjFLdPspSaLpEX1mgwy2FUBzZWnYHlZuYSaS2O7sX2wCIDFJuxWR%2BPX9XnxP7yY90nANUxFKDORBeTb3hwdkn%2BhDb%2FZIJLp86s1Mw6I8drGF%2F%2BOtibhrYpZJMwdZc%2FpFT0uwkZFDShW74v1CLtBVGwRxZCV1KBw12U67gaZ5hwBEl0pjkhZWM%2FYiJ8F7Avsr90gL07ZK4JF2e67IGU%2BHuasLD11YbtMlOK%2FMamqHTALCYN2YYuTzmXg8VQHoiEzMMSSx2UVJR%2BAMk4SUHuV6NBdlYO7%2BDLXh6QMGdmiaEGqL2MltcNEshL4uY0eKj11U3XZwkPNhxoBjH6Qu3H%2B%2FXk%2FfgvMJWNndIGOrABHr7AHvnGZMKP0W62W%2F9hl6bJnqyCNy0wBM2vsNr7XPrOOstlzfJnjCRVMtj6abKz0WX5eeB01f1%2BSr6UHv4jAmd8HwWWqrIRg8%2Fz4V2yorq%2BOvZcY29XLkDvNld8pCdKeFsoXqypEmdG2XwlAIXEW0KSeSksBGE0sMnr2Sb7uNqe0a1h%2BsWNZpAEayQdZbZ5xmj2wYEi4icuBemKxJoiIfO6TA9e%2F%2BMdYd9yh7lsWTM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=022d89b70ac1f37dafa2b672366d2905b6a3a31800bcfd5c32c1222ae4e7c0dc",
+      "file_size": 1038426,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 32,
+  "voters": [
+    "0x800700e1",
+    "n0tst3",
+    "th3hidd3nmist",
+    "bombon",
+    "alp",
+    "trieulieuf9",
+    "dukrov",
+    "shreyaschavhan",
+    "sachin_kr",
+    "sandeep_rj49",
+    "and 22 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 60161,
+    "asset_type": "APPLE_STORE_APP_ID",
+    "asset_identifier": "918820076",
+    "max_severity": "high"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1237428",
+  "votes": 32,
+  "latest_disclosable_activity_at": "2021-12-13T22:48:03.990Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:43:41.553318",
+    "source": "https://hackerone.com/reports/1237428.json",
+    "report_id": 1237428
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjM3NDI4",
+    "databaseId": "1237428",
+    "title": "[dubsmash] Long String in 'shoutout' Parameter Leading Internal server Error on Popular hastags , Community and User Profile",
+    "url": "https://hackerone.com/reports/1237428",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-12-13T22:48:03.944Z",
+    "created_at": "2021-06-18T05:37:20.175Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.8
+    },
+    "reporter": {
+      "username": "sandeep_rj49"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NzEw",
+      "handle": "reddit",
+      "name": "Reddit",
+      "url": "https://hackerone.com/reddit",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMTQwNjY=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-06-28T18:51:28.490Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEyMzc0Mjg=",
+    "_id": "1237428",
+    "disclosed": true,
+    "votes": 32,
+    "latest_disclosable_activity_at": "2021-12-13T22:48:03.990Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjM3NDI4",
+      "databaseId": "1237428",
+      "title": "[dubsmash] Long String in 'shoutout' Parameter Leading Internal server Error on Popular hastags , Community and User Profile",
+      "url": "https://hackerone.com/reports/1237428",
+      "disclosed_at": "2021-12-13T22:48:03.944Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NzEw",
+      "handle": "reddit",
+      "name": "Reddit",
+      "url": "https://hackerone.com/reddit",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "id": 263542,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjM1NDI=",
+  "url": "https://hackerone.com/reports/263542",
+  "title": "Subdomain take-over of {REDACTED}.18f.gov",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-08-26T08:25:27.994Z",
+  "submitted_at": "2017-08-26T08:25:27.994Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jackds",
+    "url": "/jackds",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/975/99b380468b2f9d3b8f03ecf5c652585a082c2ec5_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 50592,
+    "url": "https://hackerone.com/gsa_bbp",
+    "handle": "gsa_bbp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GSA Bounty",
+      "twitter_handle": null,
+      "website": "http://gsa.gov",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "no-content",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-09-06T14:46:33.376Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-08-31T13:16:07.407Z",
+  "team_member_agreed_on_going_public_at": "2017-09-06T14:46:33.302Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2017-09-30T13:16:07.444Z",
+  "allow_singular_disclosure_after": -276714364.60766536,
+  "singular_disclosure_allowed": true,
+  "vote_count": 20,
+  "voters": [
+    "sp1d3rs",
+    "rijalrojan",
+    "jackds",
+    "gerben_javado",
+    "0xelkomy",
+    "harrymg",
+    "cuso4",
+    "r3y",
+    "eveeez",
+    "alfredsaonoy",
+    "and 10 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 5273,
+      "category": "team",
+      "content": "@jackds discovered a number of related subdomain takeover attacks against some subdomains of 18f.gov. \n \nTechnically, these domains are out of scope for our [Vulnerability Disclosure Policy](https://github.com/18F/vulnerability-disclosure-policy/blob/master/vulnerability-disclosure-policy.md). We want to remind hackers to please limit their testing to domains explicitly listed in that scope (which is repeated on [our HackerOne program page](https://hackerone.com/tts) for convenience). This is for your own safety: we want to be sure that everyone's on the same page about your activities being authorized.\n\nThat said, this was a legitimate vulnerability, which we fixed, and we're disclosing details because they may be useful to other folks who operate services like ours.\n\nWe couldn't just remove the DNS entries, since those are used for internal purposes with agency CNAMEs. However, there were other ways we were able to resolve this by routing requests for unknown domains differently, and now serve 404s for these subdomains.\n\nA few more details about the cause and solutions:\n\n* For the subdomain in question, this was caused by a combination of how were routing requests to unknown domains and how we served static websites.\n* The basic issue was that our servers used our `{REDACTED}.18f.gov` domain as a fallback for any unknown domain requests routed to us. So if a request came in for particular subdomains, we would end up treating it sort of like a request to `https://{REDACTED}.18f.gov`. Since we proxied our home page requests to the same host where `{REDACTED}.18f.gov`'s static site is currently hosted, and we passed along the original HTTP Host header for these unknown domains, it meant that the host would respond as if that unknown domain had been accessed directly on that host. As demonstrated, users could then to serve up content on these other domains.\n* So all that being said, the fix was actually straightforward, since it just involved disabling using the `{REDACTED}.18f.gov` website as a fallback for unknown domains. This should mean that the only requests we forward now are actually ones for the `{REDACTED}.18f.gov` domain.\n\nThanks for the find, @jackds - we really appreciate it!\n\n[See also #263902, which was an independent discovery of the same issue on a different subdomain.]\n",
+      "updated_at": "2017-09-05T22:29:41.405Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 172876,
+        "username": "jkm",
+        "name": "Jacob Kaplan-Moss",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2017-06-02T19:27:16.073Z",
+        "url": "https://hackerone.com/jkm",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/172/876/892cc8dda2c24d00e8e963b81dd9ab51a0bc784c_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/172/876/892cc8dda2c24d00e8e963b81dd9ab51a0bc784c_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MjU2NjAsInB1ciI6ImJsb2JfaWQifX0=--0a7af70d5bff1239775fd6fe1c29a45f622a6c13/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemUiOiIyNjB4MjYwXHUwMDNlIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--6507e48fd2f16c79f4c96d055fb119d5c42eb886/jacobian.jpg"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "263542",
+  "votes": 20,
+  "latest_disclosable_activity_at": "2017-09-06T14:46:33.393Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:22:12.190468",
+    "source": "https://hackerone.com/reports/263542.json",
+    "report_id": 263542
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjM1NDI=",
+    "databaseId": "263542",
+    "title": "Subdomain take-over of {REDACTED}.18f.gov",
+    "url": "https://hackerone.com/reports/263542",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-09-06T14:46:33.376Z",
+    "created_at": "2017-08-26T08:25:27.994Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "jackds"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI2MzU0Mg==",
+    "_id": "263542",
+    "disclosed": true,
+    "votes": 20,
+    "latest_disclosable_activity_at": "2017-09-06T14:46:33.393Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjM1NDI=",
+      "databaseId": "263542",
+      "title": "Subdomain take-over of {REDACTED}.18f.gov",
+      "url": "https://hackerone.com/reports/263542",
+      "disclosed_at": "2017-09-06T14:46:33.376Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    }
+  }
+}

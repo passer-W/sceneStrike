@@ -1,0 +1,206 @@
+{
+  "id": 2786591,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNzg2NTkx",
+  "url": "https://hackerone.com/reports/2786591",
+  "title": "Unauthenticated WordPress Database Repair DoS",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2024-10-17T06:07:54.425Z",
+  "submitted_at": "2024-10-17T06:12:26.877Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "wshadow",
+    "url": "/wshadow",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 55,
+    "url": "https://hackerone.com/wordpress",
+    "handle": "wordpress",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/055/f114d1d31f904e3b903cd99a6cf566bb531f8401_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/055/f114d1d31f904e3b903cd99a6cf566bb531f8401_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "WordPress",
+      "twitter_handle": "wordpress",
+      "website": "https://wordpress.org/",
+      "about": "Beautiful sites of any kind."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-10-18T13:01:54.056Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-10-18T01:04:32.102Z",
+  "team_member_agreed_on_going_public_at": "2024-10-18T13:01:53.862Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nThe WordPress Database Repair feature, accessible via the `/wp-admin/maint/repair.php` endpoint, is vulnerable due to improper access control and insecure design. When `WP_ALLOW_REPAIR` is set to `true` in the `wp-config.php` file, the repair page becomes publicly accessible without requiring any authentication. This vulnerability arises from two main issues: the absence of authentication for accessing the repair endpoint and the insecure nature of the WordPress repair feature, which lacks any limits or restrictions on access frequency or user verification. Consequently, an attacker can repeatedly trigger resource-intensive database repair operations, overwhelming server resources and resulting in a Denial of Service (DoS) condition. \nThis vulnerability can be categorized under these two CWE's as it fails to impose necessary restrictions on who can access this critical functionality.\n\n**CWE-306: Missing Authentication for Critical Function** \n **CWE-400: Uncontrolled Resource Consumption**\n\n## Platform(s) Affected:\n\nWordpress Core  <6.6\nhttps://core.svn.wordpress.org/branches/6.6/\n\n## Steps To Reproduce:\n\n1. Ensure that `WP_ALLOW_REPAIR` is set to `true` in the `wp-config.php` file of the target WordPress installation.\n   ```php\n   define('WP_ALLOW_REPAIR', true);\n   ```\n2. Access the database repair endpoint directly by visiting the URL: `http://target-site.com/wp-admin/maint/repair.php`.\n3. Note that the page allows access without authentication. Select either the \"Repair Database\" or \"Repair and Optimize Database\" button.\n4. To exploit this vulnerability, repeatedly send GET requests to `http://target-site.com/wp-admin/maint/repair.php?repair=1` to trigger the database repair process.\n   - You can use a simple bash script or a tool like `cURL` to automate the requests:\n     ```bash\n     while true; do curl -X GET \"http://target-site.com/wp-admin/maint/repair.php?repair=1\"; sleep 1; done\n     ```\n   - To be more practical, I have weaponized it with a simple python script that can bring the site down for as long as the attacker desires. The script is hosted at https://raw.githubusercontent.com/smaranchand/wreckair-db/refs/heads/main/wreckair-db.py?token=GHSAT0AAAAAACZBPSANBXQSCUVHV6JYC2LUZYQVXVQ\n\n      Note: Let me know if it is not accessible.\n5. Observe that the repeated requests will eventually exhaust server resources, causing the site to become unresponsive, results in a Denial of Service (DoS) condition, impacting the availability of the target WordPress site.\n\n## Supporting Material/References:\n{F3684807}\n\n## Impact\n\nThe impact of this vulnerability is severe, as it allows an unauthenticated attacker to make the target WordPress site unresponsive through repeated use of the database repair functionality. This Denial of Service (DoS) condition disrupts the availability of the website, rendering it inaccessible to legitimate users. The lack of authentication and rate limiting on a critical function makes it easy for attackers to exploit, resulting in significant downtime, potential loss of business, and damage to the reputation of the affected website. Additionally, this vulnerability has been active for a long time, going unreported and unnoticed, making it a persistent threat to WordPress installations that enable the repair feature without proper security measures.\n\n## Mitigations\n\nTo mitigate this vulnerability, the following actions are recommended:\n\n1. **Require Authentication**: WordPress should require authentication for accessing the `/wp-admin/maint/repair.php` endpoint, even when `WP_ALLOW_REPAIR` is set to `true`. This would ensure that only authorized users can initiate database repair operations.\n\n2. **Restrict Access**: Implement IP-based access control to limit access to the repair page only to trusted IP addresses. This would prevent unauthorized users from accessing the endpoint.\n\n3. **Use a One-Time Token Mechanism**: Introduce a secure one-time token mechanism to allow temporary access to the repair page. This token should expire after a short period, reducing the risk of exploitation.\n\n4. **Rate Limiting**: Apply rate limiting to the `/wp-admin/maint/repair.php` endpoint to restrict how frequently repair requests can be made. This will help mitigate the risk of resource exhaustion through repeated requests.\n\nBy implementing these mitigations, the risk associated with this vulnerability can be significantly reduced, ensuring that the database repair functionality is only used by authorized personnel and cannot be abused to create a DoS condition.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3684807,
+      "file_name": "Screen_Shot_2024-10-17_at_11.01.30_AM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rhm0crkca3fjbejorqbdkaoleq6u?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2024-10-17_at_11.01.30_AM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2024-10-17_at_11.01.30_AM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043734Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2801324eed18ee0cb63ea8f50255df14f042222deb5438cd068440b992c803bb",
+      "file_size": 36981,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 70,
+  "voters": [
+    "k0ns0l",
+    "ygrk",
+    "loaymorad",
+    "0xcartel",
+    "r3dw4n",
+    "thalaivar304",
+    "jmo740",
+    "hundredpercent",
+    "0xsalmon",
+    "logic-cracker",
+    "and 60 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.0,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 2750,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "WordPress Core",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2786591",
+  "votes": 70,
+  "latest_disclosable_activity_at": "2024-10-18T13:01:54.253Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:37:34.303820",
+    "source": "https://hackerone.com/reports/2786591.json",
+    "report_id": 2786591
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNzg2NTkx",
+    "databaseId": "2786591",
+    "title": "Unauthenticated WordPress Database Repair DoS",
+    "url": "https://hackerone.com/reports/2786591",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2024-10-18T13:01:54.056Z",
+    "created_at": "2024-10-17T06:07:54.425Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.0
+    },
+    "reporter": {
+      "username": "wshadow"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU1",
+      "handle": "wordpress",
+      "name": "WordPress",
+      "url": "https://hackerone.com/wordpress",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI3ODY1OTE=",
+    "_id": "2786591",
+    "disclosed": true,
+    "votes": 70,
+    "latest_disclosable_activity_at": "2024-10-18T13:01:54.253Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNzg2NTkx",
+      "databaseId": "2786591",
+      "title": "Unauthenticated WordPress Database Repair DoS",
+      "url": "https://hackerone.com/reports/2786591",
+      "disclosed_at": "2024-10-18T13:01:54.056Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU1",
+      "handle": "wordpress",
+      "name": "WordPress",
+      "url": "https://hackerone.com/wordpress",
+      "currency": "usd"
+    }
+  }
+}

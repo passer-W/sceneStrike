@@ -1,0 +1,195 @@
+{
+  "id": 155657,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTU2NTc=",
+  "url": "https://hackerone.com/reports/155657",
+  "title": "Arbitrary Code Injection in ownCloud’s Windows Client",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-07-31T19:00:09.481Z",
+  "submitted_at": "2016-07-31T19:00:09.481Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "fbogner",
+    "url": "/fbogner",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/097/209/c6a39a3f503e5915ea2ebf90fc4f5b2ca45ef78e_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 3059,
+    "url": "https://hackerone.com/owncloud",
+    "handle": "owncloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "ownCloud",
+      "twitter_handle": "ownCloud",
+      "website": "https://www.owncloud.com",
+      "about": "ownCloud GmbH is the company behind the ownCloud Project - the most downloaded open source project for data and file sync, share and view."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2016-11-23T18:45:41.271Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-10-24T18:45:33.607Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The current ownCloud Windows Desktop client is prone to an arbitrary code injection vulnerability.\n\nThe underlying issue is that the ownCloud desktop client tries to load QT extensions from C:\\usr\\i686-w64-mingw32\\sys-root\\mingw\\lib\\qt5\\plugins.\n\nAs any authenticated user on Windows is allowed to create new folders within C:, the expected folder structure can be created.\n\nWhat that means is that a local attacker can create a malicious QT extensions that gets automatically loaded on the next launch of the ownCloud Desktop client.\n\nTo verify the issue I first tried to simply create a new QT imageformats plugin. However I failed! Have you ever tried to install QT? So I decided to simply modify an existing DLL.\n\nHence, I used Hopper to disassemble the qwindows.dll platform’s library to learn more about its entry points. With that knowledge I planned to modify the DLL so that it shows a simply message box. The necessary shellcode was created with Metasploit:\n\nmsfvenom -a x86 --platform windows -p windows/messagebox TEXT=\"DLL Loaded\" EXTIFUNC=process -f raw > shellcode\ncat shellcode |xxd -p\n\nI then overwrote some bytes after one of the previously identified DLL entry points with the shellcode.\n\nAfter placing the modified payload DLL into C:\\usr\\i686-w64-mingw32\\sys-root\\mingw\\lib\\qt5\\plugins\\platforms the shellcode got executed after launching the ownCloud desktop client.\n\nPlease see the attached PDF for some images documenting the process.\nFurthermore I created a private screen capture: https://owncloud.bogner.sh/s/Ik8AYJ9FfY5Rkyq",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 108748,
+      "file_name": "Arbitrary_Code_Injection_in_ownCloud_s_Windows_Client___bogner.pdf",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/108/748/565e07f2044a4e5fc528185cc13379041ea120e6/Arbitrary_Code_Injection_in_ownCloud_s_Windows_Client___bogner.pdf?response-content-disposition=attachment%3B%20filename%3D%22Arbitrary_Code_Injection_in_ownCloud_s_Windows_Client___bogner.pdf%22%3B%20filename%2A%3DUTF-8%27%27Arbitrary_Code_Injection_in_ownCloud_s_Windows_Client___bogner.pdf&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUBZL3SMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064834Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC0vd9qwWGGlJ5R6u1w%2FJDTEgxnnEX%2F66Z0y%2FDYDIrKogIhAMmNkpSlsAfDjpOMsGnPN%2FfULnz8pf6lMWaQAHeNhfKJKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgysijxSd9ouNs36KaUqjwUD0hBxjr%2FslcqCGno5SyyxVHX7ZsWXMYXblgWRxlnYMv2sVGB7P0GPCL0Q%2BgNF9E2XuWdW1Q7EIfU9Dun6GivHAYADWtlEnvYCmCnArQPyewGkBRHPJ8s1dmAAWer7c2sEs4jy0PxKNKQGcov0hq2jTDCUo%2Baxi2sz5MpKAjnC26Da1Lr%2B29NQjvWcBTyJCUUR3NvkN2UD44OL1wXIoV3JYeLh2x8qh0GJTWHkxerxRxME1IunjIshD5fjFlc2LQM16pi%2Bjs8sPolrf4lWgWM8D7ivQPEo%2Fq8gbt24Qrs8XDlERppmJmz%2FuYOSN2gqmaAyzD7Eu6o88%2Fpu9GBkda7RjG2%2FCX8%2B76t07zz1UTAh1MYxOc4lcY%2BYvJKWzz%2F8DNoBlvcA1mVFaW9NQeZhsm8XpdUdVqiXvwfyBYHVqPrN%2FBFewhyIuyjkeF17nWyCfSJn6tz%2BXH83FAEYHY67r2Tlp5F9wfBDWaW5gbxZLaWnjOAGJPmHFup%2FuQBSQYqhHGHcM%2FXT2hdZTxiRiQq4wFVhRrrzrpEaVb771%2B%2FwEBg%2Bs1NrFFBa1hzy%2F5oLOHVpk7GBIHJVVqrFgrFlXH8z7K4hNHvcvf5KSU97hLPE2OM1n%2FgozkWNSYh%2BTeGv0dmhM1Di32Gs1TLuJmfracd2zO5tcfL9U1dLR02F6OmtFvx7B8Yo1I5ahbvv%2BiKK25akKqT%2BOuQCGkxOTfmMlZ1Gw0lQ7fMj0H%2B9w%2FIZhy%2Bah9OqcwEvuaBGJ62GpNpR2Vw79O1TWtybkP9SWj8EHrrG96oEMkfdfRQURtwWNVSc4Dnp7iRVTNkAJW5jIObwNohK9qnON8iRS9V6tRlAicG3ZcWtZQ3kutBiP9fP4TJX9rJ2MKzLt9IGOrABTXz5zSXYJEpkSFwGSgTe1z%2FJz01I3KATBTQ6qV3JoMW0ktzuiCH6rDLfhJ04qfCeEzmk4cPqSGYcJOpIMMuV0dt2InOF37EP678V1J3jqnTxHbtFOaQb7MJ%2B1UPOJS6i9bjMKau8QswoHyj1vXaaMa7ZBAIWnLRcJhPFHp3frrjOemsArtrg4fkriDp4mPK3xZgX9iLmty2VPJFjfO407HcC0pNZ0WHeauSCnSAk6v8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5a647f05eace01ceceb9e1202ca83bfde6d086a88a4cda398e2fe09973a88c36",
+      "file_size": 2086093,
+      "type": "application/pdf",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-11-23T18:45:33.646Z",
+  "allow_singular_disclosure_after": -303566581.1185985,
+  "singular_disclosure_allowed": true,
+  "vote_count": 16,
+  "voters": [
+    "flashdisk",
+    "rj01",
+    "xsam",
+    "fbogner",
+    "pappan",
+    "brye",
+    "madrobot",
+    "eveeez",
+    "khizer47",
+    "m16",
+    "and 6 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "155657",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2016-11-23T18:45:41.291Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:48:34.871232",
+    "source": "https://hackerone.com/reports/155657.json",
+    "report_id": 155657
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTU2NTc=",
+    "databaseId": "155657",
+    "title": "Arbitrary Code Injection in ownCloud’s Windows Client",
+    "url": "https://hackerone.com/reports/155657",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-11-23T18:45:41.271Z",
+    "created_at": "2016-07-31T19:00:09.481Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "fbogner"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMTg5NQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-08-17T19:05:48.805Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE1NTY1Nw==",
+    "_id": "155657",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2016-11-23T18:45:41.291Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTU2NTc=",
+      "databaseId": "155657",
+      "title": "Arbitrary Code Injection in ownCloud’s Windows Client",
+      "url": "https://hackerone.com/reports/155657",
+      "disclosed_at": "2016-11-23T18:45:41.271Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    }
+  }
+}

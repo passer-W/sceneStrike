@@ -1,0 +1,211 @@
+{
+  "id": 2048725,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDQ4NzI1",
+  "url": "https://hackerone.com/reports/2048725",
+  "title": "Circular based introspetion Query leading to single request denial of service and cost consumption and query cost on api.sorare.com/graphql",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2023-07-03T17:37:00.446Z",
+  "submitted_at": "2023-07-03T17:37:00.570Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "thebeast99",
+    "url": "/thebeast99",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4zaxbei1hf294181cuxe91mp2bb5/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 55988,
+    "url": "https://hackerone.com/sorare",
+    "handle": "sorare",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/k3n5dp9m6i6hnr2yzi9je4dud4ph/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/k3n5dp9m6i6hnr2yzi9je4dud4ph/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Sorare",
+      "twitter_handle": "sorare",
+      "website": "https://sorare.com",
+      "about": "Sorare is a global fantasy football game where managers can trade official digital collectibles."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2024-10-17T08:07:20.077Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-09-17T08:07:17.859Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nHi Team, Hope you are doing great Sorare graphql Api has introspection enabled by default as per the policy it's meant to be public so they can facilitate their users with Graphql Playground.\n\nSo https://api.sorare.com/federal/graphql is for the users and clients using the web application and https://api.sorare.com/graphql is a playground for the developers and clients. They both share the same domain and database just a different graphql instance We can execute the same query on both graphql servers parallelly. But the catch here is because of the no-depth limits an attacker can execute a circular introspection query which is leading to a single request denial of service which is affecting both instances same time. Users don't need to be authenticated for this attack which is an extreme condition.\n\nAPIs are always the backbone of the organization and a firm. If left vulnerable that kinda attack requires a single request to take down the server and can Impact the Availability of the company. And bypassing the `Cloudflare DDOS` which is playing a role as a frontier to prevent such cases.\nYou have to consider this that it is not a typical DOS attack that requires so many bots or computational power a single query can Do pretty much damage.\n\n\n\n\n## Steps To Reproduce:\n\nIts been years now and we all know what an introspection query looks like but with the graphql feature, we can also retrieve just one query time at a time from  `__schema` we can just retrieve all fields of `mutations`, `queries` and `subscription`. By calling fields and their types.\n\n***Here is the request***:\n```\nPOST /graphql HTTP/2\nHost: api.sorare.com\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0\nAccept: application/json\nAccept-Language: en-US\nAccept-Encoding: gzip, deflate\nReferer: https://api.sorare.com/graphql/playground\nContent-Type: application/json\nOrigin: https://api.sorare.com\nContent-Length: 262\nSec-Fetch-Dest: empty\nSec-Fetch-Mode: cors\nSec-Fetch-Site: same-origin\nTe: trailers\n\n{\"operationName\":null,\"variables\":{},\"query\":\"query {\\r\\n __schema {\\r\\n   types { \\r\\n    fields {\\r\\n      type {\\r\\n    fields {\\r\\n      type { \\r\\n    fields {\\r\\n      type {\\r\\n     fields {\\r\\n     name\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\"}\n```\nFrom the above query, you will get the `3728114` bytes of data in the single query which is obviously duplicated can be seen in the query request and the delay will be around `5 to 7 seconds` which is extreme degradation condition for a backend server.\n\n***Response In my case***:\n{F2465261}\n\nYou can Add more recursive loops `the more loop the more delay`\n***Here is the query with one more circular recursive loop***\n\n```\n{\"operationName\":null,\"variables\":{},\"query\":\"query {\\r\\n __schema {\\r\\n   types { \\r\\n    fields {\\r\\n      type {\\r\\n    fields {\\r\\n      type { \\r\\n    fields {\\r\\n      type {\\r\\n     fields {\\r\\n     type {\\r\\n     fields {\\r\\n      name\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\\r\\n}\"}\n\n```\n Now you can see more delay.\n\nI hope you can see the impact of this vulnerability. If there is anything the team wants to know I would be grateful!\n\n Best & kind regards\n@thebeast99\n\n## Supporting Material/References:\n\nHere is the official Apollo guide regarding the depth limits.\nhttps://www.apollographql.com/docs/technotes/TN0021-graph-security/#limit-query-depth\n\nNote: I set the cvss as per the bug But because the scope is `High asset` my report automatically scored as 9.3 critical whereas in other cases it's always standard `7.5` High.\n\n## Impact\n\nAn attacker can take down the server with few or a single graphql request. Which will cost Availability to sorare.com",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2465261,
+      "file_name": "sorare_dos.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/padffin6f7op3rth5iz71vuokiyx?response-content-disposition=attachment%3B%20filename%3D%22sorare_dos.PNG%22%3B%20filename%2A%3DUTF-8%27%27sorare_dos.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQVWKXN6ER%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043742Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIBapLIfl9eGebdeG1pM6QIgR5hvteY5gAhucCJb1OmKgAiEAs6N%2BPmAR2M9RkevBHXEdEQgMYGRwXVaEW2REbfR3M7IqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDKH%2Bk0YScXeJ8BkJUSqOBUtLRj0%2F0j7A34kZkphIZTOr4GplnBH8AmJCC%2BRsirrmz8tuMpfhSbrOiKzCPRif0NWDaF0f5NV2w%2BUOWA5qMdz3vkV2bZujtOs2xVVUcPsfIK%2BaEOCin5Zoc578pgu%2BuujE5wmJ%2B53gVZ7C8tA6sxraASQViAaq65veRrwzOdBbO8pN1Nv7yIRAlTEgfDXU7x5EXuFBGVzalgmKrNy2a2KOitjU1IG1gr0I4g8UtEXwb8gBqcy6EbFNT0Xn4G2H28tin8JaeJTwTxnHaMNUUe0FTvXINoMqloVVRbJdAtnZhRCIDdgItyvyvB5cqmOwTqGM33VPW%2BtAPMZBTEcowIQpnTO8zD4MaRJrAS%2Bvyr%2FsB2t6JUBo4Naq7QWeacbt%2BLVIHua8%2BbyB4bKFR81RdA2lx0gbgMaj10v6Bx4e7o0cNPNmZdO0HEEhj3nCQYEPm9xgao7kEjMX3bvbygOsSyVvCQRt3z%2FA1R%2BqZ8j1ZrTZ%2BQR4uD4U3s84hvKZ8Do5D5CZMOAP8abtwFaAaQR96hnds9exR8%2Be4%2FCgbuwS3yG9Pf7BrO1xqRj9xHd%2BhmAgBkAUNLho69h0GLHIvzIz%2FxbK%2Fcc5cJJAL0dOBuXikrgz5NaqFEMlG%2FpmZm807Mpx62OeQrpKb0GDyZp%2Fb7oiMenSrESGd6zTWXq0h%2BMtqt1BAM33vg7BsCpCWWrRrB8cuUvi2zxPSj6xOOklzlIY%2FrybOPsDmqm5SW24ysfrOu3%2BuhYoAsQuaLpPA65na2nfJUkxfjlayygoyofSiK5BlnD%2BE%2FU6tXXslwLg0vR6Nk6QxsHcdIGTJhRGXyeWFfW5IaXOjmuhMHveRzw%2F75g7IRN86MoBr4BsqzLT%2F4ejXTCg8ZzSBjqxARC73lYqtXJBqIFx6EGhCyoKk8%2Fqdfha2QYsWHCRB4dfdWcrFVttlXmzy2sFVFihvv%2Ba78X0kO1CXW2RMRzKIySODHF9Nhm4rxSOEmSKlsOxQwhujf9OELrLwYKRFQ%2FGBUoIxSThO6nqmOUnxnv2NGVSU3m0KIO2KmErigp2rtELBVU896ss2Zh%2BhkU7UGJLQShx0e8ndQsDEYnckT05%2F8uVWmWxpHrUNlN23rA8bhy4IA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e6adfe84bcca30e6acc7d4cf33a58a1c1fef66f801f1502e086ade11ca16acce",
+      "file_size": 285692,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-10-17T08:07:18.261Z",
+  "allow_singular_disclosure_after": -53901023.769131914,
+  "singular_disclosure_allowed": true,
+  "vote_count": 55,
+  "voters": [
+    "guiggs",
+    "0x800700e1",
+    "k0ns0l",
+    "ygrk",
+    "ph4nt0mbyt3",
+    "0xotachi",
+    "ganeshbagaria",
+    "thruster",
+    "zy9ard3",
+    "t4r1k-b41",
+    "and 45 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.1,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 92341,
+    "asset_type": "URL",
+    "asset_identifier": "api.sorare.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2048725",
+  "votes": 55,
+  "latest_disclosable_activity_at": "2024-10-17T08:07:20.468Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:37:42.271943",
+    "source": "https://hackerone.com/reports/2048725.json",
+    "report_id": 2048725
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDQ4NzI1",
+    "databaseId": "2048725",
+    "title": "Circular based introspetion Query leading to single request denial of service and cost consumption and query cost on api.sorare.com/graphql",
+    "url": "https://hackerone.com/reports/2048725",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-10-17T08:07:20.077Z",
+    "created_at": "2023-07-03T17:37:00.446Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": 6.1
+    },
+    "reporter": {
+      "username": "thebeast99"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU1OTg4",
+      "handle": "sorare",
+      "name": "Sorare",
+      "url": "https://hackerone.com/sorare",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80OTU2NDY=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2023-07-11T14:01:30.806Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIwNDg3MjU=",
+    "_id": "2048725",
+    "disclosed": true,
+    "votes": 55,
+    "latest_disclosable_activity_at": "2024-10-17T08:07:20.468Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDQ4NzI1",
+      "databaseId": "2048725",
+      "title": "Circular based introspetion Query leading to single request denial of service and cost consumption and query cost on api.sorare.com/graphql",
+      "url": "https://hackerone.com/reports/2048725",
+      "disclosed_at": "2024-10-17T08:07:20.077Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU1OTg4",
+      "handle": "sorare",
+      "name": "Sorare",
+      "url": "https://hackerone.com/sorare",
+      "currency": "usd"
+    }
+  }
+}

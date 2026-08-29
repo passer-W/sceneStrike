@@ -1,0 +1,180 @@
+{
+  "id": 133717,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzM3MTc=",
+  "url": "https://hackerone.com/reports/133717",
+  "title": "GFM renderer leaks external issue tracker URL of private project",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-22T05:34:07.948Z",
+  "submitted_at": "2016-04-22T05:34:07.948Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-06-08T22:02:26.903Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-06-08T21:59:38.135Z",
+  "team_member_agreed_on_going_public_at": "2017-06-08T22:02:26.863Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Vulnerability details\nThe GFM renderer has the ability to cross-link issues between projects. When this project is private and the user doesn't have access, the link isn't made. This is good. However, when the private project has an external issue tracker set up, an attacker can extract the external URL from a private project. In some cases, this could lead to the disclosure of the issue.\n\n# Proof of concept\nAs a victim, set up a new private project and activate an external issue tracker. I used Jira to reproduce my find. Lets say the victim's project can be found at `root/secret`. Now sign in as a different user that does not have access to that program. Create a new project. In that project, create an issue with the body `root/secret#1`. The rendered body of the issue will now contain a link to the issue URL of the private project.\n\n# Guessing namespaces\nThe issue described above is hard to exploit because there are two unknowns to the attacker: the namespace and the name of the private project. I find an ID enumeration vulnerability in the merge request controller that allows an attacker to dump all namespaces and project names. An attacker can use this endpoint to generate a markdown message that contains all namespaces and project names, appended with `#1` in order to extract all external issue tracker URLs.\n\nThe ID enumeration vulnerability can be reproduced by creating a new merge request and changing the `merge_request[target_project_id]` parameter in the URL to reference another project. The returned HTML will contain the name of the namespace and project name of the project associated with that ID. By enumerating all IDs, all project names can be extracted.\n\nhttp://gitlab-instance/jane/project/merge_requests/new?change_branches=true&merge_request%5Bsource_branch%5D=fix&merge_request%5Bsource_project_id%5D=20&merge_request%5Btarget_branch%5D=master&merge_request%5Btarget_project_id%5D=24\n\nThe name of the project can be found in the response on line 74 and 75:\n\n{F88690}\n\n# Impact\nThe issue by itself isn't super likely to be exploited, because the attacker doesn't know the namespace and project name. However, by combing the two issues, they become a lot more severe. Both issues should be addressed in order to mitigate the leakage of the private program names and the external issue tracker URL of a private project.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 88690,
+      "file_name": "Screen_Shot_2016-04-21_at_22.30.18.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/088/690/98bd03766556d76d5335dbf970dc995819703144/Screen_Shot_2016-04-21_at_22.30.18.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-04-21_at_22.30.18.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-04-21_at_22.30.18.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQT4GE5VBD%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063122Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCICl%2BICaLUvKtNHVRXufKR3MXBRiwtRMbcyZDfPiL3tzQAiEAiXabzDlW8ZZJxeYiFj2%2F7woYV8xmGwB50Nj0UDm8TsAqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDJ887aTwSAcju455diqPBZghfagCEAPmvJ%2B4Ya0zqBg41EFkk8DeK4QSPKCP2j5lO060izFJ%2F2MnW1llU3xKqCdyBQFdRGaxogt6UrXC25KUM5S%2Fv%2BQ0acAOwZwb0U2BKTFfpEqvYL2cww5qaNdKoLd%2F%2Bf7IzScO2sIdoZ5kxsVMNevATROSUP0Q%2Fu5rYvmzEAOq%2B72LxcxuaI0MR0pvCVzngenkTX7UAxMvDoiMmgVDL7nspAjDRMm0Yr8egvFJJJ4oDXzSZOBYHeEJcmkQelFI8ypf3tvNqJWNLGivgQGCewaBgUEGRGiIRJas6dTcSI6KgUWkbAQt%2BXRIFA%2FpXq1KghoklsdXO%2BEDHxIdbIaujAZDTEP0C%2FJDKNnnmtJXR5qhUcOavklBo%2B8mKz1P4PnqTXF2rxUHbgF7PTWQRK86zkXvP1stwerbPeEg%2B71KNAoo2cTpRb5k32d8gU1gQz26JT8zwCopx9cqPOS5Bng%2FcE9BaXgCPdgSPAdmOGsYS6xn9dO8V5aTwYvFGKtKUb5SrUQAMyBB40J1XnCrrIezq6yi13tGi%2FnqRobX1P6OxZl0t8VA9EJcAr%2B%2F2qM6Ax%2F7vGVnPrILhKiad1HLHBG0TNe3k0Q7zjurk8r1inpBpEMuNRXA2gV1YJkZd73ckRNfZzQLBPwHWkhSy3DD7OykIVn0QhhkpqSXZKnYsidPqd%2By524bqbx6o8c91vLSKa6Y7vPKkzRrcJn%2FHP%2BJ5UL055t8mPLq5tjLCoTr69m0V7b%2B0vf4Qu2XfsJNY9UoKdnJ0WnmurGgqlmVviwizS7ZYe29ZKJPF%2BFmRswG404tWSvRJ%2Bxk2xeO6EgTKEYOh6F7nOh0U62vybuAfPx8FyGpmeLyjlRfz3SlPZwLZ1kw7dS30gY6sQG4VgC7K3ik6nnY%2BcEU9ULTuMAYWpdJgIjUhE8siHnZExPtr%2FkHtxDcFozMZnkPGuPHBJK4nehCyRSKribp%2FPgkV6u0HG4ikJROZ19C8my5YbVoylN2Z9kloWy4bCCVrpTtj7GSaDAUtLqKljYMCOsijEMSodVK%2F1mlNnEyYc6hChnlw3o7J1BdS%2BGXXWX%2FtFZ%2Bl6NCt3nU200cHJEZGgnM80zZLIeroS0fYuvp6AYbJP4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=eb73646f1f2a388d3fa5e69962af6fdcd466b1200774be710281a3ce23c37fb4",
+      "file_size": 55667,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-07-08T21:59:38.182Z",
+  "allow_singular_disclosure_after": -283941104.6629871,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "gamliel",
+    "eveeez",
+    "khalidamin",
+    "japz",
+    "sumit7",
+    "spetr0x"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "133717",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2017-06-08T22:02:26.916Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:31:22.957021",
+    "source": "https://hackerone.com/reports/133717.json",
+    "report_id": 133717
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzM3MTc=",
+    "databaseId": "133717",
+    "title": "GFM renderer leaks external issue tracker URL of private project",
+    "url": "https://hackerone.com/reports/133717",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-06-08T22:02:26.903Z",
+    "created_at": "2016-04-22T05:34:07.948Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzMzcxNw==",
+    "_id": "133717",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2017-06-08T22:02:26.916Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzM3MTc=",
+      "databaseId": "133717",
+      "title": "GFM renderer leaks external issue tracker URL of private project",
+      "url": "https://hackerone.com/reports/133717",
+      "disclosed_at": "2017-06-08T22:02:26.903Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

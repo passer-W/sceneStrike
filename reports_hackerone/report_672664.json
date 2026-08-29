@@ -1,0 +1,205 @@
+{
+  "id": 672664,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NzI2NjQ=",
+  "url": "https://hackerone.com/reports/672664",
+  "title": "Steal collateral during `end` process, by earning DSR interest after `flow`.",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-08-13T21:21:36.953Z",
+  "submitted_at": "2019-08-13T21:21:36.953Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "lucash-dev",
+    "url": "/lucash-dev",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/515/399/dd4a50c732c98417d7be59efa049e8c234259884_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 38065,
+    "url": "https://hackerone.com/makerdao_bbp",
+    "handle": "makerdao_bbp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/PxXdq1Fo6fX6n4fzUk31AqPD/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/PxXdq1Fo6fX6n4fzUk31AqPD/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "BlockDev Sp. Z o.o",
+      "twitter_handle": "makerdao",
+      "website": "https://makerdao.com/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-09-09T16:50:17.991Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-09-09T16:50:17.920Z",
+  "team_member_agreed_on_going_public_at": "2019-09-09T16:05:54.640Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nThe `end` contract in MCD controls the process of shutting down\nthe MCD contracts and allowing for users to redeem their DAI for\ncollateral -- presumably to migrate to a new implementation of DAI.\nThe process, however, doesn't prevent the continued functioniong\nof DAI savings accounts (`pot` contract), which allows for continued\nminting of DAI after all other contracts have been \"caged\", resulting\nin theft (possibly involuntary) of collateral.\n\n## Detailed Description\n\nThe `end` contract is responsible for orchestrating the complex sequence\nof steps for shutting down the MCD eco-system, settling all existing DAI\ninto collateral during the process.\n\nThe first step in the process is the method `cage`, which ensures that other\nMCD contracts stop operating in the normal way, and enter a \"not-live\" mode.\nIn particular, the `vat` contract is updated to prevent the creation of new\nCDP's, and also prevents the accrual of interest (`vat.fold`). This is obtained by\ncalling the `cage` method in the `vat` contract.\n\nPuzzingly, however, the `end.cage` method doesn't affect the state of the `pot`\n(savings account) contract, allowing for interests to be continuously earned\n-- and new DAI to be minted --indefinitely during all the phases of the `end`\nprocess. Most significantly, it allows a user to mint new DAI even after the\nfinal DAI/collateral rate has been fixed (`end.flow`).\n\nThe consequence is that it's possible to inflate the DAI supply so that there\nisn't enough collateral for all of it to be redeemed. In that case the last\nusers to try to redeem will have their collateral stolen by the faster ones, as\nthey might well be unable to redeem any DAI at all.\n\nAn example might help clarify the problem:\n\n- Suppose there are two users, Ali and Bob, who each control 50% percent of the\nDAI supply, lets say 10 DAI each.\n\n- Now let's assume the `end` process is initiated and proceeds as usual --\neventually reaching the `flow` stage, with a fixed exchange rate of 1 DAI / ETH.\n\n- Let's also assume that there is a DSR rate of 100% a month (unrealistic, but makes\nthe numbers easier).\n\n- After the `end.flow` is called, Ali notices that the he can still use `pot` to earn\ninterests, so he deposits all his DAI in `pot`. Meanwhile Bob can't do the same\nas his funds are locked inside a Dapp (let's say an Augur market).\n\n- After one month, Ali calls `pot.exit` and gets back 20 DAI. That corresponds to\nthe total original supply of DAI before `end.flow` was called. So, Ali calls\n`end.pack` and `end.cash` to convert his 20 DAI into 20 ETH -- all the collateral\nin the MCD contracts.\n\n- When Bob tries to redeem his DAI, there is no collateral left. His `end.cash`\ncalls fail and he ends up with no tokens -- DAI or ETH -- at all.\n\n## Steps to Reproduce\n\nI've attached to this report a version of `end.t.sol` that adds a test scenario\n(`test_steal_collateral_using_dsr_after_thaw`) to reproduce this attack (in fact, the example above).\n\nPlease don't hesitate to contact me if you need more help reproducing it.\n\n## Possible Remediation\n\nThe issue could be completely prevented by introducing a `cage` functionality into\nthe `pot` contract, and not allowing the `pot.drip` method to be called when\nnot in live mode.\n\nPlease note that the above solution is provided as proof that the reported issue\nis fixable. I make no claim that the above is the best available solution.\n\n\n## Impact\n\nPlease refer to the \"Impact Analysis\" field for more details.\n\n## Final Note\n\nPlease don't hesitate to contact me if you need any further clarification around\nthis issue, or help reproducing and evaluating it.\n\n## Impact\n\n## Impact Analysis\n\nAs clearly demonstrated above, the reported bug can be used to steal collateral\nfrom the `end` contract. Even more disturbingly, the bug can likely cause users\nthat own DSR deposits to unwittingly steal collateral in case of a shutdown.\n\nLet's evaluate how much collateral can be stolen in this scenarios. The amount\nstolen depends on three factors:\n\n1 - DSR savings rate.\n2 - Portion of DAI kept in DSR deposits.\n3 - Time distribution of users calling `end.pack`.\n\nIt's impossible to know beforehand either. But we can make educated guesses\nabout a worst-case scenario.\n\nIt's possible that the DSR rate will be set at a high value at some point.\nConsidering that the previous incarnation of DAI saw a the CDP rate reach\n25% at some point, it's definitely possible for DSR to reach a slightly lower\nrate, say 20%. Furthermore, it's likely all users (including Dapps) will keep\ntheir DAI holdings in DSR deposits, doing so has a possible upside, and minimal\ngas costs.\n\nAs for the time-distribution of users redeeming their DAI, it's again entirely\npossible that a large portion of the DAI supply will be used to interact with\nDapps rather than held speculatively. Augur V2, for example, has plans to use\nDAI for making bets on prediction markets. Since these markets might take\nquite a long time to be resolved -- up to several months -- it's unlikely\nthat a DAI shutdown would cause an immediate withdrawal of DAI by Augur users\n-- if the reported vulnerability isn't known.\n\nOther Dapps might well have similar characteristics, though it's again impossible\nto know beforehand.\n\nGiven the above -- DSR rates up to 20% and most of DAI locked in DSR deposits\ninside Dapps for months -- it's perfectly possible that the bug leads to\na loss of 10% or more of the collateral in the MCD contracts.\n\nThat scenario might happen even without an intentional attack.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 554819,
+      "file_name": "end.t.sol",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/EJPZZVEzosFxmShW4NXxggMU?response-content-disposition=attachment%3B%20filename%3D%22end.t.sol%22%3B%20filename%2A%3DUTF-8%27%27end.t.sol&response-content-type=text%2Fx-csrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXBMH4C7V%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052812Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCz3pNHfPopJFlNnasNcs5vDt%2BKxGH7afSYLYyA2cOa%2BQIhAJBXU66%2BHVuy8eVoBcV5tLac6DQAnA71cqngT1GpuBDoKrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgwE4xlwIovUu9vDLgUqjgWlt7djzEC4ADZqhGT48bJfNvjIB4e%2B73TxK9WZ5F1Ukb61Omu1HW3o5fwKWRRyRNXcksJhw6tSPfmrcRy%2FIgZLLFVgeC%2BUytukx5tw0Srr8vNYoGgu3Jelzpm9RNyD9nFW3yCLb0rDg3ZVyHIgDM%2FdB0eltdX6sVQBZg1fdMIqVZipFdWviWnM7ZJj4fYsklsFclvmeO0P09215R8Tq%2FKGpnyYiRiHE%2F%2Bpwlc1uCWhZfoHrf%2BTTlpm1G7%2B80%2FSe4WrROnebR9XzFUyAVfeJGSYtx5gsOioGHEFHg5cDmZWtzdW%2B%2B4AbAdwVLChu6B7lCK8JZXeKRyj%2FJGOQjYnW3sA%2B3lkLY8SXhlWTOnN%2FhJvSr01MNEq%2B0PVpgZp668%2B7m0Y6RfBUq77YHfmvqf9Uch2Hw0CSh1n6t9GKADAjfBIDruDD1mdr0%2FUAyd3teK1j%2FONvi5ZMgXkVgIKx6a0F1oEEcgBj0mHCW0FJ7hFmKz2IwQSEcWet9LshC3vn5f%2Fzl00WNEQqIjHlJfjsAH7NLPP58msPwul9q7TDTccB96Znxq3NhgByhONjQZ%2FBAvT66n1fq1zfKJoNBkErnmK8kmH0sCyUUtNXROFMDWCdlOV6IKd7A9dYt5%2F8PN3Omkt82HSQAfwzL1hcM2A1FmPr%2B2b%2FETQ58tovSCo0aHjhSx02fHOL0FHH7OSdDd%2BirqYySafreJaaweTKu6v3gkJqqryuAKMqjj2oBMD5lhBvJdlCf6QBcs7iMHhiThtXxnARfzKBkZJFTJ959LBgEj%2B9b8kkljaai9CkXkpUjG8PLZc1aFbcYWuLuLmVndNqR7fJkwp3piJCe5DvdGBMirtIPY5ZEmw9X%2BdmNakjg69OQAwi6q30gY6sAHlCnk0P1VS7jWbBDLl4tpSN7wRJldK0wprwf7NSMEG30pOXTak256oFOXjWhbIIi7dlJq7sdSW54ltTyAMKjb6igCtbIf%2FUEoCIwQ55EeVOvr4WJQ6xvo%2Bl6MXST%2FAXwvZ3sJjk6whfnxBadO0bvBA3VLS0TRl8eFlxD9inhwhcsPyZImbhjhrv33nYpum4mX5fxfQ5KDZbDPsloqjCkPeI9A9GwAgf5BtVHlZcZ%2BNXw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=dd94ecea565cba4aa51669c0cbe85e3371be1c9b07b1f8e45ab4e7f35c74ba1e",
+      "file_size": 24720,
+      "type": "text/x-csrc",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 152,
+  "voters": [
+    "orange303",
+    "an40r1",
+    "404_hackers",
+    "n1m0",
+    "dittyroma",
+    "dee-see",
+    "pomme",
+    "p1stachios",
+    "m0chan",
+    "mashoud1122",
+    "and 142 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 34663,
+    "asset_type": "OTHER",
+    "asset_identifier": "MCD_END",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "672664",
+  "votes": 152,
+  "latest_disclosable_activity_at": "2019-09-09T16:50:18.011Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:28:12.726166",
+    "source": "https://hackerone.com/reports/672664.json",
+    "report_id": 672664
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NzI2NjQ=",
+    "databaseId": "672664",
+    "title": "Steal collateral during `end` process, by earning DSR interest after `flow`.",
+    "url": "https://hackerone.com/reports/672664",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-09-09T16:50:17.991Z",
+    "created_at": "2019-08-13T21:21:36.953Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "lucash-dev"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM4MDY1",
+      "handle": "makerdao_bbp",
+      "name": "BlockDev Sp. Z o.o",
+      "url": "https://hackerone.com/makerdao_bbp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNTc0NTM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-09-09T16:02:08.311Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY3MjY2NA==",
+    "_id": "672664",
+    "disclosed": true,
+    "votes": 152,
+    "latest_disclosable_activity_at": "2019-09-09T16:50:18.011Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NzI2NjQ=",
+      "databaseId": "672664",
+      "title": "Steal collateral during `end` process, by earning DSR interest after `flow`.",
+      "url": "https://hackerone.com/reports/672664",
+      "disclosed_at": "2019-09-09T16:50:17.991Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM4MDY1",
+      "handle": "makerdao_bbp",
+      "name": "BlockDev Sp. Z o.o",
+      "url": "https://hackerone.com/makerdao_bbp",
+      "currency": "usd"
+    }
+  }
+}

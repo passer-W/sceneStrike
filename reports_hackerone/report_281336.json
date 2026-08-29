@@ -1,0 +1,201 @@
+{
+  "id": 281336,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODEzMzY=",
+  "url": "https://hackerone.com/reports/281336",
+  "title": "Negative size in tar header causes infinite loop",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-10-21T03:56:09.259Z",
+  "submitted_at": "2017-10-21T03:56:09.259Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "b9629eebd06fb8f0680ecbdef829e",
+    "url": "/b9629eebd06fb8f0680ecbdef829e",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 8212,
+    "url": "https://hackerone.com/rubygems",
+    "handle": "rubygems",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/008/212/e65eca09896d23bc029c08d3147a79a48ec1ee2f_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/008/212/e65eca09896d23bc029c08d3147a79a48ec1ee2f_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "RubyGems",
+      "twitter_handle": "rubygems_status",
+      "website": "https://rubygems.org",
+      "about": "RubyGems.org is the Ruby community’s gem hosting service."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-03-01T05:47:32.276Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-02-18T04:53:49.327Z",
+  "team_member_agreed_on_going_public_at": "2018-03-01T05:47:32.186Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Proof of concept\n\nThe attached file loop.gem causes an infinite loop in any command that tries to iterate over the entries in the tar container.\n```\ngem install loop.gem\ngem unpack loop.gem\ngem specification loop.gem\n```\n\n# Summary\n\n[`Gem::Package::TarHeader.from`](https://github.com/rubygems/rubygems/blob/v2.6.14/lib/rubygems/package/tar_header.rb#L97-L124) uses [`oct`](https://ruby-doc.org/core-2.4.2/String.html#method-i-oct) to parse fields in the tar header. `oct` does more than just parse octal digits, for example it permits these unexpected syntaxes:\n- sign characters:\n  - `\"+012345\".oct # 5349`\n  - `\"-012345\".oct # -5349`\n- radix prefixes:\n  - `\"0x12abc\".oct # 76476`\n  - `\"0b10000\".oct # 16`\n- silently ignoring errors:\n  - `\"123,456\".oct # 83`\n  - `\"nothing\".oct # 0`\n\nThe ability to encode negative values enables a DoS (infinite loop) in the tar reader. The proof-of-concept loop.gem has a size field of `-0000001000\\x00`, or −512. The negative size causes [`Gem::Package::TarReader.each`](https://github.com/rubygems/rubygems/blob/v2.6.14/lib/rubygems/package/tar_reader.rb#L52) to seek *backwards* after reading the header, so it reads the same header over and over.\n\nI suppose one could cause a lot of CPU usage on the rubygems.org server by uploading copies of loop.gem, but I didn't try it.\n\n# Remediation\n\nInstead of doing the conversion using `oct`, there could be a special-purpose function that validates its input better. It might be enough to check that the string matches `/\\A[0-7]+\\z/` before calling `oct`.\n\nThe attached patch file adds a test that `Gem::Package::TarHeader.from` rejects various bogus syntax.\n",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 231296,
+      "file_name": "loop.gem",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/231/296/b1b95f412814ad8eba0bce747653e11109cec4f6/loop.gem?response-content-disposition=attachment%3B%20filename%3D%22loop.gem%22%3B%20filename%2A%3DUTF-8%27%27loop.gem&response-content-type=application%2Fx-tar&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061033Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=af6750ab2477b05d1c17772c5432be1ff8d222dddca954696f2258b3d9605e60",
+      "file_size": 512,
+      "type": "application/x-tar",
+      "moderated": null
+    },
+    {
+      "id": 231297,
+      "file_name": "0001-Test-that-Gem-Package-TarHeader.from-refuses-to-pars.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/231/297/fa9ef1fef061e719a298c689d5c9730193127923/0001-Test-that-Gem-Package-TarHeader.from-refuses-to-pars.patch?response-content-disposition=attachment%3B%20filename%3D%220001-Test-that-Gem-Package-TarHeader.from-refuses-to-pars.patch%22%3B%20filename%2A%3DUTF-8%27%270001-Test-that-Gem-Package-TarHeader.from-refuses-to-pars.patch&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061033Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=412517d5fbb8257fec579299bafef7e61203974ccbfb02e4bd770ab55327b557",
+      "file_size": 1411,
+      "type": "text/x-diff",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-03-20T04:53:49.416Z",
+  "allow_singular_disclosure_after": -261969404.54221576,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "apapedulimu",
+    "eveeez",
+    "japz",
+    "sumit7",
+    "666reda",
+    "geotester",
+    "03813136"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 2043,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/rubygems/rubygems",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "281336",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2018-03-01T05:47:32.306Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:10:34.160238",
+    "source": "https://hackerone.com/reports/281336.json",
+    "report_id": 281336
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODEzMzY=",
+    "databaseId": "281336",
+    "title": "Negative size in tar header causes infinite loop",
+    "url": "https://hackerone.com/reports/281336",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-03-01T05:47:32.276Z",
+    "created_at": "2017-10-21T03:56:09.259Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "b9629eebd06fb8f0680ecbdef829e"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgyMTI=",
+      "handle": "rubygems",
+      "name": "RubyGems",
+      "url": "https://hackerone.com/rubygems",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI4MTMzNg==",
+    "_id": "281336",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2018-03-01T05:47:32.306Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODEzMzY=",
+      "databaseId": "281336",
+      "title": "Negative size in tar header causes infinite loop",
+      "url": "https://hackerone.com/reports/281336",
+      "disclosed_at": "2018-03-01T05:47:32.276Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgyMTI=",
+      "handle": "rubygems",
+      "name": "RubyGems",
+      "url": "https://hackerone.com/rubygems",
+      "currency": "usd"
+    }
+  }
+}

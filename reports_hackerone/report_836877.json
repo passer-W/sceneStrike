@@ -1,0 +1,232 @@
+{
+  "id": 836877,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MzY4Nzc=",
+  "url": "https://hackerone.com/reports/836877",
+  "title": "XXE through injection of a payload in the XMP metadata of a JPEG file",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2020-04-02T05:09:42.965Z",
+  "submitted_at": "2020-04-02T05:09:42.965Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "moebius",
+    "url": "/moebius",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/860/887b65272a8206f31beb7d5e76156bd461632aec_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 453,
+    "url": "https://hackerone.com/informatica",
+    "handle": "informatica",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6yxveqohTKjQLQyJm5Xv7Eye/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/6yxveqohTKjQLQyJm5Xv7Eye/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Informatica",
+      "twitter_handle": "informatica",
+      "website": "https://www.informatica.com/",
+      "about": "Informatica Corporation is the world’s number one independent provider of data integration software."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-04-21T09:29:34.893Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-04-14T22:33:42.585Z",
+  "team_member_agreed_on_going_public_at": "2020-04-21T09:29:34.804Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Users are able to change their avatar picture. The avatar picture upload functionality is prone to a XXE attack when parsing the image file. Specifically, the XXE attack is executed through the injection of a payload in the \"XMP metadata\" of the uploaded JPEG file.\n\nProof of concept (note the \"Burp Collaborator Payload pointing to an External DTD\"):\n```\nPOST /edit-profile-avatar!uploadImage.jspa HTTP/1.1\nHost: ███████informatica.com\n\n  [...REDACTED...PLEASE.SEE.SCREENSHOTS.FOR.FULL.PAYLOAD]\n```\n\nAnd I received the following calls (note the User-Agent \"Java██████\" confirming the vulnerability):\n\n```\nInteraction 0 \nType: HTTP \nClient IP: ███████ \nTimestamp: 2020-Apr-02 01:44:27 UTC  \nProtocol: HTTP  \n\nRAW HTTP request: \n\nGET /x.dtd HTTP/1.1 \nCache-Control: no-cache \nPragma: no-cache \nUser-Agent: Java██████ \nHost: N.syuj65rfsb27o1u78jcinsinnet6ky8n.burpcollaborator.net \nAccept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2 Connection: keep-alive\n```\n\nSimilar calls were received from another IP address: 146.112.138.73\n\nFurthermore, the affected host should not be allowed to start a new connection to the Internet.\n\n## Impact\n\nThis issue can be abused to read arbitrary files and list directory contents from the filesystem of the XML processor application. I didn't try any reading, but JAVA (JSPA is a JAVA Servlet File) is calling my external service, so the vulnerability is confirmed.",
+  "weakness": {
+    "id": 54,
+    "name": "XML External Entities (XXE)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 769845,
+      "file_name": "Screen_Shot_2020-04-02_at_2.04.53_AM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qiRepvWB73guarDWbBBwWvht?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2020-04-02_at_2.04.53_AM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2020-04-02_at_2.04.53_AM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ4C74MKR%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051016Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCx1XKlEi6OydnKZYKrSxMxZj9mWlb39Px97KO7%2BckiPAIgYTQPDN2GIIndZEF9lPi4K5KBxcQT%2BJR3NPd3qYPpwigqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDIC5Dj7zD%2FBtowb7CSqPBS4s%2BBpKO30y5FjtbNe3L%2B9s58HeTje9TSwryFomZtFjFmSZlMzYp%2FrXe3PwQ8odgAvG%2FEJuSrUecJkFPxoezHG8h6qU0QLWmcBGjDKbGr6KH4Iix11Uft0iwHgWGwAH2I2fKWwg0sCKbNAdvwK3uo%2BnJOSGbS8nVXyauPK3sDdkWTVSwfMqgh%2FIww6bRHHPF58pcL3sxX5ccYBxRQqJycx9W2N5re9qersvq1LES%2Fifyw6FloTzjE4t%2BJKM%2BgXOBR0TWiAy0l0HzCMalI%2Fh6FPy3M9GHD%2FZRNd6EC9gxBUdCu7NZYdiFGUVrKO6IBj68K44rGeIE2pCVqZYeAFSgI3QWUsiTy4viW2guZU3n1mWYflK8wDe5XyMx27c9Mima7eWhFFAiHBapKs9we%2FH8WVRPsOdP%2B3lD4d5%2BudTWJmOUOvHQxRJqFRCMYctPQvKEr2TOZUsptZ0zqjSuqoLYUsEaInvugYmlpcgKKeBMDCUC7wzDK8s0AzBw7xlxPOpnyhX%2BCVH%2FcGXHnhCLEpnyntQNWV1Bc3%2BSDBB07zJKsFxKv%2FcOme9YXm0hxo6b%2Fh3fvVv4NPFRELEgYSSKe6SeBRtjiL4MXEcF7Ehiyu1H5%2BqzTMoolF6QxMy3I34DVhVw4o8nM4DViSqTaXMAwRPqZLRkhj0IgjUTYYXmyJIY2XmTTBfTBABgc%2FnQqVFWOmonWHSLw2FYTJ34Sf8Z3ByfBoXT1UWRn8cdbgPcMy%2F262baHMHRO%2F7TMzX%2BLOstzaa2Xp0p3R%2BXuAt46lMWAEbTWFlNtckkQfgMA%2BvNv%2FaUTwRyVwi0V%2BbonhOSilbnA7epXYlpIpVr7qxOuZr4MX%2B5%2BE3i5RUqI7WcJLOAfJoSeMw9Ke30gY6sQH2LyKn%2B7ja5P6ACV0FO3Ul3N%2FkqzW40PTsASxuBaVzN6QfDozFCWeoJtSu1ZeWImK3r8uVYNsbflaIRK0Qhk4Tn7Z3YASM%2B4JVeacYUw1VlKDwlO2d6TbdV8Gxg8WINcXkJ7E076mnKjTKhUh8RIzYETcw8B7vUi2QY4DKvEpH1XffPqYeg064UX3G5dQskVOQWiIpWJDXcVzfYziZnF5Xoq6gMMd5QDPt9MwNyEZew20%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=822e5d66493ffa2c061d07ed79fcb56641f8d8b71c83f8d913b0235cdc91a57c",
+      "file_size": 82931,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 769846,
+      "file_name": "Screen_Shot_2020-04-02_at_2.05.10_AM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zEBjnN2xvdkj1iNi1NeNeVVz?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2020-04-02_at_2.05.10_AM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2020-04-02_at_2.05.10_AM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ4C74MKR%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051016Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCx1XKlEi6OydnKZYKrSxMxZj9mWlb39Px97KO7%2BckiPAIgYTQPDN2GIIndZEF9lPi4K5KBxcQT%2BJR3NPd3qYPpwigqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDIC5Dj7zD%2FBtowb7CSqPBS4s%2BBpKO30y5FjtbNe3L%2B9s58HeTje9TSwryFomZtFjFmSZlMzYp%2FrXe3PwQ8odgAvG%2FEJuSrUecJkFPxoezHG8h6qU0QLWmcBGjDKbGr6KH4Iix11Uft0iwHgWGwAH2I2fKWwg0sCKbNAdvwK3uo%2BnJOSGbS8nVXyauPK3sDdkWTVSwfMqgh%2FIww6bRHHPF58pcL3sxX5ccYBxRQqJycx9W2N5re9qersvq1LES%2Fifyw6FloTzjE4t%2BJKM%2BgXOBR0TWiAy0l0HzCMalI%2Fh6FPy3M9GHD%2FZRNd6EC9gxBUdCu7NZYdiFGUVrKO6IBj68K44rGeIE2pCVqZYeAFSgI3QWUsiTy4viW2guZU3n1mWYflK8wDe5XyMx27c9Mima7eWhFFAiHBapKs9we%2FH8WVRPsOdP%2B3lD4d5%2BudTWJmOUOvHQxRJqFRCMYctPQvKEr2TOZUsptZ0zqjSuqoLYUsEaInvugYmlpcgKKeBMDCUC7wzDK8s0AzBw7xlxPOpnyhX%2BCVH%2FcGXHnhCLEpnyntQNWV1Bc3%2BSDBB07zJKsFxKv%2FcOme9YXm0hxo6b%2Fh3fvVv4NPFRELEgYSSKe6SeBRtjiL4MXEcF7Ehiyu1H5%2BqzTMoolF6QxMy3I34DVhVw4o8nM4DViSqTaXMAwRPqZLRkhj0IgjUTYYXmyJIY2XmTTBfTBABgc%2FnQqVFWOmonWHSLw2FYTJ34Sf8Z3ByfBoXT1UWRn8cdbgPcMy%2F262baHMHRO%2F7TMzX%2BLOstzaa2Xp0p3R%2BXuAt46lMWAEbTWFlNtckkQfgMA%2BvNv%2FaUTwRyVwi0V%2BbonhOSilbnA7epXYlpIpVr7qxOuZr4MX%2B5%2BE3i5RUqI7WcJLOAfJoSeMw9Ke30gY6sQH2LyKn%2B7ja5P6ACV0FO3Ul3N%2FkqzW40PTsASxuBaVzN6QfDozFCWeoJtSu1ZeWImK3r8uVYNsbflaIRK0Qhk4Tn7Z3YASM%2B4JVeacYUw1VlKDwlO2d6TbdV8Gxg8WINcXkJ7E076mnKjTKhUh8RIzYETcw8B7vUi2QY4DKvEpH1XffPqYeg064UX3G5dQskVOQWiIpWJDXcVzfYziZnF5Xoq6gMMd5QDPt9MwNyEZew20%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9ec6e470947dc75220fa804d163ec8c1e67b3231b3d6ea5cab6b5fdb08988de7",
+      "file_size": 37671,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 769847,
+      "file_name": "Screen_Shot_2020-04-02_at_2.05.44_AM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/iWJy8aA2T86Q3CvvrrG3MNNY?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2020-04-02_at_2.05.44_AM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2020-04-02_at_2.05.44_AM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ4C74MKR%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051016Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCx1XKlEi6OydnKZYKrSxMxZj9mWlb39Px97KO7%2BckiPAIgYTQPDN2GIIndZEF9lPi4K5KBxcQT%2BJR3NPd3qYPpwigqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDIC5Dj7zD%2FBtowb7CSqPBS4s%2BBpKO30y5FjtbNe3L%2B9s58HeTje9TSwryFomZtFjFmSZlMzYp%2FrXe3PwQ8odgAvG%2FEJuSrUecJkFPxoezHG8h6qU0QLWmcBGjDKbGr6KH4Iix11Uft0iwHgWGwAH2I2fKWwg0sCKbNAdvwK3uo%2BnJOSGbS8nVXyauPK3sDdkWTVSwfMqgh%2FIww6bRHHPF58pcL3sxX5ccYBxRQqJycx9W2N5re9qersvq1LES%2Fifyw6FloTzjE4t%2BJKM%2BgXOBR0TWiAy0l0HzCMalI%2Fh6FPy3M9GHD%2FZRNd6EC9gxBUdCu7NZYdiFGUVrKO6IBj68K44rGeIE2pCVqZYeAFSgI3QWUsiTy4viW2guZU3n1mWYflK8wDe5XyMx27c9Mima7eWhFFAiHBapKs9we%2FH8WVRPsOdP%2B3lD4d5%2BudTWJmOUOvHQxRJqFRCMYctPQvKEr2TOZUsptZ0zqjSuqoLYUsEaInvugYmlpcgKKeBMDCUC7wzDK8s0AzBw7xlxPOpnyhX%2BCVH%2FcGXHnhCLEpnyntQNWV1Bc3%2BSDBB07zJKsFxKv%2FcOme9YXm0hxo6b%2Fh3fvVv4NPFRELEgYSSKe6SeBRtjiL4MXEcF7Ehiyu1H5%2BqzTMoolF6QxMy3I34DVhVw4o8nM4DViSqTaXMAwRPqZLRkhj0IgjUTYYXmyJIY2XmTTBfTBABgc%2FnQqVFWOmonWHSLw2FYTJ34Sf8Z3ByfBoXT1UWRn8cdbgPcMy%2F262baHMHRO%2F7TMzX%2BLOstzaa2Xp0p3R%2BXuAt46lMWAEbTWFlNtckkQfgMA%2BvNv%2FaUTwRyVwi0V%2BbonhOSilbnA7epXYlpIpVr7qxOuZr4MX%2B5%2BE3i5RUqI7WcJLOAfJoSeMw9Ke30gY6sQH2LyKn%2B7ja5P6ACV0FO3Ul3N%2FkqzW40PTsASxuBaVzN6QfDozFCWeoJtSu1ZeWImK3r8uVYNsbflaIRK0Qhk4Tn7Z3YASM%2B4JVeacYUw1VlKDwlO2d6TbdV8Gxg8WINcXkJ7E076mnKjTKhUh8RIzYETcw8B7vUi2QY4DKvEpH1XffPqYeg064UX3G5dQskVOQWiIpWJDXcVzfYziZnF5Xoq6gMMd5QDPt9MwNyEZew20%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=eb246e4336e286ad5076463c7a8d2e247f57950686424e31766542a50369cb5b",
+      "file_size": 16718,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-05-14T22:33:42.628Z",
+  "allow_singular_disclosure_after": -193991793.45153514,
+  "singular_disclosure_allowed": true,
+  "vote_count": 137,
+  "voters": [
+    "m4khn0",
+    "totz_sec",
+    "orange303",
+    "agrippathemagus",
+    "a_d_a_m",
+    "checkm50",
+    "hackerontwowheels",
+    "thepath",
+    "holyfield",
+    "elmago",
+    "and 127 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 21381,
+      "category": "team",
+      "content": "Researcher identified an XXE issue via a JPEG file upload. Researcher worked with us to validate the vulnerability, managed to escalate to return the contents of /etc/passwd and confirmed the issue was then fixed. Informatica responded by initially disabling the feature and then further blocking access to the vulnerable endpoint. Our thanks to moebius for the report, and the detailed writeup associated with it. Some technical details have been redacted in the below. \n\nShould there be any queries, please contact us via security@informatica.com ",
+      "updated_at": "2020-04-21T09:29:08.756Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 582228,
+        "username": "nheffernan",
+        "name": "Niall Heffernan",
+        "bio": null,
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": null,
+        "created_at": "2019-04-15T10:34:20.268Z",
+        "url": "https://hackerone.com/nheffernan",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "medium": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "xtralarge": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "836877",
+  "votes": 137,
+  "latest_disclosable_activity_at": "2020-04-21T09:29:34.919Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:10:16.191675",
+    "source": "https://hackerone.com/reports/836877.json",
+    "report_id": 836877
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MzY4Nzc=",
+    "databaseId": "836877",
+    "title": "XXE through injection of a payload in the XMP metadata of a JPEG file",
+    "url": "https://hackerone.com/reports/836877",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-04-21T09:29:34.893Z",
+    "created_at": "2020-04-02T05:09:42.965Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU0",
+      "name": "XML External Entities (XXE)",
+      "external_id": "cwe-611"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "moebius"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDUz",
+      "handle": "informatica",
+      "name": "Informatica",
+      "url": "https://hackerone.com/informatica",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzgzNjg3Nw==",
+    "_id": "836877",
+    "disclosed": true,
+    "votes": 137,
+    "latest_disclosable_activity_at": "2020-04-21T09:29:34.919Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MzY4Nzc=",
+      "databaseId": "836877",
+      "title": "XXE through injection of a payload in the XMP metadata of a JPEG file",
+      "url": "https://hackerone.com/reports/836877",
+      "disclosed_at": "2020-04-21T09:29:34.893Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDUz",
+      "handle": "informatica",
+      "name": "Informatica",
+      "url": "https://hackerone.com/informatica",
+      "currency": "usd"
+    }
+  }
+}

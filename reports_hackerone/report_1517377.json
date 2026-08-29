@@ -1,0 +1,211 @@
+{
+  "id": 1517377,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTE3Mzc3",
+  "url": "https://hackerone.com/reports/1517377",
+  "title": "Rocket.chat user info security issue",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-03-21T06:20:58.858Z",
+  "submitted_at": "2022-03-21T06:20:58.916Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mikolajczak",
+    "url": "/mikolajczak",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 19858,
+    "url": "https://hackerone.com/rocket_chat",
+    "handle": "rocket_chat",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Rocket.Chat",
+      "twitter_handle": "RocketChat",
+      "website": "https://rocket.chat",
+      "about": "Rocket.Chat is a company built on open source values and a love for efficiency. The company is driven by our amazing community of contributors."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "no-content",
+  "cve_ids": [
+    "CVE-2022-32227"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-09-22T16:04:06.242Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-09-22T12:23:20.607Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "",
+  "weakness": {
+    "id": 34,
+    "name": "Cleartext Transmission of Sensitive Information"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2022-10-22T12:23:20.729Z",
+  "allow_singular_disclosure_after": -116613773.0786994,
+  "singular_disclosure_allowed": true,
+  "vote_count": 2,
+  "voters": [
+    "shreyaschavhan",
+    "shivammusic"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.0,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 194889,
+      "category": "team",
+      "content": "Hello,\nWe have find potential security issue that user with “view-full-other-user-info” permissions is able to view another user's OAuth tokens via Rest API.\n\nTested on Rocket.Chat version 4.3.3\n\nSteps to reproduce:\n1. Integration with OAuth 2.0 identity provider (e.g. Keycloak) is required\n1. Add role with permissions “view-full-other-user-info” to user1\n2. Log in to Rocket.Chat as user1\n3. Go to My Account -> Personal Access Tokens -> Add, save Token and UserId\n4. Call Rocket API using curl, provide username of another Rocket.chat user who also is using OAuth: \ncurl -H \"X-Auth-Token: <token>\" -H \"X-User-Id: <userId>\" https://domain.com/api/v1/users.info?username=<user2>\n\nIn result you get all info includes tokens:\n\n{\n    \"user\": {\n        \"_id\": \"xyz\",\n        \"createdAt\": \"2019-09-20T12:46:18.874Z\",\n        \"services\": {\n            \"keycloak\": {\n                \"_OAuthCustom\": true,\n                \"accessToken\": \"xyz\",\n                \"idToken\": \"xyz\",\n                \"expiresAt\": 1646996798596,\n                \"refreshToken\": \"xyz\",\n                \"sub\": \"xyz\",\n                \"email_verified\": false,\n                \"name\": \"user2\",\n                \"preferred_username\": \"user2\",\n                \"given_name\": \"user2\",\n                \"family_name\": \"user2\",\n                \"email\": \"user2@domain.com\",\n                \"id\": \"xyz\",\n                \"username\": \"user2\",\n                \"serverURL\": \"https://idp.url\"\n            }\n        },\n...\n\nThis is a critical security issue. Users must not be able to view another user's tokens issued by identity provider. Even user with administrator role must not be able to do that. Capturing OAuth access and refresh tokens may lead to unauthorized access to other systems using the same identity provider.\n\n## Impact\n\nTake control on oAuth tokens another users.\n\n## Fix\n\nFixed in versions 4.7.5, 4.8.2, 5.0.0\n",
+      "updated_at": "2022-09-22T12:23:11.379Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1989106,
+        "username": "mrd0d",
+        "name": "Offsec team engineer",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2021-09-27T20:52:41.370Z",
+        "url": "https://hackerone.com/mrd0d",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/j9d22b8d3wdw2lskn3dviwszwnze/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15?response-content-disposition=inline%3B%20filename%3D%22Ghost%20Boy.jpeg%22%3B%20filename%2A%3DUTF-8%27%27Ghost%2520Boy.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050613Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9715032b204eee822751e7191d505f64d6220f92e1cd0fecfac9df1b132c0230",
+          "medium": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/j9d22b8d3wdw2lskn3dviwszwnze/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12?response-content-disposition=inline%3B%20filename%3D%22Ghost%20Boy.jpeg%22%3B%20filename%2A%3DUTF-8%27%27Ghost%2520Boy.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050613Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0becc0e5d69fc646f2a38ac73131fa5e1a9c046cd4e4b1c69cac14d4fb5e8471",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTcwOTk1NSwicHVyIjoiYmxvYl9pZCJ9fQ==--411e69acd3d9e11c3ba8656ec1816fb37b995665/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGVnIiwicmVzaXplIjoiMjYweDI2MFx1MDAzZSJ9LCJwdXIiOiJ2YXJpYXRpb24ifX0=--077a116fdc5fd6949baa55fe21d29943970c85dc/Ghost%20Boy.jpeg"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1517377",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2022-09-22T16:04:06.169Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:06:13.933137",
+    "source": "https://hackerone.com/reports/1517377.json",
+    "report_id": 1517377
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTE3Mzc3",
+    "databaseId": "1517377",
+    "title": "Rocket.chat user info security issue",
+    "url": "https://hackerone.com/reports/1517377",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-09-22T16:04:06.242Z",
+    "created_at": "2022-03-21T06:20:58.858Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM0",
+      "name": "Cleartext Transmission of Sensitive Information",
+      "external_id": "cwe-319"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.0
+    },
+    "reporter": {
+      "username": "mikolajczak"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE1MTczNzc=",
+    "_id": "1517377",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2022-09-22T16:04:06.169Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTE3Mzc3",
+      "databaseId": "1517377",
+      "title": "Rocket.chat user info security issue",
+      "url": "https://hackerone.com/reports/1517377",
+      "disclosed_at": "2022-09-22T16:04:06.242Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    }
+  }
+}

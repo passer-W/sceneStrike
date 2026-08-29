@@ -1,0 +1,216 @@
+{
+  "id": 1832494,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODMyNDk0",
+  "url": "https://hackerone.com/reports/1832494",
+  "title": "Blind SSRF on https://my.exnessaffiliates.com/ allows for internal network enumeration",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2023-01-12T13:49:27.027Z",
+  "submitted_at": "2023-01-12T13:49:27.283Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "null_hypothesis",
+    "url": "/null_hypothesis",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/919/2effe36d9a514cd008bde34f73aaec8546c123bb_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 12719,
+    "url": "https://hackerone.com/exness",
+    "handle": "exness",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/nqcs1q40b15orz664sixj9ltiejh/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/nqcs1q40b15orz664sixj9ltiejh/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "EXNESS",
+      "twitter_handle": "",
+      "website": "https://www.exness.com",
+      "about": "We offer better-than-market conditions on currencies, crypto, stocks, indices, metals, and commodities."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2023-10-25T13:09:58.717Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-10-25T13:09:58.620Z",
+  "team_member_agreed_on_going_public_at": "2023-07-13T13:23:16.514Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nHi\nHope you're well\nI have found a Blind SSRF vulnerability, in an endpoint on exnessaffiliates.com endpoint, which would allow for Internal network enumeration.\n\nThe endpoint in question is \n`https://my.exnessaffiliates.com/api/partner_integrations/template/probe`\n\nWhen an attacker makes a POST request, with the post data:\n```\n{\"data\":{\"url\":\"https://attacker-domain.tld\"}}\n```\n\nWe can see a DNS and HTTP request being made as so:\n```\nGET / HTTP/1.1\nHost: sa66ovrblrbiviochnojtli2bthk5ft4.oastify.com\nsentry-trace: xxx,baggage: sentry-trace_id=xxx,sentry-environment=production,sentry-public_key=xxx,sentry-transaction=/api/v1/partners/%7Bpartner_partner_uid%7D/integrations/\nUser-Agent: python-requests/2.28.1\nAccept-Encoding: gzip, deflate\nAccept: */*\nConnection: keep-alive\nuber-trace-id: xxx\n```\n\nThis is itself, would constitute a minor Blind SSRF vulnerability, if it is not intentionally accepted.\n\nHowever, if we use the post data:\n```\n{\"data\":{\"url\":\"https://127.0.0.1:80\"}}\n```\n\nNormally, if the port/host is not reachable, it will return a simple error:\n```\n\"code\":\"ValidationError\",\"message\":\"Invalid input.\",\"details\":[{\"field\":\"url\",\"message\":\"Invalid Postback URL\",\"code\":\"invalid\"}]\n```\n\nHowever, if the port is open, Python Requests is returning the error message to the user as so:\n{F2117769}\n\nThis indicates that the HTTP port 80 on 127.0.0.1 is open.\n\nWith permission, I will further this attack to inspect the internal network.\n\n\n## Steps to Reproduce:\n[Add details for how we can reproduce the issue. Please ensure reproducibility of the issue.]\n\n  1. Make a POST request to https://my.exnessaffiliates.com/api/partner_integrations/template/probe/\n       with the post data \n      {\"data\":{\"url\":\"https://127.0.0.1:80\"}}\n\n\n## Impact\nHow does the issue affect the business or the user? \nInternal network details are disclosed.\n\nWhat can the attacker get through the issue? \nInternal network device enumeration\nUtilise the requests for DDOS on a victim's server.\n\n\nCan the issue be escalated further? If so, how? \nPotentially, I will attempt further escalation with permission.\n\n## Mitigation\nDo not return Python errors to the user - even when URL contains blacklisted contents.\n\n\n## Supporting Material/References:\nattached above.\n\n## Impact\n\nCurrently, this will allow for network enumeration from the internal IP:\n███████\nWith permission, I will attempt to escalate this issue to inspect the internal network further, and attempt RCE.",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2117769,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/he2m5kmuthpgrur7l1hki0v62h8p?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQY6WM27R6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044911Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCw73CRLz9sOJGZ68jR3COYrzYL3ILrCiO4Ldt1wAcDSgIhAME5n1ZBPtjrek4miyWIdOchrHmJn%2BJjRw%2FOjwY99XgHKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgxARN2DuvvpJZ2epWMqjwUO%2Bkmg9tr%2B6wqfKD9br9ucHuRS%2FIehwltTZbySAR4NCOkdmA78DoU30sj8NIUMUa4CB6825u5HJmurPDFwVxnBUd%2FsqMUlEUvRW08%2BZI3jmcKdmDbzytaJbrWWm8flrJKvR6y3ivBYg6iAwCY8k4PvhC4dahTn%2BtJNtGlkb92du%2B6nvxeQQ%2FrsMKj6EFZG2xulxGiqMzyN2crdMwj1hhFWon5yXIuTCk6njfG9N7tOknAYV%2F23NCvOD0zoSQ7hhDvO8V%2Fxy%2BHlqGZZJjkkEFaNxjeIzb3R%2BZ8aivYnj2MMbsGPeKuCHInB5jYzz2DhntusW2IIaBFwTroHLdPBXY%2BhH%2FPKq%2B7%2BPpW0j4LBlU5avT0rmYVlYVhIzfpGeWhRxMFLNgzm%2FMLDKv9gr0FloMqRAXfMoyNh0ZlKxdA4t40HBhXlOEfe4sQnTBUT7gEEu5GUme0ftpyct%2B2OfJXvmBuFHS%2FVtfrga6jKQYLDHTHkIwk2ZR15fOiuFtIqrblokJAu8kDg4favAijvluHqLz0vF3D4c33wNCp1T8FR6WM1LPOBG%2BdXtdF%2F0A09eL5aJNVeMFdd2nqamMf%2BORN0P6ncuN81ci9MrqabMg0RIGvhVCApDAGCTo3M9%2FJNUEZyQz%2B5TdLEfQaAX88TuASCjK3XqWvv5stZEUiI6as6ESxd2njeBTZQ2kWT5ljlS7zVazo5KI8vv4uHr%2BJd29b44vQdKU19Vl3lDuqtqh8wOo1ePMit%2BfXK9PL7Z79AJ%2FZxQlOD13z5olJ1ol7DZlJ5k3sADywbDfF0avYaZ1YfXUCi6tdTFbkmrTdlHegp0lfWcpOIvRI70B7XGspFQ6MgyAWEDlDQ8OTou%2Byb7dG73qqHMOzmnNIGOrABdjkpiCK7pXbgfyOEI8FdTrlOpemp4A%2BMTNlSvyRUUyY8CP6QWi7kn7GTiQqPPWV%2B6ick6o2sA1gGTX9Mt5bgwVsA0MjvFDLmSjcnZ6OJCLIHDycmE7Hi887Wj0q2aCdCkdjRqTUlo0icaleJQWwkMdcyvF%2F%2BrAAIBhAjwfGsQ1cpU%2FXcYFGq5p4iD65F6C90YZ7mDEYnAYavdpPSy9vFBoHLbkCRBTQELtbhQgATo2A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e55e5486c0f31f41b3755204a4b259a81836a07df333254918a07204fcbecd0a",
+      "file_size": 44383,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 118,
+  "voters": [
+    "alganad",
+    "jadav_",
+    "datsuraku147",
+    "dreamnailxx",
+    "m4khn0",
+    "0xu",
+    "8910jq",
+    "defenderwww",
+    "h4x0r_ly",
+    "n1m0",
+    "and 108 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.1,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 440313,
+    "asset_type": "URL",
+    "asset_identifier": "exnessaffiliates.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1832494",
+  "votes": 118,
+  "latest_disclosable_activity_at": "2023-10-25T13:10:00.674Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:49:11.690234",
+    "source": "https://hackerone.com/reports/1832494.json",
+    "report_id": 1832494
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODMyNDk0",
+    "databaseId": "1832494",
+    "title": "Blind SSRF on https://my.exnessaffiliates.com/ allows for internal network enumeration",
+    "url": "https://hackerone.com/reports/1832494",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-10-25T13:09:58.717Z",
+    "created_at": "2023-01-12T13:49:27.027Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.1
+    },
+    "reporter": {
+      "username": "null_hypothesis"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEyNzE5",
+      "handle": "exness",
+      "name": "EXNESS",
+      "url": "https://hackerone.com/exness",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NTAwNDk=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2023-01-16T16:37:11.929Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4MzI0OTQ=",
+    "_id": "1832494",
+    "disclosed": true,
+    "votes": 118,
+    "latest_disclosable_activity_at": "2023-10-25T13:10:00.674Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODMyNDk0",
+      "databaseId": "1832494",
+      "title": "Blind SSRF on https://my.exnessaffiliates.com/ allows for internal network enumeration",
+      "url": "https://hackerone.com/reports/1832494",
+      "disclosed_at": "2023-10-25T13:09:58.717Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEyNzE5",
+      "handle": "exness",
+      "name": "EXNESS",
+      "url": "https://hackerone.com/exness",
+      "currency": "usd"
+    }
+  }
+}

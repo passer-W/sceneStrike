@@ -1,0 +1,193 @@
+{
+  "id": 196458,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTY0NTg=",
+  "url": "https://hackerone.com/reports/196458",
+  "title": "apps.shopify.com - CSRF token leakage through Google Analytics",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2017-01-07T00:59:41.646Z",
+  "submitted_at": "2017-01-07T00:59:41.646Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "zombiehelp54",
+    "url": "/zombiehelp54",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/mevfgipw1pc7n4wy86swdq1yaeuq/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-02-07T01:32:16.100Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-02-07T01:32:16.065Z",
+  "team_member_agreed_on_going_public_at": "2017-02-07T01:28:49.978Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "#Description:\nWhen a user tries to send a support a message to an app developer in `apps.shopify.com` , he will be asked to login and once he is logged in , he will be redirected to `apps.shopify.com/[app_id]?authenticity_token=[current_user_authenticity_token]`. \nDevelopers can track their app page view in `apps.shopify.com` by adding a google tracking code while editing their app.\n\nWith that said , here is how now attacker can steal someone's CSRF token and use it to submit requests on behalf of that user:\n- Attacker tricks the victim to visit an HTML page that he has control over it\n- The HTML page opens a new window that redirects to `https://apps.shopify.com/[attacker's_app]/support_interactions/new`\n- The victim will be redirected to `https://apps.shopify.com/#login` once he is logged in , he will be redirected to `https://apps.shopify.com/[attacker's_app]?authenticity_token=[victim's_token]` \n- The attacker can now see the victim's authenticity token by checking Real-Time analytics at his google analytics dashboard\n- The attacker can use the victim's CSRF token to forge HTML requests that edit the victim's app listing by issuing requests to `https://apps.shopify.com/services/shopify_applications/edit` , if the victim has a shopify application or he can use it to submit reviews,support messages ..etc\n\n\n#Steps to reproduce:\n1. Go to `https://app.shopify.com/services/partners/api_clients/new` to create a new application then after creating it click **Edit App Listing** and at **Google analytics code** field enter your google analytics code.\n2. Go to `https://apps.shopify.com/[your_app_id]/support_interactions/new` , you'll be redirected to the login page , enter your shop domain then login.\n3. After logging in you'll be redirected to `https://apps.shopify.com/img-src-x-onerror-prompt2?reveal_support=true?authenticity_token=[Your_CSRF_TOKEN]&utf8=%E2%9C%93` \n4. Now go to your google analytics dashboard `https://analytics.google.com/analytics/web/` -> **Real Time** analytics , and you'll see the whole URL with the authenticity token disclosed.\n\n{F149974}\n\n",
+  "weakness": {
+    "id": 45,
+    "name": "Cross-Site Request Forgery (CSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 149974,
+      "file_name": "csrf-token-analytics.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/149/974/144643bf2bf7c50d6e0935147fb5fa5f429fcd6d/csrf-token-analytics.png?response-content-disposition=attachment%3B%20filename%3D%22csrf-token-analytics.png%22%3B%20filename%2A%3DUTF-8%27%27csrf-token-analytics.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064328Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7b36362734bf4a7bff13e36f7b8ae1f74f20771560b995550b5e9d37560b3f40",
+      "file_size": 131006,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 48,
+  "voters": [
+    "arneswinnen",
+    "drsniper",
+    "inhibitor181",
+    "bogdantc",
+    "michiel",
+    "spam404",
+    "hph",
+    "aryan2808",
+    "jon_bottarini",
+    "flashdisk",
+    "and 38 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "196458",
+  "votes": 48,
+  "latest_disclosable_activity_at": "2017-02-07T01:32:16.113Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:43:28.528906",
+    "source": "https://hackerone.com/reports/196458.json",
+    "report_id": 196458
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTY0NTg=",
+    "databaseId": "196458",
+    "title": "apps.shopify.com - CSRF token leakage through Google Analytics",
+    "url": "https://hackerone.com/reports/196458",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-02-07T01:32:16.100Z",
+    "created_at": "2017-01-07T00:59:41.646Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ1",
+      "name": "Cross-Site Request Forgery (CSRF)",
+      "external_id": "cwe-352"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "zombiehelp54"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTY1Ng==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-02-07T01:28:42.649Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE5NjQ1OA==",
+    "_id": "196458",
+    "disclosed": true,
+    "votes": 48,
+    "latest_disclosable_activity_at": "2017-02-07T01:32:16.113Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTY0NTg=",
+      "databaseId": "196458",
+      "title": "apps.shopify.com - CSRF token leakage through Google Analytics",
+      "url": "https://hackerone.com/reports/196458",
+      "disclosed_at": "2017-02-07T01:32:16.100Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

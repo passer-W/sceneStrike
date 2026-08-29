@@ -1,0 +1,195 @@
+{
+  "id": 3598358,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTk4MzU4",
+  "url": "https://hackerone.com/reports/3598358",
+  "title": "urlapi: off-by-one in custom scheme validation skips last character",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "high",
+  "readable_substate": "Informative",
+  "created_at": "2026-03-11T15:02:02.489Z",
+  "submitted_at": "2026-03-11T15:02:03.190Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "otiscui",
+    "url": "/otiscui",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-03-12T15:51:30.100Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-03-11T22:33:20.122Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\n\nIn `lib/urlapi.c`, the `set_url_scheme()` function has an off-by-one error when validating custom scheme names. The validation loop checks `scheme[0]` twice (once by `ISALPHA`, once in the loop) and never checks the last character. This allows schemes ending with any arbitrary byte (e.g., `foo!`, `bar{`, `bad/`) to pass validation when set via `curl_url_set(url, CURLUPART_SCHEME, ..., CURLU_NON_SUPPORT_SCHEME)`, violating RFC 3986 Section 3.1.\n\n## Affected version\n\ncurl 8.19.1-DEV (Darwin) libcurl/8.19.1-DEV OpenSSL/3.6.1 zlib/1.2.12 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns mqtt mqtts pop3 pop3s rtsp smb smbs smtp smtps telnet tftp ws wss\nFeatures: alt-svc AsynchDNS brotli HSTS HTTPS-proxy IDN IPv6 Largefile libz NTLM SSL threadsafe TLS-SRP UnixSockets zstd\n\nTested on macOS (Darwin 25.2.0, arm64). The bug is platform-independent, in `lib/urlapi.c` lines 1648-1657.\n\n## Steps To Reproduce\n\nBuild and run this PoC:\n\n```c\n#include <stdio.h>\n#include <curl/curl.h>\n\nint main(void) {\n  CURLU *url;\n  CURLUcode rc;\n  const char *schemes[] = {\"bad!\", \"bad{\", \"bad/\", \"bad\\\\\", \"a!\", NULL};\n\n  for(int i = 0; schemes[i]; i++) {\n    url = curl_url();\n    rc = curl_url_set(url, CURLUPART_SCHEME, schemes[i],\n                      CURLU_NON_SUPPORT_SCHEME);\n    char *out = NULL;\n    if(rc == CURLUE_OK)\n      curl_url_get(url, CURLUPART_SCHEME, &out, 0);\n    printf(\"%-10s  %s\", schemes[i],\n           rc == CURLUE_OK ? \"ACCEPTED (BUG!)\" : \"REJECTED (correct)\");\n    if(out) { printf(\"  stored='%s'\", out); curl_free(out); }\n    printf(\"\\n\");\n    curl_url_cleanup(url);\n  }\n  return 0;\n}\n```\n\nOutput:\n\n\nbad!        ACCEPTED (BUG!)  stored='bad!'\nbad{        ACCEPTED (BUG!)  stored='bad{'\nbad/        ACCEPTED (BUG!)  stored='bad/'\nbad\\        ACCEPTED (BUG!)  stored='bad\\'\na!          ACCEPTED (BUG!)  stored='a!'\nAll should be REJECTED per RFC 3986 Section 3.1.\n\nRoot cause in set_url_scheme() (urlapi.c:1648-1657): after the ISALPHA(*s) check, s is not incremented before entering the while(--plen) loop, so the first character is validated twice and the last character is never validated.\n\nSuggested fix: add s++ after the ISALPHA(*s) check, before the loop.\n\n## Impact\n\n## Summary\n\n- **Input validation bypass:** Applications using `CURLU_NON_SUPPORT_SCHEME` that rely on libcurl's URL API for scheme validation will accept malformed schemes containing illegal characters in the final position.\n- **Potential SSRF filter bypass:** Security filters that use libcurl's URL parser to validate/normalize URLs before making requests may accept URLs with invalid scheme characters, which downstream components may interpret differently.\n- **RFC non-compliance:** Violates RFC 3986 Section 3.1 scheme syntax: `scheme = ALPHA *( ALPHA / DIGIT / \"+\" / \"-\" / \".\" )`\n\nNote: The bug is only triggerable via the direct `CURLUPART_SCHEME` API, not when parsing a full URL via `CURLUPART_URL` (because the URL parser's scheme extraction filters special characters before reaching `set_url_scheme()`).",
+  "weakness": {
+    "id": 17,
+    "name": "Off-by-one Error"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5512323,
+      "file_name": "scheme_obo_poc2.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/t8yiqhnbax1kl3o3mdbu76bihni7?response-content-disposition=attachment%3B%20filename%3D%22scheme_obo_poc2.c%22%3B%20filename%2A%3DUTF-8%27%27scheme_obo_poc2.c&response-content-type=text%2Fx-c%2B%2Bsrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYOF6X3DV%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042116Z&X-Amz-Expires=327&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJHMEUCICNSEJpOrgZNldPeOkLIUHGut0PUVXfAhrF3Ge%2BaOProAiEAngHx7CTD5YxInKg8ocgDQGPKlKsxYqIpj5d9Gtd2iaMquwUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCiUhirQPXWhRgj03yqPBS1T6OsiMDiIOSw7Sma5AH37sPPasE6HmyAq9vsEZxzKOYCSqclIRz6zebtLyy9qJwmvM2FE47c7a0TDUcPAEKNi047udUIjxkm6QwOuz9mNPqUfLm0dJty6f0h56Ek3oi1pJyyM975O9UZsYwwQLAYmrMxZXEwEA%2BEthxdNum6Z6%2FBuuEVMDcbLjXlwRe23eCcwiBPYikziIap%2FpthiHG58rIP2FtoirFNQ0dHE%2FRFBiW%2BaUHaG5QoWlhyTZmVkziNmXQB%2FylTOS2XyhX%2BWlFsMWRuXw5B11fWP4YFx3%2BdDmXSYqPgFXTcau7hHUOE11rtApiKjj2rDX0EwDNi7veTRssge9nFJucfaziEIB3YgmG52kJmuI%2BjpP8LjUdCgjbJKAo3EgHqRvtF1HWP4mSuUBxg5b4DCl2PhrDfX5NI0%2BVIIboks7dcSixzHK8z6NFiOzCOD2ow7bMn%2FDM7TgDTqWKCUqF23DT%2BnKs28RAgHKxlpkgmuigRLrPyJ0RoRD90aXP%2B8031LstrEJlfATIWt7lQEwuYiBZLHoMTbkk3OaSpVBUlVICvIKnf9TR0sMTJTql%2BYCyBDWZxsOPaANkMHQirvOjzz8erJY8Xvxe%2FZ9I04lGNdZ%2BfX%2BZZzuyer0EwynE0nbQsVvcyHmgH1YQaVJ9oJ%2FmJVpzgQAevhOAg41vutLXKothFXKhlCi08w3h%2BX2O9A5Sm8lk%2F%2F3SIYHRZaMnVI3KH%2B%2FpEYcCso7gXmdG7KvGuzVx%2FlawBhtQ3G2%2BTk1PTtzNOM%2FBkoaabShGQwqfuBv0cNonBq6fGH8sRXr7FzOI43IFeHHN75oE4R5s8%2BAB3y%2BAcks9b2ltDk8XZNikilSkQxfX627TQlYqYwq8Gb0gY6sQFwpb9EnekOHVLvGkM%2FSdIJKTTLxDx%2BU0sVQgOnFkIIRjIjqzvUiILlA6C7FBWgF6XDnUsAqecewx2jHdGckFKoDtkHFnvgxvSg6UiaBG9o2Yx6C06CO4RluvLCXS8JKCfPbK13J%2FUlED7ofq%2Fi0wgJTXaWI5aLU5gjahVC5hOG2h6ztfGGUPg0IkQjeyEEhyzYB3SOeh%2B9uB4SXbBMeiIimj4O75pPQvJImwu1EbELkSI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a0f7543712dda4f9a7597b1c7a103de4fde17553e2472335daccc6854b6a973c",
+      "file_size": 2239,
+      "type": "text/x-c++src",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 38,
+  "voters": [
+    "thelem",
+    "2026",
+    "t3tra-dev",
+    "tikket",
+    "dvargas2332",
+    "hendraleonar",
+    "2_4-a",
+    "figurine",
+    "nfrantz2139",
+    "trefor",
+    "and 28 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3598358",
+  "votes": 38,
+  "latest_disclosable_activity_at": "2026-03-12T15:51:29.480Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:21:16.181551",
+    "source": "https://hackerone.com/reports/3598358.json",
+    "report_id": 3598358
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTk4MzU4",
+    "databaseId": "3598358",
+    "title": "urlapi: off-by-one in custom scheme validation skips last character",
+    "url": "https://hackerone.com/reports/3598358",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-03-12T15:51:30.100Z",
+    "created_at": "2026-03-11T15:02:02.489Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE3",
+      "name": "Off-by-one Error",
+      "external_id": "cwe-193"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "otiscui"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1OTgzNTg=",
+    "_id": "3598358",
+    "disclosed": true,
+    "votes": 38,
+    "latest_disclosable_activity_at": "2026-03-12T15:51:29.480Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTk4MzU4",
+      "databaseId": "3598358",
+      "title": "urlapi: off-by-one in custom scheme validation skips last character",
+      "url": "https://hackerone.com/reports/3598358",
+      "disclosed_at": "2026-03-12T15:51:30.100Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

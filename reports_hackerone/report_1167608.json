@@ -1,0 +1,224 @@
+{
+  "id": 1167608,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTY3NjA4",
+  "url": "https://hackerone.com/reports/1167608",
+  "title": "Broken parsing of Git diff allows an attacker to inject arbitrary Ruby scripts to Casks on official taps",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2021-04-18T08:08:14.704Z",
+  "submitted_at": "2021-04-18T08:08:14.730Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ryotak",
+    "url": "/ryotak",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/Nb79aqy3v6SyMh8rwZZh43cu/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 19399,
+    "url": "https://hackerone.com/homebrew",
+    "handle": "homebrew",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/019/399/2f26b1d3c096d89ed989900225c128f670ab0ef0_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/019/399/2f26b1d3c096d89ed989900225c128f670ab0ef0_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Homebrew",
+      "twitter_handle": "MacHomebrew",
+      "website": "https://brew.sh",
+      "about": "The missing package manager for macOS (and Linux)"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-04-21T11:24:49.165Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-04-21T11:24:49.117Z",
+  "team_member_agreed_on_going_public_at": "2021-04-21T11:23:24.022Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Description\nDue to improper parsing of Git diff in [Homebrew/actions/review-cask-pr](https://github.com/Homebrew/actions/tree/336bd2aae5314f8c17c66a8319adeba99f13c093/review-cask-pr), it's possible to confuse parser to ignore additional lines.\nWhich leads injection of malicious Ruby scripts.\n\n## Root cause\n`review-cask-pr` uses the git diff file to check if the pull request is \"simple\" enough to automatically merge it.\nTo parse the git diff file, it uses [`git_diff`](https://github.com/anolson/git_diff/) gem with some modifications.\nhttps://github.com/Homebrew/actions/blob/master/review-cask-pr/git_diff_extension.rb\nSince `git_diff` has a small bug that allows a crafted diff file to confuse additions as a `a_path`, it's possible to confuse `review-cask-pr`.\nhttps://github.com/anolson/git_diff/blob/21913c2a51661449a7250cc3a5ba5f5f4f128959/lib/git_diff/file.rb#L61-L62\n\n## Steps to reproduce\n1. Fork [Homebrew/homebrew-cask](https://github.com/Homebrew/homebrew-cask).\n2. Modify a cask file to add following lines:\n```ruby\n++ \"b/#{puts 'Going to report it - RyotaK (https://hackeorne.com/ryotak)';b = 1;Casks = 1;iterm2 = {};iterm2.define_singleton_method(:rb) do 1 end}\"\n++ b/Casks/iterm2.rb\n```\n3. Open a pull request on [Homebrew/homebrew-cask](https://github.com/Homebrew/homebrew-cask).\n4. BrewTestBot will approve these changes.\n\nhttps://github.com/Homebrew/homebrew-cask/pull/104191\n\n## Impact\n\nInjected script will be evaluated once someone installed the cask, which may allows remote code execution.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2021-05-21T11:23:24.133Z",
+  "allow_singular_disclosure_after": -161464592.0343274,
+  "singular_disclosure_allowed": true,
+  "vote_count": 49,
+  "voters": [
+    "mokusou",
+    "arist0phanes",
+    "ian",
+    "pudsec",
+    "w31rd0",
+    "ola0",
+    "dee-see",
+    "battle_angel",
+    "nagli",
+    "nikitastupin",
+    "and 39 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 44217,
+      "category": "team",
+      "content": "https://brew.sh/2021/04/21/security-incident-disclosure/",
+      "updated_at": "2021-04-21T11:15:36.530Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 152571,
+        "username": "mikemcquaid",
+        "name": "Mike McQuaid",
+        "bio": "Homebrew Project Leader.",
+        "cleared": false,
+        "verified": false,
+        "website": "https://mikemcquaid.com",
+        "location": "Edinburgh, Scotland",
+        "created_at": "2017-03-21T08:51:16.977Z",
+        "url": "https://hackerone.com/mikemcquaid",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/rwqfvd8y58p42weq9cq5q3j52jij/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6?response-content-disposition=inline%3B%20filename%3D%22Me.jpg%22%3B%20filename%2A%3DUTF-8%27%27Me.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063956Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fcdb8398eaec4de7a5ea319e7561d5c91030ca196baec6d1fe86f2053a3077e7",
+          "medium": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/rwqfvd8y58p42weq9cq5q3j52jij/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f?response-content-disposition=inline%3B%20filename%3D%22Me.jpg%22%3B%20filename%2A%3DUTF-8%27%27Me.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063956Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=06e474f57f17b7a1a24060a11542b1b9837ee50adf6f72b71d96754b3e1f3d29",
+          "xtralarge": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/rwqfvd8y58p42weq9cq5q3j52jij/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9?response-content-disposition=inline%3B%20filename%3D%22Me.jpg%22%3B%20filename%2A%3DUTF-8%27%27Me.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063956Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=4cd68b1c9f2808fa4597d5688b0f41027c5eac42edae860a3a7e53790d1bf1ef"
+        }
+      }
+    },
+    {
+      "id": 44218,
+      "category": "researcher",
+      "content": "https://blog.ryotak.me/post/homebrew-security-incident-en/",
+      "updated_at": "2021-04-21T11:25:12.020Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 569456,
+        "username": "ryotak",
+        "name": "RyotaK",
+        "bio": "",
+        "cleared": true,
+        "verified": true,
+        "website": "https://ryotak.net",
+        "location": "",
+        "created_at": "2019-04-04T07:16:31.098Z",
+        "url": "https://hackerone.com/ryotak",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/Nb79aqy3v6SyMh8rwZZh43cu/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/Nb79aqy3v6SyMh8rwZZh43cu/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/Nb79aqy3v6SyMh8rwZZh43cu/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "1167608",
+  "votes": 49,
+  "latest_disclosable_activity_at": "2021-04-21T11:24:49.190Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T14:39:56.286406",
+    "source": "https://hackerone.com/reports/1167608.json",
+    "report_id": 1167608
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTY3NjA4",
+    "databaseId": "1167608",
+    "title": "Broken parsing of Git diff allows an attacker to inject arbitrary Ruby scripts to Casks on official taps",
+    "url": "https://hackerone.com/reports/1167608",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-04-21T11:24:49.165Z",
+    "created_at": "2021-04-18T08:08:14.704Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "ryotak"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTkzOTk=",
+      "handle": "homebrew",
+      "name": "Homebrew",
+      "url": "https://hackerone.com/homebrew",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExNjc2MDg=",
+    "_id": "1167608",
+    "disclosed": true,
+    "votes": 49,
+    "latest_disclosable_activity_at": "2021-04-21T11:24:49.190Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTY3NjA4",
+      "databaseId": "1167608",
+      "title": "Broken parsing of Git diff allows an attacker to inject arbitrary Ruby scripts to Casks on official taps",
+      "url": "https://hackerone.com/reports/1167608",
+      "disclosed_at": "2021-04-21T11:24:49.165Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTkzOTk=",
+      "handle": "homebrew",
+      "name": "Homebrew",
+      "url": "https://hackerone.com/homebrew",
+      "currency": "usd"
+    }
+  }
+}

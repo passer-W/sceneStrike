@@ -1,0 +1,225 @@
+{
+  "id": 1397940,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzk3OTQw",
+  "url": "https://hackerone.com/reports/1397940",
+  "title": "Self-XSS due to image URL can be eploited via XSSJacking techniques in review email",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-11-11T03:06:12.295Z",
+  "submitted_at": "2021-11-11T03:06:12.331Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "penguinshelp",
+    "url": "/penguinshelp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/435/982/efcccc1ec4233e1efdb3658c9fea4cd2f80fe8d5_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 50842,
+    "url": "https://hackerone.com/judgeme",
+    "handle": "judgeme",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/nlko0t9tbnnnvrnboo0f2qpliu7t/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/nlko0t9tbnnnvrnboo0f2qpliu7t/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Judge.me ",
+      "twitter_handle": "",
+      "website": "https://judge.me",
+      "about": "Judge.me powers the product reviews for e-commerce stores. Our apps help you collect and display reviews on Shopify, WooCommerce and BigCommerce."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2023-02-01T03:38:11.707Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-08-21T03:17:30.668Z",
+  "team_member_agreed_on_going_public_at": "2023-02-01T03:38:11.534Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nGood day team,\n\nI found a self-xss due to the image url of recommendations in your reviewer profile that can be exploited via XSSJacking techniques. \n\nThis one was honestly pretty tricky, since unlike the rest of the Judge.me App that whitelisted `*.myshopify.com` in the CSP this one has a set `X-Frame-Options: SAMEORIGIN` meaning unlike the rest of my XSS reports I can use my Shopify store's frontent. Luckily though I managed to find a place that allows me to load iframes, namely the full email preview of review requests.\n\n## Steps To Reproduce:\n\n  1. Login to your 'reviewer' account in Judge.me\n\n  1. Add a new recommendation for your public profile: `https://judge.me/[ID]?subtab=recommendations&tab=public_profile` -> Add recommendation\n\n  1. Go back to the recommendation list, click the pencil icon in the image and insert this payload to trigger the Self-XSS: `https://secure.gravatar.com/avatar/█████████.png?;'onload=alert(document.domain)>`\n\n  1. Now to exploit this, login to your Shopify account and open the Judge.me app\n\n  1. Click 'Request' -> 'Email Templates' and edit the existing email template\n\n  1. In the 'text block', add a link and insert this payload as the display text and url (make sure to edit the ID to targeted reviewer's ID): `https://<iframe src=\"https://judge.me/[ID_OF_TARGET]?tab=public_profile\">`\n{F1510271}\n\n  1. Click 'Save' two times. I'm honestly not sure why but it won't display properly unless you save it twice\n\n  1. Now to send that template, create an order in your Shopify instance and make sure to fulfill that order: `yourshop.myshopify.com/admin/draft_orders/new` -> Mark as fulfilled. Make sure that the customer you use is the one from step 1 or the email of the reviewer account\n\n  1.  Once that is done, go back to the Judge.me app and click 'Requests' -> 'Request Dashboard'\n\n  1. Click 'Add manual request' -> 'Send Review Request for Old Orders'\n\n  1. The reviewer account should receive an email notification regarding a review request, click 'Trouble viewing email' to access the full email preview\n\n  1. In there you should see that the iframe for the reviewer account is visible, now all that is needed to be done is perform XSSJacking techniques to trigger the Self-XSS\n{F1510279}\n\nNote: Getting a valid review request that you can use for the preview is pretty confusing  since the 'send me an example' doesn't work for full email preview, it took me quite a while before I successfully managed to do it so if there's anything that I haven't explained properly please let me know or you can directly ask the Judge.me team for help :)\n\n## Supporting Material/References:\n{F1510278}\n\nAs usual, if there is anything that doesn't make any sense please let me know.\n\nCheers,\nPenguinsHelp\n\n## Impact\n\nXSS via XSSJacking techniques",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1510271,
+      "file_name": "InsertLink.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tfu6xccqf9oy3grj1r1qmteetqp5?response-content-disposition=attachment%3B%20filename%3D%22InsertLink.JPG%22%3B%20filename%2A%3DUTF-8%27%27InsertLink.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ733KNTU4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045934Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIDX50k5pT%2FI2ihUhDvbA1FDBM04qCUMQs9%2BItFLfc3aZAiEA4k5Ygdsau%2BJSd%2FNJUodTdNcJMMKszkqEErxN%2FTCwxMgqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDKO%2FUPszuDVdFR12KiqOBSOeV29tjJR8fQbPzNHB%2B7IGglmhrkKnpNQzPseu6zFoRg8GFeHMW5zddejgr6uHn56r8XRcPB5lAPO0iwik1kMYRAj%2B%2FNiSI%2B6600k%2FPV9wG9jzhhoHclbh4QuAFagfKEfIvEPoyQghAG5btB8cGttgJq6fihsmhgr3CDYVuMTuefar%2FOml1Goflr%2FL%2FgZAjtgB2MzkZq%2BcNZXWviFE2iF53Rf3ytDyu6FM018xwlXbu0lrq2OmoC56lGqX7GOz6jwDK73AGlvHVuQkzvAGsupDMYrSkEbzNnMWoHNyKaMeFiEoKB6hIdZNS62Pm0ZPrZiDuOCqEz25D2acY1gpXXuxmtiC926G3hk7PxcZzm3Xqj8Glsa7Rs966A%2F3LzAB29P7U8VXau3I%2FUB5WqDHFSHgBI6OYr6vJ81%2BFdwy7OTMOtzESzZsLQlm1xxErnB%2FmpHNgt5pIJFNTej%2B4D8YgR60%2FD3%2BSa7D0Yv4F6T1LTIuIlI7ZWS0uAQRdqVL53rLUOOPk6JjZMkp4ikl8pzBz4zZb20HGYmCAKs4UXEuwBoQPXTulYPRKnRHVuwrf6EftcNKP36iVuQBAOkYy6XJ4bPNasSrGO0Pon0rG0nYxaa37K2%2FkLINzh9r%2FRLBzgU1AacDmqLua%2FqQHVLHj3z%2FENhlkI%2BQOiRes0w5ElP1SRlxs3Ncnd0jyMSk3zm8FpyvItqMJ1RlM26p%2BR3jJ6bE%2BRSAccZXRhMPQ%2FMm8zA6eqYSIgRXAtz8T0%2BVjzAQufFqW6olC%2FoF5xiWzfzdIqy9Fy1jg%2FqS%2BNyGdWHnVFnOGPJPOzswSdV8Il706ZNO3GvEiDXVeUj%2B4Y2bl8VZwYfWEEmIWKPsSZPrdVxGLngKTjDt8pzSBjqxAbnX11M6udc6YfeZk8zRY323TY1lxJVYGig1fk%2BTy0JrjYeyn%2BtlNNNvLdKDUtX%2Fgm5Ji8VyE1YljF7zls8ZMMiwEuJKBLQWiYyMBe68vEq0pj5E6MJIGx1su0RGDe58aZdJby9%2FSTRMiOdIj4Z7ycqwe8m7%2Blutf%2BMlffsqEzIB6LSdVZg2caS6vhdvZ3GOM6%2Ft0VIE7U0YDNOxfQw3p2U4vTcfXxRI%2FQkTQBWppnzNwA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6b7e1a2ebc6d3e39c5ba4ce9f571473914db33f71c4def50a858ddee59313b6d",
+      "file_size": 81715,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 1510278,
+      "file_name": "Judge.me_XSS.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qwakxribmvh85mi6b8e0lbwb78l2?response-content-disposition=attachment%3B%20filename%3D%22Judge.me_XSS.mp4%22%3B%20filename%2A%3DUTF-8%27%27Judge.me_XSS.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ733KNTU4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045934Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIDX50k5pT%2FI2ihUhDvbA1FDBM04qCUMQs9%2BItFLfc3aZAiEA4k5Ygdsau%2BJSd%2FNJUodTdNcJMMKszkqEErxN%2FTCwxMgqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDKO%2FUPszuDVdFR12KiqOBSOeV29tjJR8fQbPzNHB%2B7IGglmhrkKnpNQzPseu6zFoRg8GFeHMW5zddejgr6uHn56r8XRcPB5lAPO0iwik1kMYRAj%2B%2FNiSI%2B6600k%2FPV9wG9jzhhoHclbh4QuAFagfKEfIvEPoyQghAG5btB8cGttgJq6fihsmhgr3CDYVuMTuefar%2FOml1Goflr%2FL%2FgZAjtgB2MzkZq%2BcNZXWviFE2iF53Rf3ytDyu6FM018xwlXbu0lrq2OmoC56lGqX7GOz6jwDK73AGlvHVuQkzvAGsupDMYrSkEbzNnMWoHNyKaMeFiEoKB6hIdZNS62Pm0ZPrZiDuOCqEz25D2acY1gpXXuxmtiC926G3hk7PxcZzm3Xqj8Glsa7Rs966A%2F3LzAB29P7U8VXau3I%2FUB5WqDHFSHgBI6OYr6vJ81%2BFdwy7OTMOtzESzZsLQlm1xxErnB%2FmpHNgt5pIJFNTej%2B4D8YgR60%2FD3%2BSa7D0Yv4F6T1LTIuIlI7ZWS0uAQRdqVL53rLUOOPk6JjZMkp4ikl8pzBz4zZb20HGYmCAKs4UXEuwBoQPXTulYPRKnRHVuwrf6EftcNKP36iVuQBAOkYy6XJ4bPNasSrGO0Pon0rG0nYxaa37K2%2FkLINzh9r%2FRLBzgU1AacDmqLua%2FqQHVLHj3z%2FENhlkI%2BQOiRes0w5ElP1SRlxs3Ncnd0jyMSk3zm8FpyvItqMJ1RlM26p%2BR3jJ6bE%2BRSAccZXRhMPQ%2FMm8zA6eqYSIgRXAtz8T0%2BVjzAQufFqW6olC%2FoF5xiWzfzdIqy9Fy1jg%2FqS%2BNyGdWHnVFnOGPJPOzswSdV8Il706ZNO3GvEiDXVeUj%2B4Y2bl8VZwYfWEEmIWKPsSZPrdVxGLngKTjDt8pzSBjqxAbnX11M6udc6YfeZk8zRY323TY1lxJVYGig1fk%2BTy0JrjYeyn%2BtlNNNvLdKDUtX%2Fgm5Ji8VyE1YljF7zls8ZMMiwEuJKBLQWiYyMBe68vEq0pj5E6MJIGx1su0RGDe58aZdJby9%2FSTRMiOdIj4Z7ycqwe8m7%2Blutf%2BMlffsqEzIB6LSdVZg2caS6vhdvZ3GOM6%2Ft0VIE7U0YDNOxfQw3p2U4vTcfXxRI%2FQkTQBWppnzNwA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e9c84ec01a706837372392b32e240158a51da8401e028cbef9530785279de2a6",
+      "file_size": 5428702,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 1510279,
+      "file_name": "EmailPreview.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/4o7cq6uyfq7ilyjag3xsgj4dd127?response-content-disposition=attachment%3B%20filename%3D%22EmailPreview.JPG%22%3B%20filename%2A%3DUTF-8%27%27EmailPreview.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ733KNTU4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045934Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIDX50k5pT%2FI2ihUhDvbA1FDBM04qCUMQs9%2BItFLfc3aZAiEA4k5Ygdsau%2BJSd%2FNJUodTdNcJMMKszkqEErxN%2FTCwxMgqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDKO%2FUPszuDVdFR12KiqOBSOeV29tjJR8fQbPzNHB%2B7IGglmhrkKnpNQzPseu6zFoRg8GFeHMW5zddejgr6uHn56r8XRcPB5lAPO0iwik1kMYRAj%2B%2FNiSI%2B6600k%2FPV9wG9jzhhoHclbh4QuAFagfKEfIvEPoyQghAG5btB8cGttgJq6fihsmhgr3CDYVuMTuefar%2FOml1Goflr%2FL%2FgZAjtgB2MzkZq%2BcNZXWviFE2iF53Rf3ytDyu6FM018xwlXbu0lrq2OmoC56lGqX7GOz6jwDK73AGlvHVuQkzvAGsupDMYrSkEbzNnMWoHNyKaMeFiEoKB6hIdZNS62Pm0ZPrZiDuOCqEz25D2acY1gpXXuxmtiC926G3hk7PxcZzm3Xqj8Glsa7Rs966A%2F3LzAB29P7U8VXau3I%2FUB5WqDHFSHgBI6OYr6vJ81%2BFdwy7OTMOtzESzZsLQlm1xxErnB%2FmpHNgt5pIJFNTej%2B4D8YgR60%2FD3%2BSa7D0Yv4F6T1LTIuIlI7ZWS0uAQRdqVL53rLUOOPk6JjZMkp4ikl8pzBz4zZb20HGYmCAKs4UXEuwBoQPXTulYPRKnRHVuwrf6EftcNKP36iVuQBAOkYy6XJ4bPNasSrGO0Pon0rG0nYxaa37K2%2FkLINzh9r%2FRLBzgU1AacDmqLua%2FqQHVLHj3z%2FENhlkI%2BQOiRes0w5ElP1SRlxs3Ncnd0jyMSk3zm8FpyvItqMJ1RlM26p%2BR3jJ6bE%2BRSAccZXRhMPQ%2FMm8zA6eqYSIgRXAtz8T0%2BVjzAQufFqW6olC%2FoF5xiWzfzdIqy9Fy1jg%2FqS%2BNyGdWHnVFnOGPJPOzswSdV8Il706ZNO3GvEiDXVeUj%2B4Y2bl8VZwYfWEEmIWKPsSZPrdVxGLngKTjDt8pzSBjqxAbnX11M6udc6YfeZk8zRY323TY1lxJVYGig1fk%2BTy0JrjYeyn%2BtlNNNvLdKDUtX%2Fgm5Ji8VyE1YljF7zls8ZMMiwEuJKBLQWiYyMBe68vEq0pj5E6MJIGx1su0RGDe58aZdJby9%2FSTRMiOdIj4Z7ycqwe8m7%2Blutf%2BMlffsqEzIB6LSdVZg2caS6vhdvZ3GOM6%2Ft0VIE7U0YDNOxfQw3p2U4vTcfXxRI%2FQkTQBWppnzNwA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=17c4c000a2727f1b2bdddb5c85a3f9c1f90dd413c72ff8b88ae28987759fc38d",
+      "file_size": 98025,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 14,
+  "voters": [
+    "he4am",
+    "zy9ard3",
+    "shreyaschavhan",
+    "shubham_srt",
+    "2026",
+    "shivammusic",
+    "polapain1337",
+    "itsvoldemort",
+    "d41d8cd98f00b204e9800998ecf842",
+    "josef_k",
+    "and 4 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 57459,
+    "asset_type": "URL",
+    "asset_identifier": "judge.me",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1397940",
+  "votes": 14,
+  "latest_disclosable_activity_at": "2023-02-01T03:38:11.778Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:59:34.814973",
+    "source": "https://hackerone.com/reports/1397940.json",
+    "report_id": 1397940
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzk3OTQw",
+    "databaseId": "1397940",
+    "title": "Self-XSS due to image URL can be eploited via XSSJacking techniques in review email",
+    "url": "https://hackerone.com/reports/1397940",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-02-01T03:38:11.707Z",
+    "created_at": "2021-11-11T03:06:12.295Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": 4.8
+    },
+    "reporter": {
+      "username": "penguinshelp"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwODQy",
+      "handle": "judgeme",
+      "name": "Judge.me ",
+      "url": "https://hackerone.com/judgeme",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNTEwODg=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-11-22T06:33:29.998Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzOTc5NDA=",
+    "_id": "1397940",
+    "disclosed": true,
+    "votes": 14,
+    "latest_disclosable_activity_at": "2023-02-01T03:38:11.778Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzk3OTQw",
+      "databaseId": "1397940",
+      "title": "Self-XSS due to image URL can be eploited via XSSJacking techniques in review email",
+      "url": "https://hackerone.com/reports/1397940",
+      "disclosed_at": "2023-02-01T03:38:11.707Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwODQy",
+      "handle": "judgeme",
+      "name": "Judge.me ",
+      "url": "https://hackerone.com/judgeme",
+      "currency": "usd"
+    }
+  }
+}

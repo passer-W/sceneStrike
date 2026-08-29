@@ -1,0 +1,218 @@
+{
+  "id": 1019457,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDE5NDU3",
+  "url": "https://hackerone.com/reports/1019457",
+  "title": "Data race conditions reported by helgrind when performing parallel DNS queries in libcurl",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2020-10-27T00:52:50.602Z",
+  "submitted_at": "2020-10-27T00:52:50.673Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "brumbrum",
+    "url": "/brumbrum",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-11-04T21:44:37.603Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-11-04T15:48:54.735Z",
+  "team_member_agreed_on_going_public_at": "2020-11-04T21:44:37.504Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "While running binary built from curl git repo file \"docs/examples/10-at-a-time.c\" under valgrind specifically with the helgrind tool, reports race condition in getaddrinfo() calls.   Using the latest curl/libcurl from github repo.\n\nFrom the valgrind documentation \"Helgrind is a Valgrind tool for detecting synchronisation errors in C, C++ and Fortran programs that use the POSIX pthreads threading primitives.\"\n\n\nCommand used for testing:\n\nvalgrind --tool=helgrind --log-file=helgrind_%p.log ./10-at-a-time\n\n\nSee helgrind log files attached to this report.\n\n\nHere is one example of the helgrind reports:\nNote: libcurl was rebuilt in debug to provide complete stack traces. Problem occurs in both debug and non-debug builds.\n\n==43481== Possible data race during read of size 1 at 0x8325DE8 by thread #7\n==43481== Locks held: none\n==43481==    at 0x8325DE8: ns_name_pton (ns_name.c:160)\n==43481==    by 0x831D8DF: __res_hnok (res_comp.c:202)\n==43481==    by 0x833906B: check_name (dns-host.c:284)\n==43481==    by 0x833906B: _nss_dns_gethostbyname4_r (dns-host.c:335)\n==43481==    by 0x4A5B58E: gaih_inet.constprop.0 (getaddrinfo.c:765)\n==43481==    by 0x4A5D0D8: getaddrinfo (getaddrinfo.c:2256)\n==43481==    by 0x486D6AB: curl_dbg_getaddrinfo (curl_addrinfo.c:554)\n==43481==    by 0x486CD6D: Curl_getaddrinfo_ex (curl_addrinfo.c:124)\n==43481==    by 0x4861FE0: getaddrinfo_thread (asyn-thread.c:307)\n==43481==    by 0x4872148: curl_thread_create_thunk (curl_threads.c:57)\n==43481==    by 0x4842B1A: ??? (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_helgrind-amd64-linux.so)\n==43481==    by 0x4ED6608: start_thread (pthread_create.c:477)\n==43481==    by 0x4A76292: clone (clone.S:95)\n==43481==  Address 0x8325de8 is in the Text segment of /usr/lib/x86_64-linux-gnu/libresolv-2.31.so\n==43481==    at 0x8325DE8: ns_name_pton (ns_name.c:160)\n\n\n\nWill also see some of the calls falling, sometimes.  Not every time though.  Issues might vary based on number of cores/threads present or allocated to the test system. For this testing using a VirtualBox VM with 3 vCPUs running up to date Ubuntu 20.04.\n\n\nI received the following errors over various runs with the helgrind tool.  Usually the initial few logged output lines will report some failure, rarely do the later output logged lines show failures.  Some examples of errors received over various runs:\n\nR: 16 - Error in the HTTP2 framing layer <https://www.microsoft.com>\nR: 16 - Error in the HTTP2 framing layer <https://www.google.com>\nR: 35 - SSL connect error <https://www.mysql.com>\n\nR: 52 - Server returned nothing (no headers, no data) <https://www.bbc.co.uk>\n\nR: 55 - Failed sending data to the peer <https://www.google.com>\n\n\n$ valgrind --version\nvalgrind-3.15.0\n\n\nWhen not running under helgrind the 10-at-a-time binary usually runs without issues, but sometimes one will randomly fail, which might be normal sometimes, but appears to validate that this is a real problem and not only revealed with libcurl used under helgrind.\n\nR: 35 - SSL connect error <https://www.hp.com>\n\n\nHave not tried c-ares library.  Would you find it useful if I did?\n\n\nNot clear if the problem is with libcurl or with the libc library implementing getaddrinfo().\n\n## Impact\n\n- Failure to connect to target system.\n- Connecting to wrong IP if DNS data corrupted, potentially disclosing sensitive data to wrong site.\n\n\nMitigation:\n- Limit parallel DNS usage.\n- Potentially c-ares library may not have this issue, but this is not verified.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1053044,
+      "file_name": "helgrind_43280.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/66yg7yQTuMjjTAmtdsFNWvnh?response-content-disposition=attachment%3B%20filename%3D%22helgrind_43280.log%22%3B%20filename%2A%3DUTF-8%27%27helgrind_43280.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ75KIOYRK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045513Z&X-Amz-Expires=433&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEe3lJZLnkIea6hwZlJNy00YSK4iqhAiqfdNrMJy8pSHAiEA3YV%2BfwLmVCTD%2F%2Fy8%2BjUsmCEjMJF6R8rKOSx3EChteXsqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDPxZ6CwplgLWKaz8SSqPBQVu%2BPUGebNjZ1N81bHbNUriC9VP4k6f9Ye36ROtSCkORv%2ByZP5C9pIfOSODfKC0yW7Hey9yRSxvjrltcWxXmwA4BuM1%2BiBvJ5uevTBlQsXAI2kOZV4dwEAEK1czIJshk6P3xPgQP2%2BS%2BQa9JSgnXyIwn0u3ZLDnR9rFOeXUWCEskFcamPDQWncsnspNyWl3F0AE%2BX7q9%2Fiby9c%2BHGACU15zxB1BM2AH1pB40m1e2%2F5KMvqF491yEYpC1qiWwsT4HBIp90entbK0eUvDs%2BWLizRNBTaKsa%2FVv5oHDVFIFqnXUiVbFcwpXQXnrstlyUWMB%2FEr8CFU4hJdi2WHNH3Dq2dk9WcJuZ7NkoKxeqjrD1aMDNpJBrBkolo%2FPlIzjiKNUGHBTKvZFAxjKoEKMB2WegGQk%2BkFNGo%2FVrDZqYKnkBPLJOiuvhj7361iEgnAbyuSoOkh%2ByEhlw%2FsX5hbl8EXqqYuQaHF37D2OI%2BBLBPIeYQMdNRcI%2BkcU0r0VSM93oYylj3S%2BFvTqJy7oGOgxjDgjHxz9L9IU%2BhBLUvHkfayXn7hWcc0UXUmH0QQZ5bHN4MGo3C6qZ6uvv8G7u464gPYpquCFKEZc1Q0K1nCYSTOe5EyosdAFSslqsliKSL3SU%2B410IReOC45ALu8PNtBAOEheVAi31tNKG2rIkW9oD5l9FZVG2NNWq%2FpJfoxGzhXa61UanYeU7Rsqq4T3ubv5l%2F76Uu%2F7rachuKJnpY0qUuygVpJAeDiI95luEXu1xzfv2yoDiobuE%2F4yjnl3hP0qEw7QlKBYeNwy8Jskg3HFthVicSR%2FZCAXI4EZ%2B7VP1Sl5xFpH%2FKcXzhxxN%2F1Xtg1ih0NYlFCZYKWpXpVLVx2FsWQPYwvoi20gY6sQEzCA5oUduDeH8HLLRcnye5h35bhmg9i%2F7yXBsnyaEFK4IDpj6Y3DPbpzQPIcIGpbQW3iCxQnRrN5YAcQVP9djjBFpsQy6dj1Lbpji0JukyePFHbE83BUEq1vtPtBsG5w4FwCAtEpEcd4zR6D9arR2Qf0Vhlwu3c%2FfHlIcLJUB1gBaBJ0YpOLW5Mv%2FYoLy928dnsedn0bkcTCdTRVELDcIaId5q8M6Mjx4Uzo353RqR6hE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=640fb94dec2906dcfcee0be07c54a425a6131d99d3801dc3ae81697dd60149e1",
+      "file_size": 445466,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 1053045,
+      "file_name": "helgrind_43481.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7XHrdVhNc3KvApAJbHeAPtnU?response-content-disposition=attachment%3B%20filename%3D%22helgrind_43481.log%22%3B%20filename%2A%3DUTF-8%27%27helgrind_43481.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ75KIOYRK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045513Z&X-Amz-Expires=433&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEe3lJZLnkIea6hwZlJNy00YSK4iqhAiqfdNrMJy8pSHAiEA3YV%2BfwLmVCTD%2F%2Fy8%2BjUsmCEjMJF6R8rKOSx3EChteXsqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDPxZ6CwplgLWKaz8SSqPBQVu%2BPUGebNjZ1N81bHbNUriC9VP4k6f9Ye36ROtSCkORv%2ByZP5C9pIfOSODfKC0yW7Hey9yRSxvjrltcWxXmwA4BuM1%2BiBvJ5uevTBlQsXAI2kOZV4dwEAEK1czIJshk6P3xPgQP2%2BS%2BQa9JSgnXyIwn0u3ZLDnR9rFOeXUWCEskFcamPDQWncsnspNyWl3F0AE%2BX7q9%2Fiby9c%2BHGACU15zxB1BM2AH1pB40m1e2%2F5KMvqF491yEYpC1qiWwsT4HBIp90entbK0eUvDs%2BWLizRNBTaKsa%2FVv5oHDVFIFqnXUiVbFcwpXQXnrstlyUWMB%2FEr8CFU4hJdi2WHNH3Dq2dk9WcJuZ7NkoKxeqjrD1aMDNpJBrBkolo%2FPlIzjiKNUGHBTKvZFAxjKoEKMB2WegGQk%2BkFNGo%2FVrDZqYKnkBPLJOiuvhj7361iEgnAbyuSoOkh%2ByEhlw%2FsX5hbl8EXqqYuQaHF37D2OI%2BBLBPIeYQMdNRcI%2BkcU0r0VSM93oYylj3S%2BFvTqJy7oGOgxjDgjHxz9L9IU%2BhBLUvHkfayXn7hWcc0UXUmH0QQZ5bHN4MGo3C6qZ6uvv8G7u464gPYpquCFKEZc1Q0K1nCYSTOe5EyosdAFSslqsliKSL3SU%2B410IReOC45ALu8PNtBAOEheVAi31tNKG2rIkW9oD5l9FZVG2NNWq%2FpJfoxGzhXa61UanYeU7Rsqq4T3ubv5l%2F76Uu%2F7rachuKJnpY0qUuygVpJAeDiI95luEXu1xzfv2yoDiobuE%2F4yjnl3hP0qEw7QlKBYeNwy8Jskg3HFthVicSR%2FZCAXI4EZ%2B7VP1Sl5xFpH%2FKcXzhxxN%2F1Xtg1ih0NYlFCZYKWpXpVLVx2FsWQPYwvoi20gY6sQEzCA5oUduDeH8HLLRcnye5h35bhmg9i%2F7yXBsnyaEFK4IDpj6Y3DPbpzQPIcIGpbQW3iCxQnRrN5YAcQVP9djjBFpsQy6dj1Lbpji0JukyePFHbE83BUEq1vtPtBsG5w4FwCAtEpEcd4zR6D9arR2Qf0Vhlwu3c%2FfHlIcLJUB1gBaBJ0YpOLW5Mv%2FYoLy928dnsedn0bkcTCdTRVELDcIaId5q8M6Mjx4Uzo353RqR6hE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=00b3b9108e2b2923e39cbb9fcb307a317847749646605712027790d9b8bcf1b0",
+      "file_size": 668880,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 1053046,
+      "file_name": "helgrind_43338.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/kHxAGAtV1mJ2RcN9u7pyWZX8?response-content-disposition=attachment%3B%20filename%3D%22helgrind_43338.log%22%3B%20filename%2A%3DUTF-8%27%27helgrind_43338.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ75KIOYRK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045513Z&X-Amz-Expires=433&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEe3lJZLnkIea6hwZlJNy00YSK4iqhAiqfdNrMJy8pSHAiEA3YV%2BfwLmVCTD%2F%2Fy8%2BjUsmCEjMJF6R8rKOSx3EChteXsqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDPxZ6CwplgLWKaz8SSqPBQVu%2BPUGebNjZ1N81bHbNUriC9VP4k6f9Ye36ROtSCkORv%2ByZP5C9pIfOSODfKC0yW7Hey9yRSxvjrltcWxXmwA4BuM1%2BiBvJ5uevTBlQsXAI2kOZV4dwEAEK1czIJshk6P3xPgQP2%2BS%2BQa9JSgnXyIwn0u3ZLDnR9rFOeXUWCEskFcamPDQWncsnspNyWl3F0AE%2BX7q9%2Fiby9c%2BHGACU15zxB1BM2AH1pB40m1e2%2F5KMvqF491yEYpC1qiWwsT4HBIp90entbK0eUvDs%2BWLizRNBTaKsa%2FVv5oHDVFIFqnXUiVbFcwpXQXnrstlyUWMB%2FEr8CFU4hJdi2WHNH3Dq2dk9WcJuZ7NkoKxeqjrD1aMDNpJBrBkolo%2FPlIzjiKNUGHBTKvZFAxjKoEKMB2WegGQk%2BkFNGo%2FVrDZqYKnkBPLJOiuvhj7361iEgnAbyuSoOkh%2ByEhlw%2FsX5hbl8EXqqYuQaHF37D2OI%2BBLBPIeYQMdNRcI%2BkcU0r0VSM93oYylj3S%2BFvTqJy7oGOgxjDgjHxz9L9IU%2BhBLUvHkfayXn7hWcc0UXUmH0QQZ5bHN4MGo3C6qZ6uvv8G7u464gPYpquCFKEZc1Q0K1nCYSTOe5EyosdAFSslqsliKSL3SU%2B410IReOC45ALu8PNtBAOEheVAi31tNKG2rIkW9oD5l9FZVG2NNWq%2FpJfoxGzhXa61UanYeU7Rsqq4T3ubv5l%2F76Uu%2F7rachuKJnpY0qUuygVpJAeDiI95luEXu1xzfv2yoDiobuE%2F4yjnl3hP0qEw7QlKBYeNwy8Jskg3HFthVicSR%2FZCAXI4EZ%2B7VP1Sl5xFpH%2FKcXzhxxN%2F1Xtg1ih0NYlFCZYKWpXpVLVx2FsWQPYwvoi20gY6sQEzCA5oUduDeH8HLLRcnye5h35bhmg9i%2F7yXBsnyaEFK4IDpj6Y3DPbpzQPIcIGpbQW3iCxQnRrN5YAcQVP9djjBFpsQy6dj1Lbpji0JukyePFHbE83BUEq1vtPtBsG5w4FwCAtEpEcd4zR6D9arR2Qf0Vhlwu3c%2FfHlIcLJUB1gBaBJ0YpOLW5Mv%2FYoLy928dnsedn0bkcTCdTRVELDcIaId5q8M6Mjx4Uzo353RqR6hE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b7981cd5639e052518277efc79263b0484628b1747fad84cf1a765598fbe5b33",
+      "file_size": 601353,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 1053047,
+      "file_name": "helgrind_43432.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/82arL3RRz9SzRusX2BM6dyPk?response-content-disposition=attachment%3B%20filename%3D%22helgrind_43432.log%22%3B%20filename%2A%3DUTF-8%27%27helgrind_43432.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ75KIOYRK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045513Z&X-Amz-Expires=433&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEe3lJZLnkIea6hwZlJNy00YSK4iqhAiqfdNrMJy8pSHAiEA3YV%2BfwLmVCTD%2F%2Fy8%2BjUsmCEjMJF6R8rKOSx3EChteXsqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDPxZ6CwplgLWKaz8SSqPBQVu%2BPUGebNjZ1N81bHbNUriC9VP4k6f9Ye36ROtSCkORv%2ByZP5C9pIfOSODfKC0yW7Hey9yRSxvjrltcWxXmwA4BuM1%2BiBvJ5uevTBlQsXAI2kOZV4dwEAEK1czIJshk6P3xPgQP2%2BS%2BQa9JSgnXyIwn0u3ZLDnR9rFOeXUWCEskFcamPDQWncsnspNyWl3F0AE%2BX7q9%2Fiby9c%2BHGACU15zxB1BM2AH1pB40m1e2%2F5KMvqF491yEYpC1qiWwsT4HBIp90entbK0eUvDs%2BWLizRNBTaKsa%2FVv5oHDVFIFqnXUiVbFcwpXQXnrstlyUWMB%2FEr8CFU4hJdi2WHNH3Dq2dk9WcJuZ7NkoKxeqjrD1aMDNpJBrBkolo%2FPlIzjiKNUGHBTKvZFAxjKoEKMB2WegGQk%2BkFNGo%2FVrDZqYKnkBPLJOiuvhj7361iEgnAbyuSoOkh%2ByEhlw%2FsX5hbl8EXqqYuQaHF37D2OI%2BBLBPIeYQMdNRcI%2BkcU0r0VSM93oYylj3S%2BFvTqJy7oGOgxjDgjHxz9L9IU%2BhBLUvHkfayXn7hWcc0UXUmH0QQZ5bHN4MGo3C6qZ6uvv8G7u464gPYpquCFKEZc1Q0K1nCYSTOe5EyosdAFSslqsliKSL3SU%2B410IReOC45ALu8PNtBAOEheVAi31tNKG2rIkW9oD5l9FZVG2NNWq%2FpJfoxGzhXa61UanYeU7Rsqq4T3ubv5l%2F76Uu%2F7rachuKJnpY0qUuygVpJAeDiI95luEXu1xzfv2yoDiobuE%2F4yjnl3hP0qEw7QlKBYeNwy8Jskg3HFthVicSR%2FZCAXI4EZ%2B7VP1Sl5xFpH%2FKcXzhxxN%2F1Xtg1ih0NYlFCZYKWpXpVLVx2FsWQPYwvoi20gY6sQEzCA5oUduDeH8HLLRcnye5h35bhmg9i%2F7yXBsnyaEFK4IDpj6Y3DPbpzQPIcIGpbQW3iCxQnRrN5YAcQVP9djjBFpsQy6dj1Lbpji0JukyePFHbE83BUEq1vtPtBsG5w4FwCAtEpEcd4zR6D9arR2Qf0Vhlwu3c%2FfHlIcLJUB1gBaBJ0YpOLW5Mv%2FYoLy928dnsedn0bkcTCdTRVELDcIaId5q8M6Mjx4Uzo353RqR6hE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=eaf3c9a100f674d3eabd3fe097181133f104b525b18355a0cb615b25a1ef570f",
+      "file_size": 447193,
+      "type": "text/x-log",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 0,
+  "voters": [],
+  "severity": {
+    "rating": "medium",
+    "score": 5.2,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "physical",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1019457",
+  "votes": 0,
+  "latest_disclosable_activity_at": "2020-11-04T21:44:37.638Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:55:13.596768",
+    "source": "https://hackerone.com/reports/1019457.json",
+    "report_id": 1019457
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDE5NDU3",
+    "databaseId": "1019457",
+    "title": "Data race conditions reported by helgrind when performing parallel DNS queries in libcurl",
+    "url": "https://hackerone.com/reports/1019457",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2020-11-04T21:44:37.603Z",
+    "created_at": "2020-10-27T00:52:50.602Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.2
+    },
+    "reporter": {
+      "username": "brumbrum"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwMTk0NTc=",
+    "_id": "1019457",
+    "disclosed": true,
+    "votes": 0,
+    "latest_disclosable_activity_at": "2020-11-04T21:44:37.638Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDE5NDU3",
+      "databaseId": "1019457",
+      "title": "Data race conditions reported by helgrind when performing parallel DNS queries in libcurl",
+      "url": "https://hackerone.com/reports/1019457",
+      "disclosed_at": "2020-11-04T21:44:37.603Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

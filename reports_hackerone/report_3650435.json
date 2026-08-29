@@ -1,0 +1,211 @@
+{
+  "id": 3650435,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjUwNDM1",
+  "url": "https://hackerone.com/reports/3650435",
+  "title": "Improper enforcement of CURLOPT_SOCKS5_AUTH due to missing reuse key validation in libcurl",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2026-04-05T06:08:49.892Z",
+  "submitted_at": "2026-04-05T06:08:51.898Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cutiapretaa",
+    "url": "/cutiapretaa",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/m99ukjdcdq106tumx9nxlb3zpbvs/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-07T06:24:02.465Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-04-06T05:27:51.131Z",
+  "team_member_agreed_on_going_public_at": "2026-04-07T06:24:01.850Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# detail:\n\n- `lib/setopt.c:1048-1051`\n   - `CURLOPT_SOCKS5_AUTH` is stored into `data->set.socks5auth`\n\n- `lib/socks.c:597-641` (`socks5_req0_init`)\n   - fresh SOCKS5 handshake reads `data->set.socks5auth`, if BASIC is not allowed, it clears `sx->proxy_user` at 618-620, so username/password auth is not even offered\n\n- `lib/socks.c:665-688` (`socks5_check_resp0`)\n   - on a fresh connection, if the proxy selects BASIC while BASIC is disabled, or if no acceptable method exists, the connection fails\n\n- `lib/urldata.h:345-351`\n   - struct `proxy_info` stores host / port / proxytype / user / passwd, but no SOCKS5 auth-method policy\n\n- `lib/url.c:578-590` (`proxy_info_matches`)\n   - reuse match compares only proxy type, port, host, proxy user, and proxy password\n\n- `lib/url.c:879-913` (`url_match_proxy_use`)\n   - SOCKS proxy reuse uses `proxy_info_matches()`\n\n- `lib/url.c:1207-1229` (`url_match_conn`)\n   - connection reuse is accepted if that proxy match succeeds\n\n- `lib/url.c:2965-2998` (`url_conn_reuse_adjust`)\n   - on reuse, curl may refresh proxy credentials, but it does not compare or refresh the SOCKS5 auth-method policy\n\nso the invariant break is:\n\nfresh SOCKS5 connections enforce `CURLOPT_SOCKS5_AUTH`, but connection reuse does not include that policy in the reuse key\n\n## docs:\n\nthis is not an API misuse case\n\nchanging options between transfers on the same easy handle is a documented libcurl usage pattern, and connection reuse is the default behavior unless the application forces a fresh connection, \n\nif curl wanted `CURLOPT_SOCKS5_AUTH` to be “new connection only,” its docs should say so the same way they do for `CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256`, they do not, that makes silent reuse under a stricter later auth policy a bug, not intended behavior \n\n( ref: https://curl.se/libcurl/c/CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256.html, https://curl.se/libcurl/c/curl_easy_setopt.html , https://curl.se/libcurl/c/CURLOPT_SOCKS5_AUTH.html , https://curl.se/libcurl/c/CURLOPT_FRESH_CONNECT.html  )\n\n\n# exploit:\n\n1. create a normal easy handle\n\n2. set:\n   - `CURLOPT_URL = http://127.0.0.1:18081/`\n   - `CURLOPT_PROXY = socks5://127.0.0.1:19081`\n   - `CURLOPT_PROXYUSERPWD = \"user:pass\"`\n   - `CURLOPT_SOCKS5_AUTH = CURLAUTH_BASIC`\n\n3. perform transfer #1\n   - the SOCKS5 proxy requires username/password, so the SOCKS handshake succeeds and the connection stays alive for reuse\n\n4. on the same easy handle, change only:\n   - `CURLOPT_SOCKS5_AUTH = CURLAUTH_NONE`\n\n5. perform transfer #2 to the same proxy/destination\n   - libcurl reuses the existing connection because the reuse key ignores the SOCKS5 auth-method policy\n\n6. no new SOCKS5 handshake happens, so the request succeeds over the already-authenticated tunnel\n\n7. do the same “NONE only” transfer on a fresh easy handle\n   - it fails with `CURLE_PROXY` / error 97, because `CURLAUTH_NONE` means only no-auth is allowed and the proxy requires username/password\n\n# poc:\n\ni ran a local setup:\n\n- SOCKS5 proxy on 127.0.0.1:19081 that requires username/password\n- HTTP origin on 127.0.0.1:18081\n- C poc using the uploaded libcurl build\n\n**what happened:**\n\n1. transfer #1 on one easy handle with\n   - `CURLOPT_PROXY = socks5://127.0.0.1:19081`\n   - `CURLOPT_PROXYUSERPWD = \"user:pass\"`\n   - `CURLOPT_SOCKS5_AUTH = CURLAUTH_BASIC`\n   - result: success\n\n2. transfer #2 on the same easy handle, changing only\n   - `CURLOPT_SOCKS5_AUTH = CURLAUTH_NONE`\n   - result: success\n   - log: reusing existing http: connection with proxy 127.0.0.1\n\n3. transfer #3 on a fresh easy handle with\n   - `CURLOPT_SOCKS5_AUTH = CURLAUTH_NONE`\n   - result: failure\n   - error: 97 (proxy handshake error)\n   - log: no authentication method was acceptable\n\n**server-side logs:**\n\n- first connection offered methods `[0, 2]` and completed username/password auth\n- second transfer reused the same SOCKS connection and sent the HTTP request with no new SOCKS handshake\n- fresh third attempt offered only method `[0]` and the proxy rejected it\n\n## Impact\n\n# impacts:\n\n- SOCKS5 proxy-auth policy bypass\n- a transfer that is explicitly configured with `CURLOPT_SOCKS5_AUTH = CURLAUTH_NONE` can succeed when it should fail\n- the second transfer silently continues over an already-authenticated SOCKS5 tunnel created under a less restrictive earlier policy\n- applications can believe they enforced “no proxy authentication” for a later transfer, while libcurl actually keeps using a previously BASIC-authenticated proxy connection",
+  "weakness": {
+    "id": 124,
+    "name": "Improper Authorization"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5676750,
+      "file_name": "poc_socks5_reuse.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/t0f7vn1ormdecwtu9ajg7amsxo3z?response-content-disposition=attachment%3B%20filename%3D%22poc_socks5_reuse.c%22%3B%20filename%2A%3DUTF-8%27%27poc_socks5_reuse.c&response-content-type=text%2Fx-csrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042020Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=18b26eb6034dd1ba184ab594f7075299a3dd2ca888037702405700af14bee888",
+      "file_size": 2326,
+      "type": "text/x-csrc",
+      "moderated": null
+    },
+    {
+      "id": 5676751,
+      "file_name": "poc_out.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bpmj2avcxj8it0gxpoiiec6zykfo?response-content-disposition=attachment%3B%20filename%3D%22poc_out.txt%22%3B%20filename%2A%3DUTF-8%27%27poc_out.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042020Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=47c7f9bde14765cafcd7cdd6c0bde047f3a3027a3138e541c5f6a7783b0098b1",
+      "file_size": 1240,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 5676753,
+      "file_name": "socks_http_test.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/awd8t6kr8aosixfupvrn1mdz0t6t?response-content-disposition=attachment%3B%20filename%3D%22socks_http_test.log%22%3B%20filename%2A%3DUTF-8%27%27socks_http_test.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042020Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3eca60321287de78374aa2cc3730adb4f4ccb5c9b4b2691f0a3d8db04c5a07d2",
+      "file_size": 740,
+      "type": "text/x-log",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 15,
+  "voters": [
+    "cleaner21",
+    "2026",
+    "idkruan",
+    "ehax0x",
+    "cutiapretaa",
+    "dhmhack",
+    "kratohack",
+    "logzzz",
+    "lazykhan",
+    "artemispwns1",
+    "and 5 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3650435",
+  "votes": 15,
+  "latest_disclosable_activity_at": "2026-04-07T06:24:02.914Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:20:20.481322",
+    "source": "https://hackerone.com/reports/3650435.json",
+    "report_id": 3650435
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjUwNDM1",
+    "databaseId": "3650435",
+    "title": "Improper enforcement of CURLOPT_SOCKS5_AUTH due to missing reuse key validation in libcurl",
+    "url": "https://hackerone.com/reports/3650435",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-04-07T06:24:02.465Z",
+    "created_at": "2026-04-05T06:08:49.892Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEyNA==",
+      "name": "Improper Authorization",
+      "external_id": "cwe-285"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "cutiapretaa"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2NTA0MzU=",
+    "_id": "3650435",
+    "disclosed": true,
+    "votes": 15,
+    "latest_disclosable_activity_at": "2026-04-07T06:24:02.914Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjUwNDM1",
+      "databaseId": "3650435",
+      "title": "Improper enforcement of CURLOPT_SOCKS5_AUTH due to missing reuse key validation in libcurl",
+      "url": "https://hackerone.com/reports/3650435",
+      "disclosed_at": "2026-04-07T06:24:02.465Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

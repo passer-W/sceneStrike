@@ -1,0 +1,213 @@
+{
+  "id": 550937,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81NTA5Mzc=",
+  "url": "https://hackerone.com/reports/550937",
+  "title": "Insufficient DKIM record with RSA 512-bit key used on WordPress.com",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2019-04-29T19:23:13.697Z",
+  "submitted_at": "2019-04-29T19:23:13.697Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "vavkamil",
+    "url": "/vavkamil",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/069/616/003619f9ca0b0b3d11a238bb540d86b9b22d5b5c_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 111,
+    "url": "https://hackerone.com/automattic",
+    "handle": "automattic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Automattic",
+      "twitter_handle": "",
+      "website": "https://automattic.com",
+      "about": "WordPress.com, WooCommerce, WordPress VIP, Jetpack, Beeper, Texts, Akismet, Gravatar, Crowdsignal, Tumblr and more!"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-05-30T13:45:35.608Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2019-04-30T13:45:35.046Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### What is DomainKeys Identified Mail (DKIM) ?\nDKIM allows the receiver to check that an email claimed to have come from a specific domain was indeed authorized by the owner of that domain. It achieves this by affixing a digital signature, linked to a domain name, to each outgoing email message. The recipient system can verify this by looking up the sender's public key published in the DNS.\n\n### Length of the Key\nWith rapidly increasing processing power of computers, RSA keys with a 512-bit length, previously considered to be secure, can be cracked in a short period of time. Today, a minimum of 1024 bit RSA should be used. Organizations like the American National Institute of Standards and Technology (NIST) go further, and recommend aminimum of 2048 bits.\n\n### Short key vulnerability\nAccording to RFC 6376 the receiving party must be able to validate signatures with keys ranging from 512 bits to 2048 bits, thus usage of keys shorter than 512 bits might be incompatible and shall be avoided. The RFC 6376 also states that signers must use keys of at least 1024 bits for long-lived keys, though long-livingness is not specified there.\n\n### CWE-326: Inadequate Encryption Strength\nI was scanning WordPress.com DNS DKIM records using own wordlist of DKIM selectors. I was able to find one selector \"my1\" which is using RSA 512 bits key.\n\n```\nvavkamil@desktop:~$ dig txt my1._domainkey.wordpress.com +short\n\"p=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMXyekdYBZjcTskG1hwEji+J17DI9hPif0RsNF3aDPorKUnOLRN/bxCZ82BRpwXhgmbJ91KNe1fQMdZRs3iOdFcCAwEAAQ==\"\n```\nMore details:\n```\n# fqdn: my1._domainkey.wordpress.com\n# txt:  p=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMXyekdYBZjcTskG1hwEji+J17DI9hPif0RsNF3aDPorKUnOLRN/bxCZ82BRpwXhgmbJ91KNe1fQMdZRs3iOdFcCAwEAAQ==\n# key:  MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMXyekdYBZjcTskG1hwEji+J17DI9hPif0RsNF3aDPorKUnOLRN/bxCZ82BRpwXhgmbJ91KNe1fQMdZRs3iOdFcCAwEAAQ==\n# size:  512 bits\n# n:    10367334950201306539131289202809840614738220453757190856643449770342237105356400464470413674101052983691492083310061606610679073552649560621665862279918679\n# e:    65537\n# fp:   1651db71c5ae43c40473dcea2af993ba50c6291c  512 wordpress.com my1 PROD\n\n-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMXyekdYBZjcTskG1hwEji+J17DI9hPi\nf0RsNF3aDPorKUnOLRN/bxCZ82BRpwXhgmbJ91KNe1fQMdZRs3iOdFcCAwEAAQ==\n-----END PUBLIC KEY-----\n```\n\nExploitation\n=====================\nA 512-bit RSA key is insecure, as was proved in 1998.  Nowadays a 512-bit integers can be factored in only a few hours, for less than $100 of compute time in a public cloud environment: https://github.com/eniac/faas\nAn attacker therefore might be able to obtain private key for said DKIM record and sign any emails for the associated domain (WordPress.com). This can be used to spoof e-mails for example in targeted attacks (phishing/spear-phishing, ...).\n\nHistorical reports\n--------------------------------------\nI wasn't able to find any related bug bounty reports, but the same problem was reported to Google back in 2012: https://www.wired.com/2012/10/dkim-vulnerability-widespread\n\n## Impact\n\nAttacker can obtain 512-bit RSA private key from DKIM record with selector \"my1\" (my1._domainkey.wordpress.com) and use it to sign spoofed e-mails sent from @wordpress.com. This can lead to more sufficient phishing campaigns against Automattic customers.",
+  "weakness": {
+    "id": 40,
+    "name": "Inadequate Encryption Strength"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 478589,
+      "file_name": "my1._domainkey.wordpress.com.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/478/589/21a3f3d4e74c702356a7d69d4232daaab21683f9/my1._domainkey.wordpress.com.txt?response-content-disposition=attachment%3B%20filename%3D%22my1._domainkey.wordpress.com.txt%22%3B%20filename%2A%3DUTF-8%27%27my1._domainkey.wordpress.com.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053256Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3f43a16bfaa52d7884fc76162e9649dcc510efd00e1da80a546ab75625965719",
+      "file_size": 768,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-05-30T13:45:35.141Z",
+  "allow_singular_disclosure_after": -224264841.28416592,
+  "singular_disclosure_allowed": true,
+  "vote_count": 27,
+  "voters": [
+    "vavkamil",
+    "base_64",
+    "mheranco",
+    "ali",
+    "yashrs",
+    "joshualaurencio",
+    "bb00x",
+    "t4ym",
+    "cr4xerbik4sh",
+    "cryptographer",
+    "and 17 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.2,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "550937",
+  "votes": 27,
+  "latest_disclosable_activity_at": "2019-05-30T13:45:35.621Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:32:56.549188",
+    "source": "https://hackerone.com/reports/550937.json",
+    "report_id": 550937
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81NTA5Mzc=",
+    "databaseId": "550937",
+    "title": "Insufficient DKIM record with RSA 512-bit key used on WordPress.com",
+    "url": "https://hackerone.com/reports/550937",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-05-30T13:45:35.608Z",
+    "created_at": "2019-04-29T19:23:13.697Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQw",
+      "name": "Inadequate Encryption Strength",
+      "external_id": "cwe-326"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.2
+    },
+    "reporter": {
+      "username": "vavkamil"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMzU5MzQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-04-30T13:43:45.570Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzU1MDkzNw==",
+    "_id": "550937",
+    "disclosed": true,
+    "votes": 27,
+    "latest_disclosable_activity_at": "2019-05-30T13:45:35.621Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81NTA5Mzc=",
+      "databaseId": "550937",
+      "title": "Insufficient DKIM record with RSA 512-bit key used on WordPress.com",
+      "url": "https://hackerone.com/reports/550937",
+      "disclosed_at": "2019-05-30T13:45:35.608Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    }
+  }
+}

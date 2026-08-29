@@ -1,0 +1,220 @@
+{
+  "id": 966949,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NjY5NDk=",
+  "url": "https://hackerone.com/reports/966949",
+  "title": "IDOR in locid parameter allowing to view others accounts Profile Locations ",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2020-08-25T19:14:49.712Z",
+  "submitted_at": "2020-08-25T19:14:49.772Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cocoh__23",
+    "url": "/cocoh__23",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/rr0urr662rqu8nisvgh37r57fruv/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 545,
+    "url": "https://hackerone.com/yelp",
+    "handle": "yelp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Yelp",
+      "twitter_handle": "",
+      "website": "https://www.yelp.com",
+      "about": "Connecting people to great local businesses in communities around the world."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-09-02T19:26:35.197Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-09-01T13:36:24.420Z",
+  "team_member_agreed_on_going_public_at": "2020-09-02T19:26:35.083Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The application transmits in many occasions the **locid** parameter via URL, which means that this parameter may be being logged in plan text in the Apache server access.log, if not in others also. The fact that this happens, makes this parameter vulnerable not only to be read from this log file, but also be seen in the screen of any persons computer (Image. 1). \nI have identified that if any user gets or can reach the value of **locid** (for example via the scenarios above mentioned), he can use this value, to access others accounts profile locations. The fact why this happens is that there is not any server side control in place, which validates that the locations which is being requested from user A, is indeed from user B.  Here we see that if well the value of locid is a random hash, this security by obscurity does not provide any additional security, if the server is not controlling who access which information, and if the value of locid can be leaked via different vectors.\n\nIn order to validate the both things I mention here, the following steps are:\n\n1- Login to https://www.yelp.com/\n2- Go to https://www.yelp.com/profile_location\n3- Click the Edit button and intercept the request that is made in Burp (you will see its a GET /profile_location/add_or_edit?nonce=<nonce>&locid=<locid>)\n4- Replace the value of **locid** with any of these valid locids from my account (**wPhD_XkXv2z4Njqekn-sfg**,**yqLLfgos2xWB-Y9miJ8YcQ**,**pC5mbrTyFbCEaMHt4S4hqg**,**ZpA_GvjxD-06V_ElZfK7Uw**)\n5- You will see my profile locations.\n\n## Impact\n\nThis attack can be used to disclose personal information of Yelp users, attempting against the confidentiality of the application. If well this is low as it presents a pre-condicion which is not hard but also not easy, this should not be the only preventive measure, as this is considered security by obscurity, as you are trusting that because a hash is hard to crack, no one will be able to guess it, but as mentioned in the descripction, bruteforcing many times is the last resource as there are many other options. Furthermore, the fact that tue locid is being transfered in the URL, which means this value is possibly being logged, internal Yelp users could even take advantage of a vulnerability like this. I know it is not the case, but it does not provide confidence to the users. \nMoreover, the hash can be bruteforced as yelp does not have any preventive measures against it (Image2), which means that the pre-condition is even easier to achieve.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 963235,
+      "file_name": "Image_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/coRBnwQF3X2jzb5joSZWZX1t?response-content-disposition=attachment%3B%20filename%3D%22Image_1.png%22%3B%20filename%2A%3DUTF-8%27%27Image_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5CUWFK5L%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045912Z&X-Amz-Expires=894&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAVLQ1k%2FE9mni3x%2B8gApBqsnejRsdMWQn0fTw7TVqgNaAiEA93h29Npxt2rzfKrJ9RU4a%2BW7rRmK1yMDu2DfhMF5yVMqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDCagDSrjynWtn06X6iqOBdmCnll5QGOIBe9kr8nGAvg1ay3vP1Wp4cHdI%2BHlmIUrCf%2BZUw8UJnQap2l6BszyMFiaOLxYwTm1coajgxWKcLFv3LLo0vw37zDLBb8OgXwl5eD2iyi2G1P2GjN9xPJs7WcsU0oTNUUnoeTz5G8EDjI8eQ1r3Hc9eorwVTG2aCaC0q46zS%2FdXMKJBeJZ1L7K7sOkcK%2B%2F7dElxs9FUYnuMhPBQpFmBaD589ZEMs5OQwjancnUv9iP26EMVqftydm4jnPyqDOB0ZWpXRjw9jKGjkEOfdzP6bqH0N%2FOl71ZjY3tFX7R2PZuqoHufilAhuzPTu2RGUTF%2F1PvwrZe5t8L%2Bt4CSL3dHn433342NGNasCYgyESmkZ2zAIQ%2B7NWpvjYCayq1WDtI%2FwtMkYBxulYCfVXv54GzH0%2Bl3Ha0364oKQLCFRaVuWTV9Nm%2F4nVE%2FZJOV5ZpUTPY107ARCYzbsjSGNfvN%2FEvufC1SHrvn7vj112wMGBI3uqTTJwW5ZYlLb4dw2YrqX4Vx0mthFIzaIii7mk3mWZ8H8i8dUhqGHqtiKU8Qpm7Lz6XGVyse3A7Bqkr35dXYFMlmTzQg7wW0E3zSeeTjF0g2ePt2V99je%2F374IxiGojp5uV6iEY0BTY0u54985GDBdIpkjgZvSx3G00SyToeOggkEfIRYEfpc1Y%2BQJ3blI8Sl6qy3TW6i%2B20JNM85ERw7vVsu3Cra1M9vLnc9U83lhr80J54zXI8hJvzQoSNDRAUdEQ1aYWxAcDqrTZ%2BgZRmQLpKbKJayxnna29OZtuiCiHE1IITh2u7mmM%2FTbc7NVf2SwvxTecJ5QsTldU7aPhvqZynVLGISnEIXrU7WLm3ce7L3YEQrCddbY9YTD7hLbSBjqxAWYW%2F2S%2Bej1V4MXN4A3tsT35c3RNNZb8QhfUKjjb7rGeCYXAtPq4sEnXqt4sJ6CwvS5vxu7OBltMmOyVi9SrzfeTRoRgzz7LS1q4GwWm85kt%2FJKkdwrij4knt4R9GMkENyUxhtNU0XsxVI9vm1ChfkQXOo6R4Oq%2BXXFQPRJqXpfS2GAg9ay1%2FLrJ2RYzktTS1Lr26eGLIcWhQmtIY6Ac3VjFDobJKA%2FJoAZfG1E4DbUnVA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6bb7923b7bfa41aaf821fca51197cc423b74b81d1058bf982b046135f2cbdeaf",
+      "file_size": 508155,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 963241,
+      "file_name": "Image_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/g1BhMYuK1z5nTYj54JDMNy4P?response-content-disposition=attachment%3B%20filename%3D%22Image_2.png%22%3B%20filename%2A%3DUTF-8%27%27Image_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5CUWFK5L%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045912Z&X-Amz-Expires=894&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAVLQ1k%2FE9mni3x%2B8gApBqsnejRsdMWQn0fTw7TVqgNaAiEA93h29Npxt2rzfKrJ9RU4a%2BW7rRmK1yMDu2DfhMF5yVMqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDCagDSrjynWtn06X6iqOBdmCnll5QGOIBe9kr8nGAvg1ay3vP1Wp4cHdI%2BHlmIUrCf%2BZUw8UJnQap2l6BszyMFiaOLxYwTm1coajgxWKcLFv3LLo0vw37zDLBb8OgXwl5eD2iyi2G1P2GjN9xPJs7WcsU0oTNUUnoeTz5G8EDjI8eQ1r3Hc9eorwVTG2aCaC0q46zS%2FdXMKJBeJZ1L7K7sOkcK%2B%2F7dElxs9FUYnuMhPBQpFmBaD589ZEMs5OQwjancnUv9iP26EMVqftydm4jnPyqDOB0ZWpXRjw9jKGjkEOfdzP6bqH0N%2FOl71ZjY3tFX7R2PZuqoHufilAhuzPTu2RGUTF%2F1PvwrZe5t8L%2Bt4CSL3dHn433342NGNasCYgyESmkZ2zAIQ%2B7NWpvjYCayq1WDtI%2FwtMkYBxulYCfVXv54GzH0%2Bl3Ha0364oKQLCFRaVuWTV9Nm%2F4nVE%2FZJOV5ZpUTPY107ARCYzbsjSGNfvN%2FEvufC1SHrvn7vj112wMGBI3uqTTJwW5ZYlLb4dw2YrqX4Vx0mthFIzaIii7mk3mWZ8H8i8dUhqGHqtiKU8Qpm7Lz6XGVyse3A7Bqkr35dXYFMlmTzQg7wW0E3zSeeTjF0g2ePt2V99je%2F374IxiGojp5uV6iEY0BTY0u54985GDBdIpkjgZvSx3G00SyToeOggkEfIRYEfpc1Y%2BQJ3blI8Sl6qy3TW6i%2B20JNM85ERw7vVsu3Cra1M9vLnc9U83lhr80J54zXI8hJvzQoSNDRAUdEQ1aYWxAcDqrTZ%2BgZRmQLpKbKJayxnna29OZtuiCiHE1IITh2u7mmM%2FTbc7NVf2SwvxTecJ5QsTldU7aPhvqZynVLGISnEIXrU7WLm3ce7L3YEQrCddbY9YTD7hLbSBjqxAWYW%2F2S%2Bej1V4MXN4A3tsT35c3RNNZb8QhfUKjjb7rGeCYXAtPq4sEnXqt4sJ6CwvS5vxu7OBltMmOyVi9SrzfeTRoRgzz7LS1q4GwWm85kt%2FJKkdwrij4knt4R9GMkENyUxhtNU0XsxVI9vm1ChfkQXOo6R4Oq%2BXXFQPRJqXpfS2GAg9ay1%2FLrJ2RYzktTS1Lr26eGLIcWhQmtIY6Ac3VjFDobJKA%2FJoAZfG1E4DbUnVA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8b04bb04a79ef1a90efa3cd4ee650dc112820089de96db6e613c0afb24cf78f6",
+      "file_size": 390869,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 4,
+  "voters": [
+    "ali",
+    "raslanco",
+    "thalaivar304",
+    "xxxxxxxxxxx1"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 43913,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.yelp.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 24287,
+      "category": "team",
+      "content": "@cocoh__23 reported that they could modify the `locid` parameter in https://yelp.com/profile_location/add_or_edit endpoint to disclose an arbitrary location stored in the database. \n\nHowever, since this does not disclose which user the revealed location is associated with, Yelp has decided that this does not correspond to a security vulnerability -- in a similar way that a random address generator is not a security threat.",
+      "updated_at": "2020-09-02T19:23:37.314Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 105043,
+        "username": "aaronloo",
+        "name": "Aaron Loo",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2016-08-29T20:54:28.410Z",
+        "url": "https://hackerone.com/aaronloo",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "medium": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "xtralarge": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "966949",
+  "votes": 4,
+  "latest_disclosable_activity_at": "2020-09-02T19:26:35.232Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:59:12.812934",
+    "source": "https://hackerone.com/reports/966949.json",
+    "report_id": 966949
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NjY5NDk=",
+    "databaseId": "966949",
+    "title": "IDOR in locid parameter allowing to view others accounts Profile Locations ",
+    "url": "https://hackerone.com/reports/966949",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2020-09-02T19:26:35.197Z",
+    "created_at": "2020-08-25T19:14:49.712Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "cocoh__23"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzk2Njk0OQ==",
+    "_id": "966949",
+    "disclosed": true,
+    "votes": 4,
+    "latest_disclosable_activity_at": "2020-09-02T19:26:35.232Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NjY5NDk=",
+      "databaseId": "966949",
+      "title": "IDOR in locid parameter allowing to view others accounts Profile Locations ",
+      "url": "https://hackerone.com/reports/966949",
+      "disclosed_at": "2020-09-02T19:26:35.197Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    }
+  }
+}

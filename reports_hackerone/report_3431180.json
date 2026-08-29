@@ -1,0 +1,182 @@
+{
+  "id": 3431180,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDMxMTgw",
+  "url": "https://hackerone.com/reports/3431180",
+  "title": "Double free in tool_ssls_load()",
+  "state": "Closed",
+  "substate": "informative",
+  "readable_substate": "Informative",
+  "created_at": "2025-11-18T11:19:36.373Z",
+  "submitted_at": "2025-11-18T11:19:36.567Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "xkernel",
+    "url": "/xkernel",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-11-18T23:32:00.615Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-11-18T15:17:49.081Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThere is a double-free bug(s) in tool_ssls_load(), which can happen at line  83-84 or 129-130 (tool_ssls.c):\n```c\n    curl_free(shmac);\n    curl_free(sdata);\n```\nThe root cause is that line  83-84 did not reset `shmac` and `sdata` to NULL.\nIf the seesion is malformed, the double-free will be triggerd.\n\nNo AI was used to find the issue or generate the report.\n\n## Affected version\nIt was introduced in commit https://github.com/curl/curl/commit/515a21f350b89f0676e5df7f904c62c8f67be377 on Jan 9, 2025.\nSo, it can affect v8.12.0~v8.17.0. It only affects `curl tool`.\n\n## Steps To Reproduce:\n  1. Build curl-8_17_0 from source. (my configure is: \"./configure --enable-debug --with-openssl --enable-static --disable-shared --enable-ssls-export\").`--enable-ssls-export` is key to enable the vunerable code. \n  2. Create a malformed session file (Please refer to the attached one). The logic is to make the code continue before reset `shmac` and `sdata` via curlx_base64_decode(). My choice is directly leverage the content check at https://github.com/curl/curl/blob/master/src/tool_ssls.c#L81-L91.\n  3. Run the `curl` tool: `./src/curl --ssl-sessions .curl_ssl_sessions https://example.com`. That's it.\n\nNote:\nTo be honest, I am very happy but also a bit \"disappointed\" when my tool found it, because the feature `SSLS-EXPORT` is marked as EXPERIMENTAL again.\nI understand that the project should provide appropriate reminders to users due to the possible unstable functionalities of new features. But as a contributor,I sincerely hope that maintainers can evaluate based on the facts of code and actual scope, rather than policy labels. By doing so, I believe that the contributors will be more motivated to extensively test new features to help curl grow better.\nAnyway,  I responsibly reported it and its PoC here, as well as submit the the corresponding patch via PR (https://github.com/curl/curl/pull/19588) with no sensitive word mentioned.\n\n## Supporting Material/References:\nThe malformed PoC session file (`.curl_ssl_sessions`).\n\n  * [attachment / reference]  `.curl_ssl_sessions`\n\n## Impact\n\n## Summary:\nAttackers can trigger double-free vulnerability via specially crafted SSL session files, causing DoS or other potential dangerous behaviors.\n\nAttack Prerequisites:\n- Requires SSLS-EXPORT feature enabled\n- Attacker can influence SSL session file content, or can influence session data generation process",
+  "weakness": {
+    "id": 49,
+    "name": "Double Free"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5019678,
+      "file_name": ".curl_ssl_sessions",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/p7by4g365owwurfar7jhbnn2ypuv?response-content-disposition=attachment%3B%20filename%3D%22.curl_ssl_sessions%22%3B%20filename%2A%3DUTF-8%27%27.curl_ssl_sessions&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042602Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1a02f73e3db18be9e4553ba70af4f19c53397a87fe5ce93e2d789073793f7510",
+      "file_size": 95,
+      "type": "application/octet-stream",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 5,
+  "voters": [
+    "2026",
+    "abidashraf851",
+    "darth_sidious",
+    "taibatadebayo",
+    "xkernel"
+  ],
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3431180",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2025-11-18T23:32:00.390Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:02.802136",
+    "source": "https://hackerone.com/reports/3431180.json",
+    "report_id": 3431180
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDMxMTgw",
+    "databaseId": "3431180",
+    "title": "Double free in tool_ssls_load()",
+    "url": "https://hackerone.com/reports/3431180",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-11-18T23:32:00.615Z",
+    "created_at": "2025-11-18T11:19:36.373Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ5",
+      "name": "Double Free",
+      "external_id": "cwe-415"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "xkernel"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0MzExODA=",
+    "_id": "3431180",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2025-11-18T23:32:00.390Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDMxMTgw",
+      "databaseId": "3431180",
+      "title": "Double free in tool_ssls_load()",
+      "url": "https://hackerone.com/reports/3431180",
+      "disclosed_at": "2025-11-18T23:32:00.615Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

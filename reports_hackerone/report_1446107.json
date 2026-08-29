@@ -1,0 +1,229 @@
+{
+  "id": 1446107,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ2MTA3",
+  "url": "https://hackerone.com/reports/1446107",
+  "title": "Verification process done using different documents without corresponding to user information / User information can be changed after verification",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-01-11T03:15:00.428Z",
+  "submitted_at": "2022-01-11T03:15:00.729Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "wnovmi",
+    "url": "/wnovmi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/v3bha7sqh2qg1v87sofvyz8xu9g4/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 12719,
+    "url": "https://hackerone.com/exness",
+    "handle": "exness",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/nqcs1q40b15orz664sixj9ltiejh/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/nqcs1q40b15orz664sixj9ltiejh/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "EXNESS",
+      "twitter_handle": "",
+      "website": "https://www.exness.com",
+      "about": "We offer better-than-market conditions on currencies, crypto, stocks, indices, metals, and commodities."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2023-01-27T16:30:14.150Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-01-27T16:30:14.033Z",
+  "team_member_agreed_on_going_public_at": "2022-12-05T14:51:52.712Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\n1. A verified user can change their profile information  (Name, DoB and Address) after identity verification using the API endpoint /kyc_back/api/v2/surveys/personal_info \n2. A  user can verifiy their account with ofical documents that does not correspond to their Name and Address information provided in verification process\n\n*** Note -*** *my.exness.com does not allow to change profile information (Name, DoB, Address) using website or mobile app. The only point where a user can set name, address and dob is when verifying the account but after that, there is no way for the user an option to change such that information in the GUI.*\n\n## Affected enpoints:\n  - wbesite and mobile apps\n\n## Steps to Reproduce:\n\n***NOTE -*** The following steps covers the two issues found, changing info after verification and with documents that does not correspond to the user\n\n  1. Open BurpSuite CE, turn off the Proxy feature in order just to log each request made by the browser.\n  2. Configure your browser with BurpSuite CE proxy settings\n  3. Create an account for a real account (not a demo account), you can use a properly email provider or a dispoable one too\n  4. Go to https://my.exness.com/pa/settings/profile\n  5. At the top of the window, there is a button that helps to go to the process to verify the account\n  6. Verify the current verification step with the code sent to the email used\n  7.  Verify the current verification step with the code sent to the phone number used\n  7. Add any name, address and dob, click next\n  7. Continue with the verification process... \n  8. Select ID card, add your documents (it could be a oficial ID card that does not correspond to you)\n  9. You will asked to upload a document to proof your address, add it (you can add an oficial proof of address that is related to the previous document to comply names and address)\n  10. Submit your document and wait until they are verified (Do not let the session expires, continue click on the website normally)\n  11. Go to BurpSuite CE Proxy > HTTP hisotry tab > searcch for the following request and send it to Repeater: \n```\nPATCH /kyc_back/api/v2/surveys/personal_info\nHost: my.exness.com\n```\n  12. Refresh your page after some time, like 15-30 minutes more or less. \n  13. The identity verification was completed\n  14. Go to Burp Suite CE Repeater tab, scroll down and change the request body json data to the following:\n\n```\n{\"first_name\":\"test-1\",\"last_name\":\"test-2\",\"test-3\":\"\",\"dob\":\"1990-01-01\",\"address\":\"test-4\"}\n```\n\n  15. Send the request, you will get a HTTP 200 response with the following body: ***{\"status\":\"OK\"}***\n  17. The information was changed, you can check it out by browsing https://my.exness.com/pa/settings/profile or https://my.exnesstrade.pro/settings/personalInfo\n\nInformation when verification was completed\n\n{F1574748}\n\nInformation when verification was completed displayed in my.exness.pro\n{F1574749}\n\nInformation changed after verification\n\n{F1574752}\n\n\nInformation changed after verification and displayed in my.exness.pro\n\n{F1574751}\n\n\n## Impact\nAn attacker can use exness.com platform to start trading under someone's information and verify their account with oficial documents that does not corresponds to them. The business logic flaw in the platform makes it a not good-trusting site for any user being part of the platform or not due to it is possible to use someone's documents.\n\n## Mitigation\nAdd photo to the profile and then, facial recognition to match the photo on the ID with the person presenting the card\nAddress recognition to match the address on the proof of address document presented\n\n\n## Supporting Material/References:\nhttps://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html\n\n## Impact\n\nAn attacker can use exness.com platform to start trading under someone's information and verify their account with oficial documents that does not corresponds to them. The business logic flaw in the platform makes it a not good-trusting site for any user being part of the platform or not due to it is possible to use someone's documents.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1574748,
+      "file_name": "Screenshot_8.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/wbu46v1jbq7nvdu15etqm8xy5qwz?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_8.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_8.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045947Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b244cd23b0042578707157279135a3ebd2cb06f5ff3bc0034f8723d2b9051ad3",
+      "file_size": 113433,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1574749,
+      "file_name": "Screenshot_9.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/oi8v9xy1ojhkr4rjzihux336mqu4?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_9.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_9.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045947Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=339a84afba5ecde306458dbbe70ef630d0af0d4d928b979d869d994e09fb158a",
+      "file_size": 53846,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1574751,
+      "file_name": "Screenshot_11.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qkry7hay837eqwofr6lzjto1g7r6?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_11.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_11.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045947Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f99204cadfdf990d77f38e9bac0e93cdf57ee2297861429fff2bc3f1e5e48a90",
+      "file_size": 53377,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1574752,
+      "file_name": "Screenshot_10.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zm1vxqbp4a1jkp46zm0sahjxn28x?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_10.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_10.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045947Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b15bd033b1a833e1ff6d1a2baa84df5daf72a79ff2d8c5330cf0da880640dd6d",
+      "file_size": 109618,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 25,
+  "voters": [
+    "ezzra",
+    "defenderwww",
+    "0x800700e1",
+    "zy9ard3",
+    "shreyaschavhan",
+    "mohaned0101",
+    "thalaivar304",
+    "shubham_srt",
+    "wnovmi",
+    "ab-maj",
+    "and 15 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 54025,
+    "asset_type": "OTHER",
+    "asset_identifier": "Personal Area for Web Trading",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1446107",
+  "votes": 25,
+  "latest_disclosable_activity_at": "2023-01-27T16:30:16.773Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:59:47.793492",
+    "source": "https://hackerone.com/reports/1446107.json",
+    "report_id": 1446107
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ2MTA3",
+    "databaseId": "1446107",
+    "title": "Verification process done using different documents without corresponding to user information / User information can be changed after verification",
+    "url": "https://hackerone.com/reports/1446107",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-01-27T16:30:14.150Z",
+    "created_at": "2022-01-11T03:15:00.428Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "wnovmi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEyNzE5",
+      "handle": "exness",
+      "name": "EXNESS",
+      "url": "https://hackerone.com/exness",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNjA1MDI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-01-11T16:48:09.366Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0NDYxMDc=",
+    "_id": "1446107",
+    "disclosed": true,
+    "votes": 25,
+    "latest_disclosable_activity_at": "2023-01-27T16:30:16.773Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ2MTA3",
+      "databaseId": "1446107",
+      "title": "Verification process done using different documents without corresponding to user information / User information can be changed after verification",
+      "url": "https://hackerone.com/reports/1446107",
+      "disclosed_at": "2023-01-27T16:30:14.150Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEyNzE5",
+      "handle": "exness",
+      "name": "EXNESS",
+      "url": "https://hackerone.com/exness",
+      "currency": "usd"
+    }
+  }
+}

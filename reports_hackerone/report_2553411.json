@@ -1,0 +1,218 @@
+{
+  "id": 2553411,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTUzNDEx",
+  "url": "https://hackerone.com/reports/2553411",
+  "title": "Path traversal in deeplink query parameter can expose any user's private info to a public directory (one click)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2024-06-16T08:02:29.519Z",
+  "submitted_at": "2024-06-16T08:02:30.035Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "fr4via",
+    "url": "/fr4via",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/kf04ypdzeotxytw6dhnyp812r4cl/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 67,
+    "url": "https://hackerone.com/basecamp",
+    "handle": "basecamp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/STtZ2opgRsHdKby72xs56KhB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/STtZ2opgRsHdKby72xs56KhB/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Basecamp",
+      "twitter_handle": "basecamp",
+      "website": "https://37signals.com/policies/security/response",
+      "about": "Basecamp is the leading online project manager and the birthplace of Ruby on Rails. Creators of the HEY email service."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2024-07-09T11:01:19.059Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-07-08T10:18:33.146Z",
+  "team_member_agreed_on_going_public_at": "2024-07-09T11:01:18.813Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "```java\n[------------------------------------Package Details---------------------------------------]:\n|    Application Name  :Basecamp\n|    Package Name      :com.basecamp.bc3\n|    Version code      :380\n|    Version Name      :4.8.6\n|    Mimimum SDK       :28\n|    Target  SDK       :34\n|    Max SDK           :None\n|    Sha256            :124861dde5cbb9a38d0994c3ca994fbbe5bae83b79621b7e476a0aa78bb711f2\n[------------------------------------------------------------------------------------------]\n````\n\n## Summary\n\nIt was found that the basecamp.bc3 app can be forced to expose the user's private info (any), to the device's shared directory which is accessible by any 3p app with READ/MANAGE external storage permissions. \n\n\n## Technical details\n\nThe application declares to its android manifest that it handles deeplinks of the form: https://3.basecamp.com/* . The particular deeplink can \"take\" an additional parameter, called \"filename\" which is used by the app to save the file locally.  By using a textbook path traversal exploit, it is possible to force the app to save the file to any directory, including ones which are shared and thus accessible by 3rd party apps. \n\n\n## Steps to reproduce\n\nThe following link stores the user's progress report to the /sdcard/Download/disclosure.txt file:\n\n<a href=\"https://3.basecamp.com/5195267/reports/progress?filename=/../../../../../../../../../../sdcard/Download/disclosure.txt\">click me</a>\n\n\nSince basecamp supports link within comments/projects e.t.c. , it is possible to add a malicious link, literally anywhere:\n\n{F3360970}\n\n## Impact\n\nAn attacker can send/add a malicious link which can expose user's private and files to 3rd party entities.",
+  "weakness": {
+    "id": 19,
+    "name": "Path Traversal"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3360970,
+      "file_name": "Screen_Recording_2024-06-16_at_08.58.13.mov",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/nd0c7tt7v00pevg8fmxu7vttvtgp?response-content-disposition=attachment%3B%20filename%3D%22Screen_Recording_2024-06-16_at_08.58.13.mov%22%3B%20filename%2A%3DUTF-8%27%27Screen_Recording_2024-06-16_at_08.58.13.mov&response-content-type=video%2Fquicktime&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQY6WM27R6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCw73CRLz9sOJGZ68jR3COYrzYL3ILrCiO4Ldt1wAcDSgIhAME5n1ZBPtjrek4miyWIdOchrHmJn%2BJjRw%2FOjwY99XgHKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgxARN2DuvvpJZ2epWMqjwUO%2Bkmg9tr%2B6wqfKD9br9ucHuRS%2FIehwltTZbySAR4NCOkdmA78DoU30sj8NIUMUa4CB6825u5HJmurPDFwVxnBUd%2FsqMUlEUvRW08%2BZI3jmcKdmDbzytaJbrWWm8flrJKvR6y3ivBYg6iAwCY8k4PvhC4dahTn%2BtJNtGlkb92du%2B6nvxeQQ%2FrsMKj6EFZG2xulxGiqMzyN2crdMwj1hhFWon5yXIuTCk6njfG9N7tOknAYV%2F23NCvOD0zoSQ7hhDvO8V%2Fxy%2BHlqGZZJjkkEFaNxjeIzb3R%2BZ8aivYnj2MMbsGPeKuCHInB5jYzz2DhntusW2IIaBFwTroHLdPBXY%2BhH%2FPKq%2B7%2BPpW0j4LBlU5avT0rmYVlYVhIzfpGeWhRxMFLNgzm%2FMLDKv9gr0FloMqRAXfMoyNh0ZlKxdA4t40HBhXlOEfe4sQnTBUT7gEEu5GUme0ftpyct%2B2OfJXvmBuFHS%2FVtfrga6jKQYLDHTHkIwk2ZR15fOiuFtIqrblokJAu8kDg4favAijvluHqLz0vF3D4c33wNCp1T8FR6WM1LPOBG%2BdXtdF%2F0A09eL5aJNVeMFdd2nqamMf%2BORN0P6ncuN81ci9MrqabMg0RIGvhVCApDAGCTo3M9%2FJNUEZyQz%2B5TdLEfQaAX88TuASCjK3XqWvv5stZEUiI6as6ESxd2njeBTZQ2kWT5ljlS7zVazo5KI8vv4uHr%2BJd29b44vQdKU19Vl3lDuqtqh8wOo1ePMit%2BfXK9PL7Z79AJ%2FZxQlOD13z5olJ1ol7DZlJ5k3sADywbDfF0avYaZ1YfXUCi6tdTFbkmrTdlHegp0lfWcpOIvRI70B7XGspFQ6MgyAWEDlDQ8OTou%2Byb7dG73qqHMOzmnNIGOrABdjkpiCK7pXbgfyOEI8FdTrlOpemp4A%2BMTNlSvyRUUyY8CP6QWi7kn7GTiQqPPWV%2B6ick6o2sA1gGTX9Mt5bgwVsA0MjvFDLmSjcnZ6OJCLIHDycmE7Hi887Wj0q2aCdCkdjRqTUlo0icaleJQWwkMdcyvF%2F%2BrAAIBhAjwfGsQ1cpU%2FXcYFGq5p4iD65F6C90YZ7mDEYnAYavdpPSy9vFBoHLbkCRBTQELtbhQgATo2A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=343751867591ded441181090023497fb85e958025ce3b714f5c632721e9d0f5b",
+      "file_size": 21676197,
+      "type": "video/quicktime",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-08-07T10:18:33.288Z",
+  "allow_singular_disclosure_after": -60027786.30278581,
+  "singular_disclosure_allowed": true,
+  "vote_count": 64,
+  "voters": [
+    "0x800700e1",
+    "skyw1per",
+    "vague_",
+    "g3ksec",
+    "ragingg",
+    "ganeshbagaria",
+    "tinopreter",
+    "zy9ard3",
+    "dnelsaka",
+    "thalaivar304",
+    "and 54 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.5,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 4660,
+    "asset_type": "GOOGLE_PLAY_APP_ID",
+    "asset_identifier": "com.basecamp.bc3",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2553411",
+  "votes": 64,
+  "latest_disclosable_activity_at": "2024-07-09T11:01:19.283Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:41:39.707178",
+    "source": "https://hackerone.com/reports/2553411.json",
+    "report_id": 2553411
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTUzNDEx",
+    "databaseId": "2553411",
+    "title": "Path traversal in deeplink query parameter can expose any user's private info to a public directory (one click)",
+    "url": "https://hackerone.com/reports/2553411",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-07-09T11:01:19.059Z",
+    "created_at": "2024-06-16T08:02:29.519Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE5",
+      "name": "Path Traversal",
+      "external_id": "cwe-22"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.5
+    },
+    "reporter": {
+      "username": "fr4via"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY3",
+      "handle": "basecamp",
+      "name": "Basecamp",
+      "url": "https://hackerone.com/basecamp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81ODk1MjE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-06-20T11:42:26.367Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI1NTM0MTE=",
+    "_id": "2553411",
+    "disclosed": true,
+    "votes": 64,
+    "latest_disclosable_activity_at": "2024-07-09T11:01:19.283Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTUzNDEx",
+      "databaseId": "2553411",
+      "title": "Path traversal in deeplink query parameter can expose any user's private info to a public directory (one click)",
+      "url": "https://hackerone.com/reports/2553411",
+      "disclosed_at": "2024-07-09T11:01:19.059Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY3",
+      "handle": "basecamp",
+      "name": "Basecamp",
+      "url": "https://hackerone.com/basecamp",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "id": 889041,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84ODkwNDE=",
+  "url": "https://hackerone.com/reports/889041",
+  "title": "DOM XSS through ads",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-02T04:34:12.942Z",
+  "submitted_at": "2020-06-02T04:34:12.942Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bemodtwz",
+    "url": "/bemodtwz",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/153/507/d9409ab0b6f4bbd1c6f5cd6112fce15ccb38c7b7_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 207,
+    "url": "https://hackerone.com/urbandictionary",
+    "handle": "urbandictionary",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/1ZmKRpkDkGAWc3mPyktXfrP4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/1ZmKRpkDkGAWc3mPyktXfrP4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Urban Dictionary",
+      "twitter_handle": "urbandictionary",
+      "website": "https://www.urbandictionary.com",
+      "about": "The online dictionary with definitions you write."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-01-18T00:56:20.294Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2021-12-19T00:56:08.978Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Multiple ads hosted on www.urbandictionary.com make the www.urbandictionary.com origin vulnerable to DOM XSS.  Attached is an image of `alert(document.domain)` executing. The injection works in Firefox and Chrome.\n\nVisiting the following URL will **probably** cause an alert box displaying the  document.domain as www.urbandictionary.com.\n`https://www.urbandictionary.com/define.php?term=#asdf'-alert(document.domain)-'asdf`\n\nI say \"probably\" because the exploit depends on the loading of certain ads. Doing this from a fresh browser session usually causes the alert box. If not refreshing the page a few times, allowing the page to fully load, usually causes the pop-up. It all depends on which ad loads.\n\nIt appears the `pwt.js` JavaScript file uses the `displayCreative` function to display a unique ad. This apparently is done by executing `document.write` in an anonymous function to write the ad into the  the www.urbandictionary.com page. Visiting the above link will cause one of the ads to execute `document.domain` with a string that contains the following:\n\n```\n<script type='text/javascript'>\nurl='https://vap3ord1.lijit.com/res/sovrn.containertag.new.min.js…252de1&loc=https://www.urbandictionary.com/define.php?term=#asdf'-alert(document.domain)-'',\n```\nMany ads want a reference to the website that is loading them, so they inject the URL of the hosting page into the ad source. Since the vulnerable inject the containing page into a JavaScript single quote string, a single quote can be used to escape out of the string. This results in the JavaScript alert function being called.\n\nThe stack trace for the above injection follows:\n```\n    <anonymous> (index):2\n    displayCreative pwt.js:11048\n    displayCreative pwt.js:13098\n    displayCreative pwt.js:10759\n    <anonymous> define.php:1\n    apply define.php:347\n    <anonymous> (index):2\n    <anonymous> (index):2\n    Caspr (index):2\n    Caspr (index):2\n    casprInvocation (index):3\n    <anonymous> (index):8\n    <anonymous> (index):8\n```\n\nMultiple ads contain the nearly the same vulnerability. The stack trace is always the same.  The string passed to `document.domain` is different depending on the ad. I will try to include a few examples by attaching files showing the entire content being passed to `document.write`.  \n\n I obtained the strings passed to `document.domain` using the Eval Villain extension for Firefox, which I developed. This extension may assist you in finding the cause of the vulnerability, or verifying it's existence.\n\n## Impact\n\nDOM XSS allows an attacker to run arbitrary JavaScript under you origin. Since users can authenticate to this origin, an attacker could use this to perform actions in behalf of a victim using the victim session. I  have not yet authenticated to the site, so I don't know exactly what all that would entail.\n\nAn attacker could use this vulnerability to add malicious or inappropriate content to your website or takeover the ads seen there. \n\nSo far, it appears the urbandictionary.store does **not** grant the vulnerable origin any CORS privileges. This means an attacker most likely can NOT steal credit card information or modify purchases.",
+  "weakness": {
+    "id": 63,
+    "name": "Cross-site Scripting (XSS) - DOM"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 851850,
+      "file_name": "ss_urban_xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/S23jWF4E1jjxwGJms1Sq2YkD?response-content-disposition=attachment%3B%20filename%3D%22ss_urban_xss.png%22%3B%20filename%2A%3DUTF-8%27%27ss_urban_xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ575C7UDT%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054225Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDmoYKO9CHwGn5GZwytdn1OtdeTXxujAJzxVrulmNctpgIhAJRE%2F1XpTWIdmtSqwJ6mKSsooBqlac9HIUifMmlhTbyNKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igx6Y28NYgtVETa9mHUqjgWb1XDXlV26%2BXBwMfrBya%2BT5zZa40Jx%2BPjuyYYWCXmPlOnZK1kpPDlvzMgnjqsC15BWZOdKAPrpdlmzt8daW%2BpEqRAgR2M3H6Uu%2FOD%2B3Uyqt8XmrudcWeoZ%2B8qEuObMsAY3Cw7VerV1bPhVHsdcdVBJzRS7TF8amHy1aXkybOFooxP5rs0%2BQTlOvIC0%2F17E%2BwjaTr2LBnlEEHiL3ypLP8n%2FkSHUz9N%2BYlwxE35UGdl88PWS9CfjdGmEUDIb7FAFZ74cgf%2BmtzgAKqebOvq03Py%2FoOrdseO%2FcyKR8mXvz90F08G1%2F02O2YmHJtM10v2iZIBtFCs1wZsW0yI1lPocvu%2Fz1xxABRg7CuXhBimADgykT3rtX0JWOAKEDYUCR%2F1ktZDmQgy%2Fk%2Fno26v5b04bytCT5%2Byx0IS8NWxKQZzy4MyID%2Bjab0zx8wT8C0pXirfj5HGmIi%2FO5LslkNO3%2BqU2JbxyUpaOvepqr%2BgKpVej8NPQm6zDNRgnbA0jm8lDnlJoVYPAyeyOA%2FSph43%2BY2ZBcSoHrcx2hhLU48N%2BQGPxpC6CsJ6yBrGTNUjiEqE0PI3OyHiiEuFxUojMiEZyGkMTh2WUWm7SAMAtoxWYZS%2BKluNgp7Xz90HwRjDwPv7KtN8AxdF1Op2bg5xv1Ac0n95JVtho5GXuFJJgwKvgMsYg7B5qg0xXeemFKvcrCIccwypeijN%2B8vLwYBs7ZXeGXGnodm3g6TmoTyaeYB5MhaclC9BfiuiQCmtq6IX20aJXQmbEKuKqvfOUv7i7%2B36oF8ba61C4Bf%2FBgqcUlM3tT9E4eVlCMk4EmvMiSW4spkq75UU6cmOoxg%2FyvXRGXoiQTCyjcbnCd%2BMR3NKOFu9ipzFlbv4wr5Cd0gY6sAF5R3wZIFIuGC7X9FJ7OXeSqV8nZGSP2bt%2FUz%2B4FOJCWBDGhqXk8k1fS6fDCVJSLnUfYxo9%2BSIAVdFyc6SWE%2Fs0nW4XJBk9ddbwq94f8D073gGMqMORfI5HEQ75iPr0EXGytEFlozMRfVPcPARQ2GumlTbdI%2F9r06BlzUXLw54vH4GKxYv9xZlO%2BksB%2BcQxT8iSObQ8jC8fG2R0IMTKTjn1xiXYKSVEaDSo1v23GblVVg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c39ca5f61582d9916ba463f1ac050e09beedac0b1cc8f60a29345bb5223f1107",
+      "file_size": 399917,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 851859,
+      "file_name": "adstring4.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Vc9S16QUcw4d6s52aXBDpyR4?response-content-disposition=attachment%3B%20filename%3D%22adstring4.txt%22%3B%20filename%2A%3DUTF-8%27%27adstring4.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ575C7UDT%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054225Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDmoYKO9CHwGn5GZwytdn1OtdeTXxujAJzxVrulmNctpgIhAJRE%2F1XpTWIdmtSqwJ6mKSsooBqlac9HIUifMmlhTbyNKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igx6Y28NYgtVETa9mHUqjgWb1XDXlV26%2BXBwMfrBya%2BT5zZa40Jx%2BPjuyYYWCXmPlOnZK1kpPDlvzMgnjqsC15BWZOdKAPrpdlmzt8daW%2BpEqRAgR2M3H6Uu%2FOD%2B3Uyqt8XmrudcWeoZ%2B8qEuObMsAY3Cw7VerV1bPhVHsdcdVBJzRS7TF8amHy1aXkybOFooxP5rs0%2BQTlOvIC0%2F17E%2BwjaTr2LBnlEEHiL3ypLP8n%2FkSHUz9N%2BYlwxE35UGdl88PWS9CfjdGmEUDIb7FAFZ74cgf%2BmtzgAKqebOvq03Py%2FoOrdseO%2FcyKR8mXvz90F08G1%2F02O2YmHJtM10v2iZIBtFCs1wZsW0yI1lPocvu%2Fz1xxABRg7CuXhBimADgykT3rtX0JWOAKEDYUCR%2F1ktZDmQgy%2Fk%2Fno26v5b04bytCT5%2Byx0IS8NWxKQZzy4MyID%2Bjab0zx8wT8C0pXirfj5HGmIi%2FO5LslkNO3%2BqU2JbxyUpaOvepqr%2BgKpVej8NPQm6zDNRgnbA0jm8lDnlJoVYPAyeyOA%2FSph43%2BY2ZBcSoHrcx2hhLU48N%2BQGPxpC6CsJ6yBrGTNUjiEqE0PI3OyHiiEuFxUojMiEZyGkMTh2WUWm7SAMAtoxWYZS%2BKluNgp7Xz90HwRjDwPv7KtN8AxdF1Op2bg5xv1Ac0n95JVtho5GXuFJJgwKvgMsYg7B5qg0xXeemFKvcrCIccwypeijN%2B8vLwYBs7ZXeGXGnodm3g6TmoTyaeYB5MhaclC9BfiuiQCmtq6IX20aJXQmbEKuKqvfOUv7i7%2B36oF8ba61C4Bf%2FBgqcUlM3tT9E4eVlCMk4EmvMiSW4spkq75UU6cmOoxg%2FyvXRGXoiQTCyjcbnCd%2BMR3NKOFu9ipzFlbv4wr5Cd0gY6sAF5R3wZIFIuGC7X9FJ7OXeSqV8nZGSP2bt%2FUz%2B4FOJCWBDGhqXk8k1fS6fDCVJSLnUfYxo9%2BSIAVdFyc6SWE%2Fs0nW4XJBk9ddbwq94f8D073gGMqMORfI5HEQ75iPr0EXGytEFlozMRfVPcPARQ2GumlTbdI%2F9r06BlzUXLw54vH4GKxYv9xZlO%2BksB%2BcQxT8iSObQ8jC8fG2R0IMTKTjn1xiXYKSVEaDSo1v23GblVVg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1f4ee64fc81737fd916eb539acf84014c7d085e1820b14794edd636abec238f3",
+      "file_size": 7139,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 851860,
+      "file_name": "adstring2.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/K65TukCqFtmJY6Q1GpxEvZD2?response-content-disposition=attachment%3B%20filename%3D%22adstring2.txt%22%3B%20filename%2A%3DUTF-8%27%27adstring2.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ575C7UDT%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054225Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDmoYKO9CHwGn5GZwytdn1OtdeTXxujAJzxVrulmNctpgIhAJRE%2F1XpTWIdmtSqwJ6mKSsooBqlac9HIUifMmlhTbyNKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igx6Y28NYgtVETa9mHUqjgWb1XDXlV26%2BXBwMfrBya%2BT5zZa40Jx%2BPjuyYYWCXmPlOnZK1kpPDlvzMgnjqsC15BWZOdKAPrpdlmzt8daW%2BpEqRAgR2M3H6Uu%2FOD%2B3Uyqt8XmrudcWeoZ%2B8qEuObMsAY3Cw7VerV1bPhVHsdcdVBJzRS7TF8amHy1aXkybOFooxP5rs0%2BQTlOvIC0%2F17E%2BwjaTr2LBnlEEHiL3ypLP8n%2FkSHUz9N%2BYlwxE35UGdl88PWS9CfjdGmEUDIb7FAFZ74cgf%2BmtzgAKqebOvq03Py%2FoOrdseO%2FcyKR8mXvz90F08G1%2F02O2YmHJtM10v2iZIBtFCs1wZsW0yI1lPocvu%2Fz1xxABRg7CuXhBimADgykT3rtX0JWOAKEDYUCR%2F1ktZDmQgy%2Fk%2Fno26v5b04bytCT5%2Byx0IS8NWxKQZzy4MyID%2Bjab0zx8wT8C0pXirfj5HGmIi%2FO5LslkNO3%2BqU2JbxyUpaOvepqr%2BgKpVej8NPQm6zDNRgnbA0jm8lDnlJoVYPAyeyOA%2FSph43%2BY2ZBcSoHrcx2hhLU48N%2BQGPxpC6CsJ6yBrGTNUjiEqE0PI3OyHiiEuFxUojMiEZyGkMTh2WUWm7SAMAtoxWYZS%2BKluNgp7Xz90HwRjDwPv7KtN8AxdF1Op2bg5xv1Ac0n95JVtho5GXuFJJgwKvgMsYg7B5qg0xXeemFKvcrCIccwypeijN%2B8vLwYBs7ZXeGXGnodm3g6TmoTyaeYB5MhaclC9BfiuiQCmtq6IX20aJXQmbEKuKqvfOUv7i7%2B36oF8ba61C4Bf%2FBgqcUlM3tT9E4eVlCMk4EmvMiSW4spkq75UU6cmOoxg%2FyvXRGXoiQTCyjcbnCd%2BMR3NKOFu9ipzFlbv4wr5Cd0gY6sAF5R3wZIFIuGC7X9FJ7OXeSqV8nZGSP2bt%2FUz%2B4FOJCWBDGhqXk8k1fS6fDCVJSLnUfYxo9%2BSIAVdFyc6SWE%2Fs0nW4XJBk9ddbwq94f8D073gGMqMORfI5HEQ75iPr0EXGytEFlozMRfVPcPARQ2GumlTbdI%2F9r06BlzUXLw54vH4GKxYv9xZlO%2BksB%2BcQxT8iSObQ8jC8fG2R0IMTKTjn1xiXYKSVEaDSo1v23GblVVg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=58fe208d9be8350b6bd245b3e3ebe027217294ad9c4bb842b6d4aa2c15f08951",
+      "file_size": 2903,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 851861,
+      "file_name": "adstring3.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/uDnYFP5nst3UPonBh3kgN1US?response-content-disposition=attachment%3B%20filename%3D%22adstring3.txt%22%3B%20filename%2A%3DUTF-8%27%27adstring3.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ575C7UDT%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054225Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDmoYKO9CHwGn5GZwytdn1OtdeTXxujAJzxVrulmNctpgIhAJRE%2F1XpTWIdmtSqwJ6mKSsooBqlac9HIUifMmlhTbyNKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igx6Y28NYgtVETa9mHUqjgWb1XDXlV26%2BXBwMfrBya%2BT5zZa40Jx%2BPjuyYYWCXmPlOnZK1kpPDlvzMgnjqsC15BWZOdKAPrpdlmzt8daW%2BpEqRAgR2M3H6Uu%2FOD%2B3Uyqt8XmrudcWeoZ%2B8qEuObMsAY3Cw7VerV1bPhVHsdcdVBJzRS7TF8amHy1aXkybOFooxP5rs0%2BQTlOvIC0%2F17E%2BwjaTr2LBnlEEHiL3ypLP8n%2FkSHUz9N%2BYlwxE35UGdl88PWS9CfjdGmEUDIb7FAFZ74cgf%2BmtzgAKqebOvq03Py%2FoOrdseO%2FcyKR8mXvz90F08G1%2F02O2YmHJtM10v2iZIBtFCs1wZsW0yI1lPocvu%2Fz1xxABRg7CuXhBimADgykT3rtX0JWOAKEDYUCR%2F1ktZDmQgy%2Fk%2Fno26v5b04bytCT5%2Byx0IS8NWxKQZzy4MyID%2Bjab0zx8wT8C0pXirfj5HGmIi%2FO5LslkNO3%2BqU2JbxyUpaOvepqr%2BgKpVej8NPQm6zDNRgnbA0jm8lDnlJoVYPAyeyOA%2FSph43%2BY2ZBcSoHrcx2hhLU48N%2BQGPxpC6CsJ6yBrGTNUjiEqE0PI3OyHiiEuFxUojMiEZyGkMTh2WUWm7SAMAtoxWYZS%2BKluNgp7Xz90HwRjDwPv7KtN8AxdF1Op2bg5xv1Ac0n95JVtho5GXuFJJgwKvgMsYg7B5qg0xXeemFKvcrCIccwypeijN%2B8vLwYBs7ZXeGXGnodm3g6TmoTyaeYB5MhaclC9BfiuiQCmtq6IX20aJXQmbEKuKqvfOUv7i7%2B36oF8ba61C4Bf%2FBgqcUlM3tT9E4eVlCMk4EmvMiSW4spkq75UU6cmOoxg%2FyvXRGXoiQTCyjcbnCd%2BMR3NKOFu9ipzFlbv4wr5Cd0gY6sAF5R3wZIFIuGC7X9FJ7OXeSqV8nZGSP2bt%2FUz%2B4FOJCWBDGhqXk8k1fS6fDCVJSLnUfYxo9%2BSIAVdFyc6SWE%2Fs0nW4XJBk9ddbwq94f8D073gGMqMORfI5HEQ75iPr0EXGytEFlozMRfVPcPARQ2GumlTbdI%2F9r06BlzUXLw54vH4GKxYv9xZlO%2BksB%2BcQxT8iSObQ8jC8fG2R0IMTKTjn1xiXYKSVEaDSo1v23GblVVg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=089442ef0b7416824bb3c3f0afccb59df848e473eed9245397478b637c75b2ba",
+      "file_size": 2836,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 851862,
+      "file_name": "adstring1.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ffYM4DDzmEfszG9tRyuQAVo5?response-content-disposition=attachment%3B%20filename%3D%22adstring1.txt%22%3B%20filename%2A%3DUTF-8%27%27adstring1.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ575C7UDT%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054225Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDmoYKO9CHwGn5GZwytdn1OtdeTXxujAJzxVrulmNctpgIhAJRE%2F1XpTWIdmtSqwJ6mKSsooBqlac9HIUifMmlhTbyNKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5Igx6Y28NYgtVETa9mHUqjgWb1XDXlV26%2BXBwMfrBya%2BT5zZa40Jx%2BPjuyYYWCXmPlOnZK1kpPDlvzMgnjqsC15BWZOdKAPrpdlmzt8daW%2BpEqRAgR2M3H6Uu%2FOD%2B3Uyqt8XmrudcWeoZ%2B8qEuObMsAY3Cw7VerV1bPhVHsdcdVBJzRS7TF8amHy1aXkybOFooxP5rs0%2BQTlOvIC0%2F17E%2BwjaTr2LBnlEEHiL3ypLP8n%2FkSHUz9N%2BYlwxE35UGdl88PWS9CfjdGmEUDIb7FAFZ74cgf%2BmtzgAKqebOvq03Py%2FoOrdseO%2FcyKR8mXvz90F08G1%2F02O2YmHJtM10v2iZIBtFCs1wZsW0yI1lPocvu%2Fz1xxABRg7CuXhBimADgykT3rtX0JWOAKEDYUCR%2F1ktZDmQgy%2Fk%2Fno26v5b04bytCT5%2Byx0IS8NWxKQZzy4MyID%2Bjab0zx8wT8C0pXirfj5HGmIi%2FO5LslkNO3%2BqU2JbxyUpaOvepqr%2BgKpVej8NPQm6zDNRgnbA0jm8lDnlJoVYPAyeyOA%2FSph43%2BY2ZBcSoHrcx2hhLU48N%2BQGPxpC6CsJ6yBrGTNUjiEqE0PI3OyHiiEuFxUojMiEZyGkMTh2WUWm7SAMAtoxWYZS%2BKluNgp7Xz90HwRjDwPv7KtN8AxdF1Op2bg5xv1Ac0n95JVtho5GXuFJJgwKvgMsYg7B5qg0xXeemFKvcrCIccwypeijN%2B8vLwYBs7ZXeGXGnodm3g6TmoTyaeYB5MhaclC9BfiuiQCmtq6IX20aJXQmbEKuKqvfOUv7i7%2B36oF8ba61C4Bf%2FBgqcUlM3tT9E4eVlCMk4EmvMiSW4spkq75UU6cmOoxg%2FyvXRGXoiQTCyjcbnCd%2BMR3NKOFu9ipzFlbv4wr5Cd0gY6sAF5R3wZIFIuGC7X9FJ7OXeSqV8nZGSP2bt%2FUz%2B4FOJCWBDGhqXk8k1fS6fDCVJSLnUfYxo9%2BSIAVdFyc6SWE%2Fs0nW4XJBk9ddbwq94f8D073gGMqMORfI5HEQ75iPr0EXGytEFlozMRfVPcPARQ2GumlTbdI%2F9r06BlzUXLw54vH4GKxYv9xZlO%2BksB%2BcQxT8iSObQ8jC8fG2R0IMTKTjn1xiXYKSVEaDSo1v23GblVVg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b8831a0a0bdfc8103fce48ba09214d753f595083604768a37f0b61e655c04ee3",
+      "file_size": 2871,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-01-18T00:56:09.112Z",
+  "allow_singular_disclosure_after": -140589976.1957208,
+  "singular_disclosure_allowed": true,
+  "vote_count": 18,
+  "voters": [
+    "kashsec",
+    "7odamoo",
+    "shreyaschavhan",
+    "realvivek",
+    "ibring",
+    "official_blackhat13",
+    "theendisnear",
+    "thecyberjerry",
+    "rkhunter_",
+    "ninikocholo",
+    "and 8 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 1299,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.urbandictionary.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "889041",
+  "votes": 18,
+  "latest_disclosable_activity_at": "2022-01-18T00:56:20.333Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:42:25.502761",
+    "source": "https://hackerone.com/reports/889041.json",
+    "report_id": 889041
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84ODkwNDE=",
+    "databaseId": "889041",
+    "title": "DOM XSS through ads",
+    "url": "https://hackerone.com/reports/889041",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-01-18T00:56:20.294Z",
+    "created_at": "2020-06-02T04:34:12.942Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYz",
+      "name": "Cross-site Scripting (XSS) - DOM",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.5
+    },
+    "reporter": {
+      "username": "bemodtwz"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIwNw==",
+      "handle": "urbandictionary",
+      "name": "Urban Dictionary",
+      "url": "https://hackerone.com/urbandictionary",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg4OTA0MQ==",
+    "_id": "889041",
+    "disclosed": true,
+    "votes": 18,
+    "latest_disclosable_activity_at": "2022-01-18T00:56:20.333Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84ODkwNDE=",
+      "databaseId": "889041",
+      "title": "DOM XSS through ads",
+      "url": "https://hackerone.com/reports/889041",
+      "disclosed_at": "2022-01-18T00:56:20.294Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIwNw==",
+      "handle": "urbandictionary",
+      "name": "Urban Dictionary",
+      "url": "https://hackerone.com/urbandictionary",
+      "currency": "usd"
+    }
+  }
+}

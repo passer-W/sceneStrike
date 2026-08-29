@@ -1,0 +1,188 @@
+{
+  "id": 3684603,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjg0NjAz",
+  "url": "https://hackerone.com/reports/3684603",
+  "title": "Stack exhaustion in MIME multipart reading with deeply nested subparts",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "medium",
+  "readable_substate": "N/A",
+  "created_at": "2026-04-20T06:36:49.403Z",
+  "submitted_at": "2026-04-20T06:36:49.753Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "wi110w",
+    "url": "/wi110w",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-29T06:10:18.762Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-20T07:22:24.918Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThe MIME read path uses mutually recursive helpers for nested multipart structures without enforcing a recursion depth limit. A sufficiently deep tree of nested `curl_mime_subparts()` objects causes stack exhaustion when libcurl starts reading the MIME body. The attached PoC builds a deeply nested MIME structure and triggers an AddressSanitizer stack-overflow in `readback_bytes()` / `mime_subparts_read()`. I reproduced this on curl 8.19.0 (latest stable release) and also on the current development tip (`759f2e5`) on Linux x86_64. The affected code is in `lib/mime.c`, primarily the `readback_part()`, `read_part_content()`, and `mime_subparts_read()` call chain.\n\n## Affected version\nReproduced against:\n- **curl 8.19.0** (tag `curl-8_19_0`, commit `8c908d2`, released 2025-03-10) — current stable release\n- **curl 8.20.0-DEV** (commit `759f2e5`) — current development tip\n\nTested on Linux x86_64 with `clang` and AddressSanitizer.\n\n## Steps To Reproduce:\n1. Build curl with AddressSanitizer enabled and static libcurl available, for example:\n\n```bash\nautoreconf -fi\nCC=clang CFLAGS=\"-fsanitize=address -fno-omit-frame-pointer -g -O1\" \\\nLDFLAGS=\"-fsanitize=address\" \\\n./configure --disable-shared --with-openssl \\\n  --disable-docs --disable-manual\nmake -j\"$(nproc)\"\n# If configure fails on optional deps (e.g. libpsl), add --without-libpsl\n```\n\n2. Compile the attached `poc.c` against the built libcurl:\n\n```bash\nclang -fsanitize=address -fno-omit-frame-pointer -g -O1 \\\n  -I./include -I./lib \\\n  poc.c ./lib/.libs/libcurl.a \\\n  -lssl -lcrypto -lz -lpthread -ldl \\\n  -o /tmp/poc_curl_mime_recursion\n```\n\n3. Run it with a large nesting depth:\n\n```bash\nASAN_OPTIONS=\"halt_on_error=1:print_stacktrace=1:detect_leaks=0\" \\\n  /tmp/poc_curl_mime_recursion 10000\n```\n\n4. The PoC constructs a MIME tree with thousands of nested multipart layers and then triggers the MIME read path.\n\nObserved sanitizer output (curl 8.19.0, depth=20000):\n\n```text\nAddressSanitizer:DEADLYSIGNAL\n==25988==ERROR: AddressSanitizer: stack-overflow on address 0x7ffd763b6fa8\n    #0 0x...  in __asan_memcpy\n    #1 0x...  in readback_bytes lib/mime.c:683:3\n    #2 0x...  in mime_subparts_read lib/mime.c:918:12\n    #3 0x...  in read_part_content lib/mime.c:716:12\n    #4 0x...  in readback_part lib/mime.c:865:14\n    #5 0x...  in mime_subparts_read lib/mime.c:939:12\n    #6 0x...  in read_part_content lib/mime.c:716:12\n    #7 0x...  in readback_part lib/mime.c:865:14\n    [... pattern repeats for each nesting level ...]\nSUMMARY: AddressSanitizer: stack-overflow lib/mime.c:683:3 in readback_bytes\n```\n\n## Impact\n\nAn application that constructs or forwards attacker-influenced nested MIME structures through libcurl can be crashed through stack exhaustion. In the tested configuration this is a reliable denial of service.",
+  "weakness": {
+    "id": 134,
+    "name": "Uncontrolled Recursion"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5765187,
+      "file_name": "poc.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/so987ysvqimcxocpo58xcomvf767?response-content-disposition=attachment%3B%20filename%3D%22poc.c%22%3B%20filename%2A%3DUTF-8%27%27poc.c&response-content-type=text%2Fx-c%2B%2Bsrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYOF6X3DV%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041933Z&X-Amz-Expires=430&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJHMEUCICNSEJpOrgZNldPeOkLIUHGut0PUVXfAhrF3Ge%2BaOProAiEAngHx7CTD5YxInKg8ocgDQGPKlKsxYqIpj5d9Gtd2iaMquwUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCiUhirQPXWhRgj03yqPBS1T6OsiMDiIOSw7Sma5AH37sPPasE6HmyAq9vsEZxzKOYCSqclIRz6zebtLyy9qJwmvM2FE47c7a0TDUcPAEKNi047udUIjxkm6QwOuz9mNPqUfLm0dJty6f0h56Ek3oi1pJyyM975O9UZsYwwQLAYmrMxZXEwEA%2BEthxdNum6Z6%2FBuuEVMDcbLjXlwRe23eCcwiBPYikziIap%2FpthiHG58rIP2FtoirFNQ0dHE%2FRFBiW%2BaUHaG5QoWlhyTZmVkziNmXQB%2FylTOS2XyhX%2BWlFsMWRuXw5B11fWP4YFx3%2BdDmXSYqPgFXTcau7hHUOE11rtApiKjj2rDX0EwDNi7veTRssge9nFJucfaziEIB3YgmG52kJmuI%2BjpP8LjUdCgjbJKAo3EgHqRvtF1HWP4mSuUBxg5b4DCl2PhrDfX5NI0%2BVIIboks7dcSixzHK8z6NFiOzCOD2ow7bMn%2FDM7TgDTqWKCUqF23DT%2BnKs28RAgHKxlpkgmuigRLrPyJ0RoRD90aXP%2B8031LstrEJlfATIWt7lQEwuYiBZLHoMTbkk3OaSpVBUlVICvIKnf9TR0sMTJTql%2BYCyBDWZxsOPaANkMHQirvOjzz8erJY8Xvxe%2FZ9I04lGNdZ%2BfX%2BZZzuyer0EwynE0nbQsVvcyHmgH1YQaVJ9oJ%2FmJVpzgQAevhOAg41vutLXKothFXKhlCi08w3h%2BX2O9A5Sm8lk%2F%2F3SIYHRZaMnVI3KH%2B%2FpEYcCso7gXmdG7KvGuzVx%2FlawBhtQ3G2%2BTk1PTtzNOM%2FBkoaabShGQwqfuBv0cNonBq6fGH8sRXr7FzOI43IFeHHN75oE4R5s8%2BAB3y%2BAcks9b2ltDk8XZNikilSkQxfX627TQlYqYwq8Gb0gY6sQFwpb9EnekOHVLvGkM%2FSdIJKTTLxDx%2BU0sVQgOnFkIIRjIjqzvUiILlA6C7FBWgF6XDnUsAqecewx2jHdGckFKoDtkHFnvgxvSg6UiaBG9o2Yx6C06CO4RluvLCXS8JKCfPbK13J%2FUlED7ofq%2Fi0wgJTXaWI5aLU5gjahVC5hOG2h6ztfGGUPg0IkQjeyEEhyzYB3SOeh%2B9uB4SXbBMeiIimj4O75pPQvJImwu1EbELkSI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=516c4174e7a49ba9ef195c90d63b036909a5261bfa19d860151955167e7b1eed",
+      "file_size": 3266,
+      "type": "text/x-c++src",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 4,
+  "voters": [
+    "m2r1",
+    "ramirez911",
+    "johndoe0417",
+    "1wawawewa1"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3684603",
+  "votes": 4,
+  "latest_disclosable_activity_at": "2026-04-29T06:10:18.481Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:33.679940",
+    "source": "https://hackerone.com/reports/3684603.json",
+    "report_id": 3684603
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjg0NjAz",
+    "databaseId": "3684603",
+    "title": "Stack exhaustion in MIME multipart reading with deeply nested subparts",
+    "url": "https://hackerone.com/reports/3684603",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2026-04-29T06:10:18.762Z",
+    "created_at": "2026-04-20T06:36:49.403Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEzNA==",
+      "name": "Uncontrolled Recursion",
+      "external_id": "cwe-674"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "wi110w"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2ODQ2MDM=",
+    "_id": "3684603",
+    "disclosed": true,
+    "votes": 4,
+    "latest_disclosable_activity_at": "2026-04-29T06:10:18.481Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjg0NjAz",
+      "databaseId": "3684603",
+      "title": "Stack exhaustion in MIME multipart reading with deeply nested subparts",
+      "url": "https://hackerone.com/reports/3684603",
+      "disclosed_at": "2026-04-29T06:10:18.762Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "id": 190133,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTAxMzM=",
+  "url": "https://hackerone.com/reports/190133",
+  "title": "Segfault when passing invalid values to `values_at`",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2016-12-10T15:08:58.789Z",
+  "submitted_at": "2016-12-10T15:08:58.789Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "dkasak",
+    "url": "/dkasak",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/122/858/df3e45a00fd0f5e53ef7dc7f9b12168cbde93200_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2016-12-17T23:45:41.864Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-12-17T23:45:41.804Z",
+  "team_member_agreed_on_going_public_at": "2016-12-16T20:53:25.200Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Introduction\n============\n\nPassing primitive non-`Fixnum` values to the `values_at` method of `Struct` and `Range` leads to a segfault in both mruby and mruby-engine/parent Ruby process.\n\nProof of concept\n================\n\nlist-crash.rb\n-------------\n\n    [].values_at true\n\nstruct-crash.rb\n---------------\n\n    Struct.new.new.values_at true\n\n1. Save either of the above as `crash.rb`.\n2. Run either:\n   a) `mruby crash.rb`\n   b) `sandbox crash.rb`\n3. Both cause a segfault due to an invalid pointer dereference.\n\nDiscussion\n==========\n\nThe crash is introduced in commit `79a621dd739faf4cc0958e11d6a887331cf79e48`.\n\nThe underlying cause is that the new `mrb_range_ptr` attempts to dereference a pointer derived from a `mrb_value` to check whether the `edges` member is `NULL` without ensuring that the `mrb_value` in question is a non-primitive (and therefore has a valid pointer value). In the case of the `values_at` methods, its arguments are passed to `mrb_get_values_at` which in turn passes it to `range_beg_len`. There it is passed to `mrb_range_ptr` before checking its type.\n\nSolution\n========\n\nTo fix the crash, the type of the value passed to `range_beg_len` should be checked before calling `mrb_range_ptr`. We've also looked through the codebase for other problematic instances, but found none.\n\n    diff --git a/src/range.c b/src/range.c\n    index 4179574..73fe758 100644\n    --- a/src/range.c\n    +++ b/src/range.c\n    @@ -252,9 +252,10 @@ static mrb_bool\n    range_beg_len(mrb_state *mrb, mrb_value range, mrb_int *begp, mrb_int *lenp, mrb_int len, mrb_bool trunc)\n    {\n    mrb_int beg, end;\n    -  struct RRange *r = mrb_range_ptr(mrb, range);\n    +  struct RRange *r;\n    \n    if (mrb_type(range) != MRB_TT_RANGE) return FALSE;\n    +  r = mrb_range_ptr(mrb, range);\n    \n    beg = mrb_int(mrb, r->edges->beg);\n    end = mrb_int(mrb, r->edges->end);\n\n\n\n--\nDenis Kasak\nDamir Jelić",
+  "bounty_amount": "1000.0",
+  "formatted_bounty": "$1,000",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 142415,
+      "file_name": "list-crash.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/142/415/3197772a6ac90cb0bb55eb16002ed3bd702a2fd2/list-crash.rb?response-content-disposition=attachment%3B%20filename%3D%22list-crash.rb%22%3B%20filename%2A%3DUTF-8%27%27list-crash.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064628Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e2517a50adfefd66c9c4417d493e0e8682e9597dbc19c157853793b924a94347",
+      "file_size": 18,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 142417,
+      "file_name": "0001-Fix-segfault-when-passing-invalid-values-to-values_a.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/142/417/84ebe597e42bac842e0c999e9576c1644a07e243/0001-Fix-segfault-when-passing-invalid-values-to-values_a.patch?response-content-disposition=attachment%3B%20filename%3D%220001-Fix-segfault-when-passing-invalid-values-to-values_a.patch%22%3B%20filename%2A%3DUTF-8%27%270001-Fix-segfault-when-passing-invalid-values-to-values_a.patch&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064628Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=24dab86204450af6a0d5052d645de65c20082fef1f2f1859b4c2ba22e16d4900",
+      "file_size": 821,
+      "type": "text/x-diff",
+      "moderated": null
+    },
+    {
+      "id": 142418,
+      "file_name": "struct-crash.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/142/418/423282eedc4d37423483c6e87c35250e8979ffb0/struct-crash.rb?response-content-disposition=attachment%3B%20filename%3D%22struct-crash.rb%22%3B%20filename%2A%3DUTF-8%27%27struct-crash.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064628Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2ce64cc3f28555e74c829874285de5ffdc6fe4e627ea5aa01d226fbdf1e8a171",
+      "file_size": 30,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-01-15T20:53:25.231Z",
+  "allow_singular_disclosure_after": -298979583.1899432,
+  "singular_disclosure_allowed": true,
+  "vote_count": 5,
+  "voters": [
+    "dkasak",
+    "suv",
+    "eveeez",
+    "dr_dragon",
+    "spetr0x"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "190133",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2016-12-17T23:45:41.885Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:46:28.531913",
+    "source": "https://hackerone.com/reports/190133.json",
+    "report_id": 190133
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTAxMzM=",
+    "databaseId": "190133",
+    "title": "Segfault when passing invalid values to `values_at`",
+    "url": "https://hackerone.com/reports/190133",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-12-17T23:45:41.864Z",
+    "created_at": "2016-12-10T15:08:58.789Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "dkasak"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zODg0Mw==",
+            "amount": "1000.00",
+            "awarded_amount": "1000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-12-16T20:53:20.879Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE5MDEzMw==",
+    "_id": "190133",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2016-12-17T23:45:41.885Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xOTAxMzM=",
+      "databaseId": "190133",
+      "title": "Segfault when passing invalid values to `values_at`",
+      "url": "https://hackerone.com/reports/190133",
+      "disclosed_at": "2016-12-17T23:45:41.864Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

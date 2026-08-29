@@ -1,0 +1,232 @@
+{
+  "id": 358339,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTgzMzk=",
+  "url": "https://hackerone.com/reports/358339",
+  "title": "File access control rules not enforced on image files",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2018-05-28T15:24:21.302Z",
+  "submitted_at": "2018-05-28T15:24:21.302Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "reinism",
+    "url": "/reinism",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2018-3762"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-06-15T21:24:24.625Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-06-15T21:24:24.557Z",
+  "team_member_agreed_on_going_public_at": "2018-06-14T06:49:33.629Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "1. Installed Nextcloud from Snap package (version 13.0.2snap1, revision 6916) on fresh Ubuntu 18.04 LTS install.\n2. Installed and enabled Files access control (v1.3.0) and Files automated tagging (v1.3.0) apps.\n3. As an administrator created an invisible collaborative tag `Secret`.\n4. Added Files automated tagging rule to add the `Secret` tag for all files with user membership of `admin` group.\n5. Added Files access control rule restricting the access for all files with the `Secret` tag and user who is not a member of `admin` group.\n6. Created unprivileged user `user`.\n7. Accessed the `admin` account from WebDAV interface (in order to avoid generating automatic file previews) and created the following files/folders on the server:\n\n    ```\n    folder:    Secret_Folder\n    folder:    Secret_Folder/Secret_Subfolder\n    file:      Secret_Folder/Secret_Subfolder/Secret_Picture.jpeg\n    file:      Secret_Folder/Secret_Subfolder/Secret_Text.txt\n    ```\n8. Shared the `Secret_Folder` from `admin` user to the unprivileged user `user` with no edit rights.\n9. From client computer authorized as the unprivileged user `user` and used WebDAV search to recursively list all files with their MIME types with the following `curl` command: {F302611}. This command downloaded the list of all shared files as an xml file: {F302614}.\n10. Identified an image file `Secret_Folder/Secret_Subfolder/Secret_Picture.jpeg` from the file list and accessed its contents through files preview API with the following `curl` command:\n\n    ```\n    curl -u user 'https://test.frp.lv/index.php/apps/files/api/v1/thumbnail/1212/750/Secret_Folder/Secret_Subfolder/Secret_Picture.jpeg' -H 'Content-Type: application/x-www-form-urlencoded' > Secret_Picture.jpeg\n    ```\n\n## Impact\n\n1. The unauthorized attacker can list all files recursively for an unlimited depth, even if explicitly denied by `Files access control` rules.\n2. The unauthorized attacker can view the contents of all denied image files up to their maximum resolution. It is up to the attacker to choose the required image resolution (1024 x 768 in the example) and construct corresponding `GET` query through image preview API. Note that it is not even required for the file owner to use web interface and preview the protected image files before the attack. The corresponding image preview files are generated on the server upon the request of the attacker.\n3. If the file owner has logged in Nextcloud web interface and browsed the protected files, thus automatically rendering thumbnail previews, it also becomes possible for the attacker to access previews of protected text files with the following `curl` command referencing the text file from the example, choosing 4096x4096 resolution:\n\n    ```\n    curl -u user 'https://test.frp.lv/index.php/apps/files/api/v1/thumbnail/4096/4096/Secret_Folder/Secret_Subfolder/Secret_Text.txt' -H 'Content-Type: application/x-www-form-urlencoded' > Secret_Text.png\n    ```\nThe obtained preview image can contain critical information that should have been protected - see example of downloaded preview below:\n{F302628}",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 302611,
+      "file_name": "WebDAV_SEARCH",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/302/611/5905122c1859ab1dd385a868ef1f01de4f5bee33/WebDAV_SEARCH?response-content-disposition=attachment%3B%20filename%3D%22WebDAV_SEARCH%22%3B%20filename%2A%3DUTF-8%27%27WebDAV_SEARCH&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQOGJFWRT%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060438Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDuRizZArxkECBuBOjsP3a1K9rwXiVjunRVoV%2FicNR%2FDQIhAMMb%2FB%2FCjHDPpEB5Kxw56J0ExgAaiAeeemquaGA4WsL1KrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxppT0J%2Bw7l8%2BZzZAEqjgX3E4OhXkOWiPCo%2BOh9V3i7vaeUyQlLPE9kS1oO3yf7SImJO%2FtudrcKdP3SNebxknMIuATx2QVs%2Bco9utmQ29UGiTCVRGbmNR%2BzkN%2FW%2FGXITiidATCE7qefffYPT0mBT4NhWi5OC1DKP3YGOs3gkP%2FYF90VZim%2FoAjOmuW4avLXMR91l3Rnp%2FZor56kzh4qVj3%2FB9Ob%2FDaOZPoc8L7tbZY5W%2BKm06UdlH38QY4D4g4RUrAM0wKuiYdOeAeinmz%2Bpe88wQ7HuXarR7a6IO2rErLvi2HbRinkhslyfMEHHj3%2BbI4J0l0lyNCd4WYMqlY5ljzMCMuCy9tm6Gulo4KJ8l0vuC04beQqEAAcw8BXN%2BH6cyg65JPR8d9HhWm64QHPFAmjWzafNSosWkVQdgkPP4wQ2WSFNdJEugcC1%2FeLjJEBwUTyTXIV%2FWL1PE3oGZMM17KYxxnfnxL32joxVnmhBXQ0M%2F5eFUV4UfJgmhy%2F5HgTFLx1PMiGx%2FkYS3%2F5%2Bxsyt2oUm%2Fsn1M6rLHvIVENhipghOEfyEcQoAEAaFDWXapkDADp6nz491UV8FtogOBYQKmknAnMKfBUeH3TjeAFevXdl%2B7g7g0AVq%2Bmuq3JxWPa%2BYuzCuyJVpoFtwg64PE06VSQ7QXuzTVo0wrirYuIyOVunVgRkWUA9kY4dAOE%2Bi3TJsrKdBm7qbd%2BWXq1BWKZQw%2FX2jlCuWTxhsPTBPtcBZgACK1rvldDQWiVgoP1wdK18yQd0ef5Dw9exagjg35RahRWk%2FJiTvERzMlJFktd6fmqBxr%2BmcZa8H6R30J3Ju4jMx5lk%2Fkd%2Fez%2FabTWgWOg4ZgweRwETxnGxrHOhmiiNIWDQwNBmghxj%2Fg6%2ByUaI6Esws7W30gY6sAGYd3QSbVw0I8lRlJoTyEU7aRMbz4UTfB%2BqNOzjBcVyDr7rrj0CslwTLuQ9wDpshRq3%2BPqf3VDzZ%2FbKdOfZ5S%2BB0m%2FzEfX5nEuM79ZPMHem547cKKQB%2BvrbG0mNYDVkyF6CtKfVlz5B3%2Bm2RhR7CsRmuU1QmSN5K1FyPsLzYAGippTCS%2BgxQvScmeyQGFrIBScm3B5kXkFxo4m5ptz6pPf0NLR8VObjKz4RAfkfG767WQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5cbc661d9d66f0b9dde9a461f2784f99880409e8b61c7b84a24b41ddd7c5c8de",
+      "file_size": 626,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 302614,
+      "file_name": "data.xml",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/302/614/9131086bae67c20134c10f0935b18889daee504a/data.xml?response-content-disposition=attachment%3B%20filename%3D%22data.xml%22%3B%20filename%2A%3DUTF-8%27%27data.xml&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQOGJFWRT%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060438Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDuRizZArxkECBuBOjsP3a1K9rwXiVjunRVoV%2FicNR%2FDQIhAMMb%2FB%2FCjHDPpEB5Kxw56J0ExgAaiAeeemquaGA4WsL1KrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxppT0J%2Bw7l8%2BZzZAEqjgX3E4OhXkOWiPCo%2BOh9V3i7vaeUyQlLPE9kS1oO3yf7SImJO%2FtudrcKdP3SNebxknMIuATx2QVs%2Bco9utmQ29UGiTCVRGbmNR%2BzkN%2FW%2FGXITiidATCE7qefffYPT0mBT4NhWi5OC1DKP3YGOs3gkP%2FYF90VZim%2FoAjOmuW4avLXMR91l3Rnp%2FZor56kzh4qVj3%2FB9Ob%2FDaOZPoc8L7tbZY5W%2BKm06UdlH38QY4D4g4RUrAM0wKuiYdOeAeinmz%2Bpe88wQ7HuXarR7a6IO2rErLvi2HbRinkhslyfMEHHj3%2BbI4J0l0lyNCd4WYMqlY5ljzMCMuCy9tm6Gulo4KJ8l0vuC04beQqEAAcw8BXN%2BH6cyg65JPR8d9HhWm64QHPFAmjWzafNSosWkVQdgkPP4wQ2WSFNdJEugcC1%2FeLjJEBwUTyTXIV%2FWL1PE3oGZMM17KYxxnfnxL32joxVnmhBXQ0M%2F5eFUV4UfJgmhy%2F5HgTFLx1PMiGx%2FkYS3%2F5%2Bxsyt2oUm%2Fsn1M6rLHvIVENhipghOEfyEcQoAEAaFDWXapkDADp6nz491UV8FtogOBYQKmknAnMKfBUeH3TjeAFevXdl%2B7g7g0AVq%2Bmuq3JxWPa%2BYuzCuyJVpoFtwg64PE06VSQ7QXuzTVo0wrirYuIyOVunVgRkWUA9kY4dAOE%2Bi3TJsrKdBm7qbd%2BWXq1BWKZQw%2FX2jlCuWTxhsPTBPtcBZgACK1rvldDQWiVgoP1wdK18yQd0ef5Dw9exagjg35RahRWk%2FJiTvERzMlJFktd6fmqBxr%2BmcZa8H6R30J3Ju4jMx5lk%2Fkd%2Fez%2FabTWgWOg4ZgweRwETxnGxrHOhmiiNIWDQwNBmghxj%2Fg6%2ByUaI6Esws7W30gY6sAGYd3QSbVw0I8lRlJoTyEU7aRMbz4UTfB%2BqNOzjBcVyDr7rrj0CslwTLuQ9wDpshRq3%2BPqf3VDzZ%2FbKdOfZ5S%2BB0m%2FzEfX5nEuM79ZPMHem547cKKQB%2BvrbG0mNYDVkyF6CtKfVlz5B3%2Bm2RhR7CsRmuU1QmSN5K1FyPsLzYAGippTCS%2BgxQvScmeyQGFrIBScm3B5kXkFxo4m5ptz6pPf0NLR8VObjKz4RAfkfG767WQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6c092a6823a783ff78c7555cbc8633bc4b596ec4d4292868c50fe11cf30eb45e",
+      "file_size": 1672,
+      "type": "application/xml",
+      "moderated": null
+    },
+    {
+      "id": 302628,
+      "file_name": "Secret_Text.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/302/628/b647e2423b7ca76b107671165b5fbd60745982dc/Secret_Text.png?response-content-disposition=attachment%3B%20filename%3D%22Secret_Text.png%22%3B%20filename%2A%3DUTF-8%27%27Secret_Text.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQOGJFWRT%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060438Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDuRizZArxkECBuBOjsP3a1K9rwXiVjunRVoV%2FicNR%2FDQIhAMMb%2FB%2FCjHDPpEB5Kxw56J0ExgAaiAeeemquaGA4WsL1KrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxppT0J%2Bw7l8%2BZzZAEqjgX3E4OhXkOWiPCo%2BOh9V3i7vaeUyQlLPE9kS1oO3yf7SImJO%2FtudrcKdP3SNebxknMIuATx2QVs%2Bco9utmQ29UGiTCVRGbmNR%2BzkN%2FW%2FGXITiidATCE7qefffYPT0mBT4NhWi5OC1DKP3YGOs3gkP%2FYF90VZim%2FoAjOmuW4avLXMR91l3Rnp%2FZor56kzh4qVj3%2FB9Ob%2FDaOZPoc8L7tbZY5W%2BKm06UdlH38QY4D4g4RUrAM0wKuiYdOeAeinmz%2Bpe88wQ7HuXarR7a6IO2rErLvi2HbRinkhslyfMEHHj3%2BbI4J0l0lyNCd4WYMqlY5ljzMCMuCy9tm6Gulo4KJ8l0vuC04beQqEAAcw8BXN%2BH6cyg65JPR8d9HhWm64QHPFAmjWzafNSosWkVQdgkPP4wQ2WSFNdJEugcC1%2FeLjJEBwUTyTXIV%2FWL1PE3oGZMM17KYxxnfnxL32joxVnmhBXQ0M%2F5eFUV4UfJgmhy%2F5HgTFLx1PMiGx%2FkYS3%2F5%2Bxsyt2oUm%2Fsn1M6rLHvIVENhipghOEfyEcQoAEAaFDWXapkDADp6nz491UV8FtogOBYQKmknAnMKfBUeH3TjeAFevXdl%2B7g7g0AVq%2Bmuq3JxWPa%2BYuzCuyJVpoFtwg64PE06VSQ7QXuzTVo0wrirYuIyOVunVgRkWUA9kY4dAOE%2Bi3TJsrKdBm7qbd%2BWXq1BWKZQw%2FX2jlCuWTxhsPTBPtcBZgACK1rvldDQWiVgoP1wdK18yQd0ef5Dw9exagjg35RahRWk%2FJiTvERzMlJFktd6fmqBxr%2BmcZa8H6R30J3Ju4jMx5lk%2Fkd%2Fez%2FabTWgWOg4ZgweRwETxnGxrHOhmiiNIWDQwNBmghxj%2Fg6%2ByUaI6Esws7W30gY6sAGYd3QSbVw0I8lRlJoTyEU7aRMbz4UTfB%2BqNOzjBcVyDr7rrj0CslwTLuQ9wDpshRq3%2BPqf3VDzZ%2FbKdOfZ5S%2BB0m%2FzEfX5nEuM79ZPMHem547cKKQB%2BvrbG0mNYDVkyF6CtKfVlz5B3%2Bm2RhR7CsRmuU1QmSN5K1FyPsLzYAGippTCS%2BgxQvScmeyQGFrIBScm3B5kXkFxo4m5ptz6pPf0NLR8VObjKz4RAfkfG767WQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=af139d3286c8c91325bdad00ea9723cc04780d259be12b6b492903e24c8b6278",
+      "file_size": 28759,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-07-14T06:49:33.719Z",
+  "allow_singular_disclosure_after": -251939704.31484348,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "ali",
+    "savitar0x01",
+    "eveeez",
+    "japz",
+    "cryptographer",
+    "sumit7",
+    "destinedtohack"
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 3.5,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 17,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/files_accesscontrol",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "358339",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2018-06-15T21:24:24.654Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:04:38.156640",
+    "source": "https://hackerone.com/reports/358339.json",
+    "report_id": 358339
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTgzMzk=",
+    "databaseId": "358339",
+    "title": "File access control rules not enforced on image files",
+    "url": "https://hackerone.com/reports/358339",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-06-15T21:24:24.625Z",
+    "created_at": "2018-05-28T15:24:21.302Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.5
+    },
+    "reporter": {
+      "username": "reinism"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS84NjMyMw==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-06-04T18:07:58.672Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1ODMzOQ==",
+    "_id": "358339",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2018-06-15T21:24:24.654Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTgzMzk=",
+      "databaseId": "358339",
+      "title": "File access control rules not enforced on image files",
+      "url": "https://hackerone.com/reports/358339",
+      "disclosed_at": "2018-06-15T21:24:24.625Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

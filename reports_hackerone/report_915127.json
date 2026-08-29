@@ -1,0 +1,210 @@
+{
+  "id": 915127,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MTUxMjc=",
+  "url": "https://hackerone.com/reports/915127",
+  "title": "IDOR when moving contents at CrowdSignal",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-07-04T03:26:20.493Z",
+  "submitted_at": "2020-07-04T03:26:20.493Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bugra",
+    "url": "/bugra",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/343/105/470c1fd0c4915f1fa9e9376053d0c1ba8af260b7_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 111,
+    "url": "https://hackerone.com/automattic",
+    "handle": "automattic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Automattic",
+      "twitter_handle": "",
+      "website": "https://automattic.com",
+      "about": "WordPress.com, WooCommerce, WordPress VIP, Jetpack, Beeper, Texts, Akismet, Gravatar, Crowdsignal, Tumblr and more!"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-11-18T14:22:49.381Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-11-18T02:56:33.730Z",
+  "team_member_agreed_on_going_public_at": "2020-11-18T14:22:49.252Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nHi team,\nYou can move your contents via `Move to` button at https://app.crowdsignal.com/dashboard\nAnd when you click to `Move to > My Content` you will send a POST request to `/dashboard` like that :\n\n{F893407}\n\n`actionable[]` parameter's value is the content's ID. And if you change this ID to victim's content ID, you will see victim's content at `My Content` page. But you can't see responses or edit it. You can only change status etc if you have a free account.\n\nSo I found another way to takeover victim's content completely via team account.\nIn team accounts, you have another move option that named `Move to another user`. Basically, you can move your contents to users (in your team) .\nAnd if you follow same steps again but with `Move to another user` option, you can see victim's content in your team user's account.\n\n**Please note, content IDs are sequential, so attacker can takeover any content.**\n\n## Steps To Reproduce:\n- **With Free account (limited access to victim's content)**\n  1. Go to https://app.crowdsignal.com/dashboard\n  1. Click to checkbox on your any content and turn on Intercept at Burp Suite\n  1. Click to `Move to > My Content`\n  1. And change `actionable[]` parameter's value with victim's content ID.\n  1. Go to `My Content`.\n- **With Team account (full access to victim's content)**\n  1. Add your second email on https://app.crowdsignal.com/users/list-users.php and confirm it\n  2. Go to https://app.crowdsignal.com/dashboard\n  3. Click to checkbox on your any content and turn on Intercept at Burp Suite\n  4. Click to `Move to > Move to another user`\n  5. Select your second account, click `Move`\n  6. Change `actionable[]` parameter's value with victim's content ID.\n  7. Go to your second account and check dashboard\n\n## PoC video for full access to victim's content:\n{F893412}\n\n## Impact\n\nIDOR leads to takeover victim's content\n\nThanks,\nBugra",
+  "weakness": {
+    "id": 55,
+    "name": "Insecure Direct Object Reference (IDOR)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 893407,
+      "file_name": "request.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rpVEDhrUKpchG3RULQzrQV6c?response-content-disposition=attachment%3B%20filename%3D%22request.PNG%22%3B%20filename%2A%3DUTF-8%27%27request.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045350Z&X-Amz-Expires=1885&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=39d7cc6a82e2861b855d1fd92b947fc0889112a2440bed3b1c1812b372e13561",
+      "file_size": 35056,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 893412,
+      "file_name": "CrowdSignal-IDOR.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2q2duuWmURccWFyefcvf6uNw?response-content-disposition=attachment%3B%20filename%3D%22CrowdSignal-IDOR.mp4%22%3B%20filename%2A%3DUTF-8%27%27CrowdSignal-IDOR.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045350Z&X-Amz-Expires=1885&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c8f2589c91dfd57d8e2000a5645be5f6799986bf98b5cf849d7161b828859b1a",
+      "file_size": 1586452,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-12-18T02:56:33.829Z",
+  "allow_singular_disclosure_after": -175226236.68080765,
+  "singular_disclosure_allowed": true,
+  "vote_count": 94,
+  "voters": [
+    "defenderwww",
+    "orange303",
+    "0x800700e1",
+    "taha",
+    "saltify",
+    "xploiterr",
+    "bombon",
+    "ltidi",
+    "rzx007x",
+    "rook1337",
+    "and 84 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "915127",
+  "votes": 94,
+  "latest_disclosable_activity_at": "2020-11-18T14:22:49.418Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:53:50.697036",
+    "source": "https://hackerone.com/reports/915127.json",
+    "report_id": 915127
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MTUxMjc=",
+    "databaseId": "915127",
+    "title": "IDOR when moving contents at CrowdSignal",
+    "url": "https://hackerone.com/reports/915127",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-11-18T14:22:49.381Z",
+    "created_at": "2020-07-04T03:26:20.493Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU1",
+      "name": "Insecure Direct Object Reference (IDOR)",
+      "external_id": "cwe-639"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "bugra"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjkyMDQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-14T20:30:16.118Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkxNTEyNw==",
+    "_id": "915127",
+    "disclosed": true,
+    "votes": 94,
+    "latest_disclosable_activity_at": "2020-11-18T14:22:49.418Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MTUxMjc=",
+      "databaseId": "915127",
+      "title": "IDOR when moving contents at CrowdSignal",
+      "url": "https://hackerone.com/reports/915127",
+      "disclosed_at": "2020-11-18T14:22:49.381Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    }
+  }
+}

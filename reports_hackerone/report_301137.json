@@ -1,0 +1,225 @@
+{
+  "id": 301137,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDExMzc=",
+  "url": "https://hackerone.com/reports/301137",
+  "title": "GitHub import allows user to create child group under existing namespace",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-12-29T01:13:46.612Z",
+  "submitted_at": "2017-12-29T01:13:46.612Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2017-0919"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-05-24T18:27:39.151Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-05-24T18:22:17.207Z",
+  "team_member_agreed_on_going_public_at": "2018-05-24T18:27:39.053Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "When importing a GitHub repository on GitLab, a request is made to `/import/github`. The user is allowed to pass along a target namespace where they want to add the repository. In this process, the code will create the namespace if it doesn't exist already. However, this can be used to create a sub-group of an existing group and give you \"owner\" level access to the sub-group. This has a couple benefits, including being able to use the plan of the owner group, see who is part of the group (helpful in case the group is private), and, perhaps most importantly, being able to create new projects under a group you're unauthorized to.\n\nTo reproduce, make sure there's a GitLab instance that has a group a user is unauthorized to create projects / groups for. Then, sign in to the normal user account and authorize GitLab to view your GitHub projects. Intercept your network traffic, then click the \"Import\" button. Observe a request similar to the one below being submitted:\n\n**Request**\n```\nPOST /import/github HTTP/1.1\nHost: gitlab-instance\n...\n\nrepo_id=115670444&target_namespace=jobertabma&new_name=test\n```\n\nIn this request, change the `target_namespace` to `secret-group/test`. This will create a sub-group called `test` to the group `secret-group`.████ To exploit this, an attacker could set a GitLab logo as their group avatar and start spreading gitlab-ce and gitlab-ee projects under the gitlab-org namespace.\n\n**The sub-group as shown on the gitlab-org group page**\n{F250077}\n\n**Automatic billing due to the relationship with gitlab-org**\n{F250076}\n\nThis has been tested against the latest version of GitLab.\n\n## Impact\n\nN/A",
+  "bounty_amount": "750.0",
+  "formatted_bounty": "$750",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 250076,
+      "file_name": "Screen_Shot_2017-12-28_at_5.11.46_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/250/076/002bb14ffa5e7cdcaf8f6dbad9f463c50ba8ad35/Screen_Shot_2017-12-28_at_5.11.46_PM.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2017-12-28_at_5.11.46_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2017-12-28_at_5.11.46_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MGCBP7N%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060555Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDg4MuGAI603TNIp3LaOmX0tOUsSfGXGAuawtNU8hBzJAiEAu7bko8qMWI20udxCApr12GcYLkLqP%2FXskF7ofQJKgbwqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDK4gx%2F5FVHzJ731ZXyqPBSSDoBJo0MG6cOYHjcCNOg%2FC%2BnfhlcCY0lh%2BrFxbUo578TmeYrNFbt7gGo5cbFOETQc%2FYZCtGJSCHdfLfqBLI%2Fl7XSQneMH4dYTqo1uN9zYUNT8SSkaeBzTorLT07JMEveAu5B9yu5zGPpqRLXN2lipuPwenf0wU5K48hUG4RcKfWncWUm0ztc8GwO2mle2%2FoWATir%2ByF1qZ2R00Vs2DE5RSOy2S%2FyiOPoPXRFXJIu8HJ1DBX%2FCuEy%2B%2BlsZFWllLZgqYpFKvbIM1HRl%2BWU1R2CvUKR9W0V9HXE7m94CmBVn%2FK5fwWx96CKbSF2mEx%2FP8rvvVSUsYbCMDTdQtARkYtlAxd1zDQRuQnNePPiX5g8DGTooDXWIt6v6qTqmPwNFrJ1hkYYmmixGhmw9OlcKzessaMeWheiJQ08A1Tt0uiAiijuVm9njUWDXDAlKpjD05sTxpg5L4sQVI5Vp0Gcy2An5hZmchDuxegmlZ0ZFyMv06L4TKSLdp2f%2FSecsp1D2NG%2Bt40YkMVpzTVcJ%2BczCfQOUUknJGOJ4W%2FWjo6orOHwatAsw7VPKuuosWvBfRewoQfIii4R38xB47UxumN2IZacQQjQofmmAo8OmgnJ6hwyNVjnpUUhVilhqy0k4Oa0U1DM4G8Ic0in29YUGYGJpf0G7AN0IqJo5A%2BlK4rbf2aKavFCWuN3jQ7vO1qYg2jacUeSOhC76jua72pZ2ZiYzV4w81uhEycjRusRYtWbq0PTZyuRLxLPhOaD8C0J5yXaskcp%2B3pnFCTy42by3SSQRNT5gi4LbExZlrGrpzTkdX4xTOTpPRt0XRUWBMJrNHA%2BfCTtKKZJRX6XnjcqM9qCZmAi6zSgBW2BMNyDmyGHF%2FpwAwj8K30gY6sQE1mr6XcRbnGpg0jQayWbCaCpEJpPEV0R9W83YEe1JGBDTsQSet%2B0xJFpkyPeennPb%2BrKmlS43yHzclwG6SQwm%2FUrLo0R%2BkEPPiwkEKZZFiQpVywSeQP9oerZlFzYBM3edIP6Bl2w6UOxeSgkLrMRGKm07z6zH2C5B2yk225jNlJlPXatk1%2Fz%2BaiXyNxge4LfjLJ%2BXvmgL5RV%2FSU2wASU3JrnLlNMWz31KJx3NfWQwryrk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d564cf04dd5dbdf53b6889c6891dab2ce8ce3d2a307575b2f8bac2c8a21fbe36",
+      "file_size": 383436,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 250077,
+      "file_name": "Screen_Shot_2017-12-28_at_5.12.07_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/250/077/ccbe5e59d78c3fe5e8840447e2ae02e1d3cb821d/Screen_Shot_2017-12-28_at_5.12.07_PM.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2017-12-28_at_5.12.07_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2017-12-28_at_5.12.07_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MGCBP7N%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060555Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDg4MuGAI603TNIp3LaOmX0tOUsSfGXGAuawtNU8hBzJAiEAu7bko8qMWI20udxCApr12GcYLkLqP%2FXskF7ofQJKgbwqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDK4gx%2F5FVHzJ731ZXyqPBSSDoBJo0MG6cOYHjcCNOg%2FC%2BnfhlcCY0lh%2BrFxbUo578TmeYrNFbt7gGo5cbFOETQc%2FYZCtGJSCHdfLfqBLI%2Fl7XSQneMH4dYTqo1uN9zYUNT8SSkaeBzTorLT07JMEveAu5B9yu5zGPpqRLXN2lipuPwenf0wU5K48hUG4RcKfWncWUm0ztc8GwO2mle2%2FoWATir%2ByF1qZ2R00Vs2DE5RSOy2S%2FyiOPoPXRFXJIu8HJ1DBX%2FCuEy%2B%2BlsZFWllLZgqYpFKvbIM1HRl%2BWU1R2CvUKR9W0V9HXE7m94CmBVn%2FK5fwWx96CKbSF2mEx%2FP8rvvVSUsYbCMDTdQtARkYtlAxd1zDQRuQnNePPiX5g8DGTooDXWIt6v6qTqmPwNFrJ1hkYYmmixGhmw9OlcKzessaMeWheiJQ08A1Tt0uiAiijuVm9njUWDXDAlKpjD05sTxpg5L4sQVI5Vp0Gcy2An5hZmchDuxegmlZ0ZFyMv06L4TKSLdp2f%2FSecsp1D2NG%2Bt40YkMVpzTVcJ%2BczCfQOUUknJGOJ4W%2FWjo6orOHwatAsw7VPKuuosWvBfRewoQfIii4R38xB47UxumN2IZacQQjQofmmAo8OmgnJ6hwyNVjnpUUhVilhqy0k4Oa0U1DM4G8Ic0in29YUGYGJpf0G7AN0IqJo5A%2BlK4rbf2aKavFCWuN3jQ7vO1qYg2jacUeSOhC76jua72pZ2ZiYzV4w81uhEycjRusRYtWbq0PTZyuRLxLPhOaD8C0J5yXaskcp%2B3pnFCTy42by3SSQRNT5gi4LbExZlrGrpzTkdX4xTOTpPRt0XRUWBMJrNHA%2BfCTtKKZJRX6XnjcqM9qCZmAi6zSgBW2BMNyDmyGHF%2FpwAwj8K30gY6sQE1mr6XcRbnGpg0jQayWbCaCpEJpPEV0R9W83YEe1JGBDTsQSet%2B0xJFpkyPeennPb%2BrKmlS43yHzclwG6SQwm%2FUrLo0R%2BkEPPiwkEKZZFiQpVywSeQP9oerZlFzYBM3edIP6Bl2w6UOxeSgkLrMRGKm07z6zH2C5B2yk225jNlJlPXatk1%2Fz%2BaiXyNxge4LfjLJ%2BXvmgL5RV%2FSU2wASU3JrnLlNMWz31KJx3NfWQwryrk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c7e71921656f652ce1d29d7996e37dd4e5b9cd65ff65f12463c1fdee7dffb026",
+      "file_size": 457914,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-06-23T18:22:17.331Z",
+  "allow_singular_disclosure_after": -253712617.90751854,
+  "singular_disclosure_allowed": true,
+  "vote_count": 14,
+  "voters": [
+    "europa",
+    "kapytein",
+    "savitar0x01",
+    "apapedulimu",
+    "bugdiscloseguys",
+    "kunal94",
+    "eveeez",
+    "egrep",
+    "cryptographer",
+    "zzealsham",
+    "and 4 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.1,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "301137",
+  "votes": 14,
+  "latest_disclosable_activity_at": "2018-05-24T18:27:39.178Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:05:55.358923",
+    "source": "https://hackerone.com/reports/301137.json",
+    "report_id": 301137
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDExMzc=",
+    "databaseId": "301137",
+    "title": "GitHub import allows user to create child group under existing namespace",
+    "url": "https://hackerone.com/reports/301137",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-05-24T18:27:39.151Z",
+    "created_at": "2017-12-29T01:13:46.612Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.1
+    },
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82ODM5NA==",
+            "amount": "750.00",
+            "awarded_amount": "750.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-01-08T04:21:17.445Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMwMTEzNw==",
+    "_id": "301137",
+    "disclosed": true,
+    "votes": 14,
+    "latest_disclosable_activity_at": "2018-05-24T18:27:39.178Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDExMzc=",
+      "databaseId": "301137",
+      "title": "GitHub import allows user to create child group under existing namespace",
+      "url": "https://hackerone.com/reports/301137",
+      "disclosed_at": "2018-05-24T18:27:39.151Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

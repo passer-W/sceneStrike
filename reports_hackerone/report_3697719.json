@@ -1,0 +1,197 @@
+{
+  "id": 3697719,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjk3NzE5",
+  "url": "https://hackerone.com/reports/3697719",
+  "title": "CVE-2026-7168: cross-proxy Digest auth state leak",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2026-04-27T02:54:12.273Z",
+  "submitted_at": "2026-04-27T02:54:12.571Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "xkilua",
+    "url": "/xkilua",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2026-7168"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-29T07:15:46.446Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-29T06:10:02.547Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nOn libcurl 8.19.0, Proxy Digest state learned from proxyA survives an independent transfer boundary on a reused easy handle and is emitted preemptively to proxyB when the proxy is changed. In the attached C PoC, the first CONNECT to proxyB carries `Proxy-Authorization: Digest ...` built from `proxyArealm` / `proxyAnonce` instead of starting unauthenticated and waiting for a challenge from proxyB. The leaked header is replayable to proxyA for the same CONNECT authority and is accepted with `200`, while replay to a different authority is rejected with `407`. A fresh easy handle and `curl_easy_reset()` both suppress the leak. I also confirmed that changing proxy credentials before the second transfer still causes libcurl to build the first proxyB CONNECT from stale proxyA Digest challenge state, and that a proxyB which only advertises Basic still receives stale Digest on the first CONNECT.\n\n## Affected version\nReproduced on Linux x86_64 with:\n`curl 8.19.0 (x86_64-pc-linux-gnu) libcurl/8.19.0 OpenSSL/3.5.5 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 libssh2/1.11.1 nghttp2/1.68.1 ngtcp2/1.21.0 nghttp3/1.15.0 librtmp/2.3 mit-krb5/1.22.1 OpenLDAP/2.6.10`\n\nThe attached C PoC also prints the runtime version string:\n`curl_version=libcurl/8.19.0 ...`\n\n## Steps To Reproduce:\n1. Extract the attached `curl_proxy_connect_bundle.zip`.\n2. Start the local proxy harness:\n   `python3 proxy_digest_connect_servers.py proxy_events.jsonl`\n3. Compile the attached C PoC against the libcurl 8.19.0 build you want to test. On my system I used:\n   `cc -I/home/nobcoder/curl/curl/include poc_proxy_connect_digest_reuse.c /usr/lib/x86_64-linux-gnu/libcurl.so.4 -o poc_proxy_connect_digest_reuse_c`\n4. Run the PoC:\n   `./poc_proxy_connect_digest_reuse_c`\n5. Observe the base case output:\n   - `base1_res=0 base1_code=200`\n   - `base2_res=56 base2_code=0`\n   - `leaked_proxy_b=Digest username=\"proxyuser\", realm=\"proxyArealm\", nonce=\"proxyAnonce\", uri=\"victim.test:18099\", ...`\n   - `raw_first_connect_proxy_b=CONNECT victim.test:18099 HTTP/1.1 ... Proxy-Authorization: Digest username=\"proxyuser\", realm=\"proxyArealm\", nonce=\"proxyAnonce\", ...`\n   - `replay_status=200`\n   - `replay_used_password=false`\n   - `mismatch_status=407`\n6. Observe the controls:\n   - fresh easy handle: `fresh_first_b=(null)`\n   - `curl_easy_reset()`: `reset_first_b=(null)`\n   - changed credentials before proxyB: `altcreds_first_b=Digest username=\"otheruser\", realm=\"proxyArealm\", nonce=\"proxyAnonce\", ...`\n   - proxyB that only advertises Basic: `basicchallenge_first_b=Digest username=\"proxyuser\", realm=\"proxyArealm\", nonce=\"proxyAnonce\", ...`\n7. Inspect the attached `proxy_events.jsonl` for the full raw request log from proxyA and proxyB, including the exact first CONNECT to proxyB.\n\nRelevant source lines against release tag `curl-8_19_0`:\n- `lib/urldata.h:963-966` stores `proxydigest` and `authproxy` on easy-handle state\n- `lib/transfer.c:500-501` and `550-551` preserve proxy auth state across new transfers\n- `lib/http_digest.c:93-97`, `120`, and `161-162` read stale `data->state.proxydigest` and build `Proxy-Authorization: Digest ...`\n- `lib/http.c:809` and `lib/http_proxy.c:225-238` place proxy auth on the CONNECT path\n- `lib/url.c:588-595` and `904-919` show curl already separates connections by proxy identity, so this is not just wrong cross-proxy connection reuse\n\n## Impact\n\n## Summary:\nThis is a cross-proxy authentication boundary break. A later attacker-controlled proxy can receive a `Proxy-Authorization: Digest` response that belongs to a different proxy’s CONNECT challenge, and in the attached C PoC that leaked header is replayable to proxyA for the same CONNECT authority and is accepted with `200` without the attacker knowing the password. A different CONNECT authority is rejected with `407`, which shows the leaked header retains real authentication value rather than being stale metadata only. Fresh easy handles and `curl_easy_reset()` do not leak the header, which ties the issue to stale easy-handle-scoped Proxy Digest state crossing proxy identity boundaries.",
+  "weakness": {
+    "id": 700,
+    "name": "Exposure of Data Element to Wrong Session"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5806238,
+      "file_name": "curl_proxy_connect_bundle.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/esscx9hgnndxr7swylcjc65z7j0z?response-content-disposition=attachment%3B%20filename%3D%22curl_proxy_connect_bundle.zip%22%3B%20filename%2A%3DUTF-8%27%27curl_proxy_connect_bundle.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUK2PQYGZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041923Z&X-Amz-Expires=830&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIFaoyytC2tLMPuHV4J8C9W7%2BPzZGBBCUsxeDlvMvWMmJAiEA5FEd4vyC0DwcvJ1BVkZtNX8r9JRLS5qRtQ8x42hfXVcqsgUIABADGgwwMTM2MTkyNzQ4NDkiDEDMF3rw5RU24LqaXyqPBTnRCjbCESFC9ldC%2F%2F8ZUrvX0U4EjUpIbdQ8czyepizLkzO1ICmjVVMXsOPCyLur22UUiYVqnxu16qhiuGOqcrPNG3RIik%2FmFAryJDXxs1ai85Y8bf3ZR7AE3yvwe1nWh7Oz1JlMhbjtfau2gKXeBlC7UGpGgZeiZPDvmJR64pPYmXqDd1rZIXESXBZCnNViU9oKLwVyYOPouTaSRrH9I2zCfRb8pFum%2B2XEg3F%2F5g%2Fo3NZuqJ4c%2FahLS4RUp6nh%2FZtKKWm7Zi3O%2F5EnKkvOJtyvJASreV6YB1Bi10tXd40koXcNQh2m0SXIA2v5J8Cg7i8lkAodTVs4YNc%2FKINg8ovaUA3q2AtyGUxaVBXpjbwN6meCjX0lmkDFVn2dAdm4%2BSTcEcc08R7PD5S3pEc2os4b00rZnLj5ePCkGpm7fIH7k9mIaoYKL3w%2Fm77jN5vfL0fpmntE2inZGxCJx6jxPKpUFn7LVwvd5nL3AXHoGapgvcnt18fJm6OAlS8aRwlUoO2bMu7EHaTy60ARh4zvJ%2Bn97Sd5JJICkY45Yv9YHBxRyatetz4J8vFqElS1u7%2BtQP%2BSfAU7Zbti5HwOpbWDHylg8WjvVCIebtxMXtpJECaYzWK23auSdVcUMlVu5k4JCvl6L5xfB84ZLB6VKW4LkQS0FTO3KjP055KoIXdvOHGGA%2BhFF3CqlXQQC6evWQs7D1h4uk2qyuwnRfnsdcP0Vote%2FknnYETzeKktdSdms2XLWek272ijtk3Q8RbwlNY531ofTLRzpuisDgLmYr1671xY4%2BXXh2Bj1z6tLZ7lwaVx22%2FZz7W5IS0eycLYy8mNntwf8hhTqnf3GvN3mU0LgwH%2FEGZ48OGIQul9dvU%2F6Tsw%2Fsyb0gY6sQH8IpcFuP1cO16MlgZbEkyeQyFsuzR4lE4zc%2B3jnS7y6ipaRiViIV%2FdSJc%2BO14yCl2zu819wJCPP%2Bu7Sr8x3OrHM8CE6q6Kn5PmLCiy7%2BsVbialfgZI69v%2BxAVSDjHuDiMwcmVjMFhatTDGQT0iLPRM%2BmKHiJEzGUmYtf0TUkLhfazFZXsT0Jewy%2FeVMbCJtJFNzWH%2FQAyzjbkExzCRHJSYthWvxnFAtxyPqbLOhTj1oEY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7644aee4c0830afde8adb200bd8373b1e41c8e7c832c190d5302668a6c1990f9",
+      "file_size": 11221,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 37,
+  "voters": [
+    "brennanstjohn",
+    "m2r1",
+    "kindone",
+    "2026",
+    "foxribeye",
+    "ogspacejam22",
+    "wdshabt",
+    "thisoneguyinaz",
+    "k4w_wak",
+    "fango",
+    "and 27 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3697719",
+  "votes": 37,
+  "latest_disclosable_activity_at": "2026-04-29T07:15:45.961Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:24.029517",
+    "source": "https://hackerone.com/reports/3697719.json",
+    "report_id": 3697719
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjk3NzE5",
+    "databaseId": "3697719",
+    "title": "CVE-2026-7168: cross-proxy Digest auth state leak",
+    "url": "https://hackerone.com/reports/3697719",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-04-29T07:15:46.446Z",
+    "created_at": "2026-04-27T02:54:12.273Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcwMA==",
+      "name": "Exposure of Data Element to Wrong Session",
+      "external_id": "cwe-488"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "xkilua"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2OTc3MTk=",
+    "_id": "3697719",
+    "disclosed": true,
+    "votes": 37,
+    "latest_disclosable_activity_at": "2026-04-29T07:15:45.961Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjk3NzE5",
+      "databaseId": "3697719",
+      "title": "CVE-2026-7168: cross-proxy Digest auth state leak",
+      "url": "https://hackerone.com/reports/3697719",
+      "disclosed_at": "2026-04-29T07:15:46.446Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

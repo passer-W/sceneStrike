@@ -1,0 +1,221 @@
+{
+  "id": 298265,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTgyNjU=",
+  "url": "https://hackerone.com/reports/298265",
+  "title": "HTTP Parameter Pollution using semicolons in iframe element at hackerone.com/careers allows loading external Greenhouse forms",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "none",
+  "readable_substate": "Resolved",
+  "created_at": "2017-12-15T14:29:49.649Z",
+  "submitted_at": "2017-12-15T14:29:49.649Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "kapytein",
+    "url": "/kapytein",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/36yjb4mltb4jebgvw3esuaw059a0/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-03-13T20:14:44.096Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-03-13T20:14:43.427Z",
+  "team_member_agreed_on_going_public_at": "2018-03-13T15:06:52.658Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:**\nI noticed that HackerOne career pages loads it's application forms from Greenhouse.io via an iframe. The **gh_jid** parameter value is taken into the iframe element for the token parameter in the iframe URL (boards.greenhouse.io). Any html characters are escaped in order to avoid XSS (and possibly also to avoid any additional parameters to be included to avoid that parameters are overridden). However, I have discovered that I could load any form on the page.\n\n**Description (Include Impact):**\nBasically, you can load any form of Greenhouse.io via a GET request. I am not entirely sure how Greenhouse works (I also can not discover how it actually works since you only have paid subscriptions at Greenhouse), but you might also be able to craft pages instead of forms only (which would be more effective for a phishing attack, than only a form).\n\nThis happens because due to the fact that you can include a semicolon in the iframe element. As stated on https://en.wikipedia.org/wiki/Query_string, a semicolon can be used besides the ampersand in URLs embedded in HTML. \n\n### Steps To Reproduce\n\n1. Go to https://www.hackerone.com/careers?gh_jid=795069;for=airbnb for example.\n2. You will notice an AIrbnb application form being loaded on the page.\n\n(I sadly could not test my own forms, hence why I have used Airbnb forms to load on the page, as stated above).\n\nA fix would be to either escape the semicolon, or to adjust the position of the for parameter in the iframe URL to avoid the URL being overridden. \n\nExample for changing the order of the URLs:\n\n* https://boards.greenhouse.io/embed/job_app?for=hackerone&token=795069;for=airbnb&b=https%3A%2F%2Fwww.hackerone.com%2Fcareers (this would load the form as the parameter is overridden).\n\nwith\n\n* https://boards.greenhouse.io/embed/job_app?token=795069;for=airbnb&b=https%3A%2F%2Fwww.hackerone.com%2Fcareers&for=hackerone (this would not load the form as the parameter is not overridden).\n\n\nPS: After my pretty much failed report (#289999) (which was valid, but the way I described the vulnerability made it invalid), I appreciate any feedback on the quality of my report! Thanks in advance.\n\n## Impact\n\nAn attacker can load any other forms on the page, and possibly craft pages as well, but that depends on how Greenhouse.io actually works with it's forms. Therefore, a phishing attack would be possible.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2018-04-12T15:06:52.790Z",
+  "allow_singular_disclosure_after": -259945378.24045068,
+  "singular_disclosure_allowed": true,
+  "vote_count": 65,
+  "voters": [
+    "wargsec",
+    "0x800700e1",
+    "irvinlim",
+    "jensec",
+    "ramsexy",
+    "0-chrollo-0",
+    "bogdantc",
+    "kapytein",
+    "sameerphad72",
+    "bl4de",
+    "and 55 more..."
+  ],
+  "severity": {
+    "rating": "none",
+    "score": 0.0,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 6860,
+      "category": "researcher",
+      "content": "Using semicolons, I was able to override the `for` parameter in the iframe element. This allowed me to load external Greenhouse forms (which are not owned by HackerOne) on the page. Later on, a global fix was applied by Greenhouse on the `boards.greenhouse.io/embed/` endpoint.",
+      "updated_at": "2018-03-13T20:04:42.705Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 193843,
+        "username": "kapytein",
+        "name": "Nadir<b>",
+        "bio": "",
+        "cleared": true,
+        "verified": true,
+        "website": null,
+        "location": "The Netherlands",
+        "created_at": "2017-08-22T12:31:00.275Z",
+        "url": "https://hackerone.com/kapytein",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/36yjb4mltb4jebgvw3esuaw059a0/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/36yjb4mltb4jebgvw3esuaw059a0/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/36yjb4mltb4jebgvw3esuaw059a0/eab7e558a2bc3ec841c51b96524419e712978d371ddb665048a3154ab05197fc"
+        }
+      }
+    }
+  ],
+  "databaseId": "298265",
+  "votes": 65,
+  "latest_disclosable_activity_at": "2018-03-13T20:14:44.119Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:09:51.145995",
+    "source": "https://hackerone.com/reports/298265.json",
+    "report_id": 298265
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTgyNjU=",
+    "databaseId": "298265",
+    "title": "HTTP Parameter Pollution using semicolons in iframe element at hackerone.com/careers allows loading external Greenhouse forms",
+    "url": "https://hackerone.com/reports/298265",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-03-13T20:14:44.096Z",
+    "created_at": "2017-12-15T14:29:49.649Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "none",
+      "score": 0.0
+    },
+    "reporter": {
+      "username": "kapytein"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82NzQ4Ng==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-12-20T23:53:12.855Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5ODI2NQ==",
+    "_id": "298265",
+    "disclosed": true,
+    "votes": 65,
+    "latest_disclosable_activity_at": "2018-03-13T20:14:44.119Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTgyNjU=",
+      "databaseId": "298265",
+      "title": "HTTP Parameter Pollution using semicolons in iframe element at hackerone.com/careers allows loading external Greenhouse forms",
+      "url": "https://hackerone.com/reports/298265",
+      "disclosed_at": "2018-03-13T20:14:44.096Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "id": 1447440,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ3NDQw",
+  "url": "https://hackerone.com/reports/1447440",
+  "title": "getRoomRoles Method leaks Channel Owner",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-01-11T22:32:16.063Z",
+  "submitted_at": "2022-01-11T22:32:16.133Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "gronke",
+    "url": "/gronke",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 19858,
+    "url": "https://hackerone.com/rocket_chat",
+    "handle": "rocket_chat",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Rocket.Chat",
+      "twitter_handle": "RocketChat",
+      "website": "https://rocket.chat",
+      "about": "Rocket.Chat is a company built on open source values and a love for efficiency. The company is driven by our amazing community of contributors."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": true,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "no-content",
+  "cve_ids": [
+    "CVE-2022-35247"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-09-22T16:03:06.477Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-09-22T12:18:51.221Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2022-10-22T12:18:51.323Z",
+  "allow_singular_disclosure_after": -116614047.23773862,
+  "singular_disclosure_allowed": true,
+  "vote_count": 2,
+  "voters": [
+    "shreyaschavhan",
+    "shivammusic"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 194884,
+      "category": "team",
+      "content": "## Summary\n\nLack of ACL checks in the `getRoomRoles` Meteor method  leak channel members with special roles to unauthorized clients.\n\n## Description\n\nLack of ACL checks in the [`getRoomRoles`  Meteor method](https://github.com/RocketChat/Rocket.Chat/blob/a06e811ceeef6f674ff8c38e49ddcf0f476d9683/app/lib/server/methods/getRoomRoles.js#L8-L18) allow unauthorized clients to query channel members with special roles:\n\n```javascript\nMeteor.methods({\n\tgetRoomRoles(rid) {\n\t\tcheck(rid, String);\n\n\t\tif (!Meteor.userId() && settings.get('Accounts_AllowAnonymousRead') === false) {\n\t\t\tthrow new Meteor.Error('error-invalid-user', 'Invalid user', { method: 'getRoomRoles' });\n\t\t}\n\n\t\tcheck(rid, String);\n\n\t\treturn getRoomRoles(rid);\n\t},\n});\n```\n\nThe `rid` argument must be a String but is not further validated.\n\n## Releases Affected:\n  * 4.3.1\n  * 3.18.3\n  * develop\n\n## Steps To Reproduce (from initial installation to vulnerability):\n\n  1. Open Rocket.Chat\n  2. (Optional) Login as low-privileged user\n  3. Query `getRoomRoles` Meteor method with target Room ID\n\n## Supporting Material/References:\n\n### Proof of Concept\n```javascript\nconst TARGET_ROOM_ID = \"<ROOM_ID>\";\nMeteor.call(\"getRoomRoles\", TARGET_ROOM_ID, console.log);\n```\n\n## Suggested mitigation\n\n  * Check for the users access to the channel with given Room ID `rid`.\n\n## Impact\n\nUnauthorized clients can leak members with special permission of private channels.\n\n## Fix\n\nFixed in versions 4.7.5, 4.8,2 and 5.0.0>",
+      "updated_at": "2022-09-22T12:18:42.884Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1989106,
+        "username": "mrd0d",
+        "name": "Offsec team engineer",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2021-09-27T20:52:41.370Z",
+        "url": "https://hackerone.com/mrd0d",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/j9d22b8d3wdw2lskn3dviwszwnze/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15?response-content-disposition=inline%3B%20filename%3D%22Ghost%20Boy.jpeg%22%3B%20filename%2A%3DUTF-8%27%27Ghost%2520Boy.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQY6WM27R6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050618Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCw73CRLz9sOJGZ68jR3COYrzYL3ILrCiO4Ldt1wAcDSgIhAME5n1ZBPtjrek4miyWIdOchrHmJn%2BJjRw%2FOjwY99XgHKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgxARN2DuvvpJZ2epWMqjwUO%2Bkmg9tr%2B6wqfKD9br9ucHuRS%2FIehwltTZbySAR4NCOkdmA78DoU30sj8NIUMUa4CB6825u5HJmurPDFwVxnBUd%2FsqMUlEUvRW08%2BZI3jmcKdmDbzytaJbrWWm8flrJKvR6y3ivBYg6iAwCY8k4PvhC4dahTn%2BtJNtGlkb92du%2B6nvxeQQ%2FrsMKj6EFZG2xulxGiqMzyN2crdMwj1hhFWon5yXIuTCk6njfG9N7tOknAYV%2F23NCvOD0zoSQ7hhDvO8V%2Fxy%2BHlqGZZJjkkEFaNxjeIzb3R%2BZ8aivYnj2MMbsGPeKuCHInB5jYzz2DhntusW2IIaBFwTroHLdPBXY%2BhH%2FPKq%2B7%2BPpW0j4LBlU5avT0rmYVlYVhIzfpGeWhRxMFLNgzm%2FMLDKv9gr0FloMqRAXfMoyNh0ZlKxdA4t40HBhXlOEfe4sQnTBUT7gEEu5GUme0ftpyct%2B2OfJXvmBuFHS%2FVtfrga6jKQYLDHTHkIwk2ZR15fOiuFtIqrblokJAu8kDg4favAijvluHqLz0vF3D4c33wNCp1T8FR6WM1LPOBG%2BdXtdF%2F0A09eL5aJNVeMFdd2nqamMf%2BORN0P6ncuN81ci9MrqabMg0RIGvhVCApDAGCTo3M9%2FJNUEZyQz%2B5TdLEfQaAX88TuASCjK3XqWvv5stZEUiI6as6ESxd2njeBTZQ2kWT5ljlS7zVazo5KI8vv4uHr%2BJd29b44vQdKU19Vl3lDuqtqh8wOo1ePMit%2BfXK9PL7Z79AJ%2FZxQlOD13z5olJ1ol7DZlJ5k3sADywbDfF0avYaZ1YfXUCi6tdTFbkmrTdlHegp0lfWcpOIvRI70B7XGspFQ6MgyAWEDlDQ8OTou%2Byb7dG73qqHMOzmnNIGOrABdjkpiCK7pXbgfyOEI8FdTrlOpemp4A%2BMTNlSvyRUUyY8CP6QWi7kn7GTiQqPPWV%2B6ick6o2sA1gGTX9Mt5bgwVsA0MjvFDLmSjcnZ6OJCLIHDycmE7Hi887Wj0q2aCdCkdjRqTUlo0icaleJQWwkMdcyvF%2F%2BrAAIBhAjwfGsQ1cpU%2FXcYFGq5p4iD65F6C90YZ7mDEYnAYavdpPSy9vFBoHLbkCRBTQELtbhQgATo2A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=61d74c87b441dc101f2db927d09f80126c2941285dc8c6008cfd5964d2cc4359",
+          "medium": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/j9d22b8d3wdw2lskn3dviwszwnze/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12?response-content-disposition=inline%3B%20filename%3D%22Ghost%20Boy.jpeg%22%3B%20filename%2A%3DUTF-8%27%27Ghost%2520Boy.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQY6WM27R6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050618Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCw73CRLz9sOJGZ68jR3COYrzYL3ILrCiO4Ldt1wAcDSgIhAME5n1ZBPtjrek4miyWIdOchrHmJn%2BJjRw%2FOjwY99XgHKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgxARN2DuvvpJZ2epWMqjwUO%2Bkmg9tr%2B6wqfKD9br9ucHuRS%2FIehwltTZbySAR4NCOkdmA78DoU30sj8NIUMUa4CB6825u5HJmurPDFwVxnBUd%2FsqMUlEUvRW08%2BZI3jmcKdmDbzytaJbrWWm8flrJKvR6y3ivBYg6iAwCY8k4PvhC4dahTn%2BtJNtGlkb92du%2B6nvxeQQ%2FrsMKj6EFZG2xulxGiqMzyN2crdMwj1hhFWon5yXIuTCk6njfG9N7tOknAYV%2F23NCvOD0zoSQ7hhDvO8V%2Fxy%2BHlqGZZJjkkEFaNxjeIzb3R%2BZ8aivYnj2MMbsGPeKuCHInB5jYzz2DhntusW2IIaBFwTroHLdPBXY%2BhH%2FPKq%2B7%2BPpW0j4LBlU5avT0rmYVlYVhIzfpGeWhRxMFLNgzm%2FMLDKv9gr0FloMqRAXfMoyNh0ZlKxdA4t40HBhXlOEfe4sQnTBUT7gEEu5GUme0ftpyct%2B2OfJXvmBuFHS%2FVtfrga6jKQYLDHTHkIwk2ZR15fOiuFtIqrblokJAu8kDg4favAijvluHqLz0vF3D4c33wNCp1T8FR6WM1LPOBG%2BdXtdF%2F0A09eL5aJNVeMFdd2nqamMf%2BORN0P6ncuN81ci9MrqabMg0RIGvhVCApDAGCTo3M9%2FJNUEZyQz%2B5TdLEfQaAX88TuASCjK3XqWvv5stZEUiI6as6ESxd2njeBTZQ2kWT5ljlS7zVazo5KI8vv4uHr%2BJd29b44vQdKU19Vl3lDuqtqh8wOo1ePMit%2BfXK9PL7Z79AJ%2FZxQlOD13z5olJ1ol7DZlJ5k3sADywbDfF0avYaZ1YfXUCi6tdTFbkmrTdlHegp0lfWcpOIvRI70B7XGspFQ6MgyAWEDlDQ8OTou%2Byb7dG73qqHMOzmnNIGOrABdjkpiCK7pXbgfyOEI8FdTrlOpemp4A%2BMTNlSvyRUUyY8CP6QWi7kn7GTiQqPPWV%2B6ick6o2sA1gGTX9Mt5bgwVsA0MjvFDLmSjcnZ6OJCLIHDycmE7Hi887Wj0q2aCdCkdjRqTUlo0icaleJQWwkMdcyvF%2F%2BrAAIBhAjwfGsQ1cpU%2FXcYFGq5p4iD65F6C90YZ7mDEYnAYavdpPSy9vFBoHLbkCRBTQELtbhQgATo2A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1d9f03eaf50f45ffa80f930c97c7f0116eea75a7e07f4ec2004665e35f7f91c2",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTcwOTk1NSwicHVyIjoiYmxvYl9pZCJ9fQ==--411e69acd3d9e11c3ba8656ec1816fb37b995665/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGVnIiwicmVzaXplIjoiMjYweDI2MFx1MDAzZSJ9LCJwdXIiOiJ2YXJpYXRpb24ifX0=--077a116fdc5fd6949baa55fe21d29943970c85dc/Ghost%20Boy.jpeg"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1447440",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2022-09-22T16:03:06.376Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:06:18.712444",
+    "source": "https://hackerone.com/reports/1447440.json",
+    "report_id": 1447440
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ3NDQw",
+    "databaseId": "1447440",
+    "title": "getRoomRoles Method leaks Channel Owner",
+    "url": "https://hackerone.com/reports/1447440",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-09-22T16:03:06.477Z",
+    "created_at": "2022-01-11T22:32:16.063Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.3
+    },
+    "reporter": {
+      "username": "gronke"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0NDc0NDA=",
+    "_id": "1447440",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2022-09-22T16:03:06.376Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDQ3NDQw",
+      "databaseId": "1447440",
+      "title": "getRoomRoles Method leaks Channel Owner",
+      "url": "https://hackerone.com/reports/1447440",
+      "disclosed_at": "2022-09-22T16:03:06.477Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    }
+  }
+}

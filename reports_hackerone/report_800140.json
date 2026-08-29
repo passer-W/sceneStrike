@@ -1,0 +1,252 @@
+{
+  "id": 800140,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MDAxNDA=",
+  "url": "https://hackerone.com/reports/800140",
+  "title": "Malformed HTTP/2 SETTINGS frame leads to reachable assert",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2020-02-20T00:15:45.906Z",
+  "submitted_at": "2020-02-20T00:15:45.906Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jzebor",
+    "url": "/jzebor",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22984,
+    "url": "https://hackerone.com/nodejs",
+    "handle": "nodejs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js",
+      "twitter_handle": "nodejs",
+      "website": "https://nodejs.org",
+      "about": "The Node.js JavaScript Runtime"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-07-03T14:43:57.323Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2020-06-03T14:43:55.561Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I do not expect any form of cash bounty for this issue. If we have discovered a unique vulnerability I only ask that Jordan Zebor and Adam Cabrey of F5 Networks be crediting with finding the issue.\n\n**Summary:** A reachable assert in the NodeJS HTTP/2 implementation can result in a denial of service. \n\n**Description:** Attackers can send a series of malformed HTTP/2 SETTINGS frames to reach an assertion in code, causing the node process to exit with SIGABRT. This has been observed in v13.8.0 and v14.0.0-nightly20200213e23b12e130.\n\n## Steps To Reproduce:\n1) Create an example HTTP/2 server. I used the example code from here https://nodejs.org/api/http2.html#http2_http2_createsecureserver_options_onrequesthandler\n\n2) Create an example client to send the attached cases in a loop. In this case, I used an internal fuzz testing tool that I unfortunately cannot share but I can attach the test cases which I sent. We discovered that by sending a malformed SETTINGS frame over and over (roughly 25 in a row) the node process will SIGABRT. \n\n3) Observe node process crash after series of requests are sent. I can consistently trigger this issue in 13.8.0 and 14.0.0. I will provide a stack trace, stack trace when run under valgrind, and the test case I used to reproduce the issue. If the core file is needed I can provide that as well.\n\nI believe this is where the assertion is triggered.\nhttps://github.com/nodejs/node/blob/f3682102dca1d24959e93de918fbb583f19ee688/src/node_http2.cc#L1521\n\n## Impact: A reachable assert which leads to SIGBART of the entire node process. It's a denial of service issue.\n\n## Supporting Material/References:\nNotice with the attached examples are prefixed with the order in which they were sent. If you already know how to do all the connection preface setup then simply send the settings anomaly frame on a new connection over and over again. A visual representation of the settings frame which causes the issue can be seen in \"SETTINGS_FRAME_DETAILS.png\".\n\n## Impact\n\nA reachable assert which leads to SIGBART of the entire node process. It's a denial of service issue that an unauthenticated attacker can easily achieve. The CVSS calculator on this portal seems to be classifying the issue as \"Critical\", which I don't agree with. I believe this to be a \"High\" severity issue with this CVSS score - https://www.first.org/cvss/calculator/3.0#CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+  "bounty_amount": "250.0",
+  "formatted_bounty": "$250",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 722191,
+      "file_name": "1_connection_preface_frame",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dZ8Qj8xrEH3TMe9g4XEUztw5?response-content-disposition=attachment%3B%20filename%3D%221_connection_preface_frame%22%3B%20filename%2A%3DUTF-8%27%271_connection_preface_frame&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050311Z&X-Amz-Expires=1324&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=55aa53401f1fa59985716bc39006940069167618cd2f5d3ba97094553230f5ff",
+      "file_size": 51,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 722192,
+      "file_name": "2_headers_frame",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Pjv8S5ZCYGomoe45f4rDEB6V?response-content-disposition=attachment%3B%20filename%3D%222_headers_frame%22%3B%20filename%2A%3DUTF-8%27%272_headers_frame&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050311Z&X-Amz-Expires=1324&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=298dfc864e41bb5a2ebcbf12bc24192e0835fef520024fea9fba3c92d1d83031",
+      "file_size": 58,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 722193,
+      "file_name": "3_server_settings_ack_frame",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/BejdLHJES9zxSkFDF2VQb7Vp?response-content-disposition=attachment%3B%20filename%3D%223_server_settings_ack_frame%22%3B%20filename%2A%3DUTF-8%27%273_server_settings_ack_frame&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050311Z&X-Amz-Expires=1324&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=23fc4675cc5c1e4803cdcf9965ab1ee8d484061692c52d26b73804848cfc017c",
+      "file_size": 9,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 722195,
+      "file_name": "4_settings_anomaly",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/aLvWR6wmxU6z8bZqNMwJ6ZyT?response-content-disposition=attachment%3B%20filename%3D%224_settings_anomaly%22%3B%20filename%2A%3DUTF-8%27%274_settings_anomaly&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050311Z&X-Amz-Expires=1324&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6dc4ae14a5c5a336323b72f2006ae6cc38a972e9b1a6e923e3234a2728618ae7",
+      "file_size": 15,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 722197,
+      "file_name": "SETTINGS_FRAME_DETAILS.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/NiJ4NVLsPBPMF77tgJMgTZCR?response-content-disposition=attachment%3B%20filename%3D%22SETTINGS_FRAME_DETAILS.png%22%3B%20filename%2A%3DUTF-8%27%27SETTINGS_FRAME_DETAILS.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTFM7UXG2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050311Z&X-Amz-Expires=1324&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDp%2FCJIJI6XG1%2FVh47AnIRfpSYCsFqFDkZtV809jtDpmAiEAiI0SWiXC8dvpkDBv%2B%2BJ%2FAIIhJb0HPILpV4BRmyR%2F5DIqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDAMZRT%2FlDoFy1zhSACqOBdNFawCC5RoodV7g2LEAaUkweuPJCsWmBt3mbvDh0%2FqXtFk9R2zWcdejVIWcZCmLhmqW%2FRnNZww%2BJi0oBUjdCLKdWuvQG%2BMp9nQvYzqUTDMRcJAHFOO3eJaKcLW2VHMFwge7QufPJiySNrfEdBN5w0nf%2BHsi088KIDWx6qGn9H3HY0L9j1m7CkmqzPpkTRw6hbr5WgU%2Bgv836uwcDhjtOsCZe%2FVcwV%2FT1xzTi9JOmsxWl7oVMItVTgN90QRUz4cD%2FD9pUjQpr%2FFXFtEyGlfFdwOGTFKQ7aN1waKfFTDHYyNofDXVT6UHTFDCwF4GCic8MJ%2FD8IGnw5Ux5hUWChgsdMoU5E5JfBfCQ8a4b67QfkW32kOA8g6D3Wz96fKH4sT88%2B4IIF6KMGqB6mfOXLWFdBHTeKpo8ay%2B706RWls%2BJokz%2BgUPNEmQxyocpgYPWD%2FzLUXnhlLZOvitDM%2FCy44gMyljgbSKApdJoc42VlUWDbsrZ%2FiivVIh2zPCqd0OQ6GPtISbltvfCYrbGHfkTJFhz0Gy5uo41FsUwYAgNdjC1qPqt6GbGHoYHW7mNfhD94BMYAspRadTeohyoZYhtAJzpZGOMys%2B%2Fpck2%2Bts7uuV%2BiF1JJT4R2%2FUS9NcGPOxvtW%2F7R%2BwrvOE0nbegBTXI8B0sGqphJZj%2Fi6sdN%2Fh8Zj8JlAYvRy2OhgGLifABAabkIjyeONwITQJNO7ExPSlbfnhNMM%2B0PgqfeRPX7w6Cwd2fUJZne1tgrsPw2gogwF580CqnIo8d0iXVgrIviWN7sD48j25cwJXpG4UsVyIWAhJEdz3iR8XynRJ8zqgKZTrW8Ssb25loEuhL8xE6N6mLDgHb1j07LxYiqwd7XEdv63CWDCNj7bSBjqxAVeE2EOGKcrjTRlK4TCvq8q41mQx089ZAf22WZUNB018Vql3tx%2B0RObkhDF%2BM7qCALy70WyI06nd3q6oiCPp3qdBbJfx5ZqjDkZM4ZAhL5EBlRt4U4VOfEqNapeEMAWkvt84ziwAtSjgJIxNrmvoPy1eFOXEHW9pDy%2BfcC2z86saRZ1%2FgeFrMmOcoGj0pH1j%2Fa9RJRCHrodZJ8%2FLvAQX6WLDwRocArMhTId8bPk9Ddt7Nw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=613460f5c2f1b150c85ff0445a6a5e973dd9f0f57949f8b2c6f1e5e068c8f9f2",
+      "file_size": 197192,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-07-03T14:43:55.649Z",
+  "allow_singular_disclosure_after": -189699555.70602986,
+  "singular_disclosure_allowed": true,
+  "vote_count": 14,
+  "voters": [
+    "eye_",
+    "namgyukang",
+    "rut00",
+    "b69fb2ebda43240ece9dbeb",
+    "h1-qualys-scan",
+    "ohioguy",
+    "beforedayone",
+    "domanda",
+    "itssrio",
+    "willwct",
+    "and 4 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 666,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/nodejs/node",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "800140",
+  "votes": 14,
+  "latest_disclosable_activity_at": "2020-07-15T17:36:42.001Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:03:11.629878",
+    "source": "https://hackerone.com/reports/800140.json",
+    "report_id": 800140
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MDAxNDA=",
+    "databaseId": "800140",
+    "title": "Malformed HTTP/2 SETTINGS frame leads to reachable assert",
+    "url": "https://hackerone.com/reports/800140",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-07-03T14:43:57.323Z",
+    "created_at": "2020-02-20T00:15:45.906Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.3
+    },
+    "reporter": {
+      "username": "jzebor"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjk0ODA=",
+            "amount": "250.00",
+            "awarded_amount": "250.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-15T17:36:41.995Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzgwMDE0MA==",
+    "_id": "800140",
+    "disclosed": true,
+    "votes": 14,
+    "latest_disclosable_activity_at": "2020-07-15T17:36:42.001Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MDAxNDA=",
+      "databaseId": "800140",
+      "title": "Malformed HTTP/2 SETTINGS frame leads to reachable assert",
+      "url": "https://hackerone.com/reports/800140",
+      "disclosed_at": "2020-07-03T14:43:57.323Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    }
+  }
+}

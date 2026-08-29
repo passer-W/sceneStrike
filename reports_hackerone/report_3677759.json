@@ -1,0 +1,221 @@
+{
+  "id": 3677759,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjc3NzU5",
+  "url": "https://hackerone.com/reports/3677759",
+  "title": "CVE-2026-6429: netrc credential leak with reused proxy connection",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2026-04-16T11:28:15.733Z",
+  "submitted_at": "2026-04-16T11:28:16.413Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "nobcoderr",
+    "url": "/nobcoderr",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/7p5g1ie7xxu4fveha280jrbmsmvs/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2026-6429"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-29T07:14:27.842Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-29T06:08:03.398Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nlibcurl can leak `.netrc`-derived host `Authorization` credentials across redirected hosts when an HTTP proxy connection is reused. In the PoC, `.netrc` contains credentials only for `a.test`, but after `a.test` redirects to `b.test` and then `c.test` over the same keep-alive proxy connection, libcurl sends `Authorization: Basic dXNlckE6cGFzc0E=` to `b.test` and `c.test`. The leaked header is `Authorization`, not `Proxy-Authorization`, and the attached controls show the leak disappears when connection reuse is forbidden, when each request uses a new easy handle, and when the same redirect flow is run without a proxy. The issue appears to involve the `.netrc` / redirect / proxy connection reuse path in `lib/url.c` and `lib/http.c`. I reproduced this on `curl 8.19.0 / libcurl 8.19.0` on x86_64 Linux. An attachment with the PoC source, server scripts, `.netrc` file, and captured logs is included.\n\n## Affected version\nReproduced on:\n`curl 8.19.0 (x86_64-pc-linux-gnu) libcurl/8.19.0 OpenSSL/3.5.5 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 libssh2/1.11.1 nghttp2/1.68.1 ngtcp2/1.21.0 nghttp3/1.15.0 librtmp/2.3 mit-krb5/1.22.1 OpenLDAP/2.6.10`\nPlatform:\n`Linux x86_64`\n\n## Steps To Reproduce:\n1. Ensure the attached `.netrc` file contains only:\n   `machine a.test login userA password passA`\n2. Start the proxy/server:\n   `python3 -u netrc_proxy_redirect_server.py 18085`\n3. Start the no-proxy origin control server:\n   `python3 -u netrc_origin_redirect_server.py 18087`\n4. Build the PoC:\n   `cc poc_netrc_proxy_redirect.c -o poc_netrc_proxy_redirect $(curl-config --cflags --libs)`\n5. Run the PoC:\n   `./poc_netrc_proxy_redirect`\n6. Observe the base case proxy log. `a.test`, `b.test`, and `c.test` all use the same `client_port`, showing proxy connection reuse, and the same host `Authorization` header is sent to all three hosts:\n   `{\"client_port\": 49048, \"host\": \"a.test\", \"path\": \"http://a.test/start\", \"authorization\": \"Basic dXNlckE6cGFzc0E=\", \"proxy_authorization\": null}`\n   `{\"client_port\": 49048, \"host\": \"b.test\", \"path\": \"http://b.test/second\", \"authorization\": \"Basic dXNlckE6cGFzc0E=\", \"proxy_authorization\": null}`\n   `{\"client_port\": 49048, \"host\": \"c.test\", \"path\": \"http://c.test/third\", \"authorization\": \"Basic dXNlckE6cGFzc0E=\", \"proxy_authorization\": null}`\n7. Observe the controls:\n   - with `CURLOPT_FORBID_REUSE=1`, `b.test` and `c.test` receive no `Authorization`\n   - with a new easy handle per request, `b.test` and `c.test` receive no `Authorization`\n   - without a proxy, `b.test` and `c.test` receive no `Authorization`\n8. The attached logs also show that `Proxy-Authorization` is always `null`, so the leaked header is the target-host `Authorization` header, not proxy credentials.\n\n## Impact\n\n## Summary:\nAn attacker-controlled redirected host reachable through the same HTTP proxy connection can receive `.netrc` credentials that belong to a different host. This is a cross-host credential boundary break: credentials configured only for `a.test` are sent as host `Authorization` to `b.test` and `c.test`, even though `.netrc` has no entries for those hosts. In applications that use libcurl with `.netrc`, redirects, and HTTP proxy connection reuse, this can expose reusable Basic credentials to an unintended origin.",
+  "weakness": {
+    "id": 113,
+    "name": "Information Exposure Through Sent Data"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5745367,
+      "file_name": "curl_netrc_proxy_auth_leak_evidence.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/r9e8166cx4c3yrs0zaukz3sj2za9?response-content-disposition=attachment%3B%20filename%3D%22curl_netrc_proxy_auth_leak_evidence.zip%22%3B%20filename%2A%3DUTF-8%27%27curl_netrc_proxy_auth_leak_evidence.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041928Z&X-Amz-Expires=1001&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f2d64285ef911532cc741c66feb1b639450f1eadfa33aa58d1adbc0e8a80e217",
+      "file_size": 13262,
+      "type": "application/zip",
+      "moderated": null
+    },
+    {
+      "id": 5745370,
+      "file_name": "Screenshot_2026-04-16_175305.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/3gomcafzr9v4g9c161pg7tgrxkkd?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2026-04-16_175305.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2026-04-16_175305.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041928Z&X-Amz-Expires=1001&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=42454c9357560a934203e246abf7df77f5337991c4cc9ad780401b91840b1e85",
+      "file_size": 77914,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5745371,
+      "file_name": "Screenshot_2026-04-16_175255.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rcslr8d2j2hkoj5w5uyt8s1wkdjc?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2026-04-16_175255.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2026-04-16_175255.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041928Z&X-Amz-Expires=1001&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a6b4806680bec93db5d5e212e305bc14208df1dcd9907569ad3fbdb13be18453",
+      "file_size": 251106,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5745372,
+      "file_name": "Screenshot_2026-04-16_175313.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/y5c7exkcf94thrrv3kcsv3u4rypa?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2026-04-16_175313.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2026-04-16_175313.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041928Z&X-Amz-Expires=1001&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=769ef909ee647e16d4806c056f9854d2d7b26908b1e871b44c7d200524c7d4d9",
+      "file_size": 108157,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 19,
+  "voters": [
+    "m2r1",
+    "k4w_wak",
+    "cicada-bug",
+    "rcsye",
+    "hanselwhispered",
+    "teamerr404",
+    "astrocosmos",
+    "0xterrifier",
+    "mrp4rr0t",
+    "dilshod365",
+    "and 9 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3677759",
+  "votes": 19,
+  "latest_disclosable_activity_at": "2026-04-29T07:14:27.527Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:28.762485",
+    "source": "https://hackerone.com/reports/3677759.json",
+    "report_id": 3677759
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjc3NzU5",
+    "databaseId": "3677759",
+    "title": "CVE-2026-6429: netrc credential leak with reused proxy connection",
+    "url": "https://hackerone.com/reports/3677759",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-04-29T07:14:27.842Z",
+    "created_at": "2026-04-16T11:28:15.733Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzExMw==",
+      "name": "Information Exposure Through Sent Data",
+      "external_id": "cwe-201"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "nobcoderr"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2Nzc3NTk=",
+    "_id": "3677759",
+    "disclosed": true,
+    "votes": 19,
+    "latest_disclosable_activity_at": "2026-04-29T07:14:27.527Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjc3NzU5",
+      "databaseId": "3677759",
+      "title": "CVE-2026-6429: netrc credential leak with reused proxy connection",
+      "url": "https://hackerone.com/reports/3677759",
+      "disclosed_at": "2026-04-29T07:14:27.842Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

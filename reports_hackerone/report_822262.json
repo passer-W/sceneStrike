@@ -1,0 +1,218 @@
+{
+  "id": 822262,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MjIyNjI=",
+  "url": "https://hackerone.com/reports/822262",
+  "title": "Path traversal in Nuget Package Registry",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-03-17T15:51:58.636Z",
+  "submitted_at": "2020-03-17T15:51:58.636Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "saltyyolk",
+    "url": "/saltyyolk",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/252/596/b03010470e2928f744f71fb5c1685806f1878341_original.jpeg/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-12448"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-06-07T14:16:20.534Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-06-07T14:16:20.343Z",
+  "team_member_agreed_on_going_public_at": "2020-11-20T20:55:13.986Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary\nThere's a path traversal issue in Nuget package registry which was released to GitLab-EE recently. The issue allows an attacker to create any file with an extension “.nupkg” in the filesystem. By combining the bug with a race condition in Gitaly which I used several times before (#762421, #732330). It could finally be used to read sensitive files in a GitLab instance.\n\nFor some context, a large part of the exploit were explained in #762421, the npm registry issue. Here I will focus on the simple path traversal part which makes a little bit difference.\n\nThe root cause of the path traversal lies at `ee/app/services/packages/nuget/metadata_extraction_service.rb`\n```\n      XPATHS = {                                                               \n        package_name: '//xmlns:package/xmlns:metadata/xmlns:id',               \n        package_version: '//xmlns:package/xmlns:metadata/xmlns:version'        \n      }.freeze \n...\n      def extract_metadata(file)                                               \n        doc = Nokogiri::XML(file)                                              \n                                                                               \n        XPATHS.map do |key, query|                                             \n          [key, doc.xpath(query).text]                                         \n        end.to_h \n```\nIt extracts the uploaded nupkg (which is in zip format) for the contained nuspec file (which is an XML). And then looks for attribute `id` and `version`. Then the extracted package_name(id), and package_version(version) will be concatenated into a new filename in `ee/app/services/packages/nuget/update_package_from_metadata_service.rb`\n```                                                                      \n        @package_file.transaction do                                           \n          @package_file.update!(                                               \n            file_name: package_filename,                                       \n            file: @package_file.file                                           \n          )      \n...\n      def package_filename                                                     \n        \"#{package_name.downcase}.#{package_version.downcase}.nupkg\"           \n      end    \n```\nSo my payload is:\n```                                                                  \n  <?xml version=\"1.0\" encoding=\"utf-8\"?>                                       \n  <package xmlns=\"http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd\">  \n    <metadata>                                                                 \n      <id>DummyProject.DummyPackage</id>                                       \n      <version>../../../../../nyangawa</version>                                            \n    </metadata>                                                                \n  </package>                                                                   \n```\nname the file above as `dummy.nuspec` and zip it into `dummy.nupkg` and upload it through `PUT /api/v4/projects/#{id}/packages/nuget/` endpoint  will make GitLab to create a `nyangawa.nupkg` somewhere in the filesystem.\n\nThen I wrote a script (I used in #762421) to combine this issue and the race in Gitaly. I could finally read any file I want in my GitLab instance.\n\n### Steps to reproduce\n\n1. Download the attached exploit.tar.gz and extract it.\n2. Install some requirements by gem install faraday and gem install rubyzip\n3. Edit exp.rb to update some url and credentials\n4. Execute the exp.rb to watch the result of .gitlab_shell_secret of target GitLab instance.\n\n### Examples\n{F750878}\n\n#### Results of GitLab environment info\n```\nroot@localhost:/# gitlab-rake gitlab:env:info\n\nSystem information\nSystem:\t\t\nProxy:\t\tno\nCurrent User:\tgit\nUsing RVM:\tno\nRuby Version:\t2.6.5p114\nGem Version:\t2.7.10\nBundler Version:1.17.3\nRake Version:\t12.3.3\nRedis Version:\t5.0.7\nGit Version:\t2.24.1\nSidekiq Version:5.2.7\nGo Version:\tunknown\n\nGitLab information\nVersion:\t12.8.7-ee\nRevision:\t2643fd87200\nDirectory:\t/opt/gitlab/embedded/service/gitlab-rails\nDB Adapter:\tPostgreSQL\nDB Version:\t10.12\nURL:\t\thttp://10.26.0.5\nHTTP Clone URL:\thttp://10.26.0.5/some-group/some-project.git\nSSH Clone URL:\tgit@10.26.0.5:some-group/some-project.git\nElasticsearch:\tno\nGeo:\t\tno\nUsing LDAP:\tno\nUsing Omniauth:\tyes\nOmniauth Providers: \n\nGitLab Shell\nVersion:\t11.0.0\nRepository storage paths:\n- default: \t/var/opt/gitlab/git-data/repositories\nGitLab Shell path:\t\t/opt/gitlab/embedded/service/gitlab-shell\nGit:\t\t/opt/gitlab/embedded/bin/git\n```\n\nps. I changed my username because of a lost bet, don't be strange :p\n\nBest regards,\nSaltyYolk\n\n## Impact\n\nCommon arbitrary file read issue caused by path traversal similar to my previous reports.",
+  "bounty_amount": "12000.0",
+  "formatted_bounty": "$12,000",
+  "weakness": {
+    "id": 19,
+    "name": "Path Traversal"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 750878,
+      "file_name": "2020-03-17-234802_649x700_scrot.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/E9Ap6Era4ypQ4R3XqBVvjKMh?response-content-disposition=attachment%3B%20filename%3D%222020-03-17-234802_649x700_scrot.png%22%3B%20filename%2A%3DUTF-8%27%272020-03-17-234802_649x700_scrot.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051142Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a05779ac0eb92b4fb5215983517af08e191cca3fc9a1e5079023fca3c31a09aa",
+      "file_size": 135484,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 87,
+  "voters": [
+    "adilnbabras",
+    "m4khn0",
+    "joaxcar",
+    "ghaem51",
+    "jumpydata",
+    "n1m0",
+    "tolga",
+    "mrmax4o4",
+    "yxw21",
+    "thruster",
+    "and 77 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 39022,
+    "asset_type": "OTHER",
+    "asset_identifier": "Your Own GitLab Instance",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "822262",
+  "votes": 87,
+  "latest_disclosable_activity_at": "2022-06-07T14:16:20.606Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:11:43.058857",
+    "source": "https://hackerone.com/reports/822262.json",
+    "report_id": 822262
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MjIyNjI=",
+    "databaseId": "822262",
+    "title": "Path traversal in Nuget Package Registry",
+    "url": "https://hackerone.com/reports/822262",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-06-07T14:16:20.534Z",
+    "created_at": "2020-03-17T15:51:58.636Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE5",
+      "name": "Path Traversal",
+      "external_id": "cwe-22"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "saltyyolk"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMDYwMjg=",
+            "amount": "1000.00",
+            "awarded_amount": "1000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-03-18T09:02:49.596Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMTUyMjQ=",
+            "amount": "11000.00",
+            "awarded_amount": "11000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-05-05T16:55:33.806Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzgyMjI2Mg==",
+    "_id": "822262",
+    "disclosed": true,
+    "votes": 87,
+    "latest_disclosable_activity_at": "2022-06-07T14:16:20.606Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MjIyNjI=",
+      "databaseId": "822262",
+      "title": "Path traversal in Nuget Package Registry",
+      "url": "https://hackerone.com/reports/822262",
+      "disclosed_at": "2022-06-07T14:16:20.534Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

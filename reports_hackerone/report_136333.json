@@ -1,0 +1,185 @@
+{
+  "id": 136333,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzYzMzM=",
+  "url": "https://hackerone.com/reports/136333",
+  "title": "Persistent XSS on public wiki pages",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-05-05T02:55:10.735Z",
+  "submitted_at": "2016-05-05T02:55:10.735Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-07-27T21:44:23.111Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-07-27T21:28:16.391Z",
+  "team_member_agreed_on_going_public_at": "2016-07-27T21:44:23.023Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Details\nThere's a persistent cross-site scripting (XSS) vulnerability in the wiki pages. This can lead to an account take over via the leaked API token.\n\n# Proof of concept\nAs an attacker, create a new public repository. Make sure you have a client that is allowed to push to that repository. For this PoC, lets say the repository is located at `git@gitlab.com/dummy/test.git`. On the client, execute the following commands:\n\ngit clone git@gitlab.com/dummy/test.git\ncd test\necho \"<script>alert('Hello world!');</script>\" > index.html\ngit add index.html\ngit commit -m \"This message is super important\"\ngit push\n\nNow go to https://gitlab.com/dummy/test/wikis/index.html. As you will see, this executes the JavaScript that is stored in the file.\n\n{F91538}\n\n# Impact\nGitLab doesn't have a content security policy, which means that clients allow inline Javascript to be executed. This gives access to the current user its API token. The API token can be used to access the user its projects, do actions as the user, give access to potential confidential information, etc.",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 91538,
+      "file_name": "Screen_Shot_2016-05-04_at_19.52.50.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/091/538/f6e1c94bbd052bc9da07fba6e4fdd62abcaaa8b4/Screen_Shot_2016-05-04_at_19.52.50.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-05-04_at_19.52.50.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-05-04_at_19.52.50.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7TUVEWVN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065556Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDdtzK%2F5J6uVJGVGakRgaqX0Lrtzsmvfcz43yeUErvOiwIgbocPtfIcomNomdhxYyQj5OA7pFtvVizgD7ZxwCzC7xAqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDKBuRnr1p1vJr6JEICqOBeMeuzFtImXpHzApwDpXynvM%2B8e4tbfneFbSIUFTVszqi0XnN9mJDddpwLHoV61v3r4KuxBczR7gUktGoGj0sMIfmZtyrVUj0ndncg6gUxJAcdv6UzTCbK0wbDopz6Mv5%2FieFySje0B9qBldV8O9VJQ9j5uTOfHElAn8BqkgT9EQ9%2FtaTsYf674JoEjxOZCJ8%2FCMW8mP%2B4Vvr2OYB05M4%2BQf8ldO3E7tjv%2B25AnUrIrLIB8yD6FhMWh3%2BHYYhh84oFzTnvBx%2BCU0dPE0tElMIWl2Il81vH3GccH8q3mVN8cLddEQ1JxUvOHFaB3%2B5H4o6k4jsf26k7uWd8Dv2%2BVPG%2BqNcvYIh4OuMMXED92JeTotr9YVPwVRIdwejDAnnRBzwejqA3%2BixJVwFSzyd8N8ndvxpD5PRTXGCn5vMkDUas3Dq6jSgJMrjYSKxYwngCtlUbzW2iUKWpyzwnncCSM8k5J82k%2FPJw9ZNjHBHf2GzfLYTLcfh2Wg01rw%2F1e4ivvAjqpWTLOUmRTO1Y9ELlGw%2FADyPo1pDw7gQCiDgPkr057140WBMsjeR14tvBJ%2FffQB8EtU6bIaOkLxVd4uBGobkJTPyfsv08UW%2Bzsl%2BcJ%2FTq5r4RYYlxEy8GiApEUqBQBFyTQhF0x2OgySWiXHuYIUl6vUhSfkyAV6GxOLwVZZNVT4cjD%2BllXu4b0OZpUqa3zOxHjmihhM0%2BNjlfQ3Gg4F7%2FJer6dP%2FvfA1kd%2FnJFM56kRKicU4FBCYy8nE5is%2FUyD3XViNq%2FOpP7VuBBberPvclnRqeBcnjo7ip%2FabzMjoe2oS9G84Vz35dJax1zenNZ4p4a%2BkpBmN%2FQJMJZQad%2FtQmVE9S6dcDCCUlnR5ifInjCs47fSBjqxAR48ORPzbGn6ioMnU6YuQu2tzg07hI26ricpFaz5Np28q%2BQolANUstPMkOn9%2FFILeWx9Rtz1pL94apa9RV0bK9uZRWtR1YDbf6txzuDnrFvfNCUb3My1z0v4J9eVzQGj1FsnJ8JV%2BPM6Ja%2F7tlIXTvU7amhSmLao75E%2BHsv6qi7lLpdg5qaK6CsCD0OfzTCm4NPRGb4pNawI1%2BXLXrovM1H8VVFhU4b8gJdq1irxUkp97Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=19b7c04e276e30a7de0090a642d04dcae8160115ce02749edfddef895127ff74",
+      "file_size": 82276,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-08-26T21:28:16.504Z",
+  "allow_singular_disclosure_after": -311246860.444227,
+  "singular_disclosure_allowed": true,
+  "vote_count": 14,
+  "voters": [
+    "sameerphad72",
+    "michiel",
+    "s_p_q_r",
+    "skansing",
+    "2026",
+    "mdv",
+    "eveeez",
+    "gopi",
+    "sumit7",
+    "spetr0x",
+    "and 4 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "136333",
+  "votes": 14,
+  "latest_disclosable_activity_at": "2016-07-27T21:44:23.135Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:55:57.068628",
+    "source": "https://hackerone.com/reports/136333.json",
+    "report_id": 136333
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzYzMzM=",
+    "databaseId": "136333",
+    "title": "Persistent XSS on public wiki pages",
+    "url": "https://hackerone.com/reports/136333",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-07-27T21:44:23.111Z",
+    "created_at": "2016-05-05T02:55:10.735Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzNjMzMw==",
+    "_id": "136333",
+    "disclosed": true,
+    "votes": 14,
+    "latest_disclosable_activity_at": "2016-07-27T21:44:23.135Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzYzMzM=",
+      "databaseId": "136333",
+      "title": "Persistent XSS on public wiki pages",
+      "url": "https://hackerone.com/reports/136333",
+      "disclosed_at": "2016-07-27T21:44:23.111Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

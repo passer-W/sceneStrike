@@ -1,0 +1,226 @@
+{
+  "id": 895972,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84OTU5NzI=",
+  "url": "https://hackerone.com/reports/895972",
+  "title": "Limited LFI",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-11T10:43:44.905Z",
+  "submitted_at": "2020-06-11T10:43:44.905Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mariuszdeepsec",
+    "url": "/mariuszdeepsec",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/igjv9amx078skf5c5qdub4uq8gqj/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 50592,
+    "url": "https://hackerone.com/gsa_bbp",
+    "handle": "gsa_bbp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/iyPFgzbsX86VXw5wJHyfPg9s/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GSA Bounty",
+      "twitter_handle": null,
+      "website": "http://gsa.gov",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-07-09T01:13:41.082Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-07-08T09:52:50.432Z",
+  "team_member_agreed_on_going_public_at": "2020-07-09T01:13:40.964Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nDue to improper parameter sensitization  local file inclusion is possible. LFI is limited as we were not able to truncate the end of string.\n\n## Description:\nApplication root is located at \n/var/www/dashboard/new/public\n\nDue to URL Manipulation we are able to raed file from \n/var/www/dashboard/new/\nWhich should not be allowed.\n\nBelow we present function Index in Docs class -> parameter $page is set in URL  in below example \"..%2fREADME\" \nPath is constructed as follow $docs_path = $docs_path . $page . '.md'; then file is read in file_get_contents and returned in application GUI.\nLFI is limited due to  \" . '.md';\" part, but may be bypassed in futures, we have not found a way to bypass it thats why the risk was set to low. In case of bugs combination , PHP bugs etc.. in future this may be escalated. User should  not control any part of \"file_get_contents\" function\n```\n public function index($page = 'main')\n    {\n\n        $data = array();\n\n        $docs_path = ($this->config->item('docs_path')) ? $this->config->item('docs_path') : 'https://raw.githubusercontent.com/GSA/project-open-data-dashboard/master/documentation/';\n        $docs_path = $docs_path . $page . '.md';\n        $docs = @file_get_contents($docs_path);\n```\n\n## Steps To Reproduce:\n1. Read file from main root by calling URL:\nhttps://labs.data.gov/dashboard/Docs/index/..%2fREADME\n\n## POC\n\nFile README.md not exists in our current dir.\nF863983\n\nFile README.md can be read due to LFI\nhttps://labs.data.gov/dashboard/Docs/index/..%2fREADME\nF863984\n\nConfirmation:\nFile exact as:\nhttps://github.com/GSA/project-open-data-dashboard/blob/master/README.md\n\n## Impact\n\nUser have ability to control part of @file_get_contents function. This type of usage may lead to critical file read. In this scenario, we did not bypass the hardcoded ext so files was limited to \".md\" and low risk was set.  This should be corrected in case of future PHP bugs, if attacker will truncate the .ext part any file read will be allowed.",
+  "bounty_amount": "300.0",
+  "formatted_bounty": "$300",
+  "weakness": {
+    "id": 71,
+    "name": "Remote File Inclusion"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 863983,
+      "file_name": "Zrzut_ekranu_2020-06-11_o_12.36.29.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/oSPa2d3QMjiPc6CfumzSLEgy?response-content-disposition=attachment%3B%20filename%3D%22Zrzut_ekranu_2020-06-11_o_12.36.29.png%22%3B%20filename%2A%3DUTF-8%27%27Zrzut_ekranu_2020-06-11_o_12.36.29.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050333Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a019541a2b1cba94576bcf15a9b4d4ef0b1fad6749703850e887da33e7536290",
+      "file_size": 82313,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 863984,
+      "file_name": "Zrzut_ekranu_2020-06-11_o_12.37.51.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/sjMeHm6xFPmbqruDM4LrKbx8?response-content-disposition=attachment%3B%20filename%3D%22Zrzut_ekranu_2020-06-11_o_12.37.51.png%22%3B%20filename%2A%3DUTF-8%27%27Zrzut_ekranu_2020-06-11_o_12.37.51.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050333Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=20fef4926473e3ab7ab59034bee3b3c8dbcce8f1885fc7e4179891a51dc0c070",
+      "file_size": 672057,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 48,
+  "voters": [
+    "loaymorad",
+    "lones",
+    "mashoud1122",
+    "base_64",
+    "rook1337",
+    "tess",
+    "shreyaschavhan",
+    "sudi",
+    "itsbing0o",
+    "its_afolic",
+    "and 38 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.5,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 81476,
+    "asset_type": "URL",
+    "asset_identifier": "labs.data.gov",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "895972",
+  "votes": 48,
+  "latest_disclosable_activity_at": "2020-07-09T01:13:41.113Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:03:33.709949",
+    "source": "https://hackerone.com/reports/895972.json",
+    "report_id": 895972
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84OTU5NzI=",
+    "databaseId": "895972",
+    "title": "Limited LFI",
+    "url": "https://hackerone.com/reports/895972",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-07-09T01:13:41.082Z",
+    "created_at": "2020-06-11T10:43:44.905Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcx",
+      "name": "Remote File Inclusion",
+      "external_id": "cwe-98"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.5
+    },
+    "reporter": {
+      "username": "mariuszdeepsec"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjQ3NTc=",
+            "amount": "300.00",
+            "awarded_amount": "300.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-06-22T17:03:59.826Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg5NTk3Mg==",
+    "_id": "895972",
+    "disclosed": true,
+    "votes": 48,
+    "latest_disclosable_activity_at": "2020-07-09T01:13:41.113Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84OTU5NzI=",
+      "databaseId": "895972",
+      "title": "Limited LFI",
+      "url": "https://hackerone.com/reports/895972",
+      "disclosed_at": "2020-07-09T01:13:41.082Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzUwNTky",
+      "handle": "gsa_bbp",
+      "name": "GSA Bounty",
+      "url": "https://hackerone.com/gsa_bbp",
+      "currency": "usd"
+    }
+  }
+}

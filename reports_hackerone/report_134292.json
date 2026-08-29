@@ -1,0 +1,180 @@
+{
+  "id": 134292,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzQyOTI=",
+  "url": "https://hackerone.com/reports/134292",
+  "title": "Attacker can delete (and read) private project webhooks",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-24T23:08:05.147Z",
+  "submitted_at": "2016-04-24T23:08:05.147Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-05-03T01:00:03.985Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-05-03T00:55:06.369Z",
+  "team_member_agreed_on_going_public_at": "2016-05-03T01:00:03.868Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Vulnerability details\nAn attacker can delete and read webhooks that are configured for all projects on a GitLab instance. This includes private projects. This is a bad vulnerability because these webhooks contain private (API) tokens most of the time.\n\n# Proof of concept\nAs a victim, create a project and a webhook. Make sure you know the unique ID of the webhook. You can find this by looking at the \"Test hook\" button. In this example, the ID is `1`. Now as the attacker, which doesn't have access to the webhook, create another project. Since the attacker is the owner of this project, it can send API requests to `/projects/:id` and access its sub resources. By executing the following cURL request command, the webhook of the victim can be destroyed and read:\n\n```bash\ncurl -X DELETE --header \"PRIVATE-TOKEN: XXXXXXXXXXX\" \"http://gitlab-instance/api/v3/projects/2/hooks/1\"\n```\n\nThe attacker has access to project with ID 2, but the webhook with ID 1 belongs to a different project (see the response below). The response leaks the private webhook URL and on which events it would be fired. The request deletes the webhook, but the attacker can now keep digging with the leaked webhook URL.\n\n```json\n{\n  \"id\":1,\n  \"url\":\"http://secret.com/\",\n  \"project_id\":24,\n  \"created_at\":\"2016-04-24T22:16:58.044Z\",\n  \"updated_at\":\"2016-04-24T22:16:58.044Z\",\n  \"service_id\":null,\n  \"push_events\":true,\n  \"issues_events\":false,\n  \"merge_requests_events\":false,\n  \"tag_push_events\":false,\n  \"note_events\":false,\n  \"enable_ssl_verification\":true,\n  \"build_events\":false\n}\n```\n\n# Fix\nThe problem arises from `lib/api/project_hooks.rb:104`. Instead of calling `user_project.hooks.find`, it searches in all project hooks to fetch the object: `ProjectHook.find`. I attached the fix for this problem.",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 89269,
+      "file_name": "project-hook-fix.diff",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/089/269/a8e6040b2cfc1e93d1c362e2e215346d3809062f/project-hook-fix.diff?response-content-disposition=attachment%3B%20filename%3D%22project-hook-fix.diff%22%3B%20filename%2A%3DUTF-8%27%27project-hook-fix.diff&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5LBFRUPH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070359Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDctHX3%2F0daKhMlfwnisVxd8Td5bLkOAK0wB40rx5hFMAiEAqHr8BDbgxAzuiS4jbAFaAgtL3SuOVb2M%2FJCQYSEdLjAquwUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDB6XhH5Qvb%2F2uBEuhyqPBRhwVZjT7%2Bdt3f9qW5AjGwvfkZZVeQ%2FQU8Dnyb06Ck5Vl2kA0Pq3adH976j4cPTgQoBcodQls2XpP%2F5nZkDvOMv1vyDOdG4LmX2BOoTB4IIhJOjD98JL21Mp440p%2BIf0LJ4xsdd3ykx%2BdIEXKnHwh%2BIO9EBT5OnPGnCc61A4dJOeDxCxu0prrVBbiFqwECV8m2WxsnMo52kmxuQkovSc9DydZ2JePh2i6P7hqGae4pr7eRzhgM%2BAm6h5JJcTSL0%2FLpsr5lL416VUUGrCJNdGkhCq6NOuWqdTrrQw5ezgx%2Bwz2kO9dRffzzZr6TOdAzaPzz2rVXMhumdBS17I8nvcyid6mWVkBNTAQqyLz32Ao7yEwOUAMDJGlYEsu7aKLdaph56N8xa9Fsm2CfstwwSb6oXuS%2Bz663Iejay8IGVExL6nB2yk9FPuw78UsKKs2eOIL6%2FbFNOeRu%2B5OuO4uV3l1eW5jBaJtkzWjMOUZKKMd3vSL%2BFs6cSOCQdelxeogQm56GQFKelnTqLJBQXjnNQNMewxFbH9kRCfp2L%2FcGjtKpk922Lb%2FEq9iF7tFzq7YY3gfFDqGzRNiY7EKYCIUAJ9bsEhx2emAFwRrUSDbT2fWurbnDWA3AWh9vVZBUQgT%2FrJhTeh2YxU1K2t48jpjD9bw%2B2x%2BCONgARgzpgTmAy%2Fa2ypyYpK%2FT822r7gd%2Fu9ryPChrIZFFLEaTqOa0Aw2QwxEoXvsaCf%2FO6%2BekiU1Lac1XZSRmg03ngJy0OiZE%2BOdTGowuKvOL84mIKKj1D%2F559%2BF5OQ1OzZSdakiVAnMA1B38zMKyfQl3bipGk0jk3h4v4Hq5m2%2BdYQcHWQS2Hswg2yEw9i7mnt6o3v7QUpieOZhbAwj9y30gY6sQG5mmHg%2BH8EaeE%2FuVPmN24a7OKOcnn0er%2Fs%2FFlFzgHXube1qMad64KGHfNQ2h2lwgD%2FBua79uHXYi%2FTiY90Xsx0ft8gjhwLXeeRTCO%2F2bZX4iNqfR1n7vXz57q%2B%2Bashnl3JivOCsuKl8D%2BfqYVnklrobi%2BrtgECKN8qBtUHnAOXDjbuBmmRQv39SQKc8e3VwimXSuvVxcUGRg0V4kdi5r3opuKKy8en2%2Bo8ISKS4SfZOVw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a7aad3bfcb6e017ea98a70d2f810363cc285d82db3264bc9aef13842aee10585",
+      "file_size": 479,
+      "type": "text/x-diff",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-06-02T00:55:06.472Z",
+  "allow_singular_disclosure_after": -318665333.4191844,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "eveeez",
+    "xaleraf4ra",
+    "spetr0x",
+    "dyabla",
+    "cryptosector",
+    "dragon0x1"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "134292",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2016-05-03T01:00:04.022Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:04:00.009804",
+    "source": "https://hackerone.com/reports/134292.json",
+    "report_id": 134292
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzQyOTI=",
+    "databaseId": "134292",
+    "title": "Attacker can delete (and read) private project webhooks",
+    "url": "https://hackerone.com/reports/134292",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-05-03T01:00:03.985Z",
+    "created_at": "2016-04-24T23:08:05.147Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzNDI5Mg==",
+    "_id": "134292",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2016-05-03T01:00:04.022Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzQyOTI=",
+      "databaseId": "134292",
+      "title": "Attacker can delete (and read) private project webhooks",
+      "url": "https://hackerone.com/reports/134292",
+      "disclosed_at": "2016-05-03T01:00:03.985Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

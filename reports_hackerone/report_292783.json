@@ -1,0 +1,245 @@
+{
+  "id": 292783,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTI3ODM=",
+  "url": "https://hackerone.com/reports/292783",
+  "title": "Oauth flow on the comments widget login can lead to the access code leakage",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-11-24T13:49:34.571Z",
+  "submitted_at": "2017-11-24T13:49:34.571Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sp1d3rs",
+    "url": "/sp1d3rs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/079/690/6853ada3e124bdd8616b1be752223b558de38195_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 24342,
+    "url": "https://hackerone.com/ed",
+    "handle": "ed",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/024/342/18764de1df9c5df2781f5975a3c01990e8933dd0_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/024/342/18764de1df9c5df2781f5975a3c01990e8933dd0_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Ed",
+      "twitter_handle": "EdOverflow",
+      "website": "https://edoverflow.com",
+      "about": "This is a vulnerability disclosure program for all of my personal projects and code that I publish."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-11-24T13:52:31.378Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-11-24T13:52:31.226Z",
+  "team_member_agreed_on_going_public_at": "2017-11-24T13:50:55.536Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "##Description\nHello. Here is a keyword: `frog`\nI discovered an little Oauth flow in the comments widget authentication process using redirect_uri manipulations.\nThe widget located on the all blogposts, which have URL\n```\nhttps://edoverflow.com/2017/[post-title]/\n```\nUpon authentication, it appeared that `code` parameter gets stripped from the URL after successful authentication, so there was no visible way to do the leakage thorugh, for example, Referer header upon clicking some external link in the blogpost.\nAt this time, i noticed the only one code leakage to the \n```\nhttps://fonts.googleapis.com/css?family=Inconsolata\n```\nupon `code` verification (since it returned 200 OK) but it appeared not very serious issue for me, and i digged deeper.\nI discovered, that it was possible to manipulate the `redirect_uri` parameter, using the arbitrary directories, since it looked like whole `https://edoverflow.com` URL was whitelisted.\nSo, i tried next URL, to non-existent path /1:\n```\nhttps://github.com/login?client_id=5f45cc999f7812d0b6d2&return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3D5f45cc999f7812d0b6d2%26redirect_uri%3Dhttps%253A%252F%252Fedoverflow.com%252F1%26scope%3Dpublic_repo\n```\n{F242032}\nand... code was not stripped. So it became clear for me, that the code strips only on pages with a comment widget.\nNext, i tried to find some place, where i can post arbitrary content (like images), with controlled src, to leak the code through Referer. Unfortunately (or fortunately) site used content proxying through GitHub - so my dream about `High` impact had not came true:)\nSo my last hope was at least leak the code to the some external sites, and i came across this link:\n```\nhttps://edoverflow.com/about/\n```\nand\n```\nhttps://edoverflow.com/metadata\n```\nUsing \n```\nhttps://github.com/login?client_id=5f45cc999f7812d0b6d2&return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3D5f45cc999f7812d0b6d2%26redirect_uri%3Dhttps%253A%252F%252Fedoverflow.com%252Fabout%252f%26scope%3Dpublic_repo\n```\nand same link with `/metadata` path,\ni was able to leak the access code with user interaction to the several sites in the Referer header, like `keybase.io`, `liberapay.com`, `hackerone.com`, `crypto101.io`, `twitter.com`, `youtube.com` and several Press sites like Bloomberg.\n\n##Suggested Fix\nI suggest to restrict the `redirect_uri` only to the blogposts path, to prevent `code` leakage in the other parts of the site, and secure external links from possible Referer leakage, just in case.\n\n## Impact\n\nThe severity was set as low, because attacker can't directly conduct the authentication bypass against victim, in case attacker is not an admin of the one of the external sites=). \nStill, there was some risks, so issue was reported in several minutes after discovery",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 242032,
+      "file_name": "12.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/242/032/e0f5fe9d4578262f0e050115b93194084bac7aed/12.JPG?response-content-disposition=attachment%3B%20filename%3D%2212.JPG%22%3B%20filename%2A%3DUTF-8%27%2712.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061516Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=af9295b86b016c6fef246e96ac37ee6faea1222111a3bd336ef28acb5104c768",
+      "file_size": 41438,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-12-24T13:50:55.764Z",
+  "allow_singular_disclosure_after": -269367860.48667914,
+  "singular_disclosure_allowed": true,
+  "vote_count": 43,
+  "voters": [
+    "he4am",
+    "loaymorad",
+    "jensec",
+    "johnh4x0r",
+    "byq",
+    "cdl",
+    "bogdantc",
+    "europa",
+    "kapytein",
+    "yumi",
+    "and 33 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 3524,
+    "asset_type": "URL",
+    "asset_identifier": "edoverflow.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 5945,
+      "category": "team",
+      "content": "This report broke the record for the fastest time to resolution and then public disclosure. I would like to thank @sp1d3rs again for their fantastic report.",
+      "updated_at": "2017-11-24T14:35:25.202Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 116374,
+        "username": "edoverflow",
+        "name": "Ed",
+        "bio": "Web developer & security researcher. @EdOverflow",
+        "cleared": false,
+        "verified": false,
+        "website": "https://edoverflow.com",
+        "location": "",
+        "created_at": "2016-10-10T17:09:21.272Z",
+        "url": "https://hackerone.com/edoverflow",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/116/374/9a3cf4d62b2f507a0d33808aacbad863ec4455ac_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/116/374/9a3cf4d62b2f507a0d33808aacbad863ec4455ac_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/116/374/9a3cf4d62b2f507a0d33808aacbad863ec4455ac_original.png/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "id": 5946,
+      "category": "researcher",
+      "content": "I discovered an issue, when valid oauth `code` could be leaked to the various external hosts under some circumstances due to insufficient `redirect_uri` validation, and ability to use `Referer` header for code leakage.\nThe issue was caused by the fact, that using `redirect_uri` with an arbitrary path to the some page without comments widget enabled, and containing some insecure external links, we can prevent the `code` exchange (when i wrote 'stripped' in the report, i meant exchange), and leak it to the several external hosts with some user interaction. \n\nThe `code` exchange happened only on the pages with enabled comments widget (so flow should not be exploitable on such pages, since widget script exchanges and strips the `code` - and it become no more valid, so even if we leak such code somehow before it's stripping, it will be useless).\n\nThanks to the Ed for the fastest response in my experience!\n",
+      "updated_at": "2017-11-24T16:38:29.586Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 79690,
+        "username": "sp1d3rs",
+        "name": "Eugene Yakovchuk",
+        "bio": "The world tried to catch me, but it couldn't.",
+        "cleared": false,
+        "verified": true,
+        "website": "https://r1p.xyz",
+        "location": "Canada",
+        "created_at": "2016-05-23T03:07:23.595Z",
+        "url": "https://hackerone.com/sp1d3rs",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/079/690/6853ada3e124bdd8616b1be752223b558de38195_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/079/690/6853ada3e124bdd8616b1be752223b558de38195_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/079/690/6853ada3e124bdd8616b1be752223b558de38195_original.png/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    }
+  ],
+  "databaseId": "292783",
+  "votes": 43,
+  "latest_disclosable_activity_at": "2017-11-24T13:52:31.432Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:15:16.403902",
+    "source": "https://hackerone.com/reports/292783.json",
+    "report_id": 292783
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTI3ODM=",
+    "databaseId": "292783",
+    "title": "Oauth flow on the comments widget login can lead to the access code leakage",
+    "url": "https://hackerone.com/reports/292783",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-11-24T13:52:31.378Z",
+    "created_at": "2017-11-24T13:49:34.571Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "sp1d3rs"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjQzNDI=",
+      "handle": "ed",
+      "name": "Ed",
+      "url": "https://hackerone.com/ed",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5Mjc4Mw==",
+    "_id": "292783",
+    "disclosed": true,
+    "votes": 43,
+    "latest_disclosable_activity_at": "2017-11-24T13:52:31.432Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTI3ODM=",
+      "databaseId": "292783",
+      "title": "Oauth flow on the comments widget login can lead to the access code leakage",
+      "url": "https://hackerone.com/reports/292783",
+      "disclosed_at": "2017-11-24T13:52:31.378Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjQzNDI=",
+      "handle": "ed",
+      "name": "Ed",
+      "url": "https://hackerone.com/ed",
+      "currency": "usd"
+    }
+  }
+}

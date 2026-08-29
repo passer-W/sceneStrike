@@ -1,0 +1,222 @@
+{
+  "id": 3509632,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTA5NjMy",
+  "url": "https://hackerone.com/reports/3509632",
+  "title": "Information Disclosure via Logback Configuration Injection in GoCD Agent",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "none",
+  "readable_substate": "Informative",
+  "created_at": "2026-01-14T02:53:45.924Z",
+  "submitted_at": "2026-01-14T05:02:17.058Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "aigirl",
+    "url": "/aigirl",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13559,
+    "url": "https://hackerone.com/gocd",
+    "handle": "gocd",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/013/559/870f3bcab332d087cde7b75fe2922e93615e3f78_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/013/559/870f3bcab332d087cde7b75fe2922e93615e3f78_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GoCD",
+      "twitter_handle": "",
+      "website": "https://github.com/gocd/gocd",
+      "about": "Open-source continuous delivery server specializing in advanced workflow modeling and visualization"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-02-04T10:58:25.463Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-01-18T09:23:55.497Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Summary\n\nThe GoCD Agent's logging mechanism (Logback) allows for property substitution and custom configuration loading. By default, the config directory might not exist in the installation path. However, if an attacker creates this directory and places a specially crafted agent-launcher-logback.xml file, the GoCD Agent prioritizes this external configuration over its internal defaults. This allows an attacker to exfiltrate sensitive system environment variables by injecting specific patterns into the log layout.\n\nEnvironment\n\n    Product: GoCD Agent\n\n    Version: 25.4.0 (Latest)\n\n    OS: Windows 11 / Windows Server\n\n    Java Version: 25.0.1\n\nSteps to Reproduce\n\n    1. Navigate to the GoCD Agent installation directory (e.g., C:\\Program Files (x86)\\Go Agent\\).\n\n    2. Create a new directory named config if it does not exist.\n\n    3. Create a new file named agent-launcher-logback.xml inside the config directory.\n\n    4. Paste the following malicious Logback configuration into the file:\n\n<configuration>\n  <appender name=\"STDOUT\" class=\"ch.qos.logback.core.ConsoleAppender\">\n    <encoder>\n      <pattern>%n[!] EXFILTRATION_REPORT [!]%n- Host: ${HOSTNAME}%n- User: ${USERNAME}%n- Java: ${java.version}%n- WorkDir: ${user.dir}%n[!] END_OF_REPORT [!]%n%msg%n</pattern>\n    </encoder>\n  </appender>\n  <root level=\"INFO\">\n    <appender-ref ref=\"STDOUT\" />\n  </root>\n</configuration>\n\n5. Run the GoCD Agent via PowerShell (Administrator): .\\go-agent.bat.\n\n6. Observe the log output. The GoCD Agent will display: \"Using logback configuration from file config\\agent-launcher-logback.xml\".\n\n7. Confirm that sensitive system information (Hostname, User, Java version, etc.) is successfully evaluated and printed in the console.\n\n\n## Impact\n\nAn attacker or a malicious insider who can modify the agent configuration can steal sensitive environment variables. In many CI/CD environments, these variables often contain:\n\n    Cloud provider credentials (AWS_ACCESS_KEY_ID, etc.)\n\n    Database connection strings\n\n    Internal API keys\n\n    System architecture details that facilitate further attacks (SSRF/RCE)\n\nThis vulnerability transforms a configuration access into a critical data exfiltration vector.\n\nI am reporting this to help improve the security of GoCD. \n",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5223898,
+      "file_name": "GoCD_Information_Disclosure_PoC.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ik79feaiw9v0m8dritdewm5ddxl5?response-content-disposition=attachment%3B%20filename%3D%22GoCD_Information_Disclosure_PoC.mp4%22%3B%20filename%2A%3DUTF-8%27%27GoCD_Information_Disclosure_PoC.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042206Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7dc0d1d90a2d6ab4a1a341ef9af0d6691ce4bffa66bae1fcce26e89ca73b0b77",
+      "file_size": 20022182,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 5223899,
+      "file_name": "GoCD_Information_Disclosure_PoC.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/j9lfjrnigzz1t7qx1jqlwfqa6nby?response-content-disposition=attachment%3B%20filename%3D%22GoCD_Information_Disclosure_PoC.png%22%3B%20filename%2A%3DUTF-8%27%27GoCD_Information_Disclosure_PoC.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042206Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9c3c36a3a02831e71f572ee0ecef3539aa95542df381d4789f794acda85124a7",
+      "file_size": 64307,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5223900,
+      "file_name": "GoCD_Information_Disclosure_PoC.xml",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/n3spg8wiruudk4yi8b8ynro9qbwx?response-content-disposition=attachment%3B%20filename%3D%22GoCD_Information_Disclosure_PoC.xml%22%3B%20filename%2A%3DUTF-8%27%27GoCD_Information_Disclosure_PoC.xml&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042206Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=780203fd6bc1c7fa1bcbacf29c63f76207733a3d2ab000284bedf696e15b67fc",
+      "file_size": 498,
+      "type": "text/xml",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 37,
+  "voters": [
+    "aboalezz",
+    "mohaned0101",
+    "2026",
+    "0nlymohammed",
+    "johnnywatters",
+    "zakizu",
+    "officialdeadman",
+    "zinfinity",
+    "rootk1m",
+    "aravithapa",
+    "and 27 more..."
+  ],
+  "severity": {
+    "rating": "none",
+    "score": 0.0,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 58741,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "GoCD (https://www.gocd.org/download)",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3509632",
+  "votes": 37,
+  "latest_disclosable_activity_at": "2026-02-04T10:58:25.337Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:22:07.058239",
+    "source": "https://hackerone.com/reports/3509632.json",
+    "report_id": 3509632
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTA5NjMy",
+    "databaseId": "3509632",
+    "title": "Information Disclosure via Logback Configuration Injection in GoCD Agent",
+    "url": "https://hackerone.com/reports/3509632",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-02-04T10:58:25.463Z",
+    "created_at": "2026-01-14T02:53:45.924Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "none",
+      "score": 0.0
+    },
+    "reporter": {
+      "username": "aigirl"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTM1NTk=",
+      "handle": "gocd",
+      "name": "GoCD",
+      "url": "https://hackerone.com/gocd",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1MDk2MzI=",
+    "_id": "3509632",
+    "disclosed": true,
+    "votes": 37,
+    "latest_disclosable_activity_at": "2026-02-04T10:58:25.337Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTA5NjMy",
+      "databaseId": "3509632",
+      "title": "Information Disclosure via Logback Configuration Injection in GoCD Agent",
+      "url": "https://hackerone.com/reports/3509632",
+      "disclosed_at": "2026-02-04T10:58:25.463Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTM1NTk=",
+      "handle": "gocd",
+      "name": "GoCD",
+      "url": "https://hackerone.com/gocd",
+      "currency": "usd"
+    }
+  }
+}

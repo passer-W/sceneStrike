@@ -1,0 +1,202 @@
+{
+  "id": 530499,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzA0OTk=",
+  "url": "https://hackerone.com/reports/530499",
+  "title": "WooCommerce: Persistent XSS via customer address (state/county)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-04-07T09:06:52.809Z",
+  "submitted_at": "2019-04-07T09:06:52.809Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "foobar7",
+    "url": "/foobar7",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/197/817/efb62be6777043aba724654aa495ebeccabb9e72_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 111,
+    "url": "https://hackerone.com/automattic",
+    "handle": "automattic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Automattic",
+      "twitter_handle": "",
+      "website": "https://automattic.com",
+      "about": "WordPress.com, WooCommerce, WordPress VIP, Jetpack, Beeper, Texts, Akismet, Gravatar, Crowdsignal, Tumblr and more!"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-05-26T08:35:50.322Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-04-26T08:35:48.875Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Persistent XSS via customer address (state/county)\n================================\n\nCVSS\n----\n\nHigh 7.2 [CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N](https://www.first.org/cvss/calculator/3.0#CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N)\n\nDescription\n-----------\n\nThe current version (3.5.7) of the WooCommerce WordPress plugin echoes the state/county of a customer in the admin backend without encoding, leading to persistent XSS.\n\nFor a successful attack, an attacker needs a customer account, though it is to be expected that account creation is available for users in a considerable amount of setups.\n\nIf the victim is an administrator on a default WordPress setup, an attacker can exploit the issue to gain code execution on the server by eg sending a request to edit a WordPress plugin file.\n\nPOC\n---\n\nSetup: Install the WooCommerce plugin & open registration / add a user (permissions do not matter, I used \"customer\"). \n\nTo place the payload:\n\n1. Login as a customer at http://192.168.0.101/wordpress/my-account/\n2. To place a payload, either:\n    - add an item to cart & proceed to checkout. Under \"Billing Details\", select UK as country and enter `'\"><img src=x onerror=alert(1) x=y` as `County` (note the missing `>` which is required as tags are filtered).\n    - Alternatively, simply change the address under account settings at `http://192.168.0.101/wordpress/my-account/edit-address/`.\n\nTo trigger the payload:\n\n1. Go to `http://192.168.0.101/wordpress/wp-admin/users.php` and click on the customer, or directly visit `http://192.168.0.101/wordpress/wp-admin/user-edit.php?user_id=4`, where `4` is the customers ID.\n\n## Impact\n\nWith a successful attack, an attacker can read data available to the attacked user or perform arbitrary request in the name of the attacked user. \n\nWith a default setup, an attacker can gain code execution on the server by eg editing a WordPress plugin file.",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 463897,
+      "file_name": "xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/463/897/164bf771a0f5417aabc88070a2d4b40f2019112e/xss.png?response-content-disposition=attachment%3B%20filename%3D%22xss.png%22%3B%20filename%2A%3DUTF-8%27%27xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053308Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=355617f4985c7ad63941d8a957c0494b4ee69c219e3e144f2be586b5af3d3b2d",
+      "file_size": 49837,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-05-26T08:35:48.944Z",
+  "allow_singular_disclosure_after": -224629039.64617813,
+  "singular_disclosure_allowed": true,
+  "vote_count": 40,
+  "voters": [
+    "vavkamil",
+    "sameerphad72",
+    "yinvi777",
+    "savitar0x01",
+    "zikads",
+    "michan",
+    "javo",
+    "ecx",
+    "cryptographer",
+    "roguesmg",
+    "and 30 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "530499",
+  "votes": 40,
+  "latest_disclosable_activity_at": "2019-05-26T08:35:50.347Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:33:08.699870",
+    "source": "https://hackerone.com/reports/530499.json",
+    "report_id": 530499
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzA0OTk=",
+    "databaseId": "530499",
+    "title": "WooCommerce: Persistent XSS via customer address (state/county)",
+    "url": "https://hackerone.com/reports/530499",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-05-26T08:35:50.322Z",
+    "created_at": "2019-04-07T09:06:52.809Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "foobar7"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMzUyOTI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-04-25T13:14:57.077Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzUzMDQ5OQ==",
+    "_id": "530499",
+    "disclosed": true,
+    "votes": 40,
+    "latest_disclosable_activity_at": "2019-05-26T08:35:50.347Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzA0OTk=",
+      "databaseId": "530499",
+      "title": "WooCommerce: Persistent XSS via customer address (state/county)",
+      "url": "https://hackerone.com/reports/530499",
+      "disclosed_at": "2019-05-26T08:35:50.322Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    }
+  }
+}

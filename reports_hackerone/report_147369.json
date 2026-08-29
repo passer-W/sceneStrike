@@ -1,0 +1,204 @@
+{
+  "id": 147369,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDczNjk=",
+  "url": "https://hackerone.com/reports/147369",
+  "title": "User can start call in a channel of an unpaid account",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-06-26T03:32:17.371Z",
+  "submitted_at": "2016-06-26T03:32:17.371Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 69,
+    "url": "https://hackerone.com/slack",
+    "handle": "slack",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Slack",
+      "twitter_handle": "slackhq",
+      "website": "https://slack.com",
+      "about": "All your team communication in one place, instantly searchable, and available wherever you go."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-09-15T02:05:21.679Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-08-16T02:05:06.579Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Found a super minor issue that allows a user to start a call in a channel of an unpaid account. Besides the minor financial incentive for an attacker, this doesn't have a super high impact. Wanted to let you know anyway since it's not possible through the UI by default. To reproce it, start by signing in to a user that is part of an unpaid account and start intercepting your network traffic (I used Burp Suite).\n\n - Go to a channel, in the top bar, you'll see that the Call feature is not available.\n\n{F101678}\n\n - Go to a private chat window of another user\n - Intercept your network traffic and click the \"Call\" button in the top bar. The first request will be to https://account.slack.com/call/ID. Forward this request.\n - The next request will look like this:\n\n```\nPOST /api/screenhero.rooms.create?_x_id=<ID> HTTP/1.1\nHost: account.slack.com\n...\n\n------WebKitFormBoundaryoqDvFcsV6Y4A1ByJ\nContent-Disposition: form-data; name=\"regions\"\n\nwest|east|ap|eu\n------WebKitFormBoundaryoqDvFcsV6Y4A1ByJ\nContent-Disposition: form-data; name=\"protocol\"\n\n1.0\n------WebKitFormBoundaryoqDvFcsV6Y4A1ByJ\nContent-Disposition: form-data; name=\"channel\"\n\nD1CCM92P5\n------WebKitFormBoundaryoqDvFcsV6Y4A1ByJ\nContent-Disposition: form-data; name=\"token\"\n\n<SLACK API TOKEN>\n------WebKitFormBoundaryoqDvFcsV6Y4A1ByJ--\n```\n\n - Change the `channel` value to the ID of the a channel. This ID can be obtained by clicking on a channel in the left column and copy it from the WebSocket data being sent to Slack. Now forward the requests and stop intercepting traffic.\n - The call will be posted in the channel:\n\n{F101676}",
+  "bounty_amount": "100.0",
+  "formatted_bounty": "$100",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 101676,
+      "file_name": "call-in-channel.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/101/676/e0122848ba2ddb982dcfc045b323dc4f95497164/call-in-channel.png?response-content-disposition=attachment%3B%20filename%3D%22call-in-channel.png%22%3B%20filename%2A%3DUTF-8%27%27call-in-channel.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUMVDC725%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065209Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCEKKFgyGotKu%2BMBbuu3IdV5Bmn0oLe07aHvoqK5pSC2gIgBwomP%2FOHAWvwUa4nxYjGiaXPBrBynDU1CeHT2y1Fy%2FUqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDNeu1uxObvN1D7nGvCqPBeFew5g%2BfW%2Bt0%2F6eqWED1NtlcPYqM5XpiJCsGaRxL%2BXlO%2FVm8rAYltM9o%2FdhVWaVlxPTY20DWCyBHbpNrBAv6%2B2EQNosrdt%2FQSXqa49D28uLWYYrHOg%2FZvNlN24RDTx0Bk%2FMpGNGB%2FqHjHMLjEoaeLH8hCsU7dGs3G7bF1IGw%2FCr8IAat1UK6KuHHM%2FvrW%2FbQ6HFUI20rU5kNZlYhz3d%2BgiAZqS10Av%2FccG7Y3ObtAl6xFgTjfra%2FMC%2BVK1vtyrfG0kYyL6cImUN%2FeGk%2FW2FctCQqXt1aCPo5Dxaj5xVy4WZlTWfs7ZzP4xxrjJ1NBmef2Fbbwxm6CCvWZkNnVFr9S%2F%2B5blv81eoeuJSmbfbfghm1flY9DOvx7atEUuBuyWsASV3QDVvg7U9bgeUMPcq2UxhrnKHXA31WK2FNpziwVAZyOHe9ycMgNWWc7%2BObTaWRmZ6PQ5o0gole3AFfJXnHVjAzgZ8jurR6i6tsqsH0f3sRD9YtKHN%2Bh9kQV3SgxpLkeSQZ042RzPhN9ta80YZ2t110iKK0gNcZGU321Sdxc1ih0hiwBxlYKBHl3lhf7quLEL7mjdjTz3bauPpaNNoZJAj7jXchwOiOttUgPh87QZbKXQn4x%2BjqViKqeyHxkRvomKavmOoXvtMD%2Bd3l8QsHKDG2ZXycGcDvmC1u2XCnudUlr9SbTIoeUHV0raCm6ecVqH4NWB5ORxfbRq1AgH2pPur0iMu01nSCD8ylLaENRlAW99kIHUnZGdrvsDBm0v0s4Vw5eqrzSs0KGklZRjRg3R2nPsk4hwpdAtngyCCSzWRmZwGBDwR8u5ChaZVXbLdyGd%2F1XGqFGlnrEQdq0PGHGPjvzlS6q8p7ZnJwlQveIQw4tK30gY6sQFwIu8jOKVvMzUYQQv1Qb3sRWRQeYg12htqDTKEKNd8M%2Fc3RkgKsdplgG%2BPHT5BqIzNR196O7JlZZwmCxNK0nRLstFMfYlwwogzAZD8aWv8D2ZkyeHu5bpRo0DvrO16l58JsjTRFfK5MlwRpBFvzFUcrg%2FZHMNi6tiBDyWLj%2BrfWj5%2Fq%2BCsFDAF3Hj%2Bjpq8MZVCfMfMFoJmC5hI2U77I2TmF4vLahRXe24CrCeMfOa6XfM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=210a67c4110aa2e753c1d0aae5a7697305d20ace4f17cba28a4004a1c3a3cf16",
+      "file_size": 101446,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 101678,
+      "file_name": "call-not-available.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/101/678/3e1f50a1846d0d2ee35d167b866c39b68bbecaf7/call-not-available.png?response-content-disposition=attachment%3B%20filename%3D%22call-not-available.png%22%3B%20filename%2A%3DUTF-8%27%27call-not-available.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUMVDC725%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065209Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCEKKFgyGotKu%2BMBbuu3IdV5Bmn0oLe07aHvoqK5pSC2gIgBwomP%2FOHAWvwUa4nxYjGiaXPBrBynDU1CeHT2y1Fy%2FUqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDNeu1uxObvN1D7nGvCqPBeFew5g%2BfW%2Bt0%2F6eqWED1NtlcPYqM5XpiJCsGaRxL%2BXlO%2FVm8rAYltM9o%2FdhVWaVlxPTY20DWCyBHbpNrBAv6%2B2EQNosrdt%2FQSXqa49D28uLWYYrHOg%2FZvNlN24RDTx0Bk%2FMpGNGB%2FqHjHMLjEoaeLH8hCsU7dGs3G7bF1IGw%2FCr8IAat1UK6KuHHM%2FvrW%2FbQ6HFUI20rU5kNZlYhz3d%2BgiAZqS10Av%2FccG7Y3ObtAl6xFgTjfra%2FMC%2BVK1vtyrfG0kYyL6cImUN%2FeGk%2FW2FctCQqXt1aCPo5Dxaj5xVy4WZlTWfs7ZzP4xxrjJ1NBmef2Fbbwxm6CCvWZkNnVFr9S%2F%2B5blv81eoeuJSmbfbfghm1flY9DOvx7atEUuBuyWsASV3QDVvg7U9bgeUMPcq2UxhrnKHXA31WK2FNpziwVAZyOHe9ycMgNWWc7%2BObTaWRmZ6PQ5o0gole3AFfJXnHVjAzgZ8jurR6i6tsqsH0f3sRD9YtKHN%2Bh9kQV3SgxpLkeSQZ042RzPhN9ta80YZ2t110iKK0gNcZGU321Sdxc1ih0hiwBxlYKBHl3lhf7quLEL7mjdjTz3bauPpaNNoZJAj7jXchwOiOttUgPh87QZbKXQn4x%2BjqViKqeyHxkRvomKavmOoXvtMD%2Bd3l8QsHKDG2ZXycGcDvmC1u2XCnudUlr9SbTIoeUHV0raCm6ecVqH4NWB5ORxfbRq1AgH2pPur0iMu01nSCD8ylLaENRlAW99kIHUnZGdrvsDBm0v0s4Vw5eqrzSs0KGklZRjRg3R2nPsk4hwpdAtngyCCSzWRmZwGBDwR8u5ChaZVXbLdyGd%2F1XGqFGlnrEQdq0PGHGPjvzlS6q8p7ZnJwlQveIQw4tK30gY6sQFwIu8jOKVvMzUYQQv1Qb3sRWRQeYg12htqDTKEKNd8M%2Fc3RkgKsdplgG%2BPHT5BqIzNR196O7JlZZwmCxNK0nRLstFMfYlwwogzAZD8aWv8D2ZkyeHu5bpRo0DvrO16l58JsjTRFfK5MlwRpBFvzFUcrg%2FZHMNi6tiBDyWLj%2BrfWj5%2Fq%2BCsFDAF3Hj%2Bjpq8MZVCfMfMFoJmC5hI2U77I2TmF4vLahRXe24CrCeMfOa6XfM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0eece35221dad18b3af7253f800e2f3e2e71f895ca1ef60d3b56ee01f8977c97",
+      "file_size": 23262,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-09-15T02:05:06.739Z",
+  "allow_singular_disclosure_after": -309588423.20776665,
+  "singular_disclosure_allowed": true,
+  "vote_count": 10,
+  "voters": [
+    "yaworsk",
+    "madrobot",
+    "eveeez",
+    "sumit7",
+    "spetr0x",
+    "hackworld",
+    "dyabla",
+    "cryptosector",
+    "vasuvetri",
+    "ebrynne"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "147369",
+  "votes": 10,
+  "latest_disclosable_activity_at": "2016-09-15T02:05:21.759Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:52:10.045454",
+    "source": "https://hackerone.com/reports/147369.json",
+    "report_id": 147369
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDczNjk=",
+    "databaseId": "147369",
+    "title": "User can start call in a channel of an unpaid account",
+    "url": "https://hackerone.com/reports/147369",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-09-15T02:05:21.679Z",
+    "created_at": "2016-06-26T03:32:17.371Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMTc3MQ==",
+            "amount": "100.00",
+            "awarded_amount": "100.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-08-16T00:27:09.042Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0NzM2OQ==",
+    "_id": "147369",
+    "disclosed": true,
+    "votes": 10,
+    "latest_disclosable_activity_at": "2016-09-15T02:05:21.759Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDczNjk=",
+      "databaseId": "147369",
+      "title": "User can start call in a channel of an unpaid account",
+      "url": "https://hackerone.com/reports/147369",
+      "disclosed_at": "2016-09-15T02:05:21.679Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    }
+  }
+}

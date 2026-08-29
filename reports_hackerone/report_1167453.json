@@ -1,0 +1,272 @@
+{
+  "id": 1167453,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTY3NDUz",
+  "url": "https://hackerone.com/reports/1167453",
+  "title": "Add new development stores without permission",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-04-17T22:12:55.937Z",
+  "submitted_at": "2021-04-17T22:12:56.071Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jmp_35p",
+    "url": "/jmp_35p",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/giyoz9ry9im7n91le455jxg5caqp/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-06-04T19:06:25.818Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-05-10T22:11:22.360Z",
+  "team_member_agreed_on_going_public_at": "2021-06-04T19:06:25.707Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Details\nA staff member who only has permission to add and remove managed stores can also create development stores. It appears proper permission checks are not performed when /organizationID/stores/signup_object/dev_store endpoint is queried, as long as a staff member has store access, a token is returned. I decided to do this from the partner dashboard to proof that not only can development stores be created, they can also be logged into. Further information on setup and steps to reproduce are provided below.\n\nSetup\nOrganization owner - Owner \nStaff member - Doe\n1. Owner gives Doe both development store and managed store permission. See dev_store_B.png for details.\n2. Doe logs in and visits https://partners.shopify.com/organizationID/stores/new and selects development store.\n3. Owner edits Doe's permission so he can only add and remove managed stores. See dev_store.png for details.\n\nSteps to reproduce\n1. Doe proceeds to create the development store and gets logged in automatically. See dev_store_A.png, dev_store_C.png and dev_store_D.png for details.\n2. Alternatively, send a GET request to /organizationID/stores/signup_object/dev_store to obtain the required token. See dev_store_G.png for details.\n3. The token obtained above should be used in the following POST request.See dev_store_E.png and dev_store_F.png.\n\n```\nPOST /services/signup/create HTTP/1.1\nHost: app.shopify.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/86.0\nAccept: application/json, text/javascript, */*; q=0.01\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8\nX-Requested-With: XMLHttpRequest\nContent-Length: 1224\nOrigin: https://app.shopify.com\nDNT: 1\nConnection: close\nCookie: ...\n\n_y=&ref=&ssid=&source=&source_url=&source_url_referer=&signup_code=&signup_source=development+shop&signup_source_details=test_app_or_theme&signup_page=&signup_page_referer=&signup_locale=&domain_to_connect=&signup%5Bshop_name%5D=newiez2&signup%5Bsubdomain%5D=&signup%5Bfirst_name%5D=&signup%5Blast_name%5D=&signup%5Bemail%5D=example%40gmail.com&signup%5Bpassword%5D=5syyyypT&signup%5Bconfirm_password%5D=5syyyypT&signup%5Baddress1%5D=Suite+10&signup%5Bcity%5D=London&signup%5Bprovince%5D=&signup%5Bzip%5D=Swe10928&signup%5Bcountry%5D=GB&signup%5Bphone%5D=&signup%5Bpos%5D=&signup%5Bextra%5D%5Baffiliate_shop%5D=eyJfcmFpbHMiOnsibWVzc2F&signup%5Bextra%5D%5Borganization_id%5D=1022333&signup%5Bextra%5D%5Bpartner_test_shop%5D=&signup%5Bsignup_types%5D%5B%5D=affiliate_shop&identity_account_experiment=\n\n```\n\n## Impact\n\nStaff member can perform actions that require permission",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1269318,
+      "file_name": "dev_store_A.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/iouaab9dofvr9ietnaxokum7wkph?response-content-disposition=attachment%3B%20filename%3D%22dev_store_A.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_A.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6da2cb6007c3f4986d35c241825d7421a3a2cfe2fedeff3ba42083ec68deebfd",
+      "file_size": 81619,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269319,
+      "file_name": "dev_store.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qyv767e4a05ufl94npdg7l8nkdxl?response-content-disposition=attachment%3B%20filename%3D%22dev_store.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7e870a87cb956907ba806d45d4252c7150a61720f8ca98bb646ccac1a712683f",
+      "file_size": 127635,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269320,
+      "file_name": "dev_store_B.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qnvzt3vwk15f8qcyg1l1v45puif4?response-content-disposition=attachment%3B%20filename%3D%22dev_store_B.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_B.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1791116945776071ff35f0a600f12d1bf3828cdc5054b0d29189b1db4fa44602",
+      "file_size": 132289,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269321,
+      "file_name": "dev_store_C.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/vbfwt6ygee4no2r1bhq4atseb1d7?response-content-disposition=attachment%3B%20filename%3D%22dev_store_C.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_C.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f4bad4a06973b017b85c94359f3ae8c424bc414bdf8c10915a7d0e5cbb661e75",
+      "file_size": 66331,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269322,
+      "file_name": "dev_store_D.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/w5zih2y3yq1kmyixl6f81qob1ndy?response-content-disposition=attachment%3B%20filename%3D%22dev_store_D.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_D.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7f7a61cc1acb12cf503f4c5bbb506009cfae44beca8e6d2b26bc4592df23a671",
+      "file_size": 104923,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269323,
+      "file_name": "dev_store_E.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/94260b98x8l8663n7y5oxbazag55?response-content-disposition=attachment%3B%20filename%3D%22dev_store_E.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_E.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=13f58e3950d6b502f02db84323ba97de2d4f3065ef988c7339fe7dc8734da552",
+      "file_size": 241702,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269324,
+      "file_name": "dev_store_F.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7cmjmfkj8lpxrrnbg6sixmmppuzs?response-content-disposition=attachment%3B%20filename%3D%22dev_store_F.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_F.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b8ff2be0a4e010f02fb9754853fc98fe0af92518243ffda9c4a8d62563430dc0",
+      "file_size": 216682,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1269325,
+      "file_name": "dev_store_G.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/0ug3d5far83k04jb872hhvbkxaez?response-content-disposition=attachment%3B%20filename%3D%22dev_store_G.png%22%3B%20filename%2A%3DUTF-8%27%27dev_store_G.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZZCUSFUS%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063701Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJHMEUCIQCfrNHuQS3fsWr%2FeFBZRbe70a7F95hLjF74re0scS5jLwIgMaU0auKjWcVDdZ1d5ixccvATU33JudJn9facnOtukP4qsgUIBxADGgwwMTM2MTkyNzQ4NDkiDMwhWPg9JrX3QIgLSiqPBQAgEp4%2FxFZjMvEFzdhw2sCmMOUAp85moLGCVupj%2FQd%2FmyU7gfjOo0ITJvZnwgOWIRAknjlQR0ae07s0xuipROwzBKoWWOCpAoF1OcvvhB9r3rhWjEdWjjs4HBfePNHmIlFluVrkggiQTIJKjJnZK%2BXMXLRGrhxFYlJ1Dnv2MNcUcmuAcUCwSeX%2Bxa3fZ2vyurQIs4D8ljdxc%2FTO7C7%2BQGERIOvqLTRC8zFEY9zYW09iFMsgyPbDmTLozC10SyF5rVcvcbrjZZoPHRsrMdj6tzDy3%2BqwsNwDwQBCWHfuvKLJefU7omR45%2B16GmmBprfMCpmFzA1l8BsIMioL%2BEhyHNtEowaO5VzFxBMVYGKITS88dmgo0OBLFhgO8psElyd5zvPl9%2FVMKVu1nXwW88CmlrhlsH%2Frfsi0ujrjDFELx%2FfwBjJkamHLAGkbV7wO3HYhs2uqzXBEIxkEmaGk0jqy%2FS94g0zUczrfb%2BiBMIjMCKuxy6R4ZhuIYzabBKRC6MCyZIMh5ZUx%2F6y4KFPNT1QPF3gmTQW%2BRUhUrCxtdTj%2BB71cnJxSv9LJbjBfJVPkONRizdyTF77oST%2Bg%2Bvb0QS0y6AtAMv31c2FHzj%2FC91M9KkDEK5WF2UhCRdfv6axtXEAXa32jAC1id%2Fu4cRaNi2HYHzAx%2B2CLo6hG4Xm5ovMt0aorFrnw3diQg3xk%2FaQQCKqKWsaWoecOJMdu7T1Z%2BR7z0B8S%2BeJoMBnCHG%2FT%2FW80mK7kpDO4W8%2B16sOLCgXN8SlluqoSr%2FQowMW%2BueCqYnJHbbnOjyHCxwTSJrRt9t2%2FdD0Z1TD5I8uOtKt8MO2%2BnIwmlxtBIi12iNIbL%2BXpZeGEsIb9aLvyNQge64jJGFlpA8gwrpyd0gY6sQHrwJxFZlE0E4rhJzidXOAB7054h8W8xFWfjNKsuiXkBg%2BKT1blpn3oUE0UJOyBG2Z6YTm%2BRlIpDM27XuJ5lArJ%2Br3Iq%2B0tTVfelSFf3eD3D%2Fs504hqEir3V59ta6eAeZbj4%2FvIu6y80iryODgRPeefnCCGOW8KYscMZ3UJNuftOHNTbAs6cccGxUGg3XU4GX6g%2FTQBpV9j5Cpc0zWpYtMbMpesW93dnV84Dt6t8mmvBJQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fa4e309cdafc95eb7bd6e092b24fd4d049ee74318b51333520c3ea8eef354797",
+      "file_size": 192648,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 88,
+  "voters": [
+    "taha",
+    "drsniper",
+    "bombon",
+    "mattberg",
+    "noobyboy",
+    "yuvraj_dighe",
+    "ali",
+    "run_win",
+    "tess",
+    "mohaned0101",
+    "and 78 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 422,
+    "asset_type": "URL",
+    "asset_identifier": "partners.shopify.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1167453",
+  "votes": 88,
+  "latest_disclosable_activity_at": "2021-06-04T19:06:25.868Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:37:01.276615",
+    "source": "https://hackerone.com/reports/1167453.json",
+    "report_id": 1167453
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTY3NDUz",
+    "databaseId": "1167453",
+    "title": "Add new development stores without permission",
+    "url": "https://hackerone.com/reports/1167453",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-06-04T19:06:25.818Z",
+    "created_at": "2021-04-17T22:12:55.937Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "jmp_35p"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yOTkwNTY=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-04-28T19:41:24.541Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExNjc0NTM=",
+    "_id": "1167453",
+    "disclosed": true,
+    "votes": 88,
+    "latest_disclosable_activity_at": "2021-06-04T19:06:25.868Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTY3NDUz",
+      "databaseId": "1167453",
+      "title": "Add new development stores without permission",
+      "url": "https://hackerone.com/reports/1167453",
+      "disclosed_at": "2021-06-04T19:06:25.818Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

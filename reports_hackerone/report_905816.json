@@ -1,0 +1,226 @@
+{
+  "id": 905816,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDU4MTY=",
+  "url": "https://hackerone.com/reports/905816",
+  "title": "No Rate Limit when accessing \"Password protection\" enabled surveys leads to bypassing passwords via \"pd-pass_surveyid\" cookie",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-23T04:36:24.923Z",
+  "submitted_at": "2020-06-23T04:36:24.923Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bugra",
+    "url": "/bugra",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/343/105/470c1fd0c4915f1fa9e9376053d0c1ba8af260b7_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 111,
+    "url": "https://hackerone.com/automattic",
+    "handle": "automattic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Automattic",
+      "twitter_handle": "",
+      "website": "https://automattic.com",
+      "about": "WordPress.com, WooCommerce, WordPress VIP, Jetpack, Beeper, Texts, Akismet, Gravatar, Crowdsignal, Tumblr and more!"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-11-18T14:23:45.121Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-11-18T02:56:08.028Z",
+  "team_member_agreed_on_going_public_at": "2020-11-18T14:23:45.015Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nHi team,\nIf you write the right password on any password protected survey, you will see this request :\n{F878934}\n\nThis request is protected with rate limit, that's great. But if you look to response, you will see a cookie. The password protection feature is cookie-based system.\nIn my survey, if you write the right password, system will set this cookie : `pd-pass_DA0C46C4EAECF2BA=81dc9bdb52d04dc20036dbd8313ed055`\nAnd basically this is `pd-pass_SURVEYID=md5(password)`, it encrypts the right password with MD5 and if you visit the survey page with this cookie, you can see the survey.\nSo, I tried to brute force this cookie with Burp Suite's `Payload Processing` feature. (it encrypts your value with any hash type). And it worked, there is no rate limit when directly accessing to the survey page with password cookie.\n\nActually, I didn't any way to find the survey IDs. But when you go to a survey without password protection, the survey ID will be inside the source code. And if you enable the password protection after that, the survey ID won't be changed.\nSo, attacker can save the survey ID before the survey creator enable the password protection feature.\n\nAlso, the  `WordPress.com Shortcode` on `Sharing` page leaks the survey ID too. (but I don't know how it works, maybe this code turns to iframe etc. whne you paste it to any wordpress.com website)\n{F878946}\n\n## Steps To Reproduce:\n\n  1. Go to your survey's `Sharing` page and copy the  survey ID from `WordPress.com Shortcode` \n  1. Turn on intercept on Burp Suite and go to your password protected survey.\n  1. And send the GET request to Intruder\n  1. Add `pd-pass_YOURSURVEYIDHERE=test` to cookie and set payload position to `test` value.\n  1. Now go to `Payloads` tab on Intruder and set the `Payload Processing` feature like that :\n       {F878947}\n  1. Set the payload type to `Brute forcer` and you can change the other options like threads etc.\n  1. Start the attack.\n\nYou can watch the video :\n{F878959}\n\nProbably, this issue works on quizzes too, I didn't test it.\n\n## Impact\n\nBypassing the password protected surveys with brute force",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 878934,
+      "file_name": "request.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/1V7aFWA7GKtpL6X2strYen7S?response-content-disposition=attachment%3B%20filename%3D%22request.PNG%22%3B%20filename%2A%3DUTF-8%27%27request.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045346Z&X-Amz-Expires=2697&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1563e86db0e2863f069bb8dd4b8406cfc9c3d5336dff1f209aab60075cd866d6",
+      "file_size": 49347,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 878946,
+      "file_name": "surveyid.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/vz5LytGVDhGiKQksuNbLKxEb?response-content-disposition=attachment%3B%20filename%3D%22surveyid.PNG%22%3B%20filename%2A%3DUTF-8%27%27surveyid.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045346Z&X-Amz-Expires=2697&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ddc0cdef73306e8f0c962910f6691fec16282e716923eeb153ba137cd8cd882d",
+      "file_size": 5798,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 878947,
+      "file_name": "payloadprocessing.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7Dk2jNE5Vm3d9ebQzaHatw7q?response-content-disposition=attachment%3B%20filename%3D%22payloadprocessing.PNG%22%3B%20filename%2A%3DUTF-8%27%27payloadprocessing.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045346Z&X-Amz-Expires=2697&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=29bdf2ed6041e3280e45722621b058e10a5da495e5318f18381827235551e267",
+      "file_size": 10634,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 878959,
+      "file_name": "crowdsignalpoc.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/BZfX9NSXH8tn6k4Kb2CvCTK5?response-content-disposition=attachment%3B%20filename%3D%22crowdsignalpoc.mp4%22%3B%20filename%2A%3DUTF-8%27%27crowdsignalpoc.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045346Z&X-Amz-Expires=2697&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=79c19ec6ba564012cea568b3fc84c2eacd27cb975a9735263bb8ffdf174a0092",
+      "file_size": 6525920,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-12-18T02:56:08.078Z",
+  "allow_singular_disclosure_after": -175226258.77351424,
+  "singular_disclosure_allowed": true,
+  "vote_count": 33,
+  "voters": [
+    "ezzra",
+    "taha",
+    "xploiterr",
+    "bombon",
+    "ltidi",
+    "ali",
+    "th4nu_0x0",
+    "mohaned0101",
+    "thalaivar304",
+    "mit0z",
+    "and 23 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "905816",
+  "votes": 33,
+  "latest_disclosable_activity_at": "2020-11-18T14:23:45.144Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:53:47.027144",
+    "source": "https://hackerone.com/reports/905816.json",
+    "report_id": 905816
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDU4MTY=",
+    "databaseId": "905816",
+    "title": "No Rate Limit when accessing \"Password protection\" enabled surveys leads to bypassing passwords via \"pd-pass_surveyid\" cookie",
+    "url": "https://hackerone.com/reports/905816",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-11-18T14:23:45.121Z",
+    "created_at": "2020-06-23T04:36:24.923Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "bugra"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMjgxMTQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-07-09T16:27:02.667Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkwNTgxNg==",
+    "_id": "905816",
+    "disclosed": true,
+    "votes": 33,
+    "latest_disclosable_activity_at": "2020-11-18T14:23:45.144Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MDU4MTY=",
+      "databaseId": "905816",
+      "title": "No Rate Limit when accessing \"Password protection\" enabled surveys leads to bypassing passwords via \"pd-pass_surveyid\" cookie",
+      "url": "https://hackerone.com/reports/905816",
+      "disclosed_at": "2020-11-18T14:23:45.121Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    }
+  }
+}

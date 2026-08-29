@@ -1,0 +1,216 @@
+{
+  "id": 270999,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNzA5OTk=",
+  "url": "https://hackerone.com/reports/270999",
+  "title": "[Markdown] Stored XSS via character encoding parser bypass",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2017-09-22T20:33:25.117Z",
+  "submitted_at": "2017-09-22T20:33:25.117Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "ysx",
+    "url": "/ysx",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-10-18T12:24:50.694Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-10-18T06:15:54.370Z",
+  "team_member_agreed_on_going_public_at": "2017-10-18T12:24:50.620Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi @briann and team,\n\nA carefully crafted injection used against the Markdown input parser can be leveraged to store and execute arbitrary JavaScript on GitLab 10.0 hosts. Given the nature of this injection, which makes use of a rather esoteric filter bypass, the scope for exploitation may vary.\n\n## Proof of concept\nI have been able to exploit the following vulnerability within project Wiki pages. Consequently, prior to reproducing this issue please set up a test GitLab 10.0 instance with a Markdown-formatted project wiki. For ease of exploitation, the use of a web intercept proxy (e.g. Burp Suite) is recommended.\n\n1. Please proceed to access your Wiki, then select \"Edit\" on the homepage (or create a new Markdown page).\n\n2. Next, please activate your web intercept proxy. After doing so, enter generic text into the \"Content\" field and select the \"Save Changes\" button.\n\n3. Return to your web intercept proxy, and identify the POST request to the `wikis` endpoint. Within this request, please identify the `content ` parameter and replace this with the below payload.\n\n4. Finally, please POST the request and disable your web intercept proxy. Upon arriving on the updated Wiki page, please select the hyperlink to execute the JavaScript payload.\n\n### Markdown parser payload\n\n```\n%3Ca+href%3D%22%01java%03script%3Aconfirm%28document.domain%29%22%3EClick+to+execute%3Ca%3E%0D%0A\n```\n\n### Supporting evidence\n\n{F223200}\n\n## Verified conditions\n\nAt the time of testing, I have successfully confirmed exploitability in the following environment:\n\n* Firefox 55.0.3 stable (32-bit) on Ubuntu 16.04.3 LTS\n* Fresh GitLab 10.0.0 CE install\n\nThanks,\n\nYasin",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 223200,
+      "file_name": "GitLab_Markdown_XSS.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/223/200/38834376c20f81a352e3a12941c603030563481d/GitLab_Markdown_XSS.png?response-content-disposition=attachment%3B%20filename%3D%22GitLab_Markdown_XSS.png%22%3B%20filename%2A%3DUTF-8%27%27GitLab_Markdown_XSS.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061914Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d2672747bf247f4f6b249b9a35c73d2e01cdf1ccc0f5728d8eeedda1063ec225",
+      "file_size": 61359,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-11-17T06:15:54.425Z",
+  "allow_singular_disclosure_after": -272592199.9728676,
+  "singular_disclosure_allowed": true,
+  "vote_count": 20,
+  "voters": [
+    "sp1d3rs",
+    "aroly",
+    "michiel",
+    "bl4de",
+    "spam404",
+    "flashdisk",
+    "edoverflow",
+    "gamliel",
+    "geeknik",
+    "mpz",
+    "and 10 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 5605,
+      "category": "researcher",
+      "content": "A carefully crafted injection could be leveraged to achieve persistent XSS. This affected all locations where the Markdown parser was deployed. The Project Wiki feature was used to present a suitable proof of concept. Thanks again to @briann and the GitLab team for the swift remediation.",
+      "updated_at": "2017-10-18T12:39:15.366Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 47082,
+        "username": "ysx",
+        "name": "",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "",
+        "location": "",
+        "created_at": "2015-12-20T12:11:13.354Z",
+        "url": "https://hackerone.com/ysx",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "medium": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "xtralarge": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+        }
+      }
+    }
+  ],
+  "databaseId": "270999",
+  "votes": 20,
+  "latest_disclosable_activity_at": "2017-10-18T12:24:50.713Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:19:14.509137",
+    "source": "https://hackerone.com/reports/270999.json",
+    "report_id": 270999
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNzA5OTk=",
+    "databaseId": "270999",
+    "title": "[Markdown] Stored XSS via character encoding parser bypass",
+    "url": "https://hackerone.com/reports/270999",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-10-18T12:24:50.694Z",
+    "created_at": "2017-09-22T20:33:25.117Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "ysx"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI3MDk5OQ==",
+    "_id": "270999",
+    "disclosed": true,
+    "votes": 20,
+    "latest_disclosable_activity_at": "2017-10-18T12:24:50.713Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNzA5OTk=",
+      "databaseId": "270999",
+      "title": "[Markdown] Stored XSS via character encoding parser bypass",
+      "url": "https://hackerone.com/reports/270999",
+      "disclosed_at": "2017-10-18T12:24:50.694Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

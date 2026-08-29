@@ -1,0 +1,220 @@
+{
+  "id": 856588,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTY1ODg=",
+  "url": "https://hackerone.com/reports/856588",
+  "title": "[flsaba] Stored XSS in the file and directory name when directories listing",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2020-04-22T19:01:09.868Z",
+  "submitted_at": "2020-04-22T19:01:09.868Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "d3lla",
+    "url": "/d3lla",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-09-14T10:52:17.556Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-09-14T10:52:17.493Z",
+  "team_member_agreed_on_going_public_at": "2020-09-12T20:53:18.555Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report a Stored XSS in module \"flsaba\".\nIt allows to inject malicious scripts in the file and directory name, store them on the server, then execute these scripts in the browser via the XSS vulnerability.\n\n# Module\n\n**module name:** https://www.npmjs.com/package/flsaba\n**version:** 1.1.0\n**npm page:** `https://www.npmjs.com/package/flsaba`\n\n## Module Description\n\nsimple http server with directory listing\n\n## Module Stats\n\n[5] weekly downloads\n\n# Vulnerability\n\n## Vulnerability Description\n\nThis XSS vulnerability occurs due to the module represents file and directory name(s) in HTML when creating the listing directory page. The file and directory name(s) are used in the `href` attribute of an anchor element (as well as the value of the anchor itself) without any sanitization. \nIn this way, any malicious script written in the file/directory name and stored on the server, would be executed in the client's browser.\n\n\n## Steps To Reproduce:\n\n- install the `flsaba` module: \n    - `npm install -g flsaba`\n- in the directory which will be served via `flsaba` (in my case the directory is `~/PoC`), create:\n    - a file with name `\"><img src=x onerror=javascript:alert(\"xss\")>\"`: \n        - `touch '\"><img src=x onerror=javascript:alert(\"xss\")>\"'`\n    - a directory with name `\"><img src=x onerror=javascript:alert(\"xss2\")>\"` : \n        - `mkdir '\"><img src=x onerror=javascript:alert(\"xss2\")>\"'`\n{F799667}\n- in the same directory (in my case is `~/PoC`), start `flsaba`: \n\n```shell\n~/PoC » flsaba                                                                     \nflsaba v1.1.0 server listening on port 3000\nDirectory: /home/ubuntu/PoC\n```\n\n{F799666}\n- visit [http://localhost:3000/](http://localhost:3000/)\n- the alerts will popup\n{F799668}\n{F799669}\n\n## Patch\n\nThe vulnerability arises in the following lines of code:\n- [https://github.com/petoem/flsaba/blob/master/server.js#L58](https://github.com/petoem/flsaba/blob/master/server.js#L58)\n- [https://github.com/petoem/flsaba/blob/master/server.js#L64](https://github.com/petoem/flsaba/blob/master/server.js#L64)\n\n\n## Supporting Material/References:\n\n- OPERATING SYSTEM VERSION: Ubuntu 18.04.4 LTS\n- NODEJS VERSION: v13.13.0\n- NPM VERSION: 6.14.4\n- BROWSERS VERSIONS: Firefox Browser 75.0 (64-bit)\n\n\n# Wrap up\n\n- I contacted the maintainer to let them know: [N] \n- I opened an issue in the related repository: [N] \n\nThanks for your time.\n\nBest regards,\n\nd3lla\n\n## Impact\n\nStored XSS.\nAny malicious script written in the file/directory name and stored on the server, would be executed in the client's browser, so this vulnerability allows executing malicious JavaScript code in the client's browser.",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 799666,
+      "file_name": "flsaba.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qXQPT4Mhg5vEqyA5JnXyDys1?response-content-disposition=attachment%3B%20filename%3D%22flsaba.png%22%3B%20filename%2A%3DUTF-8%27%27flsaba.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045834Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=06ae488b030cf4a2883dbf40989dd792d57e31712dccc3142436af1fc9673495",
+      "file_size": 72745,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 799667,
+      "file_name": "files.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/UJeqbWgutPXZ3TmrLMyJxYar?response-content-disposition=attachment%3B%20filename%3D%22files.png%22%3B%20filename%2A%3DUTF-8%27%27files.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045834Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a10b10997a19b7b2bdd4944e4e19e1bb67c7aea60ef12dbaad182bfc7f69de2d",
+      "file_size": 69577,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 799668,
+      "file_name": "PoC1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/73BsLozWubZ8tdRNYMqe1Rp5?response-content-disposition=attachment%3B%20filename%3D%22PoC1.png%22%3B%20filename%2A%3DUTF-8%27%27PoC1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045834Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=279365aa71c34c837a0f8a8d25567728c8a9f2c28439f835679160f0892269e6",
+      "file_size": 127810,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 799669,
+      "file_name": "PoC2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xrynRnUtFUbeLTLEqvgK2qEX?response-content-disposition=attachment%3B%20filename%3D%22PoC2.png%22%3B%20filename%2A%3DUTF-8%27%27PoC2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ36YTT7EK%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045834Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIA1ZNsmlZoOH2sNCCJQm8vgVkCxReNlkWY3JXmMZQS1PAiEAhwOMUmzU%2FA7AIWh%2BcoCRhavPvDsaOoGHsEJl9bJiaowqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDL8E7WhoaQfL7YwihSqPBRtniWJt8KCZzq8oHzDTRoNU%2BfuiqNhk46Ud0IsVuqvdJszSyslKVt%2FBZT7I4bIGssjXeotxsJBfkmYNXpC0%2B826fHIxpSFeXii3aI2QIOkXfkk7gAq2g4SYj9uaB5pOH66BCqPwpQcWKB8QsMsFJFrRwPciX5Z1AxS1bhktmgZARwZ2I3CV1ev2f0s8dVOVNXKRdkCilC0INM5y%2FrswG8%2BVEy0KiQDEJ21ecsYpDgdXK8FfSBgh1%2Bn5RMvnDLDPrfeHwECRuFEy5vurKx8tGYw9bwZ1r3NdfGM4X6byVZg3HUB7ZPc8DBTDoTKCjqHWzV%2BNFJlpbXqB7xmJj2BxrOdLnW21cks%2B4%2FiPrjXWnYGcn0Fr6n0OE5Jj3NNEyOUTm4qEt9aNq7V7X%2FKrGUgLc51I8yajZBeCfa2wfsFA1nWWEy08v1%2BBq5k43NlmA6nW2FzmR%2BSo2VDEp5QmVSMEjTrt5Qnum5HwTpByOnh4ojw51QnPryfK0uVHzPZB%2FiyhOnxu64KmdRxm5WoupcyGumAJ%2BBnOCQAKVQCHp2RgxvZ%2ByVyCuy5uerCB3lOp1Ah%2BnhW7rqRcRasVhwl%2FWgsvIDVwpIOlaCwCVKeWvxZ8DmJ8WeAyrYljAbcG%2B6OlqvCn%2Bsy2GcIXqQcbZz7HMTO8m6cfZUP%2FhU3ISNDkm%2BHGyhjFy5BAtFrNPWqMjgI8xz8VLJfc6W2wEf5BLzsKmDvImTP%2F6iuriYp2ut9I%2FfbYCPclnWdsng1uSwKTSxpPFu7R12hCz%2BkOadA1A5b3lKhQH6N3QFi6djPwkrF3UB8cJp3GwfPkgrnE2PtZNBbuoH4viiwznHeSiC06miC6ttOTU54mtduUWP3%2F9bmBfIjoRGow56630gY6sQEE1o7UZkuqUoVbDjJybTvCYrvAqcPOxc0WubmC5BUVBsNcqm3oOrZCs1dDsVsHSLFuwAvsi%2BukYcwv5OPivuTzIDIu2Fwk%2FFqCgFWH%2BtwTvC7LGV9vSG0%2F14g4I4MXtKOcbmi1AfG2eb9SmSkZ0MRu%2FOr7kg6ZWodJDMIkoElhInOIZeFwdL%2Bsb6PMEjbvVp9uA9Oqyqp3Ou8KT%2BAw%2BKlMkntGyQxYpcD0erJY4zrVh3A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fc65e2b533aa0a543e2f35d81705bc39bb520794c5a38497f5de17c2583c105f",
+      "file_size": 128527,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-10-12T20:53:18.649Z",
+  "allow_singular_disclosure_after": -180950715.72655132,
+  "singular_disclosure_allowed": true,
+  "vote_count": 0,
+  "voters": [],
+  "severity": {
+    "rating": "low",
+    "score": 3.9,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 2986,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Other module",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "856588",
+  "votes": 0,
+  "latest_disclosable_activity_at": "2020-09-14T10:52:17.587Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:58:34.517601",
+    "source": "https://hackerone.com/reports/856588.json",
+    "report_id": 856588
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTY1ODg=",
+    "databaseId": "856588",
+    "title": "[flsaba] Stored XSS in the file and directory name when directories listing",
+    "url": "https://hackerone.com/reports/856588",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-09-14T10:52:17.556Z",
+    "created_at": "2020-04-22T19:01:09.868Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.9
+    },
+    "reporter": {
+      "username": "d3lla"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg1NjU4OA==",
+    "_id": "856588",
+    "disclosed": true,
+    "votes": 0,
+    "latest_disclosable_activity_at": "2020-09-14T10:52:17.587Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTY1ODg=",
+      "databaseId": "856588",
+      "title": "[flsaba] Stored XSS in the file and directory name when directories listing",
+      "url": "https://hackerone.com/reports/856588",
+      "disclosed_at": "2020-09-14T10:52:17.556Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

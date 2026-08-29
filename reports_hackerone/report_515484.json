@@ -1,0 +1,209 @@
+{
+  "id": 515484,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MTU0ODQ=",
+  "url": "https://hackerone.com/reports/515484",
+  "title": "[Reflected XSS] In Request URL",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2019-03-26T10:13:25.245Z",
+  "submitted_at": "2019-03-26T10:13:25.245Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "nstikhomirov",
+    "url": "/nstikhomirov",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/zw3pls1dq0djbbzxtvwzpx1wiqku/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2019-15618"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-03-01T13:18:48.738Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2020-01-31T13:18:46.758Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "In [index.php file](https://github.com/nextcloud/updater/blob/master/index.php#L1765) on 1765 we can see XSS:\n`<a class=\"button\" href=\"<?php echo str_replace('/index.php', '/../', $updaterUrl); ?>\">`\nBecause NextCloud allow links like: '/index.php/{ANY_CONTENT}'\nIf we will do request like: \n```\nPOST /updater/index.php/h\"><script>alert(1);</script> HTTP/1.1\nHost: vulns.local\nContent-Type: application/x-www-form-urlencoded\nContent-Length: 33\n\nupdater-secret-input={OUR_SECRET}\n```\nWe will see Reflected XSS: F452129\nTo fix this vulnerability need to patch `<a class=\"button\" href=\"<?php echo str_replace('/index.php', '/../', $updaterUrl); ?>\">` to `<a class=\"button\" href=\"<?php echo htmlspecialchars(str_replace('/index.php', '/../', $updaterUrl), ENT_QUOTES); ?>\">`\n\n## Impact\n\nIf the attacker knows the secret phrase, then they can implode illegitimate html code in page",
+  "weakness": {
+    "id": 61,
+    "name": "Cross-site Scripting (XSS) - Reflected"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 452129,
+      "file_name": "Screenshot_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/452/129/07051b6382b62a5f778213bf538776bc4c3cde23/Screenshot_2.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXBMH4C7V%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051306Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCz3pNHfPopJFlNnasNcs5vDt%2BKxGH7afSYLYyA2cOa%2BQIhAJBXU66%2BHVuy8eVoBcV5tLac6DQAnA71cqngT1GpuBDoKrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgwE4xlwIovUu9vDLgUqjgWlt7djzEC4ADZqhGT48bJfNvjIB4e%2B73TxK9WZ5F1Ukb61Omu1HW3o5fwKWRRyRNXcksJhw6tSPfmrcRy%2FIgZLLFVgeC%2BUytukx5tw0Srr8vNYoGgu3Jelzpm9RNyD9nFW3yCLb0rDg3ZVyHIgDM%2FdB0eltdX6sVQBZg1fdMIqVZipFdWviWnM7ZJj4fYsklsFclvmeO0P09215R8Tq%2FKGpnyYiRiHE%2F%2Bpwlc1uCWhZfoHrf%2BTTlpm1G7%2B80%2FSe4WrROnebR9XzFUyAVfeJGSYtx5gsOioGHEFHg5cDmZWtzdW%2B%2B4AbAdwVLChu6B7lCK8JZXeKRyj%2FJGOQjYnW3sA%2B3lkLY8SXhlWTOnN%2FhJvSr01MNEq%2B0PVpgZp668%2B7m0Y6RfBUq77YHfmvqf9Uch2Hw0CSh1n6t9GKADAjfBIDruDD1mdr0%2FUAyd3teK1j%2FONvi5ZMgXkVgIKx6a0F1oEEcgBj0mHCW0FJ7hFmKz2IwQSEcWet9LshC3vn5f%2Fzl00WNEQqIjHlJfjsAH7NLPP58msPwul9q7TDTccB96Znxq3NhgByhONjQZ%2FBAvT66n1fq1zfKJoNBkErnmK8kmH0sCyUUtNXROFMDWCdlOV6IKd7A9dYt5%2F8PN3Omkt82HSQAfwzL1hcM2A1FmPr%2B2b%2FETQ58tovSCo0aHjhSx02fHOL0FHH7OSdDd%2BirqYySafreJaaweTKu6v3gkJqqryuAKMqjj2oBMD5lhBvJdlCf6QBcs7iMHhiThtXxnARfzKBkZJFTJ959LBgEj%2B9b8kkljaai9CkXkpUjG8PLZc1aFbcYWuLuLmVndNqR7fJkwp3piJCe5DvdGBMirtIPY5ZEmw9X%2BdmNakjg69OQAwi6q30gY6sAHlCnk0P1VS7jWbBDLl4tpSN7wRJldK0wprwf7NSMEG30pOXTak256oFOXjWhbIIi7dlJq7sdSW54ltTyAMKjb6igCtbIf%2FUEoCIwQ55EeVOvr4WJQ6xvo%2Bl6MXST%2FAXwvZ3sJjk6whfnxBadO0bvBA3VLS0TRl8eFlxD9inhwhcsPyZImbhjhrv33nYpum4mX5fxfQ5KDZbDPsloqjCkPeI9A9GwAgf5BtVHlZcZ%2BNXw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a21bb9f83b7041cd97d263e7b857611bd9ca547fc011ebc82fe41b612102c638",
+      "file_size": 23784,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-03-01T13:18:46.847Z",
+  "allow_singular_disclosure_after": -200418859.24902532,
+  "singular_disclosure_allowed": true,
+  "vote_count": 37,
+  "voters": [
+    "a_d_a_m",
+    "ali",
+    "tess",
+    "sameerphad72",
+    "jaisharma",
+    "azraelsec",
+    "nstikhomirov",
+    "cryptographer",
+    "dracula1983",
+    "hamzaazam",
+    "and 27 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 76,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/updater",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "515484",
+  "votes": 37,
+  "latest_disclosable_activity_at": "2020-03-01T13:18:48.754Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:13:06.206134",
+    "source": "https://hackerone.com/reports/515484.json",
+    "report_id": 515484
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MTU0ODQ=",
+    "databaseId": "515484",
+    "title": "[Reflected XSS] In Request URL",
+    "url": "https://hackerone.com/reports/515484",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-03-01T13:18:48.738Z",
+    "created_at": "2019-03-26T10:13:25.245Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYx",
+      "name": "Cross-site Scripting (XSS) - Reflected",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "nstikhomirov"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMjg0NjI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-03-26T14:56:57.421Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzUxNTQ4NA==",
+    "_id": "515484",
+    "disclosed": true,
+    "votes": 37,
+    "latest_disclosable_activity_at": "2020-03-01T13:18:48.754Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MTU0ODQ=",
+      "databaseId": "515484",
+      "title": "[Reflected XSS] In Request URL",
+      "url": "https://hackerone.com/reports/515484",
+      "disclosed_at": "2020-03-01T13:18:48.738Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

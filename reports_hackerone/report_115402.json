@@ -1,0 +1,173 @@
+{
+  "id": 115402,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTU0MDI=",
+  "url": "https://hackerone.com/reports/115402",
+  "title": "XSS via modified Zomato widget (res_search_widget.php)",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-02-08T15:39:16.409Z",
+  "submitted_at": "2016-02-08T15:39:16.409Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "pr0tagon1st",
+    "url": "/pr0tagon1st",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/033/123/9e3397fc4128a6ea0579adedf2a30f47f54ad11a_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 2943,
+    "url": "https://hackerone.com/eternal",
+    "handle": "eternal",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/9525xdsq4bz7ubnoie172ssjv8ul/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/9525xdsq4bz7ubnoie172ssjv8ul/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Eternal",
+      "twitter_handle": "Zomato",
+      "website": "https://www.eternal.com",
+      "about": "Eternal is India’s largest new-age tech company by market cap, comprising of 4 businesses (as of now) – Zomato, Blinkit, District, & Hyperpure."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-03-11T06:17:58.904Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-02-10T06:17:56.247Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Table of Contents:\n1.  Short Description of Security Issue\n2. Proof of Concept\n\n#### 1. Short Description of Security Issue\n\nThe widget API endpoint at `https://www.zomato.com/widgets/res_search_widget.php` is vulnerable to XSS in the `language_id` parameter.\n\nAn attacker can create a web page that includes a Zomato widget inside an iframe with a specially crafted URL parameter that contains javascript. If a Zomato user opens this page, the iframe will load and execute the malicious javascript in the zomato.com origin using the user's active session.\n\nThis javascript can then steal a CSRF token from the zomato.com homepage and perform actions _as_ the user - actions such as inviting/removing friends, posting reviews, posting ratings and others. This can potentially be used to message other users with the malicious web page and get them to execute the malicious code, creating a sort of javascript worm or embed external malicious documents (flash, pdf, other) to continue the attack on a user's machine. On the good side, the injected javascript _may not_ steal the user's session cookie thanks to the HTTPOnly cookie parameter.\n\nThe `language_id` parameter should be filtered so that non-essential characters are removed before being output to users.\n\n#### 2. Proof of Concept\n\nI use a piece of javascript code that creates an alert box with the `document.domain`, which shows the SOP is bypassed: `\"}');alert(document.domain);console.log('`. This code is urlencoded and inserted into the `language_id` parameter of the request like so:\n\n```\nhttps://www.zomato.com/widgets/res_search_widget.php?city_id=276&language_id=%22%7D%27)%3Balert(1)%3Bconsole.log(%27&theme=blue&hideCitySearch=on&hideResSearch=on&sort=popularity\n```\n\nThis URL is used to create an iframe as described in Zomato's widget documentation: https://developers.zomato.com/widgets and the final code looks like this:\n\n```\n<html>\n    <body>\n        <iframe src=\"https://www.zomato.com/widgets/res_search_widget.php?city_id=273&language_id=%22%7D%27)%3Balert(document.domain)%3Bconsole.log(%27&theme=blue&hideCitySearch=on&hideResSearch=on&sort=popularity\" style=\"position:relative;width:100%;height:100%;\" border=\"0\" frameborder=\"0\"></iframe>\n    </body>\n</html>\n```\n\nOpening this html document, even locally, will run the javascript in the context of zomato.com as shown in the attached screenshot.\n\nLet me know if you have any questions.\n\nBest,\nMatt",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 72661,
+      "file_name": "zomato_poc.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/072/661/16d15c201d028c6f94c40f3871004d67af1a35af/zomato_poc.jpg?response-content-disposition=attachment%3B%20filename%3D%22zomato_poc.jpg%22%3B%20filename%2A%3DUTF-8%27%27zomato_poc.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ43HLOKZP%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070738Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBikVcReYoAcBGilFtbjFyxWaKrBqF3FUckVovBfa9syAiB%2FbPOUmDGoaSkOyjV1ADINP%2BVHoiwMQjPRzUCzhkuVciq7BQiA%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAMaDDAxMzYxOTI3NDg0OSIMMHH3HDmH0iA7iaBGKo8FWunNEXFCS3D5gd7m2D67BOkoEI7RNPHWGinVgiOS04G2aBZWOt6ZRIY8WN4O3avpfzU2TYddSH5eLK7DZMCeMWIVoTIZ98bZzCAeXuJ3LMqqckkrJ4zVVs6YZmB%2FqxOCMQqmSl1gUe0trDUbO%2FKvkrPvil3Qr34bu7ahtEf6432mAu48B025npgHfA%2F2cHL%2BVfgNvykWpF%2BMI7arYfvakNRiSER%2Bjt3WSR97O5rNGeNsWLsmV3Q5HyDKB1Q28k%2F9WsiPO3vrORD78t%2BlBay%2B25GiFx3YI84h09jsST%2F7U2%2BMrTQEdG2lRRdyQdHQiwZ5eto3vyQJSmKYsKC2tN3oZFoQ6yfNrOLuKrzTTJs2YkAP3bJcHxebc22WGHXqX7qTVgk1BDMWV59M67u8TFiRMmsQwoJ80H%2B%2F5U1ZctmA5FPpTgV%2Fy4sirHrveReujlwXC%2Bkb2SAXAlq6VvencwsJ8F8CrB18FjVwdR3LRWlEEDozKD8ARVGRyL8S69K6zKLve4UuZKvO85kIsxVH0DJ4RbiGhGfD2bPBrh97%2B96TYwyk6g%2F3aLv4wqzMd3NqaPrAjI3D2BOqTMxyK4lxUyNSbpm5u7Nqote0g%2BrJzaVV9%2B1gnuqbIuiqj3tSwOyd745SX44ErU1NyTZMIgb9eHQUUxQtgEQpSH65cVRpuyoP0VaqMOUq94ZB4Sa9GihtiBwk5XAAmvG%2FvqgqtrtMhAxfFIWPtz%2FG4jM16emoS1jm9EcCX8gUvO2djflWVXkyqW%2BUQpex4NSNU0p0fO4aoNpslJUxgR6UUcc99tI2srRjnSbC1q%2F7YU89LxtqdSZmW6k60bcV11E%2B2NnM97ZigOVyE19o%2BRm7oiow6h%2BGw9bdzjDP57fSBjqyAeFLUJS0denQmSdi34UxhRwDc0i7EVbf8%2FvZ3EnIN57SVKHmzhJFqiLcgfIAsRcEL3yU4Tc%2BXqB%2FNdnHt8gEHTrWcxe%2BjuScCHTOFJ%2F3jJ6539hPzcoK1cq%2F%2F%2BnxSPgPlUM1tw8jTXn5P6rXzS0%2BqFMAz8kcPX1YQh03jovh6TLDS7F6pD3A1nO%2Bj4oyiP%2FHf1e5Mq%2BcYqcBz%2BGSLgJZHdvWHJmYoR9gZmkAJZQ8VGzMN%2B0%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=308900cb0480443745ab35066b1dbfba55c0b453f1b0e6b42245b92beac2bcee",
+      "file_size": 87241,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-03-11T06:17:56.646Z",
+  "allow_singular_disclosure_after": -325817382.2129158,
+  "singular_disclosure_allowed": true,
+  "vote_count": 0,
+  "voters": [],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "115402",
+  "votes": 0,
+  "latest_disclosable_activity_at": "2016-03-11T06:17:58.943Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:07:38.983771",
+    "source": "https://hackerone.com/reports/115402.json",
+    "report_id": 115402
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTU0MDI=",
+    "databaseId": "115402",
+    "title": "XSS via modified Zomato widget (res_search_widget.php)",
+    "url": "https://hackerone.com/reports/115402",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-03-11T06:17:58.904Z",
+    "created_at": "2016-02-08T15:39:16.409Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "pr0tagon1st"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI5NDM=",
+      "handle": "eternal",
+      "name": "Eternal",
+      "url": "https://hackerone.com/eternal",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExNTQwMg==",
+    "_id": "115402",
+    "disclosed": true,
+    "votes": 0,
+    "latest_disclosable_activity_at": "2016-03-11T06:17:58.943Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTU0MDI=",
+      "databaseId": "115402",
+      "title": "XSS via modified Zomato widget (res_search_widget.php)",
+      "url": "https://hackerone.com/reports/115402",
+      "disclosed_at": "2016-03-11T06:17:58.904Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI5NDM=",
+      "handle": "eternal",
+      "name": "Eternal",
+      "url": "https://hackerone.com/eternal",
+      "currency": "usd"
+    }
+  }
+}

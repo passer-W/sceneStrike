@@ -1,0 +1,216 @@
+{
+  "id": 397545,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTc1NDU=",
+  "url": "https://hackerone.com/reports/397545",
+  "title": "Malformed .BMP file in Counter-Strike 1.6 may cause shellcode injection",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-08-21T06:33:12.777Z",
+  "submitted_at": "2018-08-21T06:33:12.777Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "kohtep2010",
+    "url": "/kohtep2010",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/tg1wmihldmstpzgysu4jqiatwjhu/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23363,
+    "url": "https://hackerone.com/valve",
+    "handle": "valve",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Valve",
+      "twitter_handle": "",
+      "website": "https://www.valvesoftware.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-02-27T18:43:10.663Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-03-23T07:10:55.347Z",
+  "team_member_agreed_on_going_public_at": "2020-02-27T18:43:10.579Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "With the vulnerability of the GoldSource Engine, the server is able to perform remote code execution on the client, overwriting the stack when reading the BMP file. The problem is in the LoadBMP8 function, which is executed when the player connects to the server, by loading the \"overviews\\%MAPNAME%.bmp\" file. If we send a badly formed file to this function, then we will be able to rewrite the stack of the function by setting the own code in the stack and passing program control to it.\n\nI've wrote a program that compiles file like that. The shellcode, which runs on the stack, starts the \"calc.exe\" process with the WinExec function.\n\nFor the client to execute this file, the server must send this file to the client. The server can do this if map that is not present on the client is launched. The server must load a map with random name, for example, \"definitely_missing_client_map.bsp\". In this case, the name of the BMP file must also be \"definitely_missing_client_map.bmp\" and it must be in \"overviews\" folder. You also must create the \"overviews\\definitely_missing_client_map.txt\" file, which is overview description. The nonstandard name of the map prompts the client to download the missing files (bsp, bmp and txt). Upon completion, when the client is able to see the map, the BMP file will be loaded and the binary code from BMP file will be executed on the stack.\n\nI've attached the source code of \"compiler\" to the message. You can find more detailed instructions in the code comments. You need to compile this project in \"Release\" configuration and then start this project. After that, malformed \"de_dust2.bmp\" file will be produced.\n\n## Impact\n\nAn attacker can execute remote code on the client's machine.",
+  "weakness": {
+    "id": 3,
+    "name": "Classic Buffer Overflow"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 335941,
+      "file_name": "HL1-BmpSploit.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/335/941/c10d065018feaa13fba5bd38cdc1ca222006ea04/HL1-BmpSploit.zip?response-content-disposition=attachment%3B%20filename%3D%22HL1-BmpSploit.zip%22%3B%20filename%2A%3DUTF-8%27%27HL1-BmpSploit.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051322Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e7afb3e6b19b1b7bc434bbd55731619505fc89b14b409d935d0037236127d5d6",
+      "file_size": 9421,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 321,
+  "voters": [
+    "keshavkejriwal",
+    "fygonzalo",
+    "saulius",
+    "mortysmithe",
+    "johnberzi",
+    "7urb0",
+    "orange303",
+    "kekkegenkai",
+    "overjt",
+    "a_d_a_m",
+    "and 311 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 1289,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "hl.exe",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "397545",
+  "votes": 321,
+  "latest_disclosable_activity_at": "2020-02-27T18:43:10.676Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:13:23.115190",
+    "source": "https://hackerone.com/reports/397545.json",
+    "report_id": 397545
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTc1NDU=",
+    "databaseId": "397545",
+    "title": "Malformed .BMP file in Counter-Strike 1.6 may cause shellcode injection",
+    "url": "https://hackerone.com/reports/397545",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-02-27T18:43:10.663Z",
+    "created_at": "2018-08-21T06:33:12.777Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM=",
+      "name": "Classic Buffer Overflow",
+      "external_id": "cwe-120"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.8
+    },
+    "reporter": {
+      "username": "kohtep2010"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS85Nzk4MA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-08-25T00:03:28.058Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM5NzU0NQ==",
+    "_id": "397545",
+    "disclosed": true,
+    "votes": 321,
+    "latest_disclosable_activity_at": "2020-02-27T18:43:10.676Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zOTc1NDU=",
+      "databaseId": "397545",
+      "title": "Malformed .BMP file in Counter-Strike 1.6 may cause shellcode injection",
+      "url": "https://hackerone.com/reports/397545",
+      "disclosed_at": "2020-02-27T18:43:10.663Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    }
+  }
+}

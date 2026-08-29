@@ -1,0 +1,197 @@
+{
+  "id": 3371414,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzcxNDE0",
+  "url": "https://hackerone.com/reports/3371414",
+  "title": "Improper Authorization Leads to Editor can toggle admin-only workspace features (Lovable Cloud)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2025-10-05T13:08:30.259Z",
+  "submitted_at": "2025-10-05T13:08:30.470Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "longlivedoma",
+    "url": "/longlivedoma",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vq9thdqusmmf0d3q72blkpfbmi5i/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 101556,
+    "url": "https://hackerone.com/lovable-vdp",
+    "handle": "lovable-vdp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vqnq844bgn7gv1xr9qr9chke2kf5/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/vqnq844bgn7gv1xr9qr9chke2kf5/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Lovable VDP",
+      "twitter_handle": "lovable",
+      "website": "http://lovable.dev",
+      "about": "Create apps and websites by chatting with AI"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-11-04T20:32:59.793Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-10-05T20:32:55.574Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nAn account with the Editor role can successfully call the API endpoint `/workspaces/<WORKSPACE_ID>/tool-preferences/supabase/enable` that disables workspace-wide admin-only features (Lovable Cloud). The API does not enforce server-side role checks for this action, allowing a vertical privilege escalation (Broken Access Control).\n\n## Steps To Reproduce:\n\nPreconditions\n\n- Two accounts are members of the same workspace `Victim-Workspace`:\n\n    - Account A (Owner/Admin) - Owner role in `Victim-Workspace`.\n    - Account B (Editor) - Editor role in the same `Victim-Workspace`.\n\n1. Sign in as Account A (Admin) and toggle the Cloud feature off inside the workspace.\n\n2. Capture this endpoint (Responsible for Disabling Cloud Feature).\n\n```HTTPS\nPOST /workspaces/<WORKSPACE_ID>/tool-preferences/supabase/enable HTTP/2\nHost: lovable-api.com\nAuthorization: Bearer <OWNER-JWT>\nContent-Type: application/json\n\n\n{\"approval_preference\":\"disable\"}\n```\nNote: <WORKSPACE_ID> is the workspace id for Victim-Workspace.\n\n4. Modify request to use Editor JWT Token\n- Replace the Authorization header with Account B (Editor) JWT:\n\n```HTTPS\nPOST /workspaces/<WORKSPACE_ID>/tool-preferences/supabase/enable HTTP/2\nHost: lovable-api.com\nAuthorization: Bearer <EDITOR_JWT>\nContent-Type: application/json\n\n{\"approval_preference\":\"disable\"}\n```\n\n5. When the request is sent again with the Editor's JWT , the request succeeds and the Lovable Cloud setting is switched off for the workspace.\n\n## Proof of Concept :\n\n{F4859059}\n\n## Impact\n\nAn Editor can disable the Lovable Cloud feature, which powers the workspace’s backend as mentioned in documentation (database, auth, storage, and serverless functions).\nThis can lead to workspace-wide downtime and broken functionality for all projects and users, making the impact High due to the potential service disruption and business damage.",
+  "weakness": {
+    "id": 124,
+    "name": "Improper Authorization"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4859059,
+      "file_name": "Lovable_Cloud_Feature_POC.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rjlr4m417d9et1ff0wmjz843f47m?response-content-disposition=attachment%3B%20filename%3D%22Lovable_Cloud_Feature_POC.mp4%22%3B%20filename%2A%3DUTF-8%27%27Lovable_Cloud_Feature_POC.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ3GYDQVI%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042628Z&X-Amz-Expires=326&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJGMEQCIFEErVE1KAEqpjNMQAsJvJg66aBY80BoJcXcOOHc69mVAiAYM0qSTOia5YefUVlQXSnlGOBz09CZ7PBtAygQ2ZbeUCq6BQj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAMaDDAxMzYxOTI3NDg0OSIMOU%2BM4m2WY8E4OxiOKo4F4pGSnW5N1%2FLVWuLVMELCstKFJ83IMJww75g56gai8hol026RxlA7hGOQrtWUx16DhqLejG2tigCFi6zInuuKyTMMdnHAA1%2B4u7%2FVPAlhNZ%2FiyadJv4BL1DkueWk5KMMDX3KJe78ZzNYOMvCpvnZjjrkN9IOyWDpROAPPMLtBXT2TZNZTndAo%2BdwTSVtCMHJffiYwrIRieIw%2Bp6hPNkFtM95%2FgIhY05VSAE%2B70PMPEYNJ4A9swI4BVCcUBN0kN5EDUtGrap7gO871RboYyORt4LLQWyTBfL2Zni%2FK4AOJVTDFod8OndScR1Ev812v83bQ2BBer45XyQQsa2QckS6M5mCNRSW2jJOPiYotq8YX23AJx7yAC1h20m0HryKC8G8DijzfkQqSrZ6Ab%2B9YAOv41mmxy7lKxwpRZ3iWHE3%2FSOF98%2FmJlGJzqPzYqAnQkFmKeLQbujw1J5kPHcdr8ByG7J3cIsPxy0%2BJyVHrAxka%2BsViK2zy7WO%2FCISVuNpH5aXrH9l%2B%2B76jiWryIcZDIuyqce5m78Pc6HO6ZuGkXVqckSpuKwR9%2BUYJqEdKwnvcwTh4F8MWd2rxXixazhiTAUQPJKiShKxpJtzg4x2jLEK%2FEPvmRUg%2FIqSDCoNPxs9l%2BnCZYCUjpSrqxbyr4gI2%2BZskmWcKkKpTOk1KTX%2BL%2FmzLHMjheJjz%2Bi1gP22yveKIW03AjT466N2jbVtV7JFccDIA0oM2GffpVfC6BkbbiAfsTNhE8dT7PFQSyyeROWZOd54Vns3nmGJWFPMgmcXRmKE7i5rHwA6IGHtnxtQkNb9r%2F2umt9Cdno6lKdKEsL1j5BVtdDiHxH5VJDeP3XBG2V5VCpty4IHHnCs7K5vjW7TQMOzAm9IGOrIBq37F61VqgsEMjgcH4tjHnG8swr8LK2ejeqNn%2FLL20z%2FlYEYviagjgnhooH1kN0DooAAavQbOZfqVsnYfgAiG2DQNZYOXrb%2B1Lf4iWQ%2BPF7CHAdF0CRW7Vbt0XE7Gm5F11x41lgO0J%2BjDvGYIij9ywz6XBJcc9TVCuZBo273tmF1QI1rDsrrRbapX1qxjNU3MxF8pgwgtNrJVtGVyyBPR8Pfh%2BBCWSo95xcSbZBqp6xoW2w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bf54b027505241b5a849de23509a8cdb01437bfd53b83177af356ecbfdf80600",
+      "file_size": 8771679,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-11-04T20:32:55.761Z",
+  "allow_singular_disclosure_after": -20764413.217447996,
+  "singular_disclosure_allowed": true,
+  "vote_count": 66,
+  "voters": [
+    "dev_ali",
+    "loaymorad",
+    "almuntadhar0x01",
+    "0-chrollo-0",
+    "bl4ck-",
+    "trptt",
+    "yoyomiski",
+    "dukrov",
+    "vaaq",
+    "mohaned0101",
+    "and 56 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 930866,
+    "asset_type": "URL",
+    "asset_identifier": "lovable.dev",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3371414",
+  "votes": 66,
+  "latest_disclosable_activity_at": "2025-11-04T20:33:01.008Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:29.304989",
+    "source": "https://hackerone.com/reports/3371414.json",
+    "report_id": 3371414
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzcxNDE0",
+    "databaseId": "3371414",
+    "title": "Improper Authorization Leads to Editor can toggle admin-only workspace features (Lovable Cloud)",
+    "url": "https://hackerone.com/reports/3371414",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-11-04T20:32:59.793Z",
+    "created_at": "2025-10-05T13:08:30.259Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEyNA==",
+      "name": "Improper Authorization",
+      "external_id": "cwe-285"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "longlivedoma"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTAxNTU2",
+      "handle": "lovable-vdp",
+      "name": "Lovable VDP",
+      "url": "https://hackerone.com/lovable-vdp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzNzE0MTQ=",
+    "_id": "3371414",
+    "disclosed": true,
+    "votes": 66,
+    "latest_disclosable_activity_at": "2025-11-04T20:33:01.008Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzcxNDE0",
+      "databaseId": "3371414",
+      "title": "Improper Authorization Leads to Editor can toggle admin-only workspace features (Lovable Cloud)",
+      "url": "https://hackerone.com/reports/3371414",
+      "disclosed_at": "2025-11-04T20:32:59.793Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTAxNTU2",
+      "handle": "lovable-vdp",
+      "name": "Lovable VDP",
+      "url": "https://hackerone.com/lovable-vdp",
+      "currency": "usd"
+    }
+  }
+}

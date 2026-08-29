@@ -1,0 +1,195 @@
+{
+  "id": 3710209,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNzEwMjA5",
+  "url": "https://hackerone.com/reports/3710209",
+  "title": "Potential Resource Leak in tool_parsecfg.c at line 279 during fileerror",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "low",
+  "readable_substate": "N/A",
+  "created_at": "2026-05-03T06:34:14.848Z",
+  "submitted_at": "2026-05-03T06:34:15.947Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ravindrasl2026",
+    "url": "/ravindrasl2026",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6ozid68s78eo845dzipqpu0oql16/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-05-05T08:23:29.418Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-05-04T17:58:42.062Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Summary:\nA resource leak was identified in src/tool_parsecfg.c using the Clang Static Analyzer. When a file error occurs (fileerror is true) during config parsing, the function returns PARAM_READ_ERROR without ensuring the file stream is properly closed, leading to a potential file descriptor leak.\n\nSteps to Reproduce:\n\n    1. Analyze the curl source code using scan-build make.\n\n    2. Observe the report for src/tool_parsecfg.c.\n\n    3. The analyzer identifies that at line 264, if fileerror is triggered, the                   control flow reaches the return statement at line 279 without\n a confirmed fclose on the opened stream.\n\n## Impact\n\nImpact:\nA local attacker could potentially cause a Denial of Service (DoS) by repeatedly triggering this error path, leading to file descriptor exhaustion.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5844834,
+      "file_name": "Screenshot_2026-05-03_11_56_22.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zxoc8q67mm78lxe4hi9z16nbtwjl?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2026-05-03_11_56_22.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2026-05-03_11_56_22.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041915Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=312ea37d19ee989d70824a2b7c8076ee8f0f1f765051fdc1989209852b738ec3",
+      "file_size": 129648,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 21,
+  "voters": [
+    "2026",
+    "codethief_831",
+    "thisoneguyinaz",
+    "0xpackh0und",
+    "ijjhs",
+    "kurayamirdo",
+    "neelagiri65",
+    "ishan3299",
+    "ballistic62",
+    "d1g1t4l-d3sp3r4d0",
+    "and 11 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3710209",
+  "votes": 21,
+  "latest_disclosable_activity_at": "2026-05-05T08:23:28.323Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:15.250192",
+    "source": "https://hackerone.com/reports/3710209.json",
+    "report_id": 3710209
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNzEwMjA5",
+    "databaseId": "3710209",
+    "title": "Potential Resource Leak in tool_parsecfg.c at line 279 during fileerror",
+    "url": "https://hackerone.com/reports/3710209",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2026-05-05T08:23:29.418Z",
+    "created_at": "2026-05-03T06:34:14.848Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "ravindrasl2026"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM3MTAyMDk=",
+    "_id": "3710209",
+    "disclosed": true,
+    "votes": 21,
+    "latest_disclosable_activity_at": "2026-05-05T08:23:28.323Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNzEwMjA5",
+      "databaseId": "3710209",
+      "title": "Potential Resource Leak in tool_parsecfg.c at line 279 during fileerror",
+      "url": "https://hackerone.com/reports/3710209",
+      "disclosed_at": "2026-05-05T08:23:29.418Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

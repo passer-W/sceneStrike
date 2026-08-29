@@ -1,0 +1,195 @@
+{
+  "id": 3584491,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTg0NDkx",
+  "url": "https://hackerone.com/reports/3584491",
+  "title": "LM Challenge-Response Hash Always Sent in SMB Authentication",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2026-03-04T07:25:17.618Z",
+  "submitted_at": "2026-03-04T07:25:18.271Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "brewm4ster",
+    "url": "/brewm4ster",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-03-09T12:15:54.203Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-03-07T21:27:16.189Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# LM Challenge-Response Hash Always Sent in SMB Authentication\n\n## Summary\n\nThe curl SMB client unconditionally computes and sends both the legacy LAN Manager (LM) and NT\nchallenge-response hashes during SMB session setup. The LM hash is cryptographically broken —\nit splits the password into two 7-character halves, converts to uppercase, and uses DES with a\nfixed constant. Combined with the fact that the 8-byte authentication challenge is entirely\nserver-controlled (no client-side nonce mixing), any SMB server that curl connects to can capture\nthe LM response and recover the user's password offline within seconds to minutes using rainbow\ntables or brute-force tools (hashcat mode 5500). This is a significant credential exposure risk\nfor any user who connects curl to an untrusted SMB server, including in SSRF scenarios.\n\n\n##  Vulnerability Details\n\n### Affected Component\n\n`lib/smb.c` — curl's SMBv1 (CIFS) client implementation, specifically the `smb_send_setup()`\nfunction and the `smb_connection_state()` function's NEGOTIATE response handling.\n\n### Affected Versions\n\nConfirmed in curl master at commit `1b35c9e1e3` (2026-03-01). The SMB implementation has used\nthis authentication scheme since its introduction; no NTLMv2 or extended security has ever been\nadded to the SMB code path.\n\n### Pre-requisites\n\n- The victim must initiate a curl SMB connection (`smb://` or `smbs://`) to an attacker-controlled\n  server, or to a server the attacker can man-in-the-middle.\n- The victim must supply credentials (via `-u user:password`, `.netrc`, or `CURLOPT_USERPWD`).\n- SMB support must be compiled in (it is by default when NTLM core is available).\n\n### Root Cause Analysis\n\n1. The server sends an SMB_COM_NEGOTIATE response containing an 8-byte challenge in\n   `nrsp->bytes[]`. This challenge is entirely server-controlled — the server can choose\n   any 8 bytes, including values optimized for rainbow table lookups.\n\n2. At `smb.c:943`, the challenge is copied into `smbc->challenge` without any validation:\n\n   ```c\n   memcpy(smbc->challenge, nrsp->bytes, sizeof(smbc->challenge));  // 8 bytes\n   ```\n\n3. At `smb.c:681-684`, the LM hash is computed and the LM response is derived using the\n   server-controlled challenge:\n\n   ```c\n   Curl_ntlm_core_mk_lm_hash(conn->passwd, lm_hash);      // LM hash of password\n   Curl_ntlm_core_lm_resp(lm_hash, smbc->challenge, lm);   // DES-encrypt challenge\n   Curl_ntlm_core_mk_nt_hash(conn->passwd, nt_hash);       // NT hash of password\n   Curl_ntlm_core_lm_resp(nt_hash, smbc->challenge, nt);   // DES-encrypt challenge\n   ```\n\n4. Both the 24-byte LM response and 24-byte NT response are sent to the server at\n   `smb.c:694-698`:\n\n   ```c\n   msg.lengths[0] = smb_swap16(sizeof(lm));   // LM response length = 24\n   msg.lengths[1] = smb_swap16(sizeof(nt));    // NT response length = 24\n   memcpy(p, lm, sizeof(lm));\n   p += sizeof(lm);\n   memcpy(p, nt, sizeof(nt));\n   ```\n\nThis produces two independent 8-byte DES blocks. Each half has at most 2^37 possible values\n(7 uppercase ASCII characters), making brute-force trivial. The two halves can be cracked\nindependently, further reducing the effective complexity.\n\n## Reproduction\n\n**1. Obtain the vulnerable version:**\n\n```bash\ngit clone https://github.com/curl/curl.git\ncd curl\ngit checkout 1b35c9e1e3\n```\n\n**2. Build curl with SMB support:**\n\n```bash\ncmake -B build-poc \\\n  -DCMAKE_BUILD_TYPE=Debug \\\n  -DCMAKE_C_FLAGS=\"-O0 -g\" \\\n  -DCURL_USE_OPENSSL=ON \\\n  -DCURL_DISABLE_SMB=OFF\ncmake --build build-poc -j$(nproc) --target curl\n```\n\nVerify SMB is enabled:\n\n```bash\n./build-poc/src/curl --version | grep -o smb\n```\n\n**3. Install PoC dependency:**\n\n```bash\npip install pycryptodome\n```\n\n**4. Start the malicious SMB server (terminal 1):**\n\n```bash\npython3 poc_clean.py\n```\n\nOutput:\n```\n[*] Listening on 127.0.0.1:4455 (challenge: 1122334455667788)\n```\n\n**5. Connect curl to the malicious server (terminal 2):**\n\n```bash\n./build-poc/src/curl -u 'testuser:Password1' smb://127.0.0.1:4455/share/file.txt\n```\n\ncurl will connect and send the SESSION_SETUP_ANDX with both LM and NT responses.\n\n### Observed Result\n\nThe PoC server captures and cracks the password:\n\n```\n[+] Connection from ('127.0.0.1', 60378)\n\n  User:         testuser\n  LM response:  76365e2d142b5612cd10e1b93d342334e8fd283ecd7b9170\n  NT response:  8614b8a84404b1c0333c8875a22bc10690bbf6a7edcf549d\n\n  [!] PASSWORD CRACKED: 'Password1'\n```\n\n**Key observations:**\n\n1. The 24-byte LM response is **non-zero** — confirming that curl computes and sends the weak\n   LM hash to the server.\n2. The password `Password1` was recovered from the LM response using only the server-chosen\n   challenge and a trivial 5-word dictionary. In practice, hashcat mode 5500 with rainbow\n   tables or GPU brute-force can crack **any** LM hash in seconds.\n3. The server fully controlled the 8-byte challenge (`1122334455667788`). A real attacker could\n   choose a challenge value optimized for pre-computed rainbow tables (e.g., `1122334455667788`\n   is a standard rainbow table challenge).\n\n## Impact\n\n## Summary:\n\nAn attacker operating a malicious SMB server (or performing a man-in-the-middle attack on an\nunencrypted SMB connection) can recover the plaintext password of any user who connects with curl.\nThe attack is completely passive from the attacker's perspective — they simply accept the connection\nand read the SESSION_SETUP_ANDX message.\n\nThe LM hash's maximum effective keyspace is 2 × 2^37 (two independent 7-character uppercase\nhalves), making brute-force trivially fast on modern hardware. Rainbow tables for LM are widely\navailable and provide instant lookup.",
+  "weakness": {
+    "id": 42,
+    "name": "Reversible One-Way Hash"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5462789,
+      "file_name": "poc.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/1jp7tfirtq320ror94c35hlbv7nu?response-content-disposition=attachment%3B%20filename%3D%22poc.py%22%3B%20filename%2A%3DUTF-8%27%27poc.py&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042125Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bc453779e3f2fa9168c0e001e9d19b5843581fab9c946eca82dfba67e3b6399f",
+      "file_size": 13250,
+      "type": "application/x-sh",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 18,
+  "voters": [
+    "a42tech",
+    "alimuhannad",
+    "2026",
+    "2_4-a",
+    "mohamedsalah_bugcrowd",
+    "mukiibi",
+    "jeisondev",
+    "7hk",
+    "x_verse",
+    "pbugger96",
+    "and 8 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3584491",
+  "votes": 18,
+  "latest_disclosable_activity_at": "2026-03-09T12:15:54.004Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:21:26.067774",
+    "source": "https://hackerone.com/reports/3584491.json",
+    "report_id": 3584491
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTg0NDkx",
+    "databaseId": "3584491",
+    "title": "LM Challenge-Response Hash Always Sent in SMB Authentication",
+    "url": "https://hackerone.com/reports/3584491",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-03-09T12:15:54.203Z",
+    "created_at": "2026-03-04T07:25:17.618Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQy",
+      "name": "Reversible One-Way Hash",
+      "external_id": "cwe-328"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "brewm4ster"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1ODQ0OTE=",
+    "_id": "3584491",
+    "disclosed": true,
+    "votes": 18,
+    "latest_disclosable_activity_at": "2026-03-09T12:15:54.004Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTg0NDkx",
+      "databaseId": "3584491",
+      "title": "LM Challenge-Response Hash Always Sent in SMB Authentication",
+      "url": "https://hackerone.com/reports/3584491",
+      "disclosed_at": "2026-03-09T12:15:54.203Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

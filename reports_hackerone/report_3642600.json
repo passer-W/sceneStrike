@@ -1,0 +1,178 @@
+{
+  "id": 3642600,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjQyNjAw",
+  "url": "https://hackerone.com/reports/3642600",
+  "title": "Authorization header leak in ssrf_filter via cross-host redirect leads to credential theft and unauthorized access",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2026-04-01T16:00:33.018Z",
+  "submitted_at": "2026-04-01T16:00:33.081Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "argareksapatii",
+    "url": "/argareksapatii",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fpm7e6yjpfqe99ev12r8d0l8fr16/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 29833,
+    "url": "https://hackerone.com/arkadiyt-projects",
+    "handle": "arkadiyt-projects",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/029/833/c7d79126a63550aa7c99662ecb49eca1a8b2d1c3_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/029/833/c7d79126a63550aa7c99662ecb49eca1a8b2d1c3_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "arkadiyt-projects",
+      "twitter_handle": "arkadiyt",
+      "website": "https://arkadiyt.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": true,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2026-04-15T20:43:58.628Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-04-15T20:31:26.061Z",
+  "team_member_agreed_on_going_public_at": "2026-04-15T20:43:58.502Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\n`ssrf_filter` follows redirects by rebuilding each redirected request from the original request options. When a redirect crosses to a different host, it still reapplies caller-supplied sensitive state such as the `Authorization` header.\n\nAs a result, an attacker-controlled redirect target can receive credentials that were intended only for the original request origin.\n\nI verified impact with a local proof of concept. A bearer token attached to the initial request was forwarded to a different host, captured there, and then successfully replayed against a separate protected API endpoint, which returned private data. This demonstrates credential theft followed by unauthorized access, not just passive header disclosure.\n\n## Steps To Reproduce:\n\n1. Clone the repository and enter the project root:\n\n   ```bash\n   git clone https://github.com/arkadiyt/ssrf_filter\n   cd ssrf_filter\n   ```\n\n2. Run the attached bearer-token replay PoC:\n\n   ```bash\n   ruby artifacts/ssrf_filter_redirect_leak_2026-04-01/01_bearer_token_replay.rb\n   ```\n\n3. The PoC starts three local servers:\n   - redirector.test, which returns a 302 redirect to collector.test\n   - collector.test, which records the inbound Authorization header\n   - api.test, which exposes /private and only returns data when the correct bearer token is presented\n\n4. Observe that SsrfFilter.get(...) follows the redirect and forwards the original Authorization header to collector.test.\n\n5. Observe that the stolen token is then replayed to api.test/private and succeeds.\n\nExpected output:\n```\n[:fetch_response, \"200\", \"stolen\"]\n[:stolen_token, \"Bearer service-token-123\"]\n[:replay_response, \"200\", \"private-data\"]\n```\n\nInterpretation:\n- Authorization is forwarded across an origin change.\n- The leaked bearer token is reusable.\n- Reuse of the stolen token grants access to protected data.\n\nNote: for local-only reproduction, the PoC temporarily allows loopback addresses so the entire harness can run on one machine. That adjustment is only for the lab setup and is not part of the vulnerability itself. The issue is the forwarding of sensitive credentials across cross-host redirects.\n\n## Supporting Material/References:\n\n* Evidence bundle: ssrf_filter/artifacts/ssrf_filter_redirect_leak_2026-04-01.zip\n* Bearer token replay PoC: ssrf_filter/artifacts/ssrf_filter_redirect_leak_2026-04-01/01_bearer_token_replay.rb\n* Evidence outputs: ssrf_filter/artifacts/ssrf_filter_redirect_leak_2026-04-01/evidence_outputs.md\n* Draft report: ssrf_filter/artifacts/ssrf_filter_redirect_leak_2026-04-01/report_draft.md\n* Relevant code path: ssrf_filter/lib/ssrf_filter/ssrf_filter.rb\n  - redirect loop reuses the original request options\n  - redirected requests reapply headers/body/request_proc\n  - redirects are not differentiated between same-host and cross-host targets",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5653562,
+      "file_name": "ssrf_filter_redirect_leak_2026-04-01.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/z3nrhxua2tbkjlxjp2xlfi2md5fd?response-content-disposition=attachment%3B%20filename%3D%22ssrf_filter_redirect_leak_2026-04-01.zip%22%3B%20filename%2A%3DUTF-8%27%27ssrf_filter_redirect_leak_2026-04-01.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3WHQU6NN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041957Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD7AFG5gTQdzM6VLx8fZl2T4XicJimN%2FMf6Od7vxmwZ1AIgK8BDIIPhdmu0WGRYo7wJwD1AT%2FHMbwZGLy41qKVWN4gqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDFC14PIrKuDPt3xcJCqPBdY7p01jvrf42U4QeJyy%2FGjTtkXJyEWl%2F9%2BRiYglHwAPOE0ap9%2F72MoMhP%2F5N%2FK1Bva76g0fWGHl2JMmYmjBYdMQ%2FHxPmByv7M9b5qwwOOS69FzYQNuPwWxehYY80TvLwfrjgJcbEySrzpHoYW86%2Fu26A2HotPQHES9%2FFlOSR%2BrjpGI4z7i7s2e%2BgmD5PYRdPIO05fgAvh7%2FYYSN%2BW0sAQcYj4NSdZWQQhL1wHJjPBd2Obafspjfn1JguzKCdzcg1Lv7DrwJyZ1fDtIHuzaGaEY5skB3AYKgJkJgPvpk2aVRZHhchgevx8wY7BEXfHQ%2FgFi9tNnm9tDFM1AU4AS7GVlOOjMwIdenS6uLxKElETBu2r%2FLG9j5Sw6r%2FOv5S1QCkMq3PfBbLAOCGYcguI91Oh%2BThi6YKOEIzwICqqN70wDHGrpBIbhIhUPhKRvjLM6tpQ0pa0EGA31B0EPKYOBilLROA8xs6pG5faMrRYhUOVhKYjQz8pzsT1Lk5189CuGgdOUzduwT6HMy%2FJ6DD52kCzR%2F1TVIl8o%2F8iWh%2BCCHqyXTuYI1%2BsI1ycfCNNBiC6PTcBHlSuz5BMmHSz4isrqEQ%2FrbWxDpbHiXO7xMPASU06dmQV9TpqbPoZikogqHWhBEN%2Fh1qoWP5veRng1pWgdU8PKvaVW6J%2Br1GIHoBcqgWyhagQXkRbrD1eAsR8LbnHnj9plQ4ZJAHUHLbhXgXdLfVTtvqMUvsnBpyNBsPM7jA88VeXRKO21I5QmIZegUN5hiBbmZvdkUpbUSuxtUF5jukzq0S0RUHmqhgVpGNCRWU%2BQTiTJ2Q0pFT7zjd8eDsMULxqPOEyzbDJTPibYuMOG0k%2F5%2BYAumMXMCggqXugER6Hcwp9Wc0gY6sQHVxxroi7figjEDmt3cXIBWAcKhHyem0%2FLi3xmlmWpaS88ZSuTlcNIWgqb23DQsKcfsOvKEAPwD8il93aYfY7mjQ4RXBtddL%2F3eSjLvBh7zwNhsd8DcKzyZ77juzeDF%2BOU8S5owoKPWHvGkLW%2Br06oVWo5doXaxd0AEU9hSsdfQNEbVJTngPCRrL1dozL8CFHWJNqWje2GjI0C5oJ1%2FEIV9DBhrpBrLstpgRM7lPtTEGD4%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ae864bc20368734ae991ac42b79843c171e6e5067b10a6d1f0d9ecd0a95614b9",
+      "file_size": 7464,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2026-05-15T20:31:26.156Z",
+  "allow_singular_disclosure_after": -4175311.553104795,
+  "singular_disclosure_allowed": true,
+  "vote_count": 40,
+  "voters": [
+    "mchelesanto",
+    "marc0_",
+    "trptt",
+    "mohaned0101",
+    "2026",
+    "what_web",
+    "zukosdead",
+    "argareksapatii",
+    "nwicks",
+    "husseinxteam",
+    "and 30 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3642600",
+  "votes": 40,
+  "latest_disclosable_activity_at": "2026-04-15T20:43:58.725Z",
+  "severity": null,
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:57.843539",
+    "source": "https://hackerone.com/reports/3642600.json",
+    "report_id": 3642600
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjQyNjAw",
+    "databaseId": "3642600",
+    "title": "Authorization header leak in ssrf_filter via cross-host redirect leads to credential theft and unauthorized access",
+    "url": "https://hackerone.com/reports/3642600",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-04-15T20:43:58.628Z",
+    "created_at": "2026-04-01T16:00:33.018Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": null,
+    "reporter": {
+      "username": "argareksapatii"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjk4MzM=",
+      "handle": "arkadiyt-projects",
+      "name": "arkadiyt-projects",
+      "url": "https://hackerone.com/arkadiyt-projects",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2NDI2MDA=",
+    "_id": "3642600",
+    "disclosed": true,
+    "votes": 40,
+    "latest_disclosable_activity_at": "2026-04-15T20:43:58.725Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjQyNjAw",
+      "databaseId": "3642600",
+      "title": "Authorization header leak in ssrf_filter via cross-host redirect leads to credential theft and unauthorized access",
+      "url": "https://hackerone.com/reports/3642600",
+      "disclosed_at": "2026-04-15T20:43:58.628Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjk4MzM=",
+      "handle": "arkadiyt-projects",
+      "name": "arkadiyt-projects",
+      "url": "https://hackerone.com/arkadiyt-projects",
+      "currency": "usd"
+    }
+  }
+}

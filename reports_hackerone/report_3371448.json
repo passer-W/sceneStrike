@@ -1,0 +1,197 @@
+{
+  "id": 3371448,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzcxNDQ4",
+  "url": "https://hackerone.com/reports/3371448",
+  "title": "Improper Authorization Leads to Editor can toggle admin-only workspace features (Lovable AI)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2025-10-05T14:15:43.084Z",
+  "submitted_at": "2025-10-05T14:15:43.317Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "longlivedoma",
+    "url": "/longlivedoma",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vq9thdqusmmf0d3q72blkpfbmi5i/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 101556,
+    "url": "https://hackerone.com/lovable-vdp",
+    "handle": "lovable-vdp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vqnq844bgn7gv1xr9qr9chke2kf5/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/vqnq844bgn7gv1xr9qr9chke2kf5/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Lovable VDP",
+      "twitter_handle": "lovable",
+      "website": "http://lovable.dev",
+      "about": "Create apps and websites by chatting with AI"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-11-04T22:54:23.954Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-10-05T22:54:20.957Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nAn account with the Editor role can successfully call the API endpoint `/workspaces/<WORKSPACE_ID>/tool-preferences/ai_gateway/enable`that disables workspace-wide admin-only feature (Lovable AI). The API does not enforce server-side role checks for this action, allowing a vertical privilege escalation (Broken Access Control).\n\n## Steps To Reproduce:\n\nPreconditions\n\n- Two accounts are members of the same workspace `Victim-Workspace`:\n\n    - Account A (Owner/Admin) - Owner role in `Victim-Workspace`.\n    - Account B (Editor) - Editor role in the same `Victim-Workspace`.\n\n1. Sign in as Account A (Admin) and toggle the AI feature off inside the workspace.\n\n2. Capture this endpoint (Responsible for Disabling AI Feature).\n\n```HTTPS\nPOST /workspaces/<WORKSPACE_ID>/tool-preferences/ai_gateway/enable HTTP/2\nHost: lovable-api.com\nAuthorization: Bearer <OWNER-TOKEN>\nContent-Type: application/json\n\n\n{\"approval_preference\":\"disable\"}\n```\nNote: <WORKSPACE_ID> is the workspace id for Victim-Workspace.\n\n4. Modify request to use Editor JWT Token\n- Replace the Authorization header with Account B (Editor) JWT:\n\n```HTTPS\nPOST /workspaces/<WORKSPACE_ID>/tool-preferences/ai_gateway/enable HTTP/2\nHost: lovable-api.com\nAuthorization: Bearer <EDITOR_JWT>\nContent-Type: application/json\n\n{\"approval_preference\":\"disable\"}\n```\n\n5. When the request is sent again with the Editor's JWT , the request succeeds and the Lovable AI setting is switched off for the workspace.\n\n## Proof of Concept: \n\n{F4859179}\n\n## Impact\n\nBased on the Lovable AI documentation, this feature powers all the AI-driven parts of a workspace like prompt integrations, content generation, and other model-based actions.\n\nIf an Editor disables it, all those AI features stop working across the workspace, breaking functionality for every member. Since only admins are supposed to control this setting, the bug lets an unauthorized user disrupt how the workspace operates and remove core features that teams rely on.",
+  "weakness": {
+    "id": 124,
+    "name": "Improper Authorization"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4859179,
+      "file_name": "Lovable_AI_Feature_POC.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7uys2zfcmkm3k7q4i0eacw8y1pfn?response-content-disposition=attachment%3B%20filename%3D%22Lovable_AI_Feature_POC.mp4%22%3B%20filename%2A%3DUTF-8%27%27Lovable_AI_Feature_POC.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042627Z&X-Amz-Expires=582&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=36a9194c2ea9d697ca137936dc1124ac92cbca61c0de4cc200e8deb3ce594611",
+      "file_size": 8951213,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-11-04T22:54:21.148Z",
+  "allow_singular_disclosure_after": -20755926.66302174,
+  "singular_disclosure_allowed": true,
+  "vote_count": 79,
+  "voters": [
+    "loaymorad",
+    "dev_ali",
+    "ell0guvn0r",
+    "almuntadhar0x01",
+    "0-chrollo-0",
+    "bl4ck-",
+    "trptt",
+    "yoyomiski",
+    "vaaq",
+    "mohaned0101",
+    "and 69 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 930866,
+    "asset_type": "URL",
+    "asset_identifier": "lovable.dev",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3371448",
+  "votes": 79,
+  "latest_disclosable_activity_at": "2025-11-04T22:54:24.446Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:28.091824",
+    "source": "https://hackerone.com/reports/3371448.json",
+    "report_id": 3371448
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzcxNDQ4",
+    "databaseId": "3371448",
+    "title": "Improper Authorization Leads to Editor can toggle admin-only workspace features (Lovable AI)",
+    "url": "https://hackerone.com/reports/3371448",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-11-04T22:54:23.954Z",
+    "created_at": "2025-10-05T14:15:43.084Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEyNA==",
+      "name": "Improper Authorization",
+      "external_id": "cwe-285"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "longlivedoma"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTAxNTU2",
+      "handle": "lovable-vdp",
+      "name": "Lovable VDP",
+      "url": "https://hackerone.com/lovable-vdp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzNzE0NDg=",
+    "_id": "3371448",
+    "disclosed": true,
+    "votes": 79,
+    "latest_disclosable_activity_at": "2025-11-04T22:54:24.446Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzcxNDQ4",
+      "databaseId": "3371448",
+      "title": "Improper Authorization Leads to Editor can toggle admin-only workspace features (Lovable AI)",
+      "url": "https://hackerone.com/reports/3371448",
+      "disclosed_at": "2025-11-04T22:54:23.954Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTAxNTU2",
+      "handle": "lovable-vdp",
+      "name": "Lovable VDP",
+      "url": "https://hackerone.com/lovable-vdp",
+      "currency": "usd"
+    }
+  }
+}

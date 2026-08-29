@@ -1,0 +1,211 @@
+{
+  "id": 854726,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTQ3MjY=",
+  "url": "https://hackerone.com/reports/854726",
+  "title": "Unix time unlock_time values have dangerous validation rules enabling a number of exploits",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-04-21T00:58:53.116Z",
+  "submitted_at": "2020-04-21T00:58:53.116Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "thecharlatan",
+    "url": "/thecharlatan",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 7731,
+    "url": "https://hackerone.com/monero",
+    "handle": "monero",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/007/731/55634f7fcd917725c7a5771cc6e7c9b4d5fe0c22_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/007/731/55634f7fcd917725c7a5771cc6e7c9b4d5fe0c22_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Monero",
+      "twitter_handle": "monero",
+      "website": "https://getmonero.org",
+      "about": " Monero: the secure, private, untraceable cryptocurrency"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-09-12T08:36:52.215Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-09-12T08:36:52.146Z",
+  "team_member_agreed_on_going_public_at": "2021-09-11T20:36:35.601Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "*Initially found by TheCharlatan, discussed with and expanded on by Isthmus, impacts all releases of monero and monero wallets*\n\n## Description\n\nThe unlock_time field in monero transaction dictates when a transaction's outputs can be spent again. This rule is enforced by the consensus code in https://github.com/monero-project/monero/blob/master/src/cryptonote_core/blockchain.cpp#L3478 . The rule has two parts. If the unlock_time is below 500000000, it is interpreted as a block height and compared with the current block height. If the unlock_time in a used transaction input's previous output is below the current block height, a transaction using that output is valid. Otherwise it is invalid and not relayed.\n\nIf the unlock time is above 500000000, then it is interpreted as unix time in seconds. However, the unlock_time is not compared to the network or rather block time, but to the local time of the machine running the monero node. Using this local time is potentially problematic for the following reasons.\n\n## Exploits\n\nThrough consuming outputs locked by carefully chosen unlock_time values, it is possible to poll the local time of other nodes. The attacker can generate any number of transactions encumbered with a spread of unlock_time values, for example with an unlock_time 20 blocks per the expected block time into the future and then spread out over intervals of seconds. The attacker then creates transactions consuming these locked outputs and connects two nodes to the node she wants to spy on. She sends the transaction from one of the nodes to the node she wants to spy on and then checks if the other node receives the transaction. If the consumed unlock_time is invalid by the consensus rules for the attacker and the greater network, but valid for the surveiled node, the attacker will get the transaction relayed to her other node as well. This then indicates that the local time on the surveiled node matches the time on the attacker's transaction. Using a binary search methodology, the attacker can then pinpoint the node's time within a precision of seconds.\n\nIf such a node is found with a different clock (running late or early), or if the attacker can manipulate a node's local time through another channel, we identified two additional ways to exploit the current unlock_time validation.\n\nAssume that a node has a clock running forward (showing a higher unix time). The attacker then creates a transaction consuming at least one output with a high enough unlock_time that it is invalid by the clocks of most node's on the netowrk, but valid for the node where the clock runs forward. If the attacker relays this transaction to the victim's node, the node will validate it as a valid transaction. This is especially useful for the attacker in the context of mining. For Example if the victim's node is a large mining pool, this can be used to make the pool expend work on a block that is not valid with the locked transaction included by the consensus rules of the rest of the network. If the attacker is a mining pool herself, she can use this to increase her profit.\n\nIf a node has a clock running behind (showing a lower unix time), the attacker can trick it into thinking that a chain that is valid by the rest of the network's consensus rules, is invalid to the attacked node. By continuously submitting transactions consuming an unlock_time encumbered output with a value just later than the victim node's clock, the node will never accept the network's best chain as valid. This would be a very effective way for an eclipse attack, even allowing the attacker enough time to feed it a \"slower\" malicious chain without expending too much proof of work.\n\n## Recommendations\n\nWe believe that these scenarios are serious enough to warrant a change away from the current consensus rules for interpreting unix time unlock_time values. Consensus rules must react to consensus variables (e.g. miner-reported block time). The local time should not be taken into account any more. Instead, an aggregation of previous block time values should be used.\n\nA similar problem existed in bitcoin's nlocktime field. However this problem was less serious at the time, since the nlocktime semantics are different compared to monero's unlock_time (nlocktime's influence is on the finality of the transaction itself, not a later transaction), and since the last block's timestamp was used instead.  It was fixed through BIP113: https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki , by using the median timestamp of the past 11 blocks to determine if an unlock time is valid. The fix was also a required step for the deployment of the CSV and CLTV opcodes, which adopt a similar output locking mechanism to the one of monero's unlock_time.\n\nWe therefore propose to also use the median timestamp over the past 60 blocks as calculated in https://github.com/monero-project/monero/blob/master/src/cryptonote_core/blockchain.cpp#L3592 , to verify the unlock_time. In fact, it looks like the cryptonote developers intended to implement something along these lines by reading both the function signatures and the comments around this line. Currently this median is used to check that a new block's timestamp is strictly increasing compared to the median. A proof of concept patch was written to use this median timestamp calculation in the unlock time.\n\nSince the exploits do not require changes to the monero software, but rather some minor scripting work to generate the locked transactions, no proof of concept is provided.\n\n## Patch:\n\nWe provide a proof of concept patch to the validation code and the wallet code in monero. This should be tested extensively before deploying, since it touches key functionality of monero. We also provide a patch to the wallet code, however this needs some additional discussion, since it touches quite a few unrelated components in its current form.\n\n## Impact\n\nWithout any additional assumptions, the attacker can get the local time of another node.\nUnder the assumption that a node's local time is off, the attacker is able to launch an eclipse attack.\nAdditionally, if the node is mining, the attack can diminish its profit.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 796877,
+      "file_name": "0001-unlocktime.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2zk4bn7gssqVnTKZbnNZHSEp?response-content-disposition=attachment%3B%20filename%3D%220001-unlocktime.patch%22%3B%20filename%2A%3DUTF-8%27%270001-unlocktime.patch&response-content-type=text%2Fx-patch&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQYH5XJ5D%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054835Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDah8VSp%2B7EIXoBlWwDLt9kMugpZDzYLHVRhpJqqAmVNQIgMb1mHFe1IKZAnwnsmpbxgqdPtPGnng1O9s5sNrav%2Bt4qsgUIBhADGgwwMTM2MTkyNzQ4NDkiDK7fgL0eTkzq7qKNOyqPBXcgjoj3%2BglUTu%2B5EkaRb%2BEZebgxyMpF3bUuMuA8DyHY6Np33GIgQY47mFIht5PUajuP8wUnlRhlICqmeM0NLKYPKynMCdp2hOJ03J7mOX4zv0tgbpa4tLh7A8bNKmllvbF7uy%2BfyFcQkscL7HD4GXBMUHIUivo2JmYhHd663%2F97ZcbJ4sFHnXtdS3mAYDIAkHwP0ty2bUQfvj2wfMyKjg342X7VLhdVKhsrOzAwP9juBFP%2FN850tsoR%2BZxT4eGwxC0IvWsNe0htaFQPdGajPJnGfKZ53FmQUO4tnKzzFciYdA6u6nARAAiIDibn5o0jPBUO55vWJyrv%2Bqyi9CIKJohSJa2djjlo%2Bndd5y4inJwwXnqpJ6q78EVBYtzXGLfXyGAMTLeKorHUYHmYJxqdnboZWmpRAoe0yEKiKYhdh85V5HVpjBUeCba1cu120TpLOWbstbboAkClAgqMiJoTE4Rw1CvAcpLJMXkcpNEmWrYuwRbTyDWTZZp%2B%2F0N3Tp9oKfqKc8bUhEqtVxiz7QSmfwteoBIqVifxbLtb%2BY87p3CoQaaJSb%2FkWFiqwMNRuRHUwWt%2B9Is6UxSaI01hOl9xKKSNzC45UD84gZsnuTX3PzOmmDwaZqIEUKNauYhUe%2BDb5a6Qzf4B4C2KEltjh%2F%2B40RCt1CmSW991GRAZaBvjRklQ1r0nkFU2MiI9yj%2FlhrQj445HKXjRl4YOGfsQA%2Fv6wWnfEoQ0oV%2BNctNyHehrV4dOcrgO93H%2FeNlpsmIm2WD%2BX%2BPT5JH%2FzzpCERGuHEc1kOGFaFQ%2BumN6g2cQn5HhgAxm5%2F7kQCZoDx5CA0VmnIugxcy54qBVDIinXJjMglc2x65sqLNmFqXHtx30uQ%2F6LfUw%2BYWd0gY6sQG74tg21JeyJ8KEfb7Y%2BryVpv%2FQyPRQJ9QkQl5BdqUSSJpsV6dWyL%2Bg8C8fxdhVMH1KJ5J%2FSHqH13YaeUNdzi311iiMYzTPMJdH2vvr1cftwPgsIzxINoFr8mslH9VsmWBdf4toI6Q1dEDkveCG6LpobWwrvolQJfVQ%2FLse1uRsIr%2FLwT4uO9gagf361bfN1fYC3ha2MutiZEwxtq28BIe1YGkmGgAZgxcuWiqklKkdEPE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e7ebb0e0e518bc60b67277f74703c240ec7046187e078fc6611c616feb039c47",
+      "file_size": 7615,
+      "type": "text/x-patch",
+      "moderated": null
+    },
+    {
+      "id": 796878,
+      "file_name": "0001-Patch-wallet-unlock-time.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xshC9Sz5voRkgJzYQA6DG3vQ?response-content-disposition=attachment%3B%20filename%3D%220001-Patch-wallet-unlock-time.patch%22%3B%20filename%2A%3DUTF-8%27%270001-Patch-wallet-unlock-time.patch&response-content-type=text%2Fx-patch&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQYH5XJ5D%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054835Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDah8VSp%2B7EIXoBlWwDLt9kMugpZDzYLHVRhpJqqAmVNQIgMb1mHFe1IKZAnwnsmpbxgqdPtPGnng1O9s5sNrav%2Bt4qsgUIBhADGgwwMTM2MTkyNzQ4NDkiDK7fgL0eTkzq7qKNOyqPBXcgjoj3%2BglUTu%2B5EkaRb%2BEZebgxyMpF3bUuMuA8DyHY6Np33GIgQY47mFIht5PUajuP8wUnlRhlICqmeM0NLKYPKynMCdp2hOJ03J7mOX4zv0tgbpa4tLh7A8bNKmllvbF7uy%2BfyFcQkscL7HD4GXBMUHIUivo2JmYhHd663%2F97ZcbJ4sFHnXtdS3mAYDIAkHwP0ty2bUQfvj2wfMyKjg342X7VLhdVKhsrOzAwP9juBFP%2FN850tsoR%2BZxT4eGwxC0IvWsNe0htaFQPdGajPJnGfKZ53FmQUO4tnKzzFciYdA6u6nARAAiIDibn5o0jPBUO55vWJyrv%2Bqyi9CIKJohSJa2djjlo%2Bndd5y4inJwwXnqpJ6q78EVBYtzXGLfXyGAMTLeKorHUYHmYJxqdnboZWmpRAoe0yEKiKYhdh85V5HVpjBUeCba1cu120TpLOWbstbboAkClAgqMiJoTE4Rw1CvAcpLJMXkcpNEmWrYuwRbTyDWTZZp%2B%2F0N3Tp9oKfqKc8bUhEqtVxiz7QSmfwteoBIqVifxbLtb%2BY87p3CoQaaJSb%2FkWFiqwMNRuRHUwWt%2B9Is6UxSaI01hOl9xKKSNzC45UD84gZsnuTX3PzOmmDwaZqIEUKNauYhUe%2BDb5a6Qzf4B4C2KEltjh%2F%2B40RCt1CmSW991GRAZaBvjRklQ1r0nkFU2MiI9yj%2FlhrQj445HKXjRl4YOGfsQA%2Fv6wWnfEoQ0oV%2BNctNyHehrV4dOcrgO93H%2FeNlpsmIm2WD%2BX%2BPT5JH%2FzzpCERGuHEc1kOGFaFQ%2BumN6g2cQn5HhgAxm5%2F7kQCZoDx5CA0VmnIugxcy54qBVDIinXJjMglc2x65sqLNmFqXHtx30uQ%2F6LfUw%2BYWd0gY6sQG74tg21JeyJ8KEfb7Y%2BryVpv%2FQyPRQJ9QkQl5BdqUSSJpsV6dWyL%2Bg8C8fxdhVMH1KJ5J%2FSHqH13YaeUNdzi311iiMYzTPMJdH2vvr1cftwPgsIzxINoFr8mslH9VsmWBdf4toI6Q1dEDkveCG6LpobWwrvolQJfVQ%2FLse1uRsIr%2FLwT4uO9gagf361bfN1fYC3ha2MutiZEwxtq28BIe1YGkmGgAZgxcuWiqklKkdEPE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=4766df428733af652d53bddfd983846145483a5c3302838111acef9fcffca521",
+      "file_size": 77938,
+      "type": "text/x-patch",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-10-11T20:36:35.931Z",
+  "allow_singular_disclosure_after": -149073119.24144128,
+  "singular_disclosure_allowed": true,
+  "vote_count": 20,
+  "voters": [
+    "mohaned0101",
+    "thalaivar304",
+    "akashhamal0x01",
+    "deadrobin",
+    "h4x0r_dz",
+    "0nlymohammed",
+    "ashrexon",
+    "0xwise",
+    "khizer47",
+    "metwallysec",
+    "and 10 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "854726",
+  "votes": 20,
+  "latest_disclosable_activity_at": "2021-09-12T08:36:52.259Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:48:35.273153",
+    "source": "https://hackerone.com/reports/854726.json",
+    "report_id": 854726
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTQ3MjY=",
+    "databaseId": "854726",
+    "title": "Unix time unlock_time values have dangerous validation rules enabling a number of exploits",
+    "url": "https://hackerone.com/reports/854726",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-09-12T08:36:52.215Z",
+    "created_at": "2020-04-21T00:58:53.116Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.3
+    },
+    "reporter": {
+      "username": "thecharlatan"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNzczMQ==",
+      "handle": "monero",
+      "name": "Monero",
+      "url": "https://hackerone.com/monero",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg1NDcyNg==",
+    "_id": "854726",
+    "disclosed": true,
+    "votes": 20,
+    "latest_disclosable_activity_at": "2021-09-12T08:36:52.259Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NTQ3MjY=",
+      "databaseId": "854726",
+      "title": "Unix time unlock_time values have dangerous validation rules enabling a number of exploits",
+      "url": "https://hackerone.com/reports/854726",
+      "disclosed_at": "2021-09-12T08:36:52.215Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNzczMQ==",
+      "handle": "monero",
+      "name": "Monero",
+      "url": "https://hackerone.com/monero",
+      "currency": "usd"
+    }
+  }
+}

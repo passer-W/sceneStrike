@@ -1,0 +1,236 @@
+{
+  "id": 227833,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMjc4MzM=",
+  "url": "https://hackerone.com/reports/227833",
+  "title": "Reverse Tab-nabbing at www.instacart.com/store/partner_recipe?recipe_url=",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2017-05-12T05:17:05.825Z",
+  "submitted_at": "2017-05-12T05:17:05.825Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ak1t4",
+    "url": "/ak1t4",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ygbscyk1hjiehik2alvfd4est1dj/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35527,
+    "url": "https://hackerone.com/instacart",
+    "handle": "instacart",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/o3gb7jh208og9ikm1jqbsj1461p5/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/o3gb7jh208og9ikm1jqbsj1461p5/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Instacart",
+      "twitter_handle": "instacart",
+      "website": "https://instacart.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-05-30T17:24:39.002Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-05-30T17:24:38.946Z",
+  "team_member_agreed_on_going_public_at": "2017-05-30T17:18:23.740Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary \n\nInstacart at ```/store/partner_recipe?recipe_url=``` endpoint is vulnerable to reverse tabnabbing, since the injected link use ```target=\"_blank\"``` , this means the page that opens in a new tab can access the initial tab and change its location using the window.opener property.\n\nexample: ```<a href=\"https://s3-eu-west-1.amazonaws.com/some-evil-host/evil2.html\" target=\"_blank\" class=\"\">```\n\n#### Reproduction Steps & PoC\n\n__POC A__\n\n1) Go to https://www.instacart.com/store/partner_recipe?recipe_url=https://s3-eu-west-1.amazonaws.com/some-evil-host/evil2.html&partner_name=&ingredients[]=apples&ingredients[]=butter&ingredients[]=Splenda+Brown+Sugar+Blend&ingredients[]=cinnamon&ingredients[]=nutmeg&title=Example-Reciper-with-Evil-Link&description=&image_url=x\n2) Click on \"Example-Reciper-with-Evil-Link\"\n3) You see that new page show 404 error and the principal page is change by a fake login page of instacart\n\n**Evil link**\n{F183925}\n**New open Page**\n{F183924}\n**Principal page changed for a phishing page**\n{F183923}\n\n__POC B__\n\n1)Go to https://www.instacart.com/store/partner_recipe?recipe_url=https://s3-eu-west-1.amazonaws.com/some-evil-host/evil.html&partner_name=&ingredients[]=apples&ingredients[]=butter&ingredients[]=Splenda+Brown+Sugar+Blend&ingredients[]=cinnamon&ingredients[]=nutmeg&title=%22Barb%27s+Fried+Apples+-Diabetic-Low+Fat&description=&image_url=x\n2) Click on \"Example-Reciper-with-Evil-Link\"\n3) You see alert popup in instacart principal page\n\n{F183926}\n\n(**Tested on all latest version browser: safari / chrome / firefox**)\n\n### FIX & MITIGATION\n\nTo  mitigate this issue we need to use rel=\"nofollow noopener noreferrer\" as follows:\n\n```<a target=\"_blank\" class=\"btn external-url\" href=\"https://evil.com\" rel=\"nofollow noopener noreferrer\"><i class=\"fa fa-external-link\"></i>\n</a>```\n\nNow when you click on this link, the attacker cannot access the initial tab.\n\n#### References\n\n**https://www.jitbit.com/alexblog/256-targetblank---the-most-underestimated-vulnerability-ever/**\n\nLet me know if more info needed or anything else,\n\nkind regards,\n@ak1t4\n\n",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 183923,
+      "file_name": "Captura_de_pantalla_2017-05-12_a_las_2.04.50.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/183/923/f653fa181db401cbd2237cb9aebd2abf57a8a235/Captura_de_pantalla_2017-05-12_a_las_2.04.50.png?response-content-disposition=attachment%3B%20filename%3D%22Captura_de_pantalla_2017-05-12_a_las_2.04.50.png%22%3B%20filename%2A%3DUTF-8%27%27Captura_de_pantalla_2017-05-12_a_las_2.04.50.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063232Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=68247cffbd4c138b65fe47b3735f21431f9d357b2d4541f742d754c0cddbf7c2",
+      "file_size": 550147,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 183924,
+      "file_name": "Captura_de_pantalla_2017-05-12_a_las_2.04.34.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/183/924/7e0abea78b49de609f30098473247b5eec1b651f/Captura_de_pantalla_2017-05-12_a_las_2.04.34.png?response-content-disposition=attachment%3B%20filename%3D%22Captura_de_pantalla_2017-05-12_a_las_2.04.34.png%22%3B%20filename%2A%3DUTF-8%27%27Captura_de_pantalla_2017-05-12_a_las_2.04.34.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063232Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3584b9408508c68e0d2acbabed7ad27288ebe411ae5932c8ca3fdfcde7bc1670",
+      "file_size": 49497,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 183925,
+      "file_name": "Captura_de_pantalla_2017-05-12_a_las_2.04.28.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/183/925/6313a06ad54bc76307f5e64641253247ccb66498/Captura_de_pantalla_2017-05-12_a_las_2.04.28.png?response-content-disposition=attachment%3B%20filename%3D%22Captura_de_pantalla_2017-05-12_a_las_2.04.28.png%22%3B%20filename%2A%3DUTF-8%27%27Captura_de_pantalla_2017-05-12_a_las_2.04.28.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063232Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=268749fb543f637c965c5c2a928b54f59b24996524721c2f84f58ee411d1d52b",
+      "file_size": 62806,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 183926,
+      "file_name": "Captura_de_pantalla_2017-05-12_a_las_2.07.16.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/183/926/6a9099095cebb5e24bcb87b9f5c06e69a9f193c3/Captura_de_pantalla_2017-05-12_a_las_2.07.16.png?response-content-disposition=attachment%3B%20filename%3D%22Captura_de_pantalla_2017-05-12_a_las_2.07.16.png%22%3B%20filename%2A%3DUTF-8%27%27Captura_de_pantalla_2017-05-12_a_las_2.07.16.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063232Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b2947256d1dd48ced163bf7fd99d6a8a2483c9864a8714258f3cb5a5783e6ebd",
+      "file_size": 107673,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-06-29T17:18:23.796Z",
+  "allow_singular_disclosure_after": -284735649.1555565,
+  "singular_disclosure_allowed": true,
+  "vote_count": 19,
+  "voters": [
+    "mashoud1122",
+    "ali",
+    "pappan",
+    "r3y",
+    "eveeez",
+    "peeper35",
+    "ak1t4",
+    "t4ym",
+    "0xspade",
+    "exception",
+    "and 9 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 4273,
+      "category": "researcher",
+      "content": "A reverse tab-nabbing link attack can be launched cause an evil link injection at www.instacart.com/store/partner_recipe?recipe_url=\n\nThanks to Karel Origin (https://twitter.com/Karel_Origin) for his report at https://hackerone.com/reports/196221, You made me think that more could be done,\nI owe you a beer :)",
+      "updated_at": "2017-05-30T17:22:10.050Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 93934,
+        "username": "ak1t4",
+        "name": "Ak1t4 ",
+        "bio": "Bug Bounty Hunter",
+        "cleared": false,
+        "verified": true,
+        "website": "https://x.com/akita_zen",
+        "location": "Argentina",
+        "created_at": "2016-07-21T10:28:35.804Z",
+        "url": "https://hackerone.com/ak1t4",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/ygbscyk1hjiehik2alvfd4est1dj/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/ygbscyk1hjiehik2alvfd4est1dj/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/ygbscyk1hjiehik2alvfd4est1dj/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    }
+  ],
+  "databaseId": "227833",
+  "votes": 19,
+  "latest_disclosable_activity_at": "2017-05-30T17:24:39.015Z",
+  "severity": null,
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:32:33.133998",
+    "source": "https://hackerone.com/reports/227833.json",
+    "report_id": 227833
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMjc4MzM=",
+    "databaseId": "227833",
+    "title": "Reverse Tab-nabbing at www.instacart.com/store/partner_recipe?recipe_url=",
+    "url": "https://hackerone.com/reports/227833",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-05-30T17:24:39.002Z",
+    "created_at": "2017-05-12T05:17:05.825Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": null,
+    "reporter": {
+      "username": "ak1t4"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NTI3",
+      "handle": "instacart",
+      "name": "Instacart",
+      "url": "https://hackerone.com/instacart",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80ODM2Mw==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-05-30T17:15:11.305Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIyNzgzMw==",
+    "_id": "227833",
+    "disclosed": true,
+    "votes": 19,
+    "latest_disclosable_activity_at": "2017-05-30T17:24:39.015Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMjc4MzM=",
+      "databaseId": "227833",
+      "title": "Reverse Tab-nabbing at www.instacart.com/store/partner_recipe?recipe_url=",
+      "url": "https://hackerone.com/reports/227833",
+      "disclosed_at": "2017-05-30T17:24:39.002Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NTI3",
+      "handle": "instacart",
+      "name": "Instacart",
+      "url": "https://hackerone.com/instacart",
+      "currency": "usd"
+    }
+  }
+}

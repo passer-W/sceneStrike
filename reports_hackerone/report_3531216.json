@@ -1,0 +1,196 @@
+{
+  "id": 3531216,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTMxMjE2",
+  "url": "https://hackerone.com/reports/3531216",
+  "title": "MQTT Protocol Packet Injection via Unchecked CONNACK Remaining Length",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2026-01-30T07:05:07.856Z",
+  "submitted_at": "2026-01-30T07:05:08.336Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "pajarori",
+    "url": "/pajarori",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/k56pge05ygu2rq3rc79wrr6ubrhe/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-02-05T04:28:32.060Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-02-05T04:28:31.771Z",
+  "team_member_agreed_on_going_public_at": "2026-02-04T21:56:19.421Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I'm not sure if this is a vulnerability or intended behavior, but I noticed that curl MQTT implementation accepts CONNACK packets with Remaining Length values greater than 2, which appears to violate the MQTT v3.1.1 specification.\n\nAccording to the MQTT spec, CONNACK packets should have a Remaining Length of exactly 2 bytes, but curl seems to process packets with larger values and treats the extra bytes as new MQTT messages.\n\n- https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/csprd01/mqtt-v3.1.1-csprd01.html#_Toc376954333\n\n## Affected version\n```\n» curl -V\ncurl 8.18.0 (x86_64-pc-linux-gnu) libcurl/8.18.0 OpenSSL/3.6.1 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 libssh2/1.11.1 nghttp2/1.68.0 ngtcp2/1.20.0 nghttp3/1.15.0 mit-krb5/1.21.3\nRelease-Date: 2026-01-07\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ipfs ipns mqtt pop3 pop3s rtsp scp sftp smb smbs smtp smtps telnet tftp ws wss\nFeatures: alt-svc AsynchDNS brotli GSS-API HSTS HTTP2 HTTP3 HTTPS-proxy IDN IPv6 Kerberos Largefile libz NTLM PSL SPNEGO SSL threadsafe TLS-SRP UnixSockets zstd\n```\n\n## Steps To Reproduce:\n  1. So in [mqtt_verify_connack](https://github.com/curl/curl/blob/master/lib/mqtt.c#L402) its reads the entire CONNACK packet,but  only validates and consumes the first 2 bytes of the payload.\n ```\nstatic CURLcode mqtt_verify_connack(struct Curl_easy *data)\n{\n  ...\n  result = mqtt_recv_atleast(data, MQTT_CONNACK_LEN);\n  if(result)\n    goto fail;\n  ...\n  if(ptr[0] != 0x00 || ptr[1] != 0x00) {   // only checks first 2 bytes:\n     ...\n  }\n  mqtt_recv_consume(data, MQTT_CONNACK_LEN);\n  ...\n}\n ```\n  1. And in [mqtt_doing](https://github.com/curl/curl/blob/1acf0c45f4ede462a553353d774395b68614a42a/lib/mqtt.c#L901) its reads from the buffer for the next MQTT message, but the leftover bytes are still in the buffer.\n ```\ncase MQTT_CONNACK:\n  result = mqtt_verify_connack(data);\n  ...\n  mqtt->nextstate = MQTT_FIRST; \n ```\n  1. I made a simple python poc script that will mimic MQTT, run this and try with curl to the server and its works to do inject a PUBLISH command.\n\n {F5294478}\n\n\nSo bytes embedded inside CONNACK are reinterpreted as a separate MQTT message, and from this attacker can inject arbitrary MQTT messages.\n\n## Supporting Material/References:\nI attached the poc.py script and screenshoot bellow.\n\n## Impact\n\nAn attacker could potentially inject other control packets.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5294478,
+      "file_name": "Screenshot_20260130_135040.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/v2gn0q8jus1m0mx3ytsodrnixxaq?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_20260130_135040.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_20260130_135040.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ3GYDQVI%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042205Z&X-Amz-Expires=589&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJGMEQCIFEErVE1KAEqpjNMQAsJvJg66aBY80BoJcXcOOHc69mVAiAYM0qSTOia5YefUVlQXSnlGOBz09CZ7PBtAygQ2ZbeUCq6BQj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAMaDDAxMzYxOTI3NDg0OSIMOU%2BM4m2WY8E4OxiOKo4F4pGSnW5N1%2FLVWuLVMELCstKFJ83IMJww75g56gai8hol026RxlA7hGOQrtWUx16DhqLejG2tigCFi6zInuuKyTMMdnHAA1%2B4u7%2FVPAlhNZ%2FiyadJv4BL1DkueWk5KMMDX3KJe78ZzNYOMvCpvnZjjrkN9IOyWDpROAPPMLtBXT2TZNZTndAo%2BdwTSVtCMHJffiYwrIRieIw%2Bp6hPNkFtM95%2FgIhY05VSAE%2B70PMPEYNJ4A9swI4BVCcUBN0kN5EDUtGrap7gO871RboYyORt4LLQWyTBfL2Zni%2FK4AOJVTDFod8OndScR1Ev812v83bQ2BBer45XyQQsa2QckS6M5mCNRSW2jJOPiYotq8YX23AJx7yAC1h20m0HryKC8G8DijzfkQqSrZ6Ab%2B9YAOv41mmxy7lKxwpRZ3iWHE3%2FSOF98%2FmJlGJzqPzYqAnQkFmKeLQbujw1J5kPHcdr8ByG7J3cIsPxy0%2BJyVHrAxka%2BsViK2zy7WO%2FCISVuNpH5aXrH9l%2B%2B76jiWryIcZDIuyqce5m78Pc6HO6ZuGkXVqckSpuKwR9%2BUYJqEdKwnvcwTh4F8MWd2rxXixazhiTAUQPJKiShKxpJtzg4x2jLEK%2FEPvmRUg%2FIqSDCoNPxs9l%2BnCZYCUjpSrqxbyr4gI2%2BZskmWcKkKpTOk1KTX%2BL%2FmzLHMjheJjz%2Bi1gP22yveKIW03AjT466N2jbVtV7JFccDIA0oM2GffpVfC6BkbbiAfsTNhE8dT7PFQSyyeROWZOd54Vns3nmGJWFPMgmcXRmKE7i5rHwA6IGHtnxtQkNb9r%2F2umt9Cdno6lKdKEsL1j5BVtdDiHxH5VJDeP3XBG2V5VCpty4IHHnCs7K5vjW7TQMOzAm9IGOrIBq37F61VqgsEMjgcH4tjHnG8swr8LK2ejeqNn%2FLL20z%2FlYEYviagjgnhooH1kN0DooAAavQbOZfqVsnYfgAiG2DQNZYOXrb%2B1Lf4iWQ%2BPF7CHAdF0CRW7Vbt0XE7Gm5F11x41lgO0J%2BjDvGYIij9ywz6XBJcc9TVCuZBo273tmF1QI1rDsrrRbapX1qxjNU3MxF8pgwgtNrJVtGVyyBPR8Pfh%2BBCWSo95xcSbZBqp6xoW2w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1ebc3138b168a017aa80aa265b38adfaa9db24137b8eb2df51ff6c6ebb15744c",
+      "file_size": 68945,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5294504,
+      "file_name": "poc.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/c4ebibrh24f4t4ce5bwmphmd3a24?response-content-disposition=attachment%3B%20filename%3D%22poc.py%22%3B%20filename%2A%3DUTF-8%27%27poc.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ3GYDQVI%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042205Z&X-Amz-Expires=589&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJGMEQCIFEErVE1KAEqpjNMQAsJvJg66aBY80BoJcXcOOHc69mVAiAYM0qSTOia5YefUVlQXSnlGOBz09CZ7PBtAygQ2ZbeUCq6BQj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAMaDDAxMzYxOTI3NDg0OSIMOU%2BM4m2WY8E4OxiOKo4F4pGSnW5N1%2FLVWuLVMELCstKFJ83IMJww75g56gai8hol026RxlA7hGOQrtWUx16DhqLejG2tigCFi6zInuuKyTMMdnHAA1%2B4u7%2FVPAlhNZ%2FiyadJv4BL1DkueWk5KMMDX3KJe78ZzNYOMvCpvnZjjrkN9IOyWDpROAPPMLtBXT2TZNZTndAo%2BdwTSVtCMHJffiYwrIRieIw%2Bp6hPNkFtM95%2FgIhY05VSAE%2B70PMPEYNJ4A9swI4BVCcUBN0kN5EDUtGrap7gO871RboYyORt4LLQWyTBfL2Zni%2FK4AOJVTDFod8OndScR1Ev812v83bQ2BBer45XyQQsa2QckS6M5mCNRSW2jJOPiYotq8YX23AJx7yAC1h20m0HryKC8G8DijzfkQqSrZ6Ab%2B9YAOv41mmxy7lKxwpRZ3iWHE3%2FSOF98%2FmJlGJzqPzYqAnQkFmKeLQbujw1J5kPHcdr8ByG7J3cIsPxy0%2BJyVHrAxka%2BsViK2zy7WO%2FCISVuNpH5aXrH9l%2B%2B76jiWryIcZDIuyqce5m78Pc6HO6ZuGkXVqckSpuKwR9%2BUYJqEdKwnvcwTh4F8MWd2rxXixazhiTAUQPJKiShKxpJtzg4x2jLEK%2FEPvmRUg%2FIqSDCoNPxs9l%2BnCZYCUjpSrqxbyr4gI2%2BZskmWcKkKpTOk1KTX%2BL%2FmzLHMjheJjz%2Bi1gP22yveKIW03AjT466N2jbVtV7JFccDIA0oM2GffpVfC6BkbbiAfsTNhE8dT7PFQSyyeROWZOd54Vns3nmGJWFPMgmcXRmKE7i5rHwA6IGHtnxtQkNb9r%2F2umt9Cdno6lKdKEsL1j5BVtdDiHxH5VJDeP3XBG2V5VCpty4IHHnCs7K5vjW7TQMOzAm9IGOrIBq37F61VqgsEMjgcH4tjHnG8swr8LK2ejeqNn%2FLL20z%2FlYEYviagjgnhooH1kN0DooAAavQbOZfqVsnYfgAiG2DQNZYOXrb%2B1Lf4iWQ%2BPF7CHAdF0CRW7Vbt0XE7Gm5F11x41lgO0J%2BjDvGYIij9ywz6XBJcc9TVCuZBo273tmF1QI1rDsrrRbapX1qxjNU3MxF8pgwgtNrJVtGVyyBPR8Pfh%2BBCWSo95xcSbZBqp6xoW2w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f4716205ad2ddcb3c1af6713db6e26f2ba83720f343793b376cdda2b2bf850ad",
+      "file_size": 766,
+      "type": "text/x-python",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 45,
+  "voters": [
+    "coder_mohammed",
+    "neospring",
+    "2026",
+    "xia0checkmate_jotp",
+    "xklepxn",
+    "etzero",
+    "officialdeadman",
+    "johnnywatters",
+    "zinfinity",
+    "jc_is_tired",
+    "and 35 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3531216",
+  "votes": 45,
+  "latest_disclosable_activity_at": "2026-02-05T04:28:32.449Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:22:05.215032",
+    "source": "https://hackerone.com/reports/3531216.json",
+    "report_id": 3531216
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTMxMjE2",
+    "databaseId": "3531216",
+    "title": "MQTT Protocol Packet Injection via Unchecked CONNACK Remaining Length",
+    "url": "https://hackerone.com/reports/3531216",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-02-05T04:28:32.060Z",
+    "created_at": "2026-01-30T07:05:07.856Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "pajarori"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1MzEyMTY=",
+    "_id": "3531216",
+    "disclosed": true,
+    "votes": 45,
+    "latest_disclosable_activity_at": "2026-02-05T04:28:32.449Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTMxMjE2",
+      "databaseId": "3531216",
+      "title": "MQTT Protocol Packet Injection via Unchecked CONNACK Remaining Length",
+      "url": "https://hackerone.com/reports/3531216",
+      "disclosed_at": "2026-02-05T04:28:32.060Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

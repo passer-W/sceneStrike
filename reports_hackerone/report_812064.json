@@ -1,0 +1,203 @@
+{
+  "id": 812064,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MTIwNjQ=",
+  "url": "https://hackerone.com/reports/812064",
+  "title": "SAML authentication bypass",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-03-06T10:09:08.702Z",
+  "submitted_at": "2020-03-06T10:09:08.702Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "tomp1",
+    "url": "/tomp1",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 19858,
+    "url": "https://hackerone.com/rocket_chat",
+    "handle": "rocket_chat",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/019/858/ada6c92a338715afad123af214dd6e22fd8dc6ff_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Rocket.Chat",
+      "twitter_handle": "RocketChat",
+      "website": "https://rocket.chat",
+      "about": "Rocket.Chat is a company built on open source values and a love for efficiency. The company is driven by our amazing community of contributors."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-06-18T17:23:50.076Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-05-19T17:23:38.723Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\n\nWhen using SAML authentication, responses are not checked properly. This allows attacker to inject/modify any assertions in the SAML response and thus, for example, authenticate as administrator.\n\n## Description\n\nFollowing code snippets are from *app/meteor-accounts-saml/server/saml_utils.js*\nWhen checking the signature, the first Signature element which is found in the whole response XML is used:\n\n`316 const signature = xmlCrypto.xpath(doc, '//*[local-name(.)=\\'Signature\\' and namespace-uri(.)=\\'http://www.w3.org/2000/09/xmldsig#\\']')[0];`\n\n After the XML signature has been verified, the code proceeds to use the first Response element found in the whole XML to get assertions and attributes. \n\n`516 const response = doc.getElementsByTagNameNS('urn:oasis:names:tc:SAML:2.0:protocol', 'Response')[0];`\n\n**However there is no check that the signature that was checked relates to the response element that is being used.** Thus attacker can take a valid SAML response, with some valid signature, and add Response element, that has no signatures, in the beginning of the XML. The code finds the original signature and validates that, but proceeds to use the malicious Response element, which is found first in the document.\n\nAlso the validating the status from the response happens before signature validation\n\n`501 const statusValidateObj = self.validateStatus(doc);`\n\n## Releases Affected:\n\nTested on 3.0.3 but appears to affect all versions based on the history of saml_utils.js file.\n\n## Steps To Reproduce (from initial installation to vulnerability):\n\n  1. Configure the application to use SAML authentication\n  1. When logging in, intercept the POST request with a proxy tool\n  1. Use the attached `samlbypasspoc.py` file to create a new value for the parameter `SAMLResponse`. Run the script in python3 with the URL encoded SAMLResponse as argument.\n  1. Replace the parameter value with the one given by the POC script and forward the request\n\nThis requires altering the POC to suite the configuration. Beginning from the line 25, you can alter the response elements as needed to desired values. \n\nIn the sample POC file, attributes `OrganizationName` and `Email` and the element `NameID` are changed. In the setup I tested this resulted in login as a newly created admin.\n\n## Supporting Material/References:\n\n  * samlbypasspoc.py\n\n## Suggested mitigation\n\n  * Refactor the code so that the same elements (references) are used when checking the signature and when reading the attributes\n  * Do not use hard coded indexes when selecting the elements\n\n## Impact\n\nSAML authentication can be bypassed and attacker can log in as any user (e.g. admin user)",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 739127,
+      "file_name": "samlbypasspoc.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/NxEmSxWnQK1GxnM8DPfvyTze?response-content-disposition=attachment%3B%20filename%3D%22samlbypasspoc.py%22%3B%20filename%2A%3DUTF-8%27%27samlbypasspoc.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQW7S7QQ3H%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050509Z&X-Amz-Expires=2008&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEoSKX5hYBU7RgRmpqp0BNmPj14swCc2ghiv684yH9tcAiEAgpvsLm8sWrTSx0qqAICUnuLcfv1KH%2FJj2Ku518Q4dlUqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDOBd0%2FNXn4EMJ4BKaCqPBWWHxyW7hea7%2BvnnQViXBpZ2L4hW1od4KVToKyIlshhIBAfmhtVpkTmrZSxTVR8lFG2up9Z8m5AAvh5Jp6ii0k4UNuCofMTyBwzFXpsHqLFOH%2BYxkef88KKXxhTKEH5OppaDVSbnLCsvl432gAsaOpbXn606CaEB8ExwniF1HR%2F7cxMWHTl1ERJcNVDopR8ca1FUepMIdqQFCNpQbY0ZXIuXYxfXb76Te6iOS6ouJ7Cz1bAFviHrd%2FSUz4jrCkcBBO3At8YCEnXY3OdHKOBnTZq650y4l%2BAdMibt6j7Sbs2wgqG2HmCdXJjJqc2Y3uCjtgcy3tQlug0pngggaBppghxWWHVX4KbgvYPiVkKy7U8l0FTvtd9Efby%2Fk%2FQHmlgBKb9gQCiUoyc0XgGUOVz0zYjVIRvf7mvEc%2F2X2ligXAYDQrCnl9Y2vj%2Fe5IXxpDHLxIlHH0VR7sDoaKJnSVd%2B2%2B8aMq8r37uckFdYJrNVsNbNegDK6vSr6tsW2Cq92dJrpdyZeHbiZGtd66URfw7r4YClZDR%2F5CRjFtlb1AVypkVMLx9VkBQ3ZMmRrBcUKlH4WEhj11sVffj0zqmn4MpKjqe69FAqY%2F2devHJchTxSgi09pHYfnYf%2B788BNKSl6r6F%2Bj2DTbcGgBgnmyHlHy4QmwzalrhMaFDzGLgPxTj%2BssQZW4y3grC%2FE%2Bg7j1SR1n%2FGW04xM4Yoe7Fuu%2FSr1ICoysYDLwrUg5bN%2BFRSCURap2GERI%2BsOEg5JSBjwcPq2gKm3ojjtaS7oJvEL%2FG9G0X5MvOxBHtdZnMb7mB7%2FoMgFFE5G7IsONbpcuAQG5ch%2BbJ%2BDEdwWuJt7j1e4dk6d6JXsGQ5NMseJ1SXbFvorqT5UUww5C20gY6sQH1p9FfXvPxJeGVy9pqs9BpaW5ye7BQTTB1Jjq660OMeq5Pgw0y1lLZoGchxWFdRms2rnF8tm2G3GZmzilAhqyWFPVfHs2LgDKulMLBVUfU2EGionr%2Bv9ICOWiFa2S%2FktMqJ0lUmvQ3n5fxD9MxYjXViYD3hMA1WqmCAagiKCKrXA3DwksAaJ44F%2FZVID1m9%2FWxGr8QdtpMaU%2FTqsdAs1ef4Gwu4HLystwKM5XxaGh7jjM%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f066045db6e9e5980a8d5c6eb7ac0f52c1fb9bcd0714003410ceab7f47373139",
+      "file_size": 1407,
+      "type": "text/x-python",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-06-18T17:23:38.758Z",
+  "allow_singular_disclosure_after": -190986091.03461736,
+  "singular_disclosure_allowed": true,
+  "vote_count": 15,
+  "voters": [
+    "fabianfreyer",
+    "p1stachios",
+    "pesticide",
+    "brahim_boufakri01",
+    "pr0f0x01",
+    "rut00",
+    "spetr0x",
+    "the_ancient",
+    "rh21a",
+    "destinedtohack",
+    "and 5 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "812064",
+  "votes": 15,
+  "latest_disclosable_activity_at": "2020-06-18T17:23:50.118Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:05:09.986317",
+    "source": "https://hackerone.com/reports/812064.json",
+    "report_id": 812064
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MTIwNjQ=",
+    "databaseId": "812064",
+    "title": "SAML authentication bypass",
+    "url": "https://hackerone.com/reports/812064",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-06-18T17:23:50.076Z",
+    "created_at": "2020-03-06T10:09:08.702Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.8
+    },
+    "reporter": {
+      "username": "tomp1"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzgxMjA2NA==",
+    "_id": "812064",
+    "disclosed": true,
+    "votes": 15,
+    "latest_disclosable_activity_at": "2020-06-18T17:23:50.118Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84MTIwNjQ=",
+      "databaseId": "812064",
+      "title": "SAML authentication bypass",
+      "url": "https://hackerone.com/reports/812064",
+      "disclosed_at": "2020-06-18T17:23:50.076Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTk4NTg=",
+      "handle": "rocket_chat",
+      "name": "Rocket.Chat",
+      "url": "https://hackerone.com/rocket_chat",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "id": 1161401,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTYxNDAx",
+  "url": "https://hackerone.com/reports/1161401",
+  "title": "Notification implicit PendingIntent in com.nextcloud.client allows to access contacts",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2021-04-12T12:20:36.938Z",
+  "submitted_at": "2021-04-12T12:20:37.002Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "imnotyouaa_test",
+    "url": "/imnotyouaa_test",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2022-24886"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-05-27T07:23:00.174Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-04-27T07:22:59.869Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "When the victim downloads files in nextcloud.A notification will be triggered. The content of the notification is \"Downloaded\".This notification is used to remind the user that the download is complete.The pendingintent in this notification is an implicit intent.\n\nAt this time a malicious app with \"BINDNOTIFICATIONLISTENER_SERVICE\" permission can get the pendintent of this notification, because it is an implicit pendintent. Therefore, the malicious app can set the \"packageName\" and \"clipdata\" of this pendintent. At this time, the malicious application will inherit the permissions of \"com.nextcloud.client\".Because nextcloud  has contacts permissions. Therefore, malicious applications can read the contacts without applying for the contacts permission.\n{F1262742}\nAt the same time, because of the path configuration of fileprovider, the log file in the nextcloud app directory can also be read\n{F1262743}\n\nThe code of this implicit pendingintent is in\n\"com.owncloud.android.files.services.FileDownloader.notifyDownloadResult(com.owncloud.android.operations.DownloadFileOperation, com.owncloud.android.lib.common.operations.RemoteOperationResult) : void\"\n{F1262747}\n\nSteps To Reproduce:\npackageName:com.nextcloud.client\nversionName:3.15.1\nphone:pixel3\nAndroidVersion:10\n\n1.install and run \"poc.apk\"\n2.click the button to give the \"BINDNOTIFICATIONLISTENER_SERVICE\" permission to poc\n3.install \"com.nextcloud.client.apk\" and give contacts permission to nextcloud.\n4.Download a file as shown in the video.At this time, the victim's app will trigger a notification\n5.run \"adb logcat | grep sbn\". now you can see the contact stolen by the attacker\n\nSupporting Material/References:\n1.read contacts poc video\n{F1262750}\n\n2.poc.apk\n{F1262748}\n\n3.\"com.nextcloud.client.apk\"\n{F1262746}\n\n## Impact\n\nAny application with notification permission can steal contacts without apply for the contacts permission\nTo fix this vulnerability, please set the flag of pengingintent to FLAG_IMMUTABLE",
+  "bounty_amount": "250.0",
+  "formatted_bounty": "$250",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1262742,
+      "file_name": "contacts.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/roeu19jak0vhn9w216u44o875vny?response-content-disposition=attachment%3B%20filename%3D%22contacts.png%22%3B%20filename%2A%3DUTF-8%27%27contacts.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051205Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=04080fc4d820ff7b811df602bfcddb967096dd6d11ba2342623e3e387c7c34b7",
+      "file_size": 984278,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1262743,
+      "file_name": "filepath.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/md44lqutt9b9eggtn0ci1vsys4xw?response-content-disposition=attachment%3B%20filename%3D%22filepath.png%22%3B%20filename%2A%3DUTF-8%27%27filepath.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051205Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d3e9b391bfc9e9c22f42ed20a7fc1744a8ba0eda394467237360ff8681eeba6f",
+      "file_size": 274060,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1262746,
+      "file_name": "com.nextcloud.client_3.15.1-30150190_minAPI21(arm64-v8a_armeabi-v7a_x86_x86_64)(nodpi)_apkmirror.com.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/x7jsmkpp5w6khllojcw030j6rwev?response-content-disposition=attachment%3B%20filename%3D%22com.nextcloud.client_3.15.1-30150190_minAPI21%2528arm64-v8a_armeabi-v7a_x86_x86_64%2529%2528nodpi%2529_apkmirror.com.apk%22%3B%20filename%2A%3DUTF-8%27%27com.nextcloud.client_3.15.1-30150190_minAPI21%2528arm64-v8a_armeabi-v7a_x86_x86_64%2529%2528nodpi%2529_apkmirror.com.apk&response-content-type=application%2Fvnd.android.package-archive&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051205Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f196c0755eca3ecdf9040c9b4a20ff1267e7703d046e7f85c3194b425585b94f",
+      "file_size": 19686645,
+      "type": "application/vnd.android.package-archive",
+      "moderated": null
+    },
+    {
+      "id": 1262747,
+      "file_name": "pendingintent.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/z5ne6rq7ifcyntufrtfmt7535979?response-content-disposition=attachment%3B%20filename%3D%22pendingintent.png%22%3B%20filename%2A%3DUTF-8%27%27pendingintent.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051205Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=812536d27f4e26469279f2eab283bd8f4aab9260c31763060e3267477b021e5a",
+      "file_size": 1099521,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1262748,
+      "file_name": "poc.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/fky5znjx48tgxx7fevz0fe27w4k8?response-content-disposition=attachment%3B%20filename%3D%22poc.apk%22%3B%20filename%2A%3DUTF-8%27%27poc.apk&response-content-type=application%2Fvnd.android.package-archive&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051205Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7be9deda69834c459d50f654deb7c4a69bce3540e0cf7b45f239631c6eef73cd",
+      "file_size": 1641302,
+      "type": "application/vnd.android.package-archive",
+      "moderated": null
+    },
+    {
+      "id": 1262750,
+      "file_name": "nextcloud.mov",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/spnzmgdexf3ovkgn800s3iut8uvd?response-content-disposition=attachment%3B%20filename%3D%22nextcloud.mov%22%3B%20filename%2A%3DUTF-8%27%27nextcloud.mov&response-content-type=video%2Fquicktime&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051205Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9501d1f9d2892944597048b963108eae37f74a4b2f032a5f299a0f9f3738a9b5",
+      "file_size": 41014583,
+      "type": "video/quicktime",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-05-27T07:22:59.973Z",
+  "allow_singular_disclosure_after": -129419346.00526394,
+  "singular_disclosure_allowed": true,
+  "vote_count": 21,
+  "voters": [
+    "fr4via",
+    "alp",
+    "thruster",
+    "zy9ard3",
+    "mavali",
+    "daik0n",
+    "h4x0r_dz",
+    "errorsec_",
+    "pyscr1pt3r",
+    "onorbayar",
+    "and 11 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 1.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "physical",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 1,
+    "asset_type": "GOOGLE_PLAY_APP_ID",
+    "asset_identifier": "com.nextcloud.client",
+    "max_severity": "medium"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 138586,
+      "category": "team",
+      "content": "Advisory at https://github.com/nextcloud/security-advisories/security/advisories/GHSA-5cj3-v98r-2wmq",
+      "updated_at": "2022-03-23T13:08:32.646Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 89223,
+        "username": "nickvergessen",
+        "name": "Joas Schilling",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "Germany",
+        "created_at": "2016-07-01T08:17:59.061Z",
+        "url": "https://hackerone.com/nickvergessen",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1161401",
+  "votes": 21,
+  "latest_disclosable_activity_at": "2022-05-27T07:23:00.248Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:12:06.088399",
+    "source": "https://hackerone.com/reports/1161401.json",
+    "report_id": 1161401
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTYxNDAx",
+    "databaseId": "1161401",
+    "title": "Notification implicit PendingIntent in com.nextcloud.client allows to access contacts",
+    "url": "https://hackerone.com/reports/1161401",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-05-27T07:23:00.174Z",
+    "created_at": "2021-04-12T12:20:36.938Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 1.3
+    },
+    "reporter": {
+      "username": "imnotyouaa_test"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNzgxNDc=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-03-23T12:57:03.062Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExNjE0MDE=",
+    "_id": "1161401",
+    "disclosed": true,
+    "votes": 21,
+    "latest_disclosable_activity_at": "2022-05-27T07:23:00.248Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTYxNDAx",
+      "databaseId": "1161401",
+      "title": "Notification implicit PendingIntent in com.nextcloud.client allows to access contacts",
+      "url": "https://hackerone.com/reports/1161401",
+      "disclosed_at": "2022-05-27T07:23:00.174Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

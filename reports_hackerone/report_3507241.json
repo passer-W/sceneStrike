@@ -1,0 +1,204 @@
+{
+  "id": 3507241,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTA3MjQx",
+  "url": "https://hackerone.com/reports/3507241",
+  "title": "Authorization Bypass in Starknet Snap via enableAuthorize parameter leads to unauthorized transaction signing",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2026-01-12T02:25:17.275Z",
+  "submitted_at": "2026-01-12T02:25:17.346Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "aszx87410",
+    "url": "/aszx87410",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/3rKuYmCUDMbVTcZVDMk2SVcq/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 56419,
+    "url": "https://hackerone.com/metamask",
+    "handle": "metamask",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/k44pl8xonhppzccudw7ivke1livz/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/k44pl8xonhppzccudw7ivke1livz/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "MetaMask",
+      "twitter_handle": "MetaMask",
+      "website": "https://metamask.io/",
+      "about": "MetaMask is a self-custodial wallet used to manage your identity, digital assets and explore web3. Available as a browser extension and mobile app."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": true,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-03-13T01:42:13.201Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-02-11T01:42:11.162Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThe Starknet Snap by Consensys contains a critical security vulnerability that allows malicious websites to bypass user authorization when signing messages or transactions. The vulnerability exists in the `enableAuthorize` parameter which can be controlled by any website. When set to `false`, the confirmation dialog is not shown to the user, allowing a malicious website to sign arbitrary messages or transactions without user approval, potentially leading to asset theft.\n\n## Steps To Reproduce:\n1. Make sure MetaMask is installed\n2. Visit https://snaps.consensys.io/starknet\n3. Click \"Connect with MetaMask\" button to install the StarkNet Snap\n4. Download the html file: \"exp-starknet.html\" and host it on local port 5555\n5. Visit http://localhost:5555/exp-starknet.html\n6. Click \"start PoC\" button\n7. Accept the connection request\n8. Observe that the signMessage is shown in the page without user approval\n\n## Supporting Material/References:\nThe vulnerability exists in the following code: https://github.com/Consensys/starknet-snap/blob/main/packages/starknet-snap/src/rpcs/sign-message.ts#L77\n\n```js\n  protected async handleRequest(\n    params: SignMessageParams,\n  ): Promise<SignMessageResponse> {\n    const { enableAuthorize, typedDataMessage, address } = params;\n    if (\n      // Get Starknet expected not to show the confirm dialog, therefore, `enableAuthorize` will set to false to bypass the confirmation\n      // TODO: enableAuthorize should set default to true\n      enableAuthorize &&\n      !(await renderSignMessageUI({\n        address,\n        typedDataMessage,\n        chainId: this.network.chainId,\n      }))\n    ) {\n      throw new UserRejectedOpError() as unknown as Error;\n    }\n\n    return await signMessageUtil(\n      this.account.privateKey,\n      typedDataMessage,\n      address,\n    );\n  }\n}\n```\n\n* exp-starknet.html - an example exploit\n  Attachments: [{\"filename\":\"exp-starknet.html\",\"created_at\":\"2026-01-12T02:13:56.722Z\",\"hai_attachment_description\":null}]",
+  "bounty_amount": "350.0",
+  "formatted_bounty": "$350",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5214216,
+      "file_name": "exp-starknet.html",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/i1c1mvncdz4s0h21z7rktnpv33ej?response-content-disposition=attachment%3B%20filename%3D%22exp-starknet.html%22%3B%20filename%2A%3DUTF-8%27%27exp-starknet.html&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYOF6X3DV%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042113Z&X-Amz-Expires=330&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJHMEUCICNSEJpOrgZNldPeOkLIUHGut0PUVXfAhrF3Ge%2BaOProAiEAngHx7CTD5YxInKg8ocgDQGPKlKsxYqIpj5d9Gtd2iaMquwUI%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCiUhirQPXWhRgj03yqPBS1T6OsiMDiIOSw7Sma5AH37sPPasE6HmyAq9vsEZxzKOYCSqclIRz6zebtLyy9qJwmvM2FE47c7a0TDUcPAEKNi047udUIjxkm6QwOuz9mNPqUfLm0dJty6f0h56Ek3oi1pJyyM975O9UZsYwwQLAYmrMxZXEwEA%2BEthxdNum6Z6%2FBuuEVMDcbLjXlwRe23eCcwiBPYikziIap%2FpthiHG58rIP2FtoirFNQ0dHE%2FRFBiW%2BaUHaG5QoWlhyTZmVkziNmXQB%2FylTOS2XyhX%2BWlFsMWRuXw5B11fWP4YFx3%2BdDmXSYqPgFXTcau7hHUOE11rtApiKjj2rDX0EwDNi7veTRssge9nFJucfaziEIB3YgmG52kJmuI%2BjpP8LjUdCgjbJKAo3EgHqRvtF1HWP4mSuUBxg5b4DCl2PhrDfX5NI0%2BVIIboks7dcSixzHK8z6NFiOzCOD2ow7bMn%2FDM7TgDTqWKCUqF23DT%2BnKs28RAgHKxlpkgmuigRLrPyJ0RoRD90aXP%2B8031LstrEJlfATIWt7lQEwuYiBZLHoMTbkk3OaSpVBUlVICvIKnf9TR0sMTJTql%2BYCyBDWZxsOPaANkMHQirvOjzz8erJY8Xvxe%2FZ9I04lGNdZ%2BfX%2BZZzuyer0EwynE0nbQsVvcyHmgH1YQaVJ9oJ%2FmJVpzgQAevhOAg41vutLXKothFXKhlCi08w3h%2BX2O9A5Sm8lk%2F%2F3SIYHRZaMnVI3KH%2B%2FpEYcCso7gXmdG7KvGuzVx%2FlawBhtQ3G2%2BTk1PTtzNOM%2FBkoaabShGQwqfuBv0cNonBq6fGH8sRXr7FzOI43IFeHHN75oE4R5s8%2BAB3y%2BAcks9b2ltDk8XZNikilSkQxfX627TQlYqYwq8Gb0gY6sQFwpb9EnekOHVLvGkM%2FSdIJKTTLxDx%2BU0sVQgOnFkIIRjIjqzvUiILlA6C7FBWgF6XDnUsAqecewx2jHdGckFKoDtkHFnvgxvSg6UiaBG9o2Yx6C06CO4RluvLCXS8JKCfPbK13J%2FUlED7ofq%2Fi0wgJTXaWI5aLU5gjahVC5hOG2h6ztfGGUPg0IkQjeyEEhyzYB3SOeh%2B9uB4SXbBMeiIimj4O75pPQvJImwu1EbELkSI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a9ceb1176403dd6ff52a79f9658707cad82649a1fae02874522c5ac83e103d7b",
+      "file_size": 2262,
+      "type": "text/html",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2026-03-13T01:42:11.363Z",
+  "allow_singular_disclosure_after": -9686341.844358403,
+  "singular_disclosure_allowed": true,
+  "vote_count": 83,
+  "voters": [
+    "thelem",
+    "aboalezz",
+    "subhashdasyam",
+    "supermancyber",
+    "zy9ard3",
+    "mohaned0101",
+    "shubham_srt",
+    "jmo740",
+    "8acrget",
+    "m3ntor",
+    "and 73 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3507241",
+  "votes": 83,
+  "latest_disclosable_activity_at": "2026-03-13T01:42:13.321Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:21:13.352111",
+    "source": "https://hackerone.com/reports/3507241.json",
+    "report_id": 3507241
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTA3MjQx",
+    "databaseId": "3507241",
+    "title": "Authorization Bypass in Starknet Snap via enableAuthorize parameter leads to unauthorized transaction signing",
+    "url": "https://hackerone.com/reports/3507241",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-03-13T01:42:13.201Z",
+    "created_at": "2026-01-12T02:25:17.275Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "aszx87410"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU2NDE5",
+      "handle": "metamask",
+      "name": "MetaMask",
+      "url": "https://hackerone.com/metamask",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS83NjIyNjU=",
+            "amount": "350.00",
+            "awarded_amount": "350.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2026-02-10T10:15:12.905Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1MDcyNDE=",
+    "_id": "3507241",
+    "disclosed": true,
+    "votes": 83,
+    "latest_disclosable_activity_at": "2026-03-13T01:42:13.321Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTA3MjQx",
+      "databaseId": "3507241",
+      "title": "Authorization Bypass in Starknet Snap via enableAuthorize parameter leads to unauthorized transaction signing",
+      "url": "https://hackerone.com/reports/3507241",
+      "disclosed_at": "2026-03-13T01:42:13.201Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU2NDE5",
+      "handle": "metamask",
+      "name": "MetaMask",
+      "url": "https://hackerone.com/metamask",
+      "currency": "usd"
+    }
+  }
+}

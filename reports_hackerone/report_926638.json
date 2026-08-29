@@ -1,0 +1,197 @@
+{
+  "id": 926638,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MjY2Mzg=",
+  "url": "https://hackerone.com/reports/926638",
+  "title": "curl overwrites local file with -J option if file non-readable, but file writable.",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2020-07-18T00:52:32.779Z",
+  "submitted_at": "2020-07-18T00:52:32.779Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "brumbrum",
+    "url": "/brumbrum",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8177"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-08-01T16:46:35.501Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-08-01T16:46:35.458Z",
+  "team_member_agreed_on_going_public_at": "2020-08-01T15:50:15.817Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nWhen using -J -O options on curl command line tool and a server responding with a header that is using Content-Disposition to provide a filename, existing local file will be overwritten if the file is non-readable by the current user, but file is writable by the current user.\n\nCurl contains protection to prevent the overwrite, but protection code is using the file's readability permission to check for its existence.  So protection will be bypassed in this case, as it is only writable by the user.\n\nIssue was discovered after review of CVE-2020-8177 description. I was curious how the Content-Disposition feature and prevention of file overwrite worked.  While reviewing the code around that feature noted that the existence of the file is checked via being able to read the file.  So what happens if the file is not readable, but writable!?!\n\nWhy would a system have a file that is writable only, for sensitive information that must be collected by a particular user, but must not be viewable by that user.  Certain logs or audit trails or privacy related files or security related files, might have such restrictions.\n\nAdditionally, and in an extreme example, code as written is susceptible to Race Condition as the file existence check and file write are done with two distinct fopen() calls in the tool_create_output_file() in tool_cb_wrt.c file.  Data lose possible if parallel write operations performed on the same file via two curl processes, or even some other process (malicious or not) acting/interfering on the same file.\n\n\n## Steps To Reproduce:\n1. Create a new file (e.g. echo \"TEST\" >data.txt)\n2. Check content of file to see that file contains \"TEST\".\n3. Change permissions of new file to remove read permission (e.g. chmod 222 data.txt)\n4. Download file from remote server that will have Content-Disposition with filename \"data.txt\"\n5. Check that file data.txt is still only writable! Permissions have not changed.\n6. Change permissions to add the read permission back (so we can see the content)\n7. View the content of data.txt file, it will be overwritten with server response.\n\n## Supporting Material/References:\n\n1. Log of reproduction attached. See curl_reproduction.log attached.\n2. Source for a simple Golang HTTP server with Content-Disposition header also attached.  See httpserver.go file attached.\n\n\n## Mitigation:\n\nOne way to fix the issue robustly (check for file existence and create file in one operation) would be to use the open() to create the file while using safe options (such as O_CREAT | O_WRONLY | O_EXCL), as is shown in one of the solutions in this stackoverflow posting (see posting by \"Dan Lenski\", for example):\n\nhttps://stackoverflow.com/questions/230062/whats-the-best-way-to-check-if-a-file-exists-in-c\n\n## Impact\n\n- An existing local file could be overwritten, either maliciously or accidentally by curl\n- A malicious server would need to send Content-Disposition with filename provided at the same time, as the victim would have to use the -J -O option on the curl command line side, with a file that is non-readable, but writable.",
+  "weakness": {
+    "id": 135,
+    "name": "Improper Handling of Insufficient Permissions or Privileges"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 911701,
+      "file_name": "curl_reproduction.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5H6WsCHn6hGaPYnpgxpEkNNX?response-content-disposition=attachment%3B%20filename%3D%22curl_reproduction.log%22%3B%20filename%2A%3DUTF-8%27%27curl_reproduction.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3QUTMK2E%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050143Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCd3ZYT19Yjw%2FkLeAlI6riNVpqeTSycWw8QD8jzzKtjpgIhAPoahgyk84bSxnbcJfK%2FZI02vAgxYUoSSLVq2o3GgwUiKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgzWRizfocfvr7Vtl3wqjwXReQtyYvbb90OSHgHtD0vBp1wMugC398jVgSLJJiSHAwt9B5UIl%2B1ti95%2B1zaNZRILCQT%2FYOXxv7Hrj4tpgguWwOEXa0NGE7fXl72Cyzrsj5og6bAzPH4C%2BQRBWfk3Nj%2Fy6ubuIuT4DcMoCUAff3YhXw3Z874%2BrWhEm5nIVmHmOR0SVQg5Fzwk5iVzhia7dvPf5JDgNUBvYVEIIaBksZxguzBjdf5h6URx2Tx7o%2BUNZ4969pJwUY%2FFEa4%2FJRNHfTxxJAznmWvRVof%2FFRLhMw4lDzcfih611EXnRzaBw5aIpOs9aNZcI5ufPAV6nLDzQKow2daOtsznwbFqymtmJLFO4NJhBEweISeObBkOHG59F%2FxJe3NSqLS7%2Fwo6v7ArVqJEuH25u8l68x%2FkRD%2FbpcejAPQEzA%2BFr3jM5KQ7w1V6HwdL85%2BlE2bl0cbHGOzMKGiphnoSWNQmesTqZweV3aDO9U3yvT7JwV8sdavvxR0ekWQeev2yEHG6L0gn2JHI3xda28S%2Fazlt0xSF3XkbCo6KcQFjulzTYx7Vvd%2Bur3FOiFMwlbTcUvoVqx81Wgpu0kggrJ9HpHEwAdonW78En3q1J8pd17VK1BC3s1pay46lq7X%2FITiZGzoSX0bYEkJSvH4he2iRmmKQ5TBoJmsxfocm%2BlGe2d%2Ff1ZOBddHvgdm3U1J5kzF3jjB3pswwpCpQTVxn7b2m%2BAdSqzHfWtAUJQGKlkiuO7S7kjxZ0QLkWcxj2Em%2FEYCCKG269mJXFx%2FXwMQ7DmldaDNp053x2z5z%2FXG4%2FHIcfmOArdKNm%2BC1sWZW3rU1gAsgc%2B48LB2zlgup03qRQ%2FyuxJNGm9EtFOPfjhjLBa%2BDltGBUFH9sD1VeGdtMNuNt9IGOrABfMbsZq4hEob2hPujdD49G7iQyS9IIVwKU%2BCaFhdG5hN7rJHm%2BV4qM2kjXp67AupFdyNk%2BGZrlcw7N4tsIrgSBfMsD4CqR5aTorqhDO2PKibv210P6%2B4ioNG%2FBIQsEmDDmxc6kJ5uZtzmTtV4A8Li5%2ByHZICwtQWzY3vlk1AjLokW7q8mUWAYvPhSatOOHZpuf0HapE8bRahA0Qh25kJ561ef1TkA%2FhaQ%2F%2BZZQLRdwCk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=230b94bba4100f08604ef8078140d7c0839f870478b509f5fd75f101dfa10f74",
+      "file_size": 1048,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 911703,
+      "file_name": "httpserver.go",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/RuJ9nSJ8xz6N9a61mRzwY87G?response-content-disposition=attachment%3B%20filename%3D%22httpserver.go%22%3B%20filename%2A%3DUTF-8%27%27httpserver.go&response-content-type=text%2Fx-go&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3QUTMK2E%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050143Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCd3ZYT19Yjw%2FkLeAlI6riNVpqeTSycWw8QD8jzzKtjpgIhAPoahgyk84bSxnbcJfK%2FZI02vAgxYUoSSLVq2o3GgwUiKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgzWRizfocfvr7Vtl3wqjwXReQtyYvbb90OSHgHtD0vBp1wMugC398jVgSLJJiSHAwt9B5UIl%2B1ti95%2B1zaNZRILCQT%2FYOXxv7Hrj4tpgguWwOEXa0NGE7fXl72Cyzrsj5og6bAzPH4C%2BQRBWfk3Nj%2Fy6ubuIuT4DcMoCUAff3YhXw3Z874%2BrWhEm5nIVmHmOR0SVQg5Fzwk5iVzhia7dvPf5JDgNUBvYVEIIaBksZxguzBjdf5h6URx2Tx7o%2BUNZ4969pJwUY%2FFEa4%2FJRNHfTxxJAznmWvRVof%2FFRLhMw4lDzcfih611EXnRzaBw5aIpOs9aNZcI5ufPAV6nLDzQKow2daOtsznwbFqymtmJLFO4NJhBEweISeObBkOHG59F%2FxJe3NSqLS7%2Fwo6v7ArVqJEuH25u8l68x%2FkRD%2FbpcejAPQEzA%2BFr3jM5KQ7w1V6HwdL85%2BlE2bl0cbHGOzMKGiphnoSWNQmesTqZweV3aDO9U3yvT7JwV8sdavvxR0ekWQeev2yEHG6L0gn2JHI3xda28S%2Fazlt0xSF3XkbCo6KcQFjulzTYx7Vvd%2Bur3FOiFMwlbTcUvoVqx81Wgpu0kggrJ9HpHEwAdonW78En3q1J8pd17VK1BC3s1pay46lq7X%2FITiZGzoSX0bYEkJSvH4he2iRmmKQ5TBoJmsxfocm%2BlGe2d%2Ff1ZOBddHvgdm3U1J5kzF3jjB3pswwpCpQTVxn7b2m%2BAdSqzHfWtAUJQGKlkiuO7S7kjxZ0QLkWcxj2Em%2FEYCCKG269mJXFx%2FXwMQ7DmldaDNp053x2z5z%2FXG4%2FHIcfmOArdKNm%2BC1sWZW3rU1gAsgc%2B48LB2zlgup03qRQ%2FyuxJNGm9EtFOPfjhjLBa%2BDltGBUFH9sD1VeGdtMNuNt9IGOrABfMbsZq4hEob2hPujdD49G7iQyS9IIVwKU%2BCaFhdG5hN7rJHm%2BV4qM2kjXp67AupFdyNk%2BGZrlcw7N4tsIrgSBfMsD4CqR5aTorqhDO2PKibv210P6%2B4ioNG%2FBIQsEmDDmxc6kJ5uZtzmTtV4A8Li5%2ByHZICwtQWzY3vlk1AjLokW7q8mUWAYvPhSatOOHZpuf0HapE8bRahA0Qh25kJ561ef1TkA%2FhaQ%2F%2BZZQLRdwCk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=26ee6efd1d7f15e023a15e065a3cfa100cad04d3e5b42805e02832b899e82317",
+      "file_size": 338,
+      "type": "text/x-go",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 3,
+  "voters": [
+    "mrtspitup5860gotyou",
+    "jabril",
+    "v13rsba"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "926638",
+  "votes": 3,
+  "latest_disclosable_activity_at": "2020-08-01T16:46:35.524Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:01:44.072814",
+    "source": "https://hackerone.com/reports/926638.json",
+    "report_id": 926638
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MjY2Mzg=",
+    "databaseId": "926638",
+    "title": "curl overwrites local file with -J option if file non-readable, but file writable.",
+    "url": "https://hackerone.com/reports/926638",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2020-08-01T16:46:35.501Z",
+    "created_at": "2020-07-18T00:52:32.779Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEzNQ==",
+      "name": "Improper Handling of Insufficient Permissions or Privileges",
+      "external_id": "cwe-280"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "brumbrum"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzkyNjYzOA==",
+    "_id": "926638",
+    "disclosed": true,
+    "votes": 3,
+    "latest_disclosable_activity_at": "2020-08-01T16:46:35.524Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85MjY2Mzg=",
+      "databaseId": "926638",
+      "title": "curl overwrites local file with -J option if file non-readable, but file writable.",
+      "url": "https://hackerone.com/reports/926638",
+      "disclosed_at": "2020-08-01T16:46:35.501Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

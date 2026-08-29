@@ -1,0 +1,219 @@
+{
+  "id": 3473182,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDczMTgy",
+  "url": "https://hackerone.com/reports/3473182",
+  "title": "A logic error in detect_proxy caused truncation of environment variable names for long protocol schemes.",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "low",
+  "readable_substate": "N/A",
+  "created_at": "2025-12-20T06:19:17.734Z",
+  "submitted_at": "2025-12-20T06:19:17.998Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "herdiyanitdev",
+    "url": "/herdiyanitdev",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6nflcat0bydnit7d0o0ovnhkrzeu/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-12-21T21:34:01.610Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-12-20T15:44:44.056Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "In lib/url.c, the detect_proxy function uses a fixed-size buffer, proxy_env[20], to construct proxy environment variable names (e.g., http_proxy). However, the curl URL parser (lib/urlapi.c) allows protocol schemes up to 40 characters (MAX_SCHEME_LEN). When a protocol scheme longer than 12 characters is used, the environment variable name is silently truncated to 19 characters by curl_msnprintf. This causes a business logic error where curl may read configuration from an unintended (truncated) environment variable, causing potentially unexpected proxy behavior in applications using custom schemes.\n\nGoogle Gemini AI was used as an analysis aid only; all findings, including the truncation behavior, were manually verified by reviewing the source code and testing a PoC.\n\nAffected Versions\n- curl 8.18.0-DEV (latest master branch)\n- Platform: Windows 10 x64 (platform-independent logic issue)\n\nSteps to Reproduce\n1. Inspect lib/url.c lines 2060–2067.\n2. Note that proxy_env is declared as char proxy_env[20];.\n3. Observe that conn->handler->scheme can be up to 40 characters (MAX_SCHEME_LEN).\n4. Call curl_msnprintf(proxy_env, sizeof(proxy_env), \"%s_proxy\", conn->handler->scheme); with a long scheme.\n5. Example: \"extremelylongprotocolname\" (25 characters) will be truncated to \"extremelylongsc\" instead of \"extremelylongprotocolname_proxy\".\n\nSupporting/Reference Materials\n- Source code snippet from lib/url.c (lines 2060–2067)\n- PoC code (poc_truncation.c) demonstrating truncation\n- Screenshot of PoC execution showing truncation\n- Screenshot of the vulnerable code in lib/url.c\n\n## Impact\n\nA business logic flaw allows proxy configuration manipulation or bypass through truncating environment variable names. This can lead to unexpected network behavior or bypass security policies that rely on protocol-specific proxy settings. An attacker with control over environment variables could set truncated variable names to redirect traffic through an unauthorized proxy.",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5138336,
+      "file_name": "curl_detect_proxy_truncation_report_herdiyanitdev.pdf",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2k0t623xiv7hmrpfi61efqf0vt6k?response-content-disposition=attachment%3B%20filename%3D%22curl_detect_proxy_truncation_report_herdiyanitdev.pdf%22%3B%20filename%2A%3DUTF-8%27%27curl_detect_proxy_truncation_report_herdiyanitdev.pdf&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042448Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b112e8f59493059d469c5da6271030f0b8b03231b96379fe9107cb7187ee6f26",
+      "file_size": 133454,
+      "type": "application/pdf",
+      "moderated": null
+    },
+    {
+      "id": 5138340,
+      "file_name": "poc_proxy_env_truncation_output.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/a2scquaotdabyyd916by5rkwxwqr?response-content-disposition=attachment%3B%20filename%3D%22poc_proxy_env_truncation_output.png%22%3B%20filename%2A%3DUTF-8%27%27poc_proxy_env_truncation_output.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042448Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=15d903dafdca8f1c8c6bf70a578f442d91e528fedb95b7a67ee5f419be24d6e6",
+      "file_size": 108177,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 5138341,
+      "file_name": "poc_proxy_env_truncation.c.jpeg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ehd6nxrh9fuplimb3ves26xjs61z?response-content-disposition=attachment%3B%20filename%3D%22poc_proxy_env_truncation.c.jpeg%22%3B%20filename%2A%3DUTF-8%27%27poc_proxy_env_truncation.c.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042448Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bb4fe5263d5f940fb2d2192399ab95fa7a24a059170523556afbacd23c725f53",
+      "file_size": 285415,
+      "type": "image/jpeg",
+      "moderated": false
+    },
+    {
+      "id": 5138342,
+      "file_name": "proxy_env_truncation.png.jpeg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/a7hgexjs7j358rhp1077pa221zm2?response-content-disposition=attachment%3B%20filename%3D%22proxy_env_truncation.png.jpeg%22%3B%20filename%2A%3DUTF-8%27%27proxy_env_truncation.png.jpeg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSXR5PW6T%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042448Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQCoBIr2ZSFIAeUBdyXnMorers3cNjbC6iM3nyMhNrxv7QIgUmNW2wyEplro0nwpQ9wXQkanNO0zYABBIHVKqcXHYXUqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BZ9GkQMNE8dkyoHCqPBTOHpOJxw1WaI7ib4lh32PkdJEEgtGIgWI4v%2FV%2By7PQAWfBxWShLx4x9mQDK4V6fQ5xSGfx03fRFFn4aeBsWzF8sfQnp3S0SVFgtazDTinrglw62QZHYp%2B%2FVOgAoUtQjBJQTjcmL%2BWdsS4vbpbVv8fFv4SP22yuaVSwY2Rsl6Ak02BTB3aOtyqJZbY2Oa2mZzcrGhIotsxi4hWnhtrjNTLbMfYIOYACkUiHLEcEz30dKSsvXZDNfr4dMj9e6g1x54tn1fz%2FKB6tDNugnLQfXZKSp5IWYnF69X%2BaZLPTLqNx7XpME%2FtJU9JFJeyCPYxaXWGyQjfOVpjMbwYeYT2k8RpzeTqOLh74dAXD6tesLyZU5L5RzUPh4iNWK6dyZnV5sQmKUeE1JwPdxpFk3exRlcwlViy%2FtXfWJN%2Bh4%2BcPCtBML5AfU5Wqr6KdneFGAyk0d6RjNfrdCQu9K86VRumlz5dpE2YUcMewTwMJJSJSz076c6rE5u3Q%2Bjoig48GkriwJQNC%2B%2FI6nI0ul5w2N06gmztI2lr1WJqdqozC2bKdDLDIdoiSh4q6cW6qizRVVLcMVNJ3grV1Qd%2BXjibiiD8f8z5FFWLGJbYBZX4hgzHDtdvozAZBRVxqpHUcdPJyPjieifOBBmnrX8rpFVfgfqr4Ys88ZPml7o3l6qPiyv3eMGictIPo%2B%2BfZYGEnIb3%2BAJOEnlbxEFxRyCrl%2BIEBhPiz5Qei8h3sYtXG4g1azVFq1mRNA2i3nz%2BpFjilCCw3UsJxFR5uUku53lwLZoIilhsCsHTkKM0vw5jyOLG%2BWWRPHRvARqzbsoOXcgk4foX3qvc0qS0bC7%2FmQ8olxmaEbj9RrWTCG9HOveQWBBcRaWzp6Qkowyd2c0gY6sQGtAeNp7wFJeDYDeEJjSUfooJSPS9CPkC9XrwAk7No4gYhD5z511xbRNq0fHkG30hrLPcY%2FFfsATXLn3ejV47vXnCbRMuOjo%2Bnzj5JUorD9G1toDCk3hVpqXBSqEk47rUS6%2FusaKFgUXlUUIzm7qC5ssnDdHBly0w28yujYKFlVRjPIluXQiJ%2BEd9cBmkxsQAL9L4NNxThqho1wu4uvx2B2cVYzuCve3eGdJ8TSwzMYKmc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=109f8ec9cbf68681de9b0b8fb28001664f8262f6275a56e58aa6603372eb8c4f",
+      "file_size": 74879,
+      "type": "image/jpeg",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 12,
+  "voters": [
+    "ghaddarittoo",
+    "2026",
+    "shubh_hackss",
+    "gabson0x",
+    "rayansec7",
+    "shotsfi-red",
+    "djees",
+    "herdiyanitdev",
+    "inside_out",
+    "stickwk",
+    "and 2 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3473182",
+  "votes": 12,
+  "latest_disclosable_activity_at": "2025-12-21T21:34:01.474Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:24:48.338098",
+    "source": "https://hackerone.com/reports/3473182.json",
+    "report_id": 3473182
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDczMTgy",
+    "databaseId": "3473182",
+    "title": "A logic error in detect_proxy caused truncation of environment variable names for long protocol schemes.",
+    "url": "https://hackerone.com/reports/3473182",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-12-21T21:34:01.610Z",
+    "created_at": "2025-12-20T06:19:17.734Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "herdiyanitdev"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0NzMxODI=",
+    "_id": "3473182",
+    "disclosed": true,
+    "votes": 12,
+    "latest_disclosable_activity_at": "2025-12-21T21:34:01.474Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDczMTgy",
+      "databaseId": "3473182",
+      "title": "A logic error in detect_proxy caused truncation of environment variable names for long protocol schemes.",
+      "url": "https://hackerone.com/reports/3473182",
+      "disclosed_at": "2025-12-21T21:34:01.610Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

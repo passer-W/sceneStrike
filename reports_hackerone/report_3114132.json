@@ -1,0 +1,205 @@
+{
+  "id": 3114132,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTE0MTMy",
+  "url": "https://hackerone.com/reports/3114132",
+  "title": "Broken Access Control Exposes Email Verification Status and Privacy Settings via API Endpoint",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2025-04-26T22:54:16.748Z",
+  "submitted_at": "2025-04-26T22:54:16.984Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ctrl_cipher",
+    "url": "/ctrl_cipher",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/461iai2ff9jznylfgim6gfeus6ct/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 21801,
+    "url": "https://hackerone.com/wakatime",
+    "handle": "wakatime",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6t1wy3jbq9kayjwvqbnymavxizfx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/6t1wy3jbq9kayjwvqbnymavxizfx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "WakaTime",
+      "twitter_handle": "wakatime",
+      "website": "https://wakatime.com",
+      "about": "Automated metrics about your programming from text editor plugins."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-04-29T12:45:03.155Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-04-27T16:29:41.808Z",
+  "team_member_agreed_on_going_public_at": "2025-04-29T12:45:02.730Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The /api/v1/users/{username} endpoint leaks sensitive email-related metadata (e.g., is_email_confirmed, is_email_public) without proper authorization checks. Attackers can abuse this to:\nIdentify verified/active accounts for targeted attacks.\nDetermine users’ email privacy preferences (even if the email itself is hidden).\nThis behavior allows me to distinguish whether an account's email address is confirmed or not.\n\n#Steps to Reproduce\n1. Authenticate as a valid user (e.g. user/current).\n2. Intercept a request to your own profile:\n>GET /api/v1/users/attacker_user HTTP/2  \nHost: wakatime.com  \nCookie: \n3. Modify the username in the URL to access another user’s data:\n>GET /api/v1/users/<any name> HTTP/2  \nHost: wakatime.com  \nCookie: \n4. Observe the response:\n>{\n  \"is_email_confirmed\": true,\n  \"is_email_public\": false,\n  \"public_email\": null,\n  // ... other sensitive fields\n}\n\n## Impact\n\nAccount Enumeration:\nAttackers can confirm valid/verified accounts (is_email_confirmed: true), enabling targeted credential stuffing or phishing.\n\nPrivacy Violations:\nKnowing a user’s email privacy preference (is_email_public: false) leaks their intent to keep their email private.\n\nAttack Surface Expansion:\nCombined with other vulnerabilities (e.g., password reset flaws), attackers can prioritize high-value accounts.",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4290369,
+      "file_name": "poc1.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/thv45n9nr940bjrn1w3hfx7pm9ly?response-content-disposition=attachment%3B%20filename%3D%22poc1.jpg%22%3B%20filename%2A%3DUTF-8%27%27poc1.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ26TPEBDB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043224Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCox93aj484Dun%2BiHUzEzur35hePizlyTPCWuCcejJl5AIhAM33Oy29mcn4go3WxFVgySURFUwoS6Ctas4AnUxEuIK8KrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgzV6haXsUbmrr4UCbgqjwVnyH7eXnVvcekdVhgledPvVchvZeW2%2FZv3yRw7QKwoE4zsq31VBV4q7eeCAEcoj1Qc3yzaMc6UxViTioxPJTeDZp9RZ4625dNo3vlBFAEsgFQtgZIwF0tXFS8PESNIIlp9EcGY4z9jZOgQiV4JCRXjMLDiIf9%2FdrdnzJ%2B1QiNyKFaWrgdJ1Ha4X5dFaRjSMEeyKuhgDUB%2F%2BEDSAnloC%2B9De1GXPOH7m%2B2kARBHlbpPYOm2GUZJVRT8RkUAFUKHmjYgioZSPJ1X3K1WzyPFXc5E1c126xkSmhPA2mSuwp1UPB4T94HUi0c7chwI56eyiU6Un1jARZjx03MnpBgdLd4cvF5owhxA3J%2Fr0B90wNvVJvfVvQoXSjd%2FoPJMhM79xtbdZ7HP9KdxhnKZzDIkOoETAC31StgGiP%2Bg9dDGXrL2PMnstROIdIc7Og%2FowsXdEUqghhe%2By5BDn%2B9Kn4mWpfm0jEGCNfQ383ELF9UhYcDGJ9y4RUNk%2F7wfcr4TqjE10r%2Fym8dHHDNFSpIPuWfgm1g86QrilLhcUgmMbfbIk7dcOe7OcgAL4pQiQb1SQgyty67NTRat3hIw9FV%2Bx1OaR0gObi78Dn9W3O%2BNHpsYvhUnVSpD3Ny%2FiAhcF5zi0RU9XjpC5bXbU7B2b5xkL21DpTcAH6JMZdRaubUwXccCjrtDzWbCz9xsm%2BspDsIZIkggB9WCtBySFJ01YjYJ87Uv3rnJvwzwwudhVsYR5X4XozHqsowXKxOM6f1zg2LohL20Y4iji%2FQgdPb6UdlvQ7yGsIXvPO6WvnF1DAB%2FUE7cdZ7GiWjatK4N4v6rAguv58am86qVy7J%2FVGiPRiTye1IfYsOo5Ubnnk6pKhyfJllClYpXMInynNIGOrABbuRSbaQG7WTwO7YB82Qk8yf3kI92C3a%2FIZ0ALjdQ7VBDWqq%2Foy9jqMTx%2BZXvCExde0XRgJXnuV5mqQHwatLOmyUJ7yGYlnafC02N5rdUrqjZi%2FW0oa4MDsoSOn70n883ec940nKaYqwB3SSRh%2F%2FfiD1Lbzk8eS3eMsC8dSSdbHvuWy05HFJFvuzcxCADbpP70yBmqH1Y7vWnw7xkX9QpN2wm9KLeKy22VCq8YYZ459k%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=36d0450383672d65510ecd281c2075467ab4203f007b3c108beeb70380413373",
+      "file_size": 222779,
+      "type": "image/jpeg",
+      "moderated": false
+    },
+    {
+      "id": 4290370,
+      "file_name": "poc2.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2g8mj9lx3zst9ypejzd0de0tpftx?response-content-disposition=attachment%3B%20filename%3D%22poc2.jpg%22%3B%20filename%2A%3DUTF-8%27%27poc2.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ26TPEBDB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043224Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCox93aj484Dun%2BiHUzEzur35hePizlyTPCWuCcejJl5AIhAM33Oy29mcn4go3WxFVgySURFUwoS6Ctas4AnUxEuIK8KrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgzV6haXsUbmrr4UCbgqjwVnyH7eXnVvcekdVhgledPvVchvZeW2%2FZv3yRw7QKwoE4zsq31VBV4q7eeCAEcoj1Qc3yzaMc6UxViTioxPJTeDZp9RZ4625dNo3vlBFAEsgFQtgZIwF0tXFS8PESNIIlp9EcGY4z9jZOgQiV4JCRXjMLDiIf9%2FdrdnzJ%2B1QiNyKFaWrgdJ1Ha4X5dFaRjSMEeyKuhgDUB%2F%2BEDSAnloC%2B9De1GXPOH7m%2B2kARBHlbpPYOm2GUZJVRT8RkUAFUKHmjYgioZSPJ1X3K1WzyPFXc5E1c126xkSmhPA2mSuwp1UPB4T94HUi0c7chwI56eyiU6Un1jARZjx03MnpBgdLd4cvF5owhxA3J%2Fr0B90wNvVJvfVvQoXSjd%2FoPJMhM79xtbdZ7HP9KdxhnKZzDIkOoETAC31StgGiP%2Bg9dDGXrL2PMnstROIdIc7Og%2FowsXdEUqghhe%2By5BDn%2B9Kn4mWpfm0jEGCNfQ383ELF9UhYcDGJ9y4RUNk%2F7wfcr4TqjE10r%2Fym8dHHDNFSpIPuWfgm1g86QrilLhcUgmMbfbIk7dcOe7OcgAL4pQiQb1SQgyty67NTRat3hIw9FV%2Bx1OaR0gObi78Dn9W3O%2BNHpsYvhUnVSpD3Ny%2FiAhcF5zi0RU9XjpC5bXbU7B2b5xkL21DpTcAH6JMZdRaubUwXccCjrtDzWbCz9xsm%2BspDsIZIkggB9WCtBySFJ01YjYJ87Uv3rnJvwzwwudhVsYR5X4XozHqsowXKxOM6f1zg2LohL20Y4iji%2FQgdPb6UdlvQ7yGsIXvPO6WvnF1DAB%2FUE7cdZ7GiWjatK4N4v6rAguv58am86qVy7J%2FVGiPRiTye1IfYsOo5Ubnnk6pKhyfJllClYpXMInynNIGOrABbuRSbaQG7WTwO7YB82Qk8yf3kI92C3a%2FIZ0ALjdQ7VBDWqq%2Foy9jqMTx%2BZXvCExde0XRgJXnuV5mqQHwatLOmyUJ7yGYlnafC02N5rdUrqjZi%2FW0oa4MDsoSOn70n883ec940nKaYqwB3SSRh%2F%2FfiD1Lbzk8eS3eMsC8dSSdbHvuWy05HFJFvuzcxCADbpP70yBmqH1Y7vWnw7xkX9QpN2wm9KLeKy22VCq8YYZ459k%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=189c36f4c39bd7dbff566c9beef670fd97093ae7da29ccccbbd65cba02ccb79f",
+      "file_size": 221737,
+      "type": "image/jpeg",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-05-27T16:29:41.935Z",
+  "allow_singular_disclosure_after": -34689762.50781077,
+  "singular_disclosure_allowed": true,
+  "vote_count": 56,
+  "voters": [
+    "loaymorad",
+    "orange303",
+    "m4khn0",
+    "almuntadhar0x01",
+    "raslanco",
+    "mohaned0101",
+    "thalaivar304",
+    "shubham_srt",
+    "sisi0x",
+    "mouhannadlrx0",
+    "and 46 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 614470,
+    "asset_type": "URL",
+    "asset_identifier": "wakatime.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3114132",
+  "votes": 56,
+  "latest_disclosable_activity_at": "2025-04-29T12:45:03.595Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:32:24.551902",
+    "source": "https://hackerone.com/reports/3114132.json",
+    "report_id": 3114132
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTE0MTMy",
+    "databaseId": "3114132",
+    "title": "Broken Access Control Exposes Email Verification Status and Privacy Settings via API Endpoint",
+    "url": "https://hackerone.com/reports/3114132",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-04-29T12:45:03.155Z",
+    "created_at": "2025-04-26T22:54:16.748Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "ctrl_cipher"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjE4MDE=",
+      "handle": "wakatime",
+      "name": "WakaTime",
+      "url": "https://hackerone.com/wakatime",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMxMTQxMzI=",
+    "_id": "3114132",
+    "disclosed": true,
+    "votes": 56,
+    "latest_disclosable_activity_at": "2025-04-29T12:45:03.595Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTE0MTMy",
+      "databaseId": "3114132",
+      "title": "Broken Access Control Exposes Email Verification Status and Privacy Settings via API Endpoint",
+      "url": "https://hackerone.com/reports/3114132",
+      "disclosed_at": "2025-04-29T12:45:03.155Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjE4MDE=",
+      "handle": "wakatime",
+      "name": "WakaTime",
+      "url": "https://hackerone.com/wakatime",
+      "currency": "usd"
+    }
+  }
+}

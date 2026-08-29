@@ -1,0 +1,213 @@
+{
+  "id": 186554,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODY1NTQ=",
+  "url": "https://hackerone.com/reports/186554",
+  "title": "Stored XSS in Adress Book (starbucks.com/account/profile)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2016-11-29T20:26:01.316Z",
+  "submitted_at": "2016-11-29T20:26:01.316Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "myst404",
+    "url": "/myst404",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1989,
+    "url": "https://hackerone.com/starbucks",
+    "handle": "starbucks",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/001/989/c9aa38cf3b1a91daa085d31e23d23f34cd1874df_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/001/989/c9aa38cf3b1a91daa085d31e23d23f34cd1874df_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Starbucks",
+      "twitter_handle": "Starbucks",
+      "website": "http://www.starbucks.com",
+      "about": "Premier purveyor of the finest coffee in the world, inspiring and nurturing the human spirit — one person, one cup and one neighborhood at a time."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-05-31T20:05:38.316Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-05-26T22:21:28.200Z",
+  "team_member_agreed_on_going_public_at": "2017-05-31T20:05:38.270Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hello,\n\nI just found a stored XSS in the \"Adress book menu\" of a user's profile : https://www.starbucks.com/account/profile\n\n# Description :\n\nXSS is happening due to the lack of filtering on the **Address.FirstName** parameter when you POST a new address on the URL : https://www.starbucks.com/account/profile/AddressSave :\n\n{F138388}\n{F138390}\n\nHere are the POST Parameters to reproduce the issue:\n\n██████████\n\n```\nAddress.AddressName=bbbbb%22%3E&Address.FirstName=z%22 onmouseover=\"alert('Hackerone')\" style=\"position:fixed;left:0;top:0;width:9999px;height:9999px;\">&Address.LastName=bbbbb%22%3E&Address.Country=US&Address.AddressLine1=bbbbb%22%3E&Address.AddressLine2=aaaa%22%3E&Address.City=aaaa%22%3E&Address.CountrySubdivision=AK&Address.PostalCode=75000&Address.PhoneNumber=███████&Address.PhoneExtension=&Address.AddressType=Registration&Address.AddressId=32ecef14-f8af-4b5e-adad-d8d2adc8ddad&Address.VerificationStatus=Override&IsAddress=true&__RequestVerificationToken=MDSbXzmn-5j18ck06PpT7Og05zgwOzgq8FMwiqTXIeUfcfRS-keyp9i_x0VbBaIfvUo7EhzYGMvvzPUc0WG5QqlG_YathJ80lgs-p3PCoyNfdvo_E-XY6JfoC9R4tPir0\n```\n\nIt was quite tricky to leveraged.\nIndeed :\n- It looks like no parameter from this request is filtered. However, except **Address.FirstName**, they are printed are inside an HTML tag and you prevented the opening of a new tag by blocking anything with \"<.\" (where the point can be anything of course)\n- The maximum length of each field (15 characters) is only checked client-side, though short XSS exists\n- That is why my final payload is :\n\n**z\" onmouseover=\"alert('Hackerone')\" style=\"position:fixed;left:0;top:0;width:9999px;height:9999px;\">**\n\nHere is the email of my account if you can check by yourself: *██████*\n\n# Risks\nI assume that you perfectly know the risks of an XSS. \nThis one presents a high/critical risk as my addresses can, I think, be seen in the admin panel. I just have to contact the Customer Support for them to look at my account and trigger the XSS.\n\n\n#Remediation\nI also assume that you know how to correct XSS properly as it looks like it is well done elsewhere on the website.\n\n\nBest regards,",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 138388,
+      "file_name": "Capture_d_e_cran_2016-11-29_a__21.04.18.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/138/388/5b95834147e9c1c2aa16df8af8540c8642093e47/Capture_d_e_cran_2016-11-29_a__21.04.18.png?response-content-disposition=attachment%3B%20filename%3D%22Capture_d_e_cran_2016-11-29_a__21.04.18.png%22%3B%20filename%2A%3DUTF-8%27%27Capture_d_e_cran_2016-11-29_a__21.04.18.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7G5NZYMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063229Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCxGN07r1uVbMWvIvYC2t%2B%2FcGJvcNDRyUhf57EtmDK8yQIgG%2B0q0cs69snxepjtSyhLT5F2BDtA7cTXK4BC26EJhjkqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDMm3%2FwzD3KnjAAnfByqOBVVdMOUpCw4KxnkZ%2BV71Ji%2BLOfMTHTmsF8ayYTH8IpPcxtY1%2FCBdlYZXil73OPW0haR1HKhs1j7FS%2B6aruxR5w%2FlwW%2FFsqq4MncAVxgUnFOsDuoiE7TFjtRH%2BjqmQsok3zoYW%2BTMWs%2BeLg6YYyG2d7X2AnmnrQOUW1fpG9BPtaV4NAv4zH1jErYSTyhTYXJcbBIpi7oPljA4QnWkxVmULkjp2Dne1UhIzw3VeWaJUUS6k9VtTYiKhZjcopTTdBkvCLdxfrDvHzhX394IZjsMPWGEcKmvV%2F3jJonolaugxvafffROPPTgmOchVe84dypzs3zAoipPRBhH1axw7Q2WobX6sRV3Ah6S0TMQpn%2FQEvvH6PEvPbUdWsh0Yz1IFIE31DHK5yzlqyTijRa6i52g60%2F4LQavkGzcHm4jJ%2FnKTAEjENBTuNiOz9dLcDwgiKcnEtUlUrL2yxtn5IksmF2trdOFyu4jFG%2FIIl2UmWeBqHOB3FKfat8b8WngHA%2BvTdhBjtiLt2NQ8LtC%2BTRNTkvrWFBMQ8BmxkTD95i%2FajpPre6lPZKso%2Fqe0tq9EGaI6GXza4XI%2BO5E7DFffCDJdhxrIIOTNA%2BNga2gCdYQwendOXcbBlufzLIoStaMvtLI0o6l8bLl80Qe7RTG406Ebk8ExL5SV648ARpIBsiM21Z4pfu%2FXeSSrJKSxiz6f%2F0f5IhGr7f2%2BTxOEmw9n3ZJP2KQo5%2BsKEw0fzYingjDYZcG%2ByEb8jpIPDUZ%2FHOZllU1PEOFDYZjByrjIinF0p24kdxZMD60WicIBt7o2moRsXH9M83ZF6S77KRFLKgJK6gCdRlpWTRfQo%2BcP3aeHLzRnp3sSEXq%2Fi4PFol%2FR0Dn0v3CnDCXxLfSBjqxATYTXilxV%2FNllwSZIU15bQshj4sqLiDzcUiJYT5IwZ1S5u6ptYH3%2FcX3WjOMdVW37nV%2FCy%2FrySD29Tn2%2Fmgljzfp4Z3vfBt9O6Ls5ozqO%2FRe8Uc3WIKa0uT9C3uSEkCC3kvlE6%2Bn6P3igLvQkS3W3sRcybduXYA1QTbAliW%2BgcRy2nt8IUD3Dj1MAKfdaioguBLflGC9Oq%2FEwf5skmA8lIraqCAbOss9oqPNHC6cVEYUCw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0a82b14cb3d74f168b85863c33f42f14cdaff85f533f1db7c1f20c897968699d",
+      "file_size": 387697,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 138390,
+      "file_name": "Capture_d_e_cran_2016-11-29_a__21.11.11.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/138/390/de54fe502f54de903c3d9f0fd559251ed47830da/Capture_d_e_cran_2016-11-29_a__21.11.11.png?response-content-disposition=attachment%3B%20filename%3D%22Capture_d_e_cran_2016-11-29_a__21.11.11.png%22%3B%20filename%2A%3DUTF-8%27%27Capture_d_e_cran_2016-11-29_a__21.11.11.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7G5NZYMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063229Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCxGN07r1uVbMWvIvYC2t%2B%2FcGJvcNDRyUhf57EtmDK8yQIgG%2B0q0cs69snxepjtSyhLT5F2BDtA7cTXK4BC26EJhjkqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDMm3%2FwzD3KnjAAnfByqOBVVdMOUpCw4KxnkZ%2BV71Ji%2BLOfMTHTmsF8ayYTH8IpPcxtY1%2FCBdlYZXil73OPW0haR1HKhs1j7FS%2B6aruxR5w%2FlwW%2FFsqq4MncAVxgUnFOsDuoiE7TFjtRH%2BjqmQsok3zoYW%2BTMWs%2BeLg6YYyG2d7X2AnmnrQOUW1fpG9BPtaV4NAv4zH1jErYSTyhTYXJcbBIpi7oPljA4QnWkxVmULkjp2Dne1UhIzw3VeWaJUUS6k9VtTYiKhZjcopTTdBkvCLdxfrDvHzhX394IZjsMPWGEcKmvV%2F3jJonolaugxvafffROPPTgmOchVe84dypzs3zAoipPRBhH1axw7Q2WobX6sRV3Ah6S0TMQpn%2FQEvvH6PEvPbUdWsh0Yz1IFIE31DHK5yzlqyTijRa6i52g60%2F4LQavkGzcHm4jJ%2FnKTAEjENBTuNiOz9dLcDwgiKcnEtUlUrL2yxtn5IksmF2trdOFyu4jFG%2FIIl2UmWeBqHOB3FKfat8b8WngHA%2BvTdhBjtiLt2NQ8LtC%2BTRNTkvrWFBMQ8BmxkTD95i%2FajpPre6lPZKso%2Fqe0tq9EGaI6GXza4XI%2BO5E7DFffCDJdhxrIIOTNA%2BNga2gCdYQwendOXcbBlufzLIoStaMvtLI0o6l8bLl80Qe7RTG406Ebk8ExL5SV648ARpIBsiM21Z4pfu%2FXeSSrJKSxiz6f%2F0f5IhGr7f2%2BTxOEmw9n3ZJP2KQo5%2BsKEw0fzYingjDYZcG%2ByEb8jpIPDUZ%2FHOZllU1PEOFDYZjByrjIinF0p24kdxZMD60WicIBt7o2moRsXH9M83ZF6S77KRFLKgJK6gCdRlpWTRfQo%2BcP3aeHLzRnp3sSEXq%2Fi4PFol%2FR0Dn0v3CnDCXxLfSBjqxATYTXilxV%2FNllwSZIU15bQshj4sqLiDzcUiJYT5IwZ1S5u6ptYH3%2FcX3WjOMdVW37nV%2FCy%2FrySD29Tn2%2Fmgljzfp4Z3vfBt9O6Ls5ozqO%2FRe8Uc3WIKa0uT9C3uSEkCC3kvlE6%2Bn6P3igLvQkS3W3sRcybduXYA1QTbAliW%2BgcRy2nt8IUD3Dj1MAKfdaioguBLflGC9Oq%2FEwf5skmA8lIraqCAbOss9oqPNHC6cVEYUCw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=673bf355acafc3cef55e6acfc09b82d1ca800e9e57897d399b1fae3bdf40c25b",
+      "file_size": 202813,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-06-25T22:21:28.258Z",
+  "allow_singular_disclosure_after": -285063060.75293,
+  "singular_disclosure_allowed": true,
+  "vote_count": 9,
+  "voters": [
+    "bl4de",
+    "vijay_kumar",
+    "gamliel",
+    "eveeez",
+    "kieran",
+    "b3nac",
+    "japz",
+    "spetr0x",
+    "kiddarknez"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 13020,
+    "asset_type": "URL",
+    "asset_identifier": "www.starbucks.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "186554",
+  "votes": 9,
+  "latest_disclosable_activity_at": "2017-05-31T20:05:38.333Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:32:29.149259",
+    "source": "https://hackerone.com/reports/186554.json",
+    "report_id": 186554
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODY1NTQ=",
+    "databaseId": "186554",
+    "title": "Stored XSS in Adress Book (starbucks.com/account/profile)",
+    "url": "https://hackerone.com/reports/186554",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-05-31T20:05:38.316Z",
+    "created_at": "2016-11-29T20:26:01.316Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "myst404"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE5ODk=",
+      "handle": "starbucks",
+      "name": "Starbucks",
+      "url": "https://hackerone.com/starbucks",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNzkxOA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-12-02T23:00:57.675Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4NjU1NA==",
+    "_id": "186554",
+    "disclosed": true,
+    "votes": 9,
+    "latest_disclosable_activity_at": "2017-05-31T20:05:38.333Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODY1NTQ=",
+      "databaseId": "186554",
+      "title": "Stored XSS in Adress Book (starbucks.com/account/profile)",
+      "url": "https://hackerone.com/reports/186554",
+      "disclosed_at": "2017-05-31T20:05:38.316Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE5ODk=",
+      "handle": "starbucks",
+      "name": "Starbucks",
+      "url": "https://hackerone.com/starbucks",
+      "currency": "usd"
+    }
+  }
+}

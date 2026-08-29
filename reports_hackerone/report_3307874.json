@@ -1,0 +1,227 @@
+{
+  "id": 3307874,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA3ODc0",
+  "url": "https://hackerone.com/reports/3307874",
+  "title": "Critical Deadlock Vulnerability in Monero RPC Leading to Complete Node Paralysis",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2025-08-21T12:32:18.629Z",
+  "submitted_at": "2025-08-21T12:32:18.812Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "rorkh",
+    "url": "/rorkh",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4a9psazvymfi8q4v1brrrxzm2gw5/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 7731,
+    "url": "https://hackerone.com/monero",
+    "handle": "monero",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/007/731/55634f7fcd917725c7a5771cc6e7c9b4d5fe0c22_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/007/731/55634f7fcd917725c7a5771cc6e7c9b4d5fe0c22_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Monero",
+      "twitter_handle": "monero",
+      "website": "https://getmonero.org",
+      "about": " Monero: the secure, private, untraceable cryptocurrency"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2026-05-06T17:13:37.828Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-06T17:13:36.607Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nA deadlock vulnerability in Monero's JSON-RPC interface allows a remote, unauthenticated attacker to completely paralyze any Monero node with a single HTTP request containing specific batch methods, leading to permanent denial of service.\n\n## Releases Affected:\n- Monero 'Fluorine Fermi' (v0.18.4.2-2987b7200)\n- Likely all previous versions\n- All operating systems (Linux, Windows, macOS)\n- All run modes (mainnet, testnet, offline, restricted-rpc)\n\nSeverity:\nCVSS 3.0: 10.0 – Critical:\n- CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H\nRationale:\n- Remote, network-based attack\n- No privileges required\n- Immediate node paralysis\n\nAffects availability, integrity, and potentially confidentiality\n\n## Steps To Reproduce:\n1. Start Monero node with any configuration:\n   ./monerod \\                              ─╯\n  --testnet \\\n  --data-dir ~/monero-testnet/blockchain \\\n  --rpc-bind-port 28081 \\\n  --p2p-bind-port 28080 \\\n  --restricted-rpc \\\n  --confirm-external-bind \\\n  --add-exclusive-node 127.0.0.1:28080 \\\n  --log-level 4 \\\n\n2. Run the script\npython3 exploit/PoC.py http://localhost:28081/json_rpc 50 500\n\n3. Observe:\n- Node becomes completely unresponsive (RPC, P2P, admin)\n- Standard termination signals (SIGTERM/SIGINT) do not work\n- Only kill -9 can terminate the process\n\n\nProof of Concept\nThe PoC demonstrates:\n  - Multithreaded adaptive load: 50 threads sending batched JSON-RPC requests.\nMix of request types:\n  - Valid Monero RPC methods (get_block_headers_range, get_output_distribution, etc.)\n  - Invalid or malformed requests\n  - Resource-heavy requests triggering memory allocation\n  - Adaptive batch size and memory usage based on server responses (413 / 429 / request too large)\n  - Gzip compression for large payloads\n  - User-Agent and X-Forwarded-For randomization to bypass basic filtering\n  - Effect: 29+ threads blocked, node deadlocked, requires SIGKILL to recov\n\nSupporting materials/links:\n- gdb_thread_dump.txt (blocked threads)\n- process_status.txt (thread states)\n- deadlock_graph.png (visualization of blocked threads)\n- Vulnerability demonstration script (PoC.py)\n\nTechnical Details:\nDeadlock occurs when Monero RPC threads enter circular wait on shared resources during batch request handling.\nThe PoC script triggers this using any combination of RPC methods, demonstrating that the vulnerability is not limited to a single method.\nNode remains unresponsive even with --restricted-rpc or offline mode.\nThe adaptive script proves the attack is resilient against server-side throttling or batch limits.\n\nHousekeeping:\n  I've read the rules.\n  XMR address for receiving the reward: 44eM3rY8uNrc2tEZn8VrmnN45mEjpVVTBZEHpn5iefjvK23HsaXCCZYcJye4aXoh5Xfrj1q6TkWpKYLXs4yZY6nuPwpVp1T\n\n## Impact\n\n- Availability: Complete and permanent node DoS\n- Integrity: Potential blockchain corruption during forced restart\n- Confidentiality: Possible leakage of sensitive data during unsafe shutdown\n- Ease of attack: Trivial, requires 1 network request, no privileges",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4701191,
+      "file_name": "process_status.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/plcvzjgm2ecsk2mvm2hvvvkklnnj?response-content-disposition=attachment%3B%20filename%3D%22process_status.txt%22%3B%20filename%2A%3DUTF-8%27%27process_status.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041911Z&X-Amz-Expires=1018&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5d4ce74879b1bf10eeafee71ba8e7277cacf321f711c042494f909c6db073c63",
+      "file_size": 61,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 4701192,
+      "file_name": "gdb_thread_dump.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5qym3bsip451ju3xdp7k2b5l0tzb?response-content-disposition=attachment%3B%20filename%3D%22gdb_thread_dump.txt%22%3B%20filename%2A%3DUTF-8%27%27gdb_thread_dump.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041911Z&X-Amz-Expires=1018&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0bacfb058eb8e4859f3216e3254f9a0f4b7370a9a7f86f77e3d23535dd81e17f",
+      "file_size": 7433,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 4701195,
+      "file_name": "PoC.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/y5vsaqymjtwdjugnrd540nzyise2?response-content-disposition=attachment%3B%20filename%3D%22PoC.py%22%3B%20filename%2A%3DUTF-8%27%27PoC.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041911Z&X-Amz-Expires=1018&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d0ffa7e9ed91f1f65f68244d1a3a36534f88366a342c59d1149954f4053f8c0f",
+      "file_size": 7722,
+      "type": "text/x-python",
+      "moderated": null
+    },
+    {
+      "id": 4701196,
+      "file_name": "deadlock_graph.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/j427iryg0ukvmy0stlc82pc6p2rp?response-content-disposition=attachment%3B%20filename%3D%22deadlock_graph.png%22%3B%20filename%2A%3DUTF-8%27%27deadlock_graph.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041911Z&X-Amz-Expires=1018&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b81c65ae251bfb6ca252e114f23b10d71c253f2f127f37dab3a5dbdf6c484e73",
+      "file_size": 157558,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2026-05-06T17:13:36.800Z",
+  "allow_singular_disclosure_after": -4964734.55630479,
+  "singular_disclosure_allowed": true,
+  "vote_count": 91,
+  "voters": [
+    "dp0101",
+    "m2r1",
+    "usagirabbit",
+    "2026",
+    "duckywantducky",
+    "zerodown",
+    "sottam",
+    "l1ackersalman",
+    "eddym69",
+    "khairmohammad",
+    "and 81 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 10.0,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3307874",
+  "votes": 91,
+  "latest_disclosable_activity_at": "2026-05-06T17:13:38.030Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:11.472409",
+    "source": "https://hackerone.com/reports/3307874.json",
+    "report_id": 3307874
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA3ODc0",
+    "databaseId": "3307874",
+    "title": "Critical Deadlock Vulnerability in Monero RPC Leading to Complete Node Paralysis",
+    "url": "https://hackerone.com/reports/3307874",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-05-06T17:13:37.828Z",
+    "created_at": "2025-08-21T12:32:18.629Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 10.0
+    },
+    "reporter": {
+      "username": "rorkh"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNzczMQ==",
+      "handle": "monero",
+      "name": "Monero",
+      "url": "https://hackerone.com/monero",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzMDc4NzQ=",
+    "_id": "3307874",
+    "disclosed": true,
+    "votes": 91,
+    "latest_disclosable_activity_at": "2026-05-06T17:13:38.030Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzA3ODc0",
+      "databaseId": "3307874",
+      "title": "Critical Deadlock Vulnerability in Monero RPC Leading to Complete Node Paralysis",
+      "url": "https://hackerone.com/reports/3307874",
+      "disclosed_at": "2026-05-06T17:13:37.828Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNzczMQ==",
+      "handle": "monero",
+      "name": "Monero",
+      "url": "https://hackerone.com/monero",
+      "currency": "usd"
+    }
+  }
+}

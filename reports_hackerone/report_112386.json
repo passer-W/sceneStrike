@@ -1,0 +1,190 @@
+{
+  "id": 112386,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTIzODY=",
+  "url": "https://hackerone.com/reports/112386",
+  "title": "smartlist_add, smartlist_insert (may) cause heap corruption as a result of inadequate checks in smartlist_ensure_capacity",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-01-23T03:33:29.620Z",
+  "submitted_at": "2016-01-23T03:33:29.620Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "guido",
+    "url": "/guido",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/983/e55b0b2324777fb7efc2de4212fd8d337ca816bd_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1800,
+    "url": "https://hackerone.com/torproject",
+    "handle": "torproject",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/001/800/6e575d0a9127b91e83833cf4a9e6be6e8b30cbc3_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/001/800/6e575d0a9127b91e83833cf4a9e6be6e8b30cbc3_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Tor",
+      "twitter_handle": "torproject",
+      "website": "https://www.torproject.org/",
+      "about": "Anonymity Online"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-10-19T10:16:15.572Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-10-19T10:16:15.522Z",
+  "team_member_agreed_on_going_public_at": "2017-10-19T09:34:51.427Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "#Walkthrough of the vulnerability\n\n```smartlist_add``` and ```smartlist_insert``` both invoke ```smartlist_ensure_capacity``` prior adding an element to the list in order to ensure that sufficient memory is available, to ```exit()``` if not enough memory is available and to detect requests for an invalid size:\n\n```c\nstatic INLINE void\nsmartlist_ensure_capacity(smartlist_t *sl, int size)\n{\n#if SIZEOF_SIZE_T > SIZEOF_INT\n#define MAX_CAPACITY (INT_MAX)\n#else\n#define MAX_CAPACITY (int)((SIZE_MAX / (sizeof(void*))))\n#define ASSERT_CAPACITY\n#endif\n  if (size > sl->capacity) {\n    int higher = sl->capacity;\n    if (PREDICT_UNLIKELY(size > MAX_CAPACITY/2)) {\n#ifdef ASSERT_CAPACITY\n      /* We don't include this assertion when MAX_CAPACITY == INT_MAX,\n       * since int size; (size <= INT_MAX) makes analysis tools think we're\n       * doing something stupid. */\n      tor_assert(size <= MAX_CAPACITY);\n#endif\n      higher = MAX_CAPACITY;\n    } else {\n      while (size > higher)\n        higher *= 2;\n    }\n    sl->capacity = higher;\n    sl->list = tor_reallocarray(sl->list, sizeof(void*),\n                                ((size_t)sl->capacity));\n  }\n#undef ASSERT_CAPACITY\n#undef MAX_CAPACITY\n}\n```\n\nOn a typical 64-bit system, ```SIZEOF_INT``` is 4 and ```SIZEOF_SIZE_T``` is 8. Consequently, ```MAX_CAPACITY``` is ```INT_MAX```, which is 0x7FFFFFFF as can be seen in torint.h:\n\n```c\n#ifndef INT_MAX\n#if (SIZEOF_INT == 4)\n#define INT_MAX 0x7fffffffL\n#elif (SIZEOF_INT == 8)\n#define INT_MAX 0x7fffffffffffffffL\n#else\n#error \"Can't define INT_MAX\"\n#endif\n#endif\n```\n\nSo ```MAX_CAPACITY``` is 0x7FFFFFFF. Now assume that that many (0x7FFFFFFF) items have already been added to a smartlist via smartlist_add(sl, value).\n\nsmartlist_add() is:\n\n```c\nvoid\nsmartlist_add(smartlist_t *sl, void *element)\n{\n  smartlist_ensure_capacity(sl, sl->num_used+1);\n  sl->list[sl->num_used++] = element;\n}\n```\n\nIf ```sl->num_used``` is 0x7FFFFFFF prior to invoking ```smartlist_add```, then the next ```smartlist_add``` is effectively:\n\n```c\nvoid\nsmartlist_add(smartlist_t *sl, void *element)\n{\n  smartlist_ensure_capacity(sl, -2147483648);\n  sl->list[2147483647] = element;\n  sl->num_used = -2147483648\n}\n```\n\nThis is the case since we are dealing with a signed 32 bit integer, and 2147483647 + 1 equals -2147483647.\n\nAll of the code in ```smartlist_ensure_capacity``` is wrapped inside the following ```if``` block:\n\n```c\n  if (size > sl->capacity) {\n  }\n```\n\nThe expression -2147483648 > 2147483647 equals false, thus the code inside the block is not executed.\n\nWhat actually causes the segmentation fault is that a negative 32 bit integer is used to compute a the location of array index on a 64 bit memory layout, ie., the next call to smartlist_add is effectively:\n\n```c\nvoid\nsmartlist_add(smartlist_t *sl, void *element)\n{\n  smartlist_ensure_capacity(sl, -2147483647); // Note that this is effective do-nothing code, as explained above\n  sl->list[-2147483648] = element;\n  sl->num_used = -2147483647\n}\n```\n\n#Proof of concept\n\nI've prepared a proof of concept which consists of smartlist_new, smartlist_add, smartlist_ensure_capacity taken from the Tor source code version 0.2.7.6 and their dependencies (tor_*alloc functions etc).\n\nI have made one change to it and that is the size of one element can be configured. In the Tor source code this is void*, which is 8 bytes on a 64 bit system.\n\nI've defined:\n\n```c\n#define ELEMENT unsigned char\n```\n\nbecause 2147483647 * 8 bytes = 17179869176 bytes = 16 gigabyte, which I couldn't allocate on my system. ```unsigned int``` works since it only requires 8 gigabytes of memory.\n\n#Discussion\n\nThe requirement for 16 gigabytes of memory is considerable.\n\nTriggering the vulnerability obviously also requires some code path which will invoke ```smartlist_add``` or ```smartlist_insert``` upon the same smartlist at the attacker's behest. Moreover, such a code path may have the side effect that it requires a separate allocation for each object that is added to the list; ```smartlist_add``` takes a pointer argument after all -- usually, but not always, this pointer refers to freshly allocated memory. Exceptions to this rule are static strings and pointers to a place in a large string or buffer that was already extant.\nOnce a vulnerable code path has been discovered, then it ultimately boils down to how much memory a user's machine is able to allocate in order to corrupt the heap.\n\nDespite these constraints, smartlists form a considerable portion of the infrastructure of your code (I count some 380+ occurrences of ```smartlist_add```/```smartlist_insert``` in the .c files using grep, that is excluding the test/ directory) and as such it's probably wise to revise the checks in ```smartlist_ensure_capacity```.\n\n",
+  "weakness": {
+    "id": 2,
+    "name": "Memory Corruption - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 70504,
+      "file_name": "poc.tar",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/070/504/d6bb53c68866bc6ece3f0e80b748134d0d3cd821/poc.tar?response-content-disposition=attachment%3B%20filename%3D%22poc.tar%22%3B%20filename%2A%3DUTF-8%27%27poc.tar&response-content-type=application%2Fx-tar&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUCAS5DEL%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061906Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC2TJliBdJI%2Fx2arwFR5bw4Y%2BAnJgmpsOmJeRuH4gP%2FswIhALJJEvlY7AsOo3zXRxt651X7VhwP51jzm%2FN9mJk7gxaoKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgxTquK%2BpB6PmOEKecoqjgWXTdzpbNEHOqG9CHAi%2BI%2FNxFigauQuP1TitmWdVwdHrNW61R4zVsezIrWXn2U0OwQaMOIWTzvyEspD9A7UpI9S0LEScw9MY%2FjkJURHxeBCrTUH5%2FxFISUJjXnMzSSFI4t18NRpx%2BAjMWmELFdkaiSYTl5WVGh4mPwJoakbnzUJVb93o5JFvpVacfBwnTa98YEhKRt64FcLA8U%2F%2BoAz7r4nhXybUxynvj%2F4cuob8BAPcCX3mh1XaSSdEX9BCUchW8MbjVR%2Ba3Isad7kiVZ2nT73OUil9E2cu%2BNic4ieji%2FfZUvYnwz0P3olAqDcj%2F7aA8GcMy2o9DOmyZuStiOpAFN48SD8KYab0ottA4mOjhmvfRq0198b%2FIQvsGfb2TH0deq6TDa6qsOCk8u2vYUJRnfEYBp7C7FNSthd9hEP%2BD%2BHtnRmeRsBrwML33KuZEKOEMB%2BDPJvs6pXKAGMhGh%2BndigGywKqWvRQ8sI%2Ff3ONaCvEl5V2%2BROryQ8OzBYF1Fk03fXRUXFykPWdmSIejXpqPhafatpGz%2BMk6sxNiF%2FGmYgLry4g%2BxoWjaUXjSp6fwzjdycD7js5C4S6jw8R6A33fVoCLyFMp%2Fyc88XHf4F0JEYsP6lBs921SlHtc0A%2Bso%2BRA1f1yfP7lC8nOTvkqQDSInICQFxLY2%2BpkgPsOHFQvN%2FoRc65em9ktRtPwOlVO5EEpEN%2BQHLzqwtmFauYCvGU1Xqq0IWu%2FvqWxkWOQfBSFpdtMcl1F6uxeHp7ox%2Fcr3KZugicC%2BiGy3otZM%2FuSxnqUy3Sc2PzhZNcbY5zcjxmXhrtQ5vetx4AWBrdceGUeBOoD7J7UvHZRibVoqf0Wt3tz5ZKlYI6Lz6F4rmgEBxfcgwzr630gY6sAG31F%2BCKFjNLrdiPwt3HYa%2BJHguapVDZyCu7xBDmhafgu2U8pGJ3VCUNwV%2FtBVUAooI0eo81sfGbEemgCTFhRDSajlSkWrbwh5W5gNbAtygNTiz8HNY6y1MrmS21ftU5rMyCwKRP4kAY3g0dF92Ap5%2Fb5kFKdfqh2AppPWrGS6KK1SAvYizhC31rPAReNJfIYk0mv4Uvd1Ikms8S3%2FxGsgho0ZzFvsZb5JNY6ZTRmla3Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=40e373ea766cb54bcc19fe78e808f201b34c0bf01ed43f3b9e7402185282e0a6",
+      "file_size": 40960,
+      "type": "application/x-tar",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-11-18T09:34:51.473Z",
+  "allow_singular_disclosure_after": -272493854.5734221,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "geeknik",
+    "eveeez",
+    "mr_r3boot",
+    "spetr0x",
+    "mycel",
+    "b4155f7c29acd42c27d007a"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "112386",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2017-10-19T10:16:15.588Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:19:06.159753",
+    "source": "https://hackerone.com/reports/112386.json",
+    "report_id": 112386
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTIzODY=",
+    "databaseId": "112386",
+    "title": "smartlist_add, smartlist_insert (may) cause heap corruption as a result of inadequate checks in smartlist_ensure_capacity",
+    "url": "https://hackerone.com/reports/112386",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-10-19T10:16:15.572Z",
+    "created_at": "2016-01-23T03:33:29.620Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI=",
+      "name": "Memory Corruption - Generic",
+      "external_id": "cwe-119"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "guido"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4MDA=",
+      "handle": "torproject",
+      "name": "Tor",
+      "url": "https://hackerone.com/torproject",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNjUyNQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-01-26T14:26:44.920Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExMjM4Ng==",
+    "_id": "112386",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2017-10-19T10:16:15.588Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTIzODY=",
+      "databaseId": "112386",
+      "title": "smartlist_add, smartlist_insert (may) cause heap corruption as a result of inadequate checks in smartlist_ensure_capacity",
+      "url": "https://hackerone.com/reports/112386",
+      "disclosed_at": "2017-10-19T10:16:15.572Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4MDA=",
+      "handle": "torproject",
+      "name": "Tor",
+      "url": "https://hackerone.com/torproject",
+      "currency": "usd"
+    }
+  }
+}

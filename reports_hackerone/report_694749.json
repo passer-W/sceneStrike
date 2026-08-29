@@ -1,0 +1,211 @@
+{
+  "id": 694749,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTQ3NDk=",
+  "url": "https://hackerone.com/reports/694749",
+  "title": "Clicking \"http://burp\" hyperlink on FireFox CA Installation guide redirects to \"burp.com\" (unclaimed website).",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2019-09-14T05:54:32.668Z",
+  "submitted_at": "2019-09-14T05:54:32.668Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "intelcorgi",
+    "url": "/intelcorgi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fbmf4k3c7p8lbm8eez820j0owv4e/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15252,
+    "url": "https://hackerone.com/portswigger",
+    "handle": "portswigger",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/252/60e8778f4f1fee57ea2b164a7d2ec1e2d2dd7bc8_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/252/60e8778f4f1fee57ea2b164a7d2ec1e2d2dd7bc8_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "PortSwigger Web Security",
+      "twitter_handle": "Burp_Suite",
+      "website": "https://portswigger.net",
+      "about": "Burp Suite is the leading software for web security testing"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-09-16T17:17:50.114Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-09-16T17:17:50.063Z",
+  "team_member_agreed_on_going_public_at": "2019-09-16T07:35:32.948Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Executive Summary\n---------------------------------------------------\n I was in the process of installing Burp suite community edition on my recent machine where I believe I stumbled across a potential open redirect issue [on the CA certificate installation website](https://support.portswigger.net/customer/portal/articles/1783087-Installing_Installing%20CA%20Certificate%20-%20FF.html). This is a security concern due to the fact that if a user clicks the hyperlink without Burp Suite / proxy settings configured, they could be redirected to a phishing site and have sensitive data stolen. \n \n It would be incredibly easy for a malicious actor to claim the domain redirected to by the hyperlink on the webpage. While \"burp.com\" is not a Portswigger subdomain or owned by Portswigger, it could be confusing to a user, especially if a phishing site used burp.com and the malicious actor mocked it up to look like the Portswigger website.\n\n*Note: While for most redirection / sub domain takeover bugs the standard practice is to actually go out and register the unclaimed website / domain, I have chosen not to in this PoC because I think it is a much lower level security issue.* \n\n\nLinks where security issue can be found\n---------------------------------------------------\n- [FireFox CA Installation Instructions](https://support.portswigger.net/customer/portal/articles/1783087-Installing_Installing%20CA%20Certificate%20-%20FF.html)\n\n- [IE CA Installation Instructions](https://support.portswigger.net/customer/portal/articles/1783080-Installing_Installing%20CA%20Certificate%20-%20IE.html)\n\n- [Safari Installation Instructions](https://support.portswigger.net/customer/portal/articles/1783096-Installing_Installing%20CA%20Certificate%20-%20Safari.html)\n\n\nTest Conditions\n---------------------------------------------------\n-**Browser**: Firefox 69.0 (64-bit). No proxy activated and certificate not installed.\n\n-**OS**: Windows 10\n\n-**Burp Product**: Burp Suite Community Edition v2.1.02 (turned on, no settings changed).\n\n\nExecution\n---------------------------------------------------\n1. I was following the instructions found [on the CA certificate installation website](https://support.portswigger.net/customer/portal/articles/1783087-Installing_Installing%20CA%20Certificate%20-%20FF.html) to install the CA for FireFox as a part of setting up Burp on my PC. \n\n2. I turned on Burp as instructed by the directions, and tried navigating to the page to download the certificate authority by clicking the hyperlink to http://burp as seen in this screenshot{F582570}. \n\n3. Upon clicking the hyperlink FireFox will either immediately direct you to \"burp.com\"(Which then sends you to inert.com, the seller of the domains), shown in this screenshot {F5825782}. \"Burp.com\" can be shown for sale in {F582571}. Sometimes, FireFox will throw an error on the redirect, but refreshing will eventually lead you to \"burp.com => inert.com\"\n\n4. inert.com shows how easy it would be for a malicious attacker to register \"burp.com\". Any user then clicking on the \"http://burp\" hyperlink will be directed to malicious \"burp.com\".\n\n\nSuggested Remediation\n---------------------------------------------------\n- Register \"burp.com\" domain, have it lead nowhere / black hole.\n- Remove hyperlink HTML elements to avoid having a user accidentally click on it and cause the redirect.\n- Add explicit instructions to turn on proxy settings on top of Burp simply being on.\n\n## Impact\n\nOpen redirect vulnerabilities can be used as a tool to potentially phish user data. If a malicious actor claims the unclaimed URL which is embedded , a user could be redirected to the new website thinking it was registered by Portswigger and may input credentials, payment information, or other sensitive data. It could also be used to serve malicious payloads to the user.",
+  "weakness": {
+    "id": 53,
+    "name": "Open Redirect"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 582570,
+      "file_name": "Page_w_Redirect.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/WHqpgQ1ycB9iez8epL58sE2T?response-content-disposition=attachment%3B%20filename%3D%22Page_w_Redirect.JPG%22%3B%20filename%2A%3DUTF-8%27%27Page_w_Redirect.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052748Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f586f2738709a2b173c12f8f6599b73be0b0c294ba0918ca9bc72b1ff1c57941",
+      "file_size": 245581,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 582571,
+      "file_name": "Burp_for_sale.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bLbv3DX98cXBjxcwk5UhxdDT?response-content-disposition=attachment%3B%20filename%3D%22Burp_for_sale.JPG%22%3B%20filename%2A%3DUTF-8%27%27Burp_for_sale.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052748Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e55e527b2ee4ff693fe702cb89528f586ee7151cdb70fb260d40b6079742d315",
+      "file_size": 128735,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 582572,
+      "file_name": "Redirect_Destination.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/nPDWeBXMzgKQjCfbApxAfXrp?response-content-disposition=attachment%3B%20filename%3D%22Redirect_Destination.JPG%22%3B%20filename%2A%3DUTF-8%27%27Redirect_Destination.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052748Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a0d7af3d5ff9008670625d2a0ababe08239f207384947c38a27f04afe518ebb7",
+      "file_size": 194856,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 22,
+  "voters": [
+    "foobar7",
+    "hogarth45",
+    "sameerphad72",
+    "thalaivar304",
+    "sudi",
+    "amad3u6",
+    "jlleitschuh",
+    "cr4xerbik4sh",
+    "cryptographer",
+    "0xj4y",
+    "and 12 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 168,
+    "asset_type": "URL",
+    "asset_identifier": "portswigger.net",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "694749",
+  "votes": 22,
+  "latest_disclosable_activity_at": "2019-09-16T17:17:50.133Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:27:48.766697",
+    "source": "https://hackerone.com/reports/694749.json",
+    "report_id": 694749
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTQ3NDk=",
+    "databaseId": "694749",
+    "title": "Clicking \"http://burp\" hyperlink on FireFox CA Installation guide redirects to \"burp.com\" (unclaimed website).",
+    "url": "https://hackerone.com/reports/694749",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2019-09-16T17:17:50.114Z",
+    "created_at": "2019-09-14T05:54:32.668Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUz",
+      "name": "Open Redirect",
+      "external_id": "cwe-601"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "intelcorgi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1MjUy",
+      "handle": "portswigger",
+      "name": "PortSwigger Web Security",
+      "url": "https://hackerone.com/portswigger",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY5NDc0OQ==",
+    "_id": "694749",
+    "disclosed": true,
+    "votes": 22,
+    "latest_disclosable_activity_at": "2019-09-16T17:17:50.133Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTQ3NDk=",
+      "databaseId": "694749",
+      "title": "Clicking \"http://burp\" hyperlink on FireFox CA Installation guide redirects to \"burp.com\" (unclaimed website).",
+      "url": "https://hackerone.com/reports/694749",
+      "disclosed_at": "2019-09-16T17:17:50.114Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1MjUy",
+      "handle": "portswigger",
+      "name": "PortSwigger Web Security",
+      "url": "https://hackerone.com/portswigger",
+      "currency": "usd"
+    }
+  }
+}

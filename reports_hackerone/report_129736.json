@@ -1,0 +1,190 @@
+{
+  "id": 129736,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjk3MzY=",
+  "url": "https://hackerone.com/reports/129736",
+  "title": "Persistent XSS on public project page",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-11T01:04:32.943Z",
+  "submitted_at": "2016-04-11T01:04:32.943Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-05-03T01:00:34.925Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-05-03T00:54:48.830Z",
+  "team_member_agreed_on_going_public_at": "2016-05-03T01:00:34.762Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Details\nA project admin can set up a custom issue tracker integration. This setting misses a check to make sure that it's a real URL and, thus, can use the `javascript` handler to execute arbitrary Javascript. Browsers use this handler to execute inline Javascript. This can lead to an account take over via the leaked API token.\n\n# Proof of concept\nFollow these steps to reproduce:\n\n - go to `/projects/new`, fill in the form and set the visibility level to **Public**\n - now click `Settings`, followed by `Services` and `Custom Issue Tracker`\n - now fill in the form like this:\n\n{F84532}\n\n - as you can see, the XSS payload is hidden in the `Project URL`:\n\n```\njavascript:alert(\"Current user its API token: \" + window.gon.api_token);\n```\n\n - go back to the project page and click **Issues**, this triggers the XSS:\n\n{F84533}\n\n# Impact\nGitLab doesn't have a content security policy, which means that clients allow inline Javascript to be executed. This gives, like shown in the proof of concept, access to the current user its API token. The API token can be used to access the user its projects, do actions as the user, give access to potential confidential information, etc. \n\n# Origin of the issue\nThe integration model lacks a validator that makes sure the Project URL matches `/\\Ahttps?:\\/\\//i`. This validator should also be applied to the Issues URL and New issue URL, since those fields are also vulnerable to a persistent XSS (although those are not on the project page).",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 84532,
+      "file_name": "Screen_Shot_2016-04-10_at_17.43.30.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/084/532/2097fbe49a0cbe1144bd1a6419548c49702ab740/Screen_Shot_2016-04-10_at_17.43.30.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-04-10_at_17.43.30.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-04-10_at_17.43.30.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070357Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a8398553de457f7b7c81486d2b7b5b3b415c3a3b33287050375fb8875a21c172",
+      "file_size": 107566,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 84533,
+      "file_name": "Screen_Shot_2016-04-10_at_17.44.42.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/084/533/f5fecff862da0ca67d338015e5ce70537caf0c93/Screen_Shot_2016-04-10_at_17.44.42.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-04-10_at_17.44.42.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-04-10_at_17.44.42.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQCBT5CT2%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070357Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGZrjEWZwbb9piskBn4OeFC4PNJvUp7%2BG4VASQ%2FhxptjAiBwHGWwQaznf%2FM%2BqyVMSiOsdVrQNnE4EFaRSLzd2cagqSqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMTNps2gaW8hir3fc6Ko4F7awAc483rFVAMIsJfLviFEoLyTwcOwpOWeGrcBFTJHaFizbGmyGP3wi83fI6cT%2F8d%2FE4ilBEwG4B1lFCt9x8N%2B9J7eXBlc51QVDhs1de7mp%2FYQoXpGnbTJR59qBFb856sjRQ4VtAYvlXX7ary83kfHJOnjA8AvXkjJswVn8nMnPye7G7Du%2BfbXE%2FW6Whv7MpYihVlrMUq6YnGrMcPbB%2BXrzS93x6fiPQ4%2FwipkaFE5tAqdMAM5rhgORrHK9VCvzmMAo9XPSTBkjWVEhNHf5APqFRIejhsd4o193sNKcftekCGYuwiuR2Vvv2zA6BGW2TbqE8ZWg2bjZ10wAQd20%2BSLgBtl7j5WalTaobPMNBb2%2BS8fKo9L37vaouH349rI%2B4h7nQQO7l8tIGJurknRacqsw5TXPDzwaw3QhGm3OZiAgbgeSRgZLHsZTGsS1HAbI33yxyPWwPWFWiiFF1q%2BFVcRoESoH22T5boVSmNJiavteIDAcmwT5D1Rp6Lr7IfV83VowCGeTDeKmg7v9yQH1Kvs4YZr7gqEYyZVr0zT4Ta2HbonZTFJRdpwdn4w8KHdzJBlAsPyXPlc1MFI4zAH7ADhk304UZIZBDbbftOt45QF12rZzm340%2FmK6Pi7aEyXMKdhs8s2TT%2FxM%2Bn5LAyUchLigt9BivB%2BraIvI6ERJmxGjsX6AtOLdbm2dJGEWiusu9Y9IbqqVScUWV77%2BIqHHg1f%2BcblT8wrd38v7uba2jdCx4bpb%2F67f83zUF9LH3c7lNzvTCBCplSb%2BNNPbj9tpxMea1GMC%2FT%2FQRAVrtT1HBug0FJ2VH5iCB7HUQ3jmlOGv8XkxYhk%2BUbeMKkBzq6j5drbn9TRuzloB71PRdhwhVML3Lt9IGOrIBLxWa%2BJoBrazOiw%2BQ3ByT2dhmkFKHCVREMe1IdrsbBLhx4Ghk5WuRvwhVm8wNLmw5L45765clLZHQZcLztb0vOI2mBprUrmFQ8eXKh2JMTaKWdDHdbiO6I4gw%2F0xuCIFeYqf07rikkuQ%2F%2Fj5pH5fqmP5SA73Wphp%2B56y%2F8u5ig3op9XYhtqXC0aiJKODd6z5TvrrI5gwp8Jt3CPmcM5KY1hgjX7shrldkaoLVwB%2BB4Q5C%2BQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=89c360551e2c50186c45a3e2bee536a61f94c1e9646e75ee335730e2f6a5aaea",
+      "file_size": 104464,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-06-02T00:54:48.879Z",
+  "allow_singular_disclosure_after": -318665349.1017204,
+  "singular_disclosure_allowed": true,
+  "vote_count": 8,
+  "voters": [
+    "2026",
+    "eveeez",
+    "spetr0x",
+    "martijn",
+    "dyabla",
+    "cryptosector",
+    "dragon0x1",
+    "pei"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "129736",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2016-05-03T01:00:34.963Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:03:58.119634",
+    "source": "https://hackerone.com/reports/129736.json",
+    "report_id": 129736
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjk3MzY=",
+    "databaseId": "129736",
+    "title": "Persistent XSS on public project page",
+    "url": "https://hackerone.com/reports/129736",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-05-03T01:00:34.925Z",
+    "created_at": "2016-04-11T01:04:32.943Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEyOTczNg==",
+    "_id": "129736",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2016-05-03T01:00:34.963Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjk3MzY=",
+      "databaseId": "129736",
+      "title": "Persistent XSS on public project page",
+      "url": "https://hackerone.com/reports/129736",
+      "disclosed_at": "2016-05-03T01:00:34.925Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

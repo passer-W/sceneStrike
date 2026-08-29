@@ -1,0 +1,227 @@
+{
+  "id": 3158093,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTU4MDkz",
+  "url": "https://hackerone.com/reports/3158093",
+  "title": "Memory Leak in libcurl via Location Header Handling (CWE-770)",
+  "state": "Closed",
+  "substate": "spam",
+  "severity_rating": "high",
+  "readable_substate": "Spam",
+  "created_at": "2025-05-22T01:15:43.536Z",
+  "submitted_at": "2025-05-22T01:15:44.803Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "senseijohnmed",
+    "url": "/senseijohnmed",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-05-22T07:19:09.675Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-05-22T07:18:43.066Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThis report details a memory leak vulnerability in libcurl that occurs when processing HTTP 3xx redirect responses containing a `Location:` header. Specifically, the memory allocated for the `Location:` header's value is not properly deallocated when the `Curl_easy` handle is reused for subsequent requests (e.g., when following redirects or in long-running applications that frequently reuse handles). This leads to a gradual increase in memory consumption, potentially resulting in a Denial of Service (DoS) due to resource exhaustion.\n\n### Statement clarifying if an AI was used to find the issue or generate the report:\nThis report was generated with the assistance of an AI. The vulnerability was identified through a combination of manual code analysis and AI-assisted debugging and proof-of-concept generation.\n\n## Affected version:\ncurl/libcurl version: **8.14.0-DEV** (Built from source on 2025-05-22)\nPlatform: **Kali Linux (x86_64)**\n\nYou can obtain your exact version information using:\n```bash\n./src/curl -V\n```\n**Steps To Reproduce**:\n**Set up the testing environment**:\n**Install necessary dependencies**:\n```\nsudo apt update\nsudo apt install git build-essential autoconf automake libtool pkg-config zlib1g-dev libssl-dev libnghttp2-dev libldap2-dev librtmp-dev libssh2-1-dev libpsl-dev libidn2-dev libnghttp3-dev libsqlite3-dev libbrotli-dev valgrind python3\n```\n**Clone the curl repository**:\n```git clone https://github.com/curl/curl.git\ncd curl\n```\n**Build curl with debug symbols**:\n```\nautoreconf -fi\n./configure --with-openssl --with-zlib --with-libssh2 --with-libpsl --with-libidn2 --with-nghttp2 --with-ldap --with-brotli --enable-debug --disable-shared\nmake -j$(nproc)\nchmod +x curl-config\n```\n**Prepare the malicious HTTP server (Python PoC server)**:\n**Create a Python script named leak_server.py in the root of the curl directory**:\n```\nnano leak_server.py\n```\n**Paste the following Python code into leak_server.py**:\n```\nfrom http.server import BaseHTTPRequestHandler, HTTPServer\nimport sys\n\nclass LeakHandler(BaseHTTPRequestHandler):\n    def do_GET(self):\n        path = self.path\n        sys.stderr.write(f\"Received request for: {path}\\n\")\n\n        # Number of redirects to perform before stopping\n        max_redirects = 1000 # Adjust this value as needed for more/less leak\n\n        try:\n            current_redirect_count = int(path.split('/')[-1])\n        except ValueError:\n            current_redirect_count = 0\n\n        if current_redirect_count < max_redirects:\n            next_redirect_count = current_redirect_count + 1\n            # Create a long Location header for maximum leak per redirect\n            long_location = f\"/redirect/{next_redirect_count}\" + \"A\" * 1000 # Appends 1000 'A' characters\n            \n            self.send_response(302) # HTTP 302 Found (Temporary Redirect)\n            self.send_header('Location', long_location)\n            self.send_header('Content-Length', '0') # No body for redirect response\n            self.end_headers()\n            sys.stderr.write(f\"Redirecting to: {long_location}\\n\")\n        else:\n            self.send_response(200)\n            self.send_header('Content-Type', 'text/plain')\n            self.end_headers()\n            self.wfile.write(b\"Reached max redirects. Done.\")\n            sys.stderr.write(\"Reached max redirects. Serving final content.\\n\")\n\ndef run_server(port=8000):\n    server_address = ('', port)\n    httpd = HTTPServer(server_address, LeakHandler)\n    sys.stderr.write(f\"Starting leak server on port {port}\\n\")\n    httpd.serve_forever()\n\nif __name__ == '__main__':\n    run_server()\n```\n**Run the malicious HTTP server**:\nOpen a new terminal (keep it separate).\nNavigate to the curl root directory:\n```\ncd /home/kali/curl # Adjust path if different\n```\nStart the server in the background, redirecting its output to server.log:\n```\nnohup python3 leak_server.py > server.log 2>&1 &\n```\nExecute curl to trigger the memory leak using Valgrind:\nOpen a new terminal (keep it separate from the server's terminal).\nNavigate to the curl root directory:\n```\ncd /home/kali/curl # Adjust path if different\n```\nRun your custom-built curl binary with Valgrind, following the redirects:\n```\nvalgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind_report.txt ./src/curl -v --location --max-redirs 1000 http://127.0.0.1:8000/redirect/0\n```\n*This command will execute curl, forcing it to follow up to 1000 redirects from the Python server, each with a long Location: header. Valgrind will monitor memory allocations and deallocations. This process might take a few minutes. Wait for the valgrind command to complete (your terminal prompt will reappear).*\n\n **Analyze the results**:\nView the Valgrind report:\n```\ncat valgrind_report.txt\n```\n*(Note: While Valgrind's definitely lost summary might show 0 bytes due to subtle internal cleanup or program termination characteristics, the core of this vulnerability is revealed through code analysis as described below.)*\n\nView the server log:\n```\ncat server.log\n```\n*(You should see many Received request for: and Redirecting to: lines, confirming curl followed the redirects.)*\n\n**Supporting Material/References**:\n\n*Valgrind valgrind_report.txt (output from step 5)*\n*Python server server.log (output from step 5)*\n*Affected source code files: lib/http.c, lib/request.c*\n\n## Impact\n\n## Summary:\nThis memory leak vulnerability allows an attacker to progressively consume memory on a system running an application that uses libcurl to follow HTTP redirects. By crafting a series of HTTP 3xx responses with specially designed (e.g., very long) `Location:` headers, a malicious server can cause the client-side application using libcurl to continuously allocate memory without proper deallocation.\n\n### Specifics:\n*   **Resource Exhaustion (Denial of Service):** In long-running services or applications that frequently handle HTTP redirects or reuse `Curl_easy` handles over many requests, this continuous memory accumulation can lead to the application consuming excessive amounts of RAM. Eventually, this could exhaust available system memory, causing the application to crash, become unstable, or trigger system-wide performance degradation, effectively leading to a Denial of Service.\n*   **Attacker Control:** The attacker has control over the length of the leaked string (the `Location:` header value), allowing them to influence the rate of memory consumption. While standard HTTP header size limits exist, even within these limits, repeatedly leaking memory can be impactful over time.\n*   **Scope of Impact:** Affects clients that use libcurl, not the server-side infrastructure of `curl`.\n\n### Technical Details of the Leak:\nThe memory leak stems from the handling of the `location` pointer within the `struct SingleRequest` (defined in `lib/request.h`).\n1.  **Allocation:** In `lib/http.c`, within the `http_header()` function (around line 2342 in version 8.14.0-DEV), when a `Location:` header is received, its value is duplicated and stored: `data->req.location = location;` (where `location` is dynamically allocated via `Curl_copy_header_value` which uses `Curl_memdup0`, similar to `strdup`).\n2.  **Missing Deallocation:** In `lib/request.c`, the `Curl_req_hard_reset()` function (around line 100), which is called to reset the request state (e.g., before following a redirect or when preparing for a new request), sets `req->location = NULL;`. **Crucially, it does not free the memory previously pointed to by `req->location` before nullifying the pointer.**\n3.  **Persistence:** The `Curl_req_free()` function (also in `lib/request.c`), responsible for freeing the `SingleRequest` structure, also does not explicitly free `req->location`.\n\nThis chain of events ensures that for every redirect `curl` follows (or for every `Curl_easy` handle reused after a redirect), the memory allocated for the `Location:` header of the *previous* redirect is leaked.",
+  "weakness": {
+    "id": 120,
+    "name": "Allocation of Resources Without Limits or Throttling"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4373100,
+      "file_name": "error.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2vy4fs6kvttqmsz5owzpyr7v82jb?response-content-disposition=attachment%3B%20filename%3D%22error.PNG%22%3B%20filename%2A%3DUTF-8%27%27error.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1d48f0886931af0f9d7059163a5550d271177e04e9704bec93380efe991ac9ab",
+      "file_size": 23159,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4373101,
+      "file_name": "error2.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/8uikd9fvwmo81lz1m9qp9whmqcyg?response-content-disposition=attachment%3B%20filename%3D%22error2.PNG%22%3B%20filename%2A%3DUTF-8%27%27error2.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1bce5ec2f73bbc725b2ee20cfd1b985d73a7bfe7f26da3237131c751141db592",
+      "file_size": 31090,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4373102,
+      "file_name": "error3.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qjo926l3o0abz96nm1mx3c1pqbt6?response-content-disposition=attachment%3B%20filename%3D%22error3.PNG%22%3B%20filename%2A%3DUTF-8%27%27error3.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d7a258e55aa8e4a04af173f521825509d4dc5aa2e778458cbcfc63fe695d6051",
+      "file_size": 5904,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4373103,
+      "file_name": "server-log.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/exaj1iivdw7u1ixjag9cxb00mit2?response-content-disposition=attachment%3B%20filename%3D%22server-log.PNG%22%3B%20filename%2A%3DUTF-8%27%27server-log.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9ea9147553d3f16ac2e543b99a537fedf0fe20d270ef246ebeaa1f04bde91fd2",
+      "file_size": 32890,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4373104,
+      "file_name": "valgrind_report.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/sfi0c9ln8vciomqrjketw6agxw89?response-content-disposition=attachment%3B%20filename%3D%22valgrind_report.txt%22%3B%20filename%2A%3DUTF-8%27%27valgrind_report.txt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ46JPSP6U%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043139Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQDN%2BOksRIQv9ADNRN9IpBOMxO%2B1yzPgexSOCriUwk8AHAIgJrK5l15eVuxGb7DQwvGs35TFj6i013eV7CuXq5ItyGAqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDJjsoe4gdv%2FnCSOZdCqOBZlif6fsXcbv4Wq9BSrsac2H0xEk1QDU9uqXO%2FsjVMvRqbrUHj01lumaOYNMoAwmkJSKE0DUdRy7PsMBmYKeRWcE%2FUcCtZj1aG1nlsJTXbqm1UgO7Tm7oOfMp1GLQssmChIIiXTFT27PN%2FX35S3EGPQGyYm0Kv4bI2%2F1SWOfI7iAY4j6F1nQV544U3CgMxFtnibQ6T8XXqhtfzmtakszXZ8bttEFwJG1Q7XjbsR7DHX%2BtLdVHGQ3x3LNZn%2FUuosvMyPsOuu%2BajGjOmKILC%2BPyA%2BoC0BuX9xUgv30Ie2XcQ98E1NmEiwCy9%2FYuBE4RC%2BKhrKFf%2FDS2UUB74ZuiJ9Yo3DgD42OmEWH2Mwu%2Fb8YH1IGD45lEW8Ary4CdXTbUYO2roKB1noN3PblrSLPTUr9XIRu6HhyOURaco%2FGgwth2JxpvDwDYNl%2BVDqPJBaw2BYMhnl0b8RmyJJnjWujy3lUhHNjXFRkRin0juwP8MZpIGkV7TokCoHitsRzHzcLnu6FdpslQKt7HG8WQ%2FAvfxz4SLKJ034wP7weCsay4Q%2FR74V6u33X5zQYovnjduAVu%2FwfZ9Me2SSf59Wug%2Fgb3G0ppRBNS5d2uxvNy49hks9nQV974qBJ7T9s%2FQiVLPhwzciqLgjpwTDt%2FJC0c0R4iFG2WgwM%2BCC3nfWRm667CD3fGNrKMb%2FHKPp%2F%2B2%2Fz99q4ApIzMzNDolnid6mKkG%2FBtzHjngg0uyFZJzavsEv8%2FCvVgzhpeaHR56y0MhVffZV3NE%2BdcnLUS8UZvgKQ3c9soLuEXUpgBluzCnafoJCYGisBs4pbzELdaC0Z6jUcFqO1H4rUmMAI%2BHqL5OITDQmCMmm8pd1J3DLK%2BKd8WKJgAlQQPzDr6ZzSBjqxAcPZnJS4V4vJpkOjlrkRAcyx8uoIerYr8Ul43uDcGnkwhomZ14xMvO7HZUBqqq9xnNKuqv57N%2F3oFSk06mBe2lnjV7Ue32Wk5MjanbJmDgi7cKCSRWYf3ny%2BNa%2BrAySXOUWL%2F3Uf%2BkG5Yle8%2BSpYn%2FFA4PCNyZiQ%2BYeUnLCFSZiYxOWr6lCeNUK3gNwhSInYKlQF1fyX4Sjy0yQbTdwZjLsY4i5lU42jiXoZ10tl6FogNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2b09a10889a0e94fea746cc6e1973affc5a956c1b3081cf2cac44b3890e7c80b",
+      "file_size": 5905,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 54,
+  "voters": [
+    "k0ns0l",
+    "ryel",
+    "corrupted_bytes",
+    "apophenia",
+    "fdeleite",
+    "securityreapers",
+    "begbounty",
+    "bl4ck-",
+    "mohaned0101",
+    "thalaivar304",
+    "and 44 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3158093",
+  "votes": 54,
+  "latest_disclosable_activity_at": "2025-05-22T07:19:09.579Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:31:40.051829",
+    "source": "https://hackerone.com/reports/3158093.json",
+    "report_id": 3158093
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTU4MDkz",
+    "databaseId": "3158093",
+    "title": "Memory Leak in libcurl via Location Header Handling (CWE-770)",
+    "url": "https://hackerone.com/reports/3158093",
+    "state": null,
+    "substate": "spam",
+    "disclosed_at": "2025-05-22T07:19:09.675Z",
+    "created_at": "2025-05-22T01:15:43.536Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEyMA==",
+      "name": "Allocation of Resources Without Limits or Throttling",
+      "external_id": "cwe-770"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "senseijohnmed"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMxNTgwOTM=",
+    "_id": "3158093",
+    "disclosed": true,
+    "votes": 54,
+    "latest_disclosable_activity_at": "2025-05-22T07:19:09.579Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTU4MDkz",
+      "databaseId": "3158093",
+      "title": "Memory Leak in libcurl via Location Header Handling (CWE-770)",
+      "url": "https://hackerone.com/reports/3158093",
+      "disclosed_at": "2025-05-22T07:19:09.675Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

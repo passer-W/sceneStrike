@@ -1,0 +1,234 @@
+{
+  "id": 2047168,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDQ3MTY4",
+  "url": "https://hackerone.com/reports/2047168",
+  "title": "Any (non-admin) user from an instance can destroy any (user and/or global) external filesystem",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2023-07-02T15:13:30.256Z",
+  "submitted_at": "2023-07-02T15:13:30.383Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cult",
+    "url": "/cult",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2023-39962"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-08-10T09:50:03.738Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-08-10T09:50:03.643Z",
+  "team_member_agreed_on_going_public_at": "2023-08-10T07:18:56.204Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nThere is no verification of the ownership and/or its type when deleting a user-manager external storage. \nMeaning anyone on a Nextcloud instance can destroy any (user, global) external filesystem.\nThe attacker does not need to have access to the external storage.\nThe options 'Allow users to mount external storage does not need to be enabled.\n\nWhen executing the DELETE request on /apps/files_external/userstorages/<storage_id> [1], the app will:\n- only check that the mount exists in database, without any condition based on the type of the storage and/or its owner [2]\n- remove all data from database related to the storage based on its id. [3]\n\n[1] https://github.com/nextcloud/server/blob/master/apps/files_external/lib/Controller/UserStoragesController.php#L234\n[2]  https://github.com/nextcloud/server/blob/master/apps/files_external/lib/Service/DBConfigService.php#L67\n[3] https://github.com/nextcloud/server/blob/master/apps/files_external/lib/Service/DBConfigService.php#L274\n\n\n## Steps To Reproduce:\n\n- From an admin session, create a new external storage.\n- From a non-admin session, send a DELETE request to `/apps/files_external/userstorages/<storage_id>`, replace `storage_id` by the correct id (integer) of the storage.\n- From an admin session, the created external storage is not listed anymore.\n\n## Impact\n\nFilesystem can be unmounted by anyone, I have no clue how this was not reported earlier.",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2461645,
+      "file_name": "recording-1688310781410.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/73d7bnl2f811twksz10de57sqzct?response-content-disposition=attachment%3B%20filename%3D%22recording-1688310781410.webm%22%3B%20filename%2A%3DUTF-8%27%27recording-1688310781410.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQVWKXN6ER%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T045208Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIBapLIfl9eGebdeG1pM6QIgR5hvteY5gAhucCJb1OmKgAiEAs6N%2BPmAR2M9RkevBHXEdEQgMYGRwXVaEW2REbfR3M7IqsQUIBRADGgwwMTM2MTkyNzQ4NDkiDKH%2Bk0YScXeJ8BkJUSqOBUtLRj0%2F0j7A34kZkphIZTOr4GplnBH8AmJCC%2BRsirrmz8tuMpfhSbrOiKzCPRif0NWDaF0f5NV2w%2BUOWA5qMdz3vkV2bZujtOs2xVVUcPsfIK%2BaEOCin5Zoc578pgu%2BuujE5wmJ%2B53gVZ7C8tA6sxraASQViAaq65veRrwzOdBbO8pN1Nv7yIRAlTEgfDXU7x5EXuFBGVzalgmKrNy2a2KOitjU1IG1gr0I4g8UtEXwb8gBqcy6EbFNT0Xn4G2H28tin8JaeJTwTxnHaMNUUe0FTvXINoMqloVVRbJdAtnZhRCIDdgItyvyvB5cqmOwTqGM33VPW%2BtAPMZBTEcowIQpnTO8zD4MaRJrAS%2Bvyr%2FsB2t6JUBo4Naq7QWeacbt%2BLVIHua8%2BbyB4bKFR81RdA2lx0gbgMaj10v6Bx4e7o0cNPNmZdO0HEEhj3nCQYEPm9xgao7kEjMX3bvbygOsSyVvCQRt3z%2FA1R%2BqZ8j1ZrTZ%2BQR4uD4U3s84hvKZ8Do5D5CZMOAP8abtwFaAaQR96hnds9exR8%2Be4%2FCgbuwS3yG9Pf7BrO1xqRj9xHd%2BhmAgBkAUNLho69h0GLHIvzIz%2FxbK%2Fcc5cJJAL0dOBuXikrgz5NaqFEMlG%2FpmZm807Mpx62OeQrpKb0GDyZp%2Fb7oiMenSrESGd6zTWXq0h%2BMtqt1BAM33vg7BsCpCWWrRrB8cuUvi2zxPSj6xOOklzlIY%2FrybOPsDmqm5SW24ysfrOu3%2BuhYoAsQuaLpPA65na2nfJUkxfjlayygoyofSiK5BlnD%2BE%2FU6tXXslwLg0vR6Nk6QxsHcdIGTJhRGXyeWFfW5IaXOjmuhMHveRzw%2F75g7IRN86MoBr4BsqzLT%2F4ejXTCg8ZzSBjqxARC73lYqtXJBqIFx6EGhCyoKk8%2Fqdfha2QYsWHCRB4dfdWcrFVttlXmzy2sFVFihvv%2Ba78X0kO1CXW2RMRzKIySODHF9Nhm4rxSOEmSKlsOxQwhujf9OELrLwYKRFQ%2FGBUoIxSThO6nqmOUnxnv2NGVSU3m0KIO2KmErigp2rtELBVU896ss2Zh%2BhkU7UGJLQShx0e8ndQsDEYnckT05%2F8uVWmWxpHrUNlN23rA8bhy4IA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d05fe96080bc1464ded69014072279dfe88aecefc83e1b1df9693ba7d54aac71",
+      "file_size": 4018515,
+      "type": "video/webm",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-09-09T07:18:56.286Z",
+  "allow_singular_disclosure_after": -88810392.15748517,
+  "singular_disclosure_allowed": true,
+  "vote_count": 12,
+  "voters": [
+    "alp",
+    "zy9ard3",
+    "mrardiansah",
+    "shreyaschavhan",
+    "mohaned0101",
+    "shubham_srt",
+    "kerolesmagdy",
+    "imnatarobot",
+    "amr4l44",
+    "h8handles",
+    "and 2 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 13,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/server",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 331186,
+      "category": "team",
+      "content": "Security advisory at https://github.com/nextcloud/security-advisories/security/advisories/GHSA-xwxx-2752-w3xm",
+      "updated_at": "2023-08-09T08:38:47.836Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 89223,
+        "username": "nickvergessen",
+        "name": "Joas Schilling",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "Germany",
+        "created_at": "2016-07-01T08:17:59.061Z",
+        "url": "https://hackerone.com/nickvergessen",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2047168",
+  "votes": 11,
+  "latest_disclosable_activity_at": "2023-08-10T09:50:03.816Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:52:08.580471",
+    "source": "https://hackerone.com/reports/2047168.json",
+    "report_id": 2047168
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDQ3MTY4",
+    "databaseId": "2047168",
+    "title": "Any (non-admin) user from an instance can destroy any (user and/or global) external filesystem",
+    "url": "https://hackerone.com/reports/2047168",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-08-10T09:50:03.738Z",
+    "created_at": "2023-07-02T15:13:30.256Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.5
+    },
+    "reporter": {
+      "username": "cult"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIwNDcxNjg=",
+    "_id": "2047168",
+    "disclosed": true,
+    "votes": 11,
+    "latest_disclosable_activity_at": "2023-08-10T09:50:03.816Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMDQ3MTY4",
+      "databaseId": "2047168",
+      "title": "Any (non-admin) user from an instance can destroy any (user and/or global) external filesystem",
+      "url": "https://hackerone.com/reports/2047168",
+      "disclosed_at": "2023-08-10T09:50:03.738Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

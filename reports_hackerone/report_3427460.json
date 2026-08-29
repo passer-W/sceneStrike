@@ -1,0 +1,186 @@
+{
+  "id": 3427460,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDI3NDYw",
+  "url": "https://hackerone.com/reports/3427460",
+  "title": "Incorrect sizeof() in Rustls Backend Memory Allocation",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "low",
+  "readable_substate": "N/A",
+  "created_at": "2025-11-15T22:45:37.410Z",
+  "submitted_at": "2025-11-15T22:45:37.619Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "pelioro",
+    "url": "/pelioro",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fyib612249yt7dacxpa19yqnms8m/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-11-15T22:56:06.871Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-11-15T22:56:06.771Z",
+  "team_member_agreed_on_going_public_at": "2025-11-15T22:55:23.196Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\n\nThere's a bug in `lib/vtls/rustls.c` where `malloc()` uses `sizeof(cipher_suites)` instead of `sizeof(*cipher_suites)`. This allocates memory based on pointer size rather than element size.\n\n## Steps To Reproduce\n\n1. Look at `lib/vtls/rustls.c` line 530:\n```c\nconst struct rustls_supported_ciphersuite **cipher_suites = NULL;\n```\n\n2. Then line 589:\n```c\ncipher_suites = malloc(sizeof(cipher_suites) * (cipher_suites_len));\n```\n\nThe problem: `sizeof(cipher_suites)` returns the size of a pointer (8 bytes on 64-bit), not the size of what it points to.\n\n## The Bug\n\n```c\n// Line 530 - cipher_suites is a double pointer\nconst struct rustls_supported_ciphersuite **cipher_suites = NULL;\n\n// Line 589 - Wrong: sizeof(pointer) instead of sizeof(element)\ncipher_suites = malloc(sizeof(cipher_suites) * (cipher_suites_len));\n```\n\nShould be:\n```c\ncipher_suites = malloc(sizeof(*cipher_suites) * cipher_suites_len);\n```\n\n## Why This Matters\n\nOn 64-bit systems, this happens to work because:\n- `sizeof(cipher_suites)` = 8 (pointer size)\n- `sizeof(*cipher_suites)` = 8 (pointer to pointer size)\n\nBut the code is still wrong. It's using the wrong pattern and violates C best practices. If you look at the rest of the curl codebase, you'll see the correct pattern `sizeof(*ptr)` is used everywhere else.\n\n## Proof\n\nI wrote a small test program that shows the issue:\n\n```c\nconst struct rustls_supported_ciphersuite **cipher_suites = NULL;\n\n// What the code does now (WRONG)\nsize_t wrong = sizeof(cipher_suites);  // = 8 (pointer size)\n\n// What it should do (CORRECT)  \nsize_t correct = sizeof(*cipher_suites);  // = 8 (element size)\n```\n\nOn 64-bit: both are 8, so bug is masked\nOn 32-bit or if struct changes: could cause underallocation\n\n## Impact\n\n- Type: Incorrect buffer size calculation\n- Currently works by accident on 64-bit\n- Code quality issue that should be fixed\n- Violates the pattern used everywhere else in curl",
+  "weakness": {
+    "id": 13,
+    "name": "Incorrect Calculation of Buffer Size"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 15,
+  "voters": [
+    "2026",
+    "slide123",
+    "vulnoverflow",
+    "pelioro",
+    "kamekame",
+    "zeta47",
+    "ccpentester",
+    "cellroad4sec",
+    "hero2880",
+    "joelfreude10",
+    "and 5 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3427460",
+  "votes": 15,
+  "latest_disclosable_activity_at": "2025-11-15T22:56:07.076Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:07.211875",
+    "source": "https://hackerone.com/reports/3427460.json",
+    "report_id": 3427460
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDI3NDYw",
+    "databaseId": "3427460",
+    "title": "Incorrect sizeof() in Rustls Backend Memory Allocation",
+    "url": "https://hackerone.com/reports/3427460",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2025-11-15T22:56:06.871Z",
+    "created_at": "2025-11-15T22:45:37.410Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEz",
+      "name": "Incorrect Calculation of Buffer Size",
+      "external_id": "cwe-131"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "pelioro"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0Mjc0NjA=",
+    "_id": "3427460",
+    "disclosed": true,
+    "votes": 15,
+    "latest_disclosable_activity_at": "2025-11-15T22:56:07.076Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDI3NDYw",
+      "databaseId": "3427460",
+      "title": "Incorrect sizeof() in Rustls Backend Memory Allocation",
+      "url": "https://hackerone.com/reports/3427460",
+      "disclosed_at": "2025-11-15T22:56:06.871Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

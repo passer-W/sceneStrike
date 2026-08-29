@@ -1,0 +1,211 @@
+{
+  "id": 3599248,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTk5MjQ4",
+  "url": "https://hackerone.com/reports/3599248",
+  "title": "Bypass of Open Redirect Fix on lovable.dev via /..// Path Traversal in redirect parameter",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2026-03-12T04:28:22.767Z",
+  "submitted_at": "2026-03-12T04:28:23.468Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "marioniangi",
+    "url": "/marioniangi",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/1plzyb6zdlnvt8qvobwpjn57v38p/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 101556,
+    "url": "https://hackerone.com/lovable-vdp",
+    "handle": "lovable-vdp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vqnq844bgn7gv1xr9qr9chke2kf5/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/vqnq844bgn7gv1xr9qr9chke2kf5/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Lovable VDP",
+      "twitter_handle": "lovable",
+      "website": "http://lovable.dev",
+      "about": "Create apps and websites by chatting with AI"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2026-03-12T09:57:06.118Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-03-12T09:56:17.025Z",
+  "team_member_agreed_on_going_public_at": "2026-03-12T09:57:05.342Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nA bypass exists for the previously patched open redirect vulnerability (report #3581815) \non lovable.dev. The original fix blocked backslash-based payloads (/\\ and /%5C), but \nfails to account for path traversal sequences combined with double slashes. By supplying \n`/..//google.com` as the redirect value, an attacker can still redirect authenticated \nusers to arbitrary external domains.\n\nAfter logging in, the application processes a redirect via:\nhttps://lovable.dev/auth/post-login?redirect=/..//google.com\n\nThe server normalizes the path traversal `/../` and then treats `//google.com` as a \nprotocol-relative URL, resulting in a redirect to https://google.com.\n\nThis bypass demonstrates that the previous fix used an incomplete denylist rather than \na proper allowlist or URL parser validation.\n\n## Steps To Reproduce:\n\n1. Create or log in to an existing account on lovable.dev\n2. Visit the following URL while authenticated:\n   https://lovable.dev/auth/post-login?redirect=/..//google.com\n3. Observe that you are redirected to https://google.com (external domain)\n\n## Supporting Material/References:\n\n- Previous related report: #3581815 (resolved)\n- Payload used: /..//google.com\n- Final redirect URL observed in browser: https://google.com\n- The fix from report #3581815 only blocked /\\ and /%5C variants\n- This payload was not covered by the fix\n- I have a poc\n\n## Impact\n\nAn attacker can craft a trusted lovable.dev URL that silently redirects authenticated \nusers to an arbitrary external website. This can be used in targeted phishing campaigns \nwhere victims trust the lovable.dev domain in the link. Since the redirect occurs \npost-login, victims are already authenticated, making social engineering attacks \nsignificantly more credible. The attacker could redirect to a lookalike page to steal \ncredentials or session tokens.",
+  "weakness": {
+    "id": 53,
+    "name": "Open Redirect"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5515823,
+      "file_name": "LOVABLE-POC.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dz0s960isdhv17wmw764gbsqdi6b?response-content-disposition=attachment%3B%20filename%3D%22LOVABLE-POC.mp4%22%3B%20filename%2A%3DUTF-8%27%27LOVABLE-POC.mp4&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRDWZ32LF%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042116Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDsaCXVzLXdlc3QtMiJHMEUCIQCknWLwaSzkhwLF2IhyyRW2B4lUHJTy0tuB6NfJrAMEPwIgPe1eMY2xHmPnitNbHKOoNiIjZqmcY23NigaZQrMXuwYqsgUIBBADGgwwMTM2MTkyNzQ4NDkiDOOBqt6NH8K00sybfCqPBULvQIimyjKwpvGj93i%2F4nftqeZrQCPovwIAJj8SpiN5dXZLxnaHtifPqBMQDEWIjlaPn4vVr0%2F%2BR3RHg8UdGFFZjqJekjv46veqT6elA6QUvSXtZX4bjzmRs2Cbxal06FSU%2F4x%2FQuKz2%2BdUIEmTh1TCS8PjN5GdOa90%2FLB1Im7dD8miwNGOO6QF0hWs9PO91qX4kPySUUTJGtIbOQPJkMbi2aZKUeRXjkJy5T6D4hR6CYhl%2FfctjALZQq99VC0P%2BDhhgzPxkgSWDZAEKfxM6hHXKi2hwrsu%2FPQ3FcPZIVt%2BWGQmtqPo1gL8MX%2Frt0A4%2F6aQLnEG686goXoZCP8zr1HLK%2Fz6tko0vWRpgClodogBcIgfqnfwZ7SdlFnFA44RtsB5E6BnG9tQ2aliXz39WvDR0BLjEdVpmlV9de9m3UCFNRprleBqgFAe3GculwWUsOHHV3Pvr96%2FSR1gNBn4rfRvVVXbr48m3WZTBP21Ljmbiie1SKCykglF7P%2BqCSJr6PG%2BLm5kv5OqdBFdy9i8hmiWS7CfW3a3IRBLC3EANOuN7K1ZHZsUKbNd1%2B%2Fo0yPuavycpQu%2BnFQNOzXuVyycwG7q1lXh2WH9sVY%2BQkiKP3mHvingj8AcO8nWkC1W%2Bpa8STiy1QXXshKPIwPNIJkf%2FTdZPGcBaLHqJ%2FuT0uwILCglXjriPIJA%2B9JpQ6F13Dau5uYphJRO5vgrCvD3Dt1OcHLGEG3VoLDWvjlr%2BmR4RxsWsr0aBBFhovgrogWHxjU%2BmoJP6yIMZyLGlEHFviGc5E3%2BqAJRDhtzYXUGFrSDjQ6aQWt8awQcjToZBa2hnshavLSHxSiPDX8Sn%2BF6nKelJ4u6beBJI718ZEZJnM4ZKU4wpMuc0gY6sQGn674ptdI2qmkB0jjPGJq99%2FMSl0ls3DErYAXGWSSgqlxdtVGdrtvN2RbsoeK63%2FwGemofKhiU5IbAXlbCNVPl51teQkMGBNsWnXv5%2FvSWXx4eND3tuPCGe8uYIWyY%2BvsovM7kp9Evz%2BgpmoyN63lCh%2FSkZQR%2FMCqC8sCV25Olh81S5Q7ls3VTTPkEa51TVbORaW9U5m6hsoh9xxMixqyScV5Hu%2FNNlybOuYTcNFIIgK8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5986b7e9e8038c3b180b7b70e414a1fc0a7b3a3f3c540fe1e033abaacf52f598",
+      "file_size": 7869034,
+      "type": "video/webm",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2026-04-11T09:56:17.376Z",
+  "allow_singular_disclosure_after": -7151099.601410239,
+  "singular_disclosure_allowed": true,
+  "vote_count": 70,
+  "voters": [
+    "loaymorad",
+    "aboalezz",
+    "baehelprichard",
+    "bad_architect",
+    "0-chrollo-0",
+    "ivoabreu",
+    "trptt",
+    "candysec",
+    "shubham_srt",
+    "sisi0x",
+    "and 60 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.1,
+    "author_type": "User",
+    "cvss_4_point_0_metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "attack_requirements": "none",
+      "privileges_required": "none",
+      "user_interaction": "active",
+      "vulnerable_confidentiality": "none",
+      "vulnerable_integrity": "none",
+      "vulnerable_availability": "none",
+      "subsequent_confidentiality": "low",
+      "subsequent_integrity": "low",
+      "subsequent_availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 930866,
+    "asset_type": "URL",
+    "asset_identifier": "lovable.dev",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3599248",
+  "votes": 70,
+  "latest_disclosable_activity_at": "2026-03-12T09:57:06.658Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:21:17.110322",
+    "source": "https://hackerone.com/reports/3599248.json",
+    "report_id": 3599248
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTk5MjQ4",
+    "databaseId": "3599248",
+    "title": "Bypass of Open Redirect Fix on lovable.dev via /..// Path Traversal in redirect parameter",
+    "url": "https://hackerone.com/reports/3599248",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-03-12T09:57:06.118Z",
+    "created_at": "2026-03-12T04:28:22.767Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUz",
+      "name": "Open Redirect",
+      "external_id": "cwe-601"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.1
+    },
+    "reporter": {
+      "username": "marioniangi"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTAxNTU2",
+      "handle": "lovable-vdp",
+      "name": "Lovable VDP",
+      "url": "https://hackerone.com/lovable-vdp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM1OTkyNDg=",
+    "_id": "3599248",
+    "disclosed": true,
+    "votes": 70,
+    "latest_disclosable_activity_at": "2026-03-12T09:57:06.658Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNTk5MjQ4",
+      "databaseId": "3599248",
+      "title": "Bypass of Open Redirect Fix on lovable.dev via /..// Path Traversal in redirect parameter",
+      "url": "https://hackerone.com/reports/3599248",
+      "disclosed_at": "2026-03-12T09:57:06.118Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMTAxNTU2",
+      "handle": "lovable-vdp",
+      "name": "Lovable VDP",
+      "url": "https://hackerone.com/lovable-vdp",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "id": 1735586,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzM1NTg2",
+  "url": "https://hackerone.com/reports/1735586",
+  "title": "Wordpress users Disclosure [ /wp-json/wp/v2/users/ ]",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2022-10-14T13:29:55.961Z",
+  "submitted_at": "2022-10-14T13:29:56.108Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "shubham_srt",
+    "url": "/shubham_srt",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/x69pdqqt7kzlv77tfyi4mn2zmm9k/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 41919,
+    "url": "https://hackerone.com/mtn_group",
+    "handle": "mtn_group",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4e6ikuxrt34g8b14w2bk53c6vyry/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/4e6ikuxrt34g8b14w2bk53c6vyry/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "MTN Group",
+      "twitter_handle": "",
+      "website": "https://www.mtn.com/",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-11-27T03:25:02.082Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-10-28T03:25:01.986Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nUsing REST API, we can see all the WordPress users/author with some of their information. Which can even be Personal information of employees/author. The file v2/users at:  https://www.mtn.com/wp-json/wp/v2/users/   is enabled and this give the attacker many users names like:  `Amogelang Maluleka` `Greg Davies` `karenbyamugisha` `Marc Ilunga` `mitchprinsloo`\n\n## Steps To Reproduce:\n\n  1.  Go to https://www.mtn.com/wp-json/wp/v2/users/  [ Allows anyone to view active usernames ]\n\n{F1985941}\n\n## Supporting Material/References:\nhttps://hackerone.com/reports/356047\nhttps://hackerone.com/reports/370777\n\n###Fix:\nUse this code will hide the users list and give 404 as the result, while rest of the api calls keep running as they were.\n```javascript\nadd_filter( 'rest_endpoints', function( $endpoints ){\n    if ( isset( $endpoints['/wp/v2/users'] ) ) {\n        unset( $endpoints['/wp/v2/users'] );\n    }\n    if ( isset( $endpoints['/wp/v2/users/(?P<id>[\\d]+)'] ) ) {\n        unset( $endpoints['/wp/v2/users/(?P<id>[\\d]+)'] );\n    }\n    return $endpoints;\n});\n```\n\n## Impact\n\nMalicious counterpart could collect the usernames disclosed (and the admin user) and be focused throughout BF attack (as the usernames are now known), making it less harder to penetrate the data.gov systems.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1985941,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/aagmhlky6u4nnluy9vupaz9lrsmp?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050235Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9528dd713464bc08d29780cd204eb32895831dd6d966ee54e603fb6b5360f6d0",
+      "file_size": 229910,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-11-27T03:25:02.036Z",
+  "allow_singular_disclosure_after": -113535453.73302767,
+  "singular_disclosure_allowed": true,
+  "vote_count": 33,
+  "voters": [
+    "loaymorad",
+    "jumpydata",
+    "mikemyers",
+    "bug_vs_me",
+    "shreyaschavhan",
+    "shubham_srt",
+    "johans585",
+    "mohammed100",
+    "hunterr0x01",
+    "shivammusic",
+    "and 23 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 34306,
+    "asset_type": "URL",
+    "asset_identifier": "mtn.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1735586",
+  "votes": 33,
+  "latest_disclosable_activity_at": "2022-11-27T03:25:02.186Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:02:35.907429",
+    "source": "https://hackerone.com/reports/1735586.json",
+    "report_id": 1735586
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzM1NTg2",
+    "databaseId": "1735586",
+    "title": "Wordpress users Disclosure [ /wp-json/wp/v2/users/ ]",
+    "url": "https://hackerone.com/reports/1735586",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-11-27T03:25:02.082Z",
+    "created_at": "2022-10-14T13:29:55.961Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "shubham_srt"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDE5MTk=",
+      "handle": "mtn_group",
+      "name": "MTN Group",
+      "url": "https://hackerone.com/mtn_group",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3MzU1ODY=",
+    "_id": "1735586",
+    "disclosed": true,
+    "votes": 33,
+    "latest_disclosable_activity_at": "2022-11-27T03:25:02.186Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzM1NTg2",
+      "databaseId": "1735586",
+      "title": "Wordpress users Disclosure [ /wp-json/wp/v2/users/ ]",
+      "url": "https://hackerone.com/reports/1735586",
+      "disclosed_at": "2022-11-27T03:25:02.082Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDE5MTk=",
+      "handle": "mtn_group",
+      "name": "MTN Group",
+      "url": "https://hackerone.com/mtn_group",
+      "currency": "usd"
+    }
+  }
+}

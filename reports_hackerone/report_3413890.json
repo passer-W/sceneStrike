@@ -1,0 +1,226 @@
+{
+  "id": 3413890,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDEzODkw",
+  "url": "https://hackerone.com/reports/3413890",
+  "title": "Unrestricted setPerPage allows huge result sets / resource exhaustion / mass log retrieval",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2025-11-06T08:45:09.752Z",
+  "submitted_at": "2025-11-06T08:45:10.132Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "vidang04",
+    "url": "/vidang04",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 2367,
+    "url": "https://hackerone.com/revive_adserver",
+    "handle": "revive_adserver",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/367/4f47a5b4a364515d4bbdc17550d67ea5415363cd_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/002/367/4f47a5b4a364515d4bbdc17550d67ea5415363cd_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Revive Adserver",
+      "twitter_handle": "",
+      "website": "https://www.revive-adserver.com",
+      "about": "Revive Adserver is a free open source ad serving system"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2025-55128"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-11-19T13:00:00.724Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-11-19T12:59:41.483Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "##Description:\nThe setPerPage query parameter controls pagination for the log viewer but is not validated or capped on the server. An attacker can supply an extremely large numeric value (for example setPerPage=100000000000000000) and the application will attempt to honor that value when building the result set. This behavior can cause excessive database work, large responses, application slowdowns, and may enable bulk retrieval of log entries.\n\n##Steps:\n1. Authenticate as a user with access to the log view \n2. The setPerPage values ​​range from 10 to 100. Setting the value for setPerPage to 300 results in the site still returning the result:\n\n{F4972841}\n\n{F4972842}\n\n3. This is the typical interface when the value of setPerPage is set within the allowed range\n\n{F4972847}\n\n## Impact\n\n- If the server tries to query/render N records extremely large → memory / CPU / DB I/O increases sharply → timeout, OOM, crash (DoS).\n- If the backend returns all data in one response → bandwidth/time load is heavy, the browser client may hang.",
+  "weakness": {
+    "id": 120,
+    "name": "Allocation of Resources Without Limits or Throttling"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4972841,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/lzsrmim9cyvrcz7zxt6lbw4wpqlm?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUK2PQYGZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042545Z&X-Amz-Expires=448&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIFaoyytC2tLMPuHV4J8C9W7%2BPzZGBBCUsxeDlvMvWMmJAiEA5FEd4vyC0DwcvJ1BVkZtNX8r9JRLS5qRtQ8x42hfXVcqsgUIABADGgwwMTM2MTkyNzQ4NDkiDEDMF3rw5RU24LqaXyqPBTnRCjbCESFC9ldC%2F%2F8ZUrvX0U4EjUpIbdQ8czyepizLkzO1ICmjVVMXsOPCyLur22UUiYVqnxu16qhiuGOqcrPNG3RIik%2FmFAryJDXxs1ai85Y8bf3ZR7AE3yvwe1nWh7Oz1JlMhbjtfau2gKXeBlC7UGpGgZeiZPDvmJR64pPYmXqDd1rZIXESXBZCnNViU9oKLwVyYOPouTaSRrH9I2zCfRb8pFum%2B2XEg3F%2F5g%2Fo3NZuqJ4c%2FahLS4RUp6nh%2FZtKKWm7Zi3O%2F5EnKkvOJtyvJASreV6YB1Bi10tXd40koXcNQh2m0SXIA2v5J8Cg7i8lkAodTVs4YNc%2FKINg8ovaUA3q2AtyGUxaVBXpjbwN6meCjX0lmkDFVn2dAdm4%2BSTcEcc08R7PD5S3pEc2os4b00rZnLj5ePCkGpm7fIH7k9mIaoYKL3w%2Fm77jN5vfL0fpmntE2inZGxCJx6jxPKpUFn7LVwvd5nL3AXHoGapgvcnt18fJm6OAlS8aRwlUoO2bMu7EHaTy60ARh4zvJ%2Bn97Sd5JJICkY45Yv9YHBxRyatetz4J8vFqElS1u7%2BtQP%2BSfAU7Zbti5HwOpbWDHylg8WjvVCIebtxMXtpJECaYzWK23auSdVcUMlVu5k4JCvl6L5xfB84ZLB6VKW4LkQS0FTO3KjP055KoIXdvOHGGA%2BhFF3CqlXQQC6evWQs7D1h4uk2qyuwnRfnsdcP0Vote%2FknnYETzeKktdSdms2XLWek272ijtk3Q8RbwlNY531ofTLRzpuisDgLmYr1671xY4%2BXXh2Bj1z6tLZ7lwaVx22%2FZz7W5IS0eycLYy8mNntwf8hhTqnf3GvN3mU0LgwH%2FEGZ48OGIQul9dvU%2F6Tsw%2Fsyb0gY6sQH8IpcFuP1cO16MlgZbEkyeQyFsuzR4lE4zc%2B3jnS7y6ipaRiViIV%2FdSJc%2BO14yCl2zu819wJCPP%2Bu7Sr8x3OrHM8CE6q6Kn5PmLCiy7%2BsVbialfgZI69v%2BxAVSDjHuDiMwcmVjMFhatTDGQT0iLPRM%2BmKHiJEzGUmYtf0TUkLhfazFZXsT0Jewy%2FeVMbCJtJFNzWH%2FQAyzjbkExzCRHJSYthWvxnFAtxyPqbLOhTj1oEY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bb39fd111b4cd664408250bdc68ac9638d982916d6e115a2953be51f73884e89",
+      "file_size": 225404,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4972842,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/hfvp2yaddut1l2enw4ekhgvk7hwb?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUK2PQYGZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042545Z&X-Amz-Expires=448&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIFaoyytC2tLMPuHV4J8C9W7%2BPzZGBBCUsxeDlvMvWMmJAiEA5FEd4vyC0DwcvJ1BVkZtNX8r9JRLS5qRtQ8x42hfXVcqsgUIABADGgwwMTM2MTkyNzQ4NDkiDEDMF3rw5RU24LqaXyqPBTnRCjbCESFC9ldC%2F%2F8ZUrvX0U4EjUpIbdQ8czyepizLkzO1ICmjVVMXsOPCyLur22UUiYVqnxu16qhiuGOqcrPNG3RIik%2FmFAryJDXxs1ai85Y8bf3ZR7AE3yvwe1nWh7Oz1JlMhbjtfau2gKXeBlC7UGpGgZeiZPDvmJR64pPYmXqDd1rZIXESXBZCnNViU9oKLwVyYOPouTaSRrH9I2zCfRb8pFum%2B2XEg3F%2F5g%2Fo3NZuqJ4c%2FahLS4RUp6nh%2FZtKKWm7Zi3O%2F5EnKkvOJtyvJASreV6YB1Bi10tXd40koXcNQh2m0SXIA2v5J8Cg7i8lkAodTVs4YNc%2FKINg8ovaUA3q2AtyGUxaVBXpjbwN6meCjX0lmkDFVn2dAdm4%2BSTcEcc08R7PD5S3pEc2os4b00rZnLj5ePCkGpm7fIH7k9mIaoYKL3w%2Fm77jN5vfL0fpmntE2inZGxCJx6jxPKpUFn7LVwvd5nL3AXHoGapgvcnt18fJm6OAlS8aRwlUoO2bMu7EHaTy60ARh4zvJ%2Bn97Sd5JJICkY45Yv9YHBxRyatetz4J8vFqElS1u7%2BtQP%2BSfAU7Zbti5HwOpbWDHylg8WjvVCIebtxMXtpJECaYzWK23auSdVcUMlVu5k4JCvl6L5xfB84ZLB6VKW4LkQS0FTO3KjP055KoIXdvOHGGA%2BhFF3CqlXQQC6evWQs7D1h4uk2qyuwnRfnsdcP0Vote%2FknnYETzeKktdSdms2XLWek272ijtk3Q8RbwlNY531ofTLRzpuisDgLmYr1671xY4%2BXXh2Bj1z6tLZ7lwaVx22%2FZz7W5IS0eycLYy8mNntwf8hhTqnf3GvN3mU0LgwH%2FEGZ48OGIQul9dvU%2F6Tsw%2Fsyb0gY6sQH8IpcFuP1cO16MlgZbEkyeQyFsuzR4lE4zc%2B3jnS7y6ipaRiViIV%2FdSJc%2BO14yCl2zu819wJCPP%2Bu7Sr8x3OrHM8CE6q6Kn5PmLCiy7%2BsVbialfgZI69v%2BxAVSDjHuDiMwcmVjMFhatTDGQT0iLPRM%2BmKHiJEzGUmYtf0TUkLhfazFZXsT0Jewy%2FeVMbCJtJFNzWH%2FQAyzjbkExzCRHJSYthWvxnFAtxyPqbLOhTj1oEY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b577b8a2d490842afe794a54f9a0c1b22d72f919d394aab201478bd73d939e4a",
+      "file_size": 394298,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4972847,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/td9l37daplx6mdihjetu5mxlabvn?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUK2PQYGZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042545Z&X-Amz-Expires=448&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIFaoyytC2tLMPuHV4J8C9W7%2BPzZGBBCUsxeDlvMvWMmJAiEA5FEd4vyC0DwcvJ1BVkZtNX8r9JRLS5qRtQ8x42hfXVcqsgUIABADGgwwMTM2MTkyNzQ4NDkiDEDMF3rw5RU24LqaXyqPBTnRCjbCESFC9ldC%2F%2F8ZUrvX0U4EjUpIbdQ8czyepizLkzO1ICmjVVMXsOPCyLur22UUiYVqnxu16qhiuGOqcrPNG3RIik%2FmFAryJDXxs1ai85Y8bf3ZR7AE3yvwe1nWh7Oz1JlMhbjtfau2gKXeBlC7UGpGgZeiZPDvmJR64pPYmXqDd1rZIXESXBZCnNViU9oKLwVyYOPouTaSRrH9I2zCfRb8pFum%2B2XEg3F%2F5g%2Fo3NZuqJ4c%2FahLS4RUp6nh%2FZtKKWm7Zi3O%2F5EnKkvOJtyvJASreV6YB1Bi10tXd40koXcNQh2m0SXIA2v5J8Cg7i8lkAodTVs4YNc%2FKINg8ovaUA3q2AtyGUxaVBXpjbwN6meCjX0lmkDFVn2dAdm4%2BSTcEcc08R7PD5S3pEc2os4b00rZnLj5ePCkGpm7fIH7k9mIaoYKL3w%2Fm77jN5vfL0fpmntE2inZGxCJx6jxPKpUFn7LVwvd5nL3AXHoGapgvcnt18fJm6OAlS8aRwlUoO2bMu7EHaTy60ARh4zvJ%2Bn97Sd5JJICkY45Yv9YHBxRyatetz4J8vFqElS1u7%2BtQP%2BSfAU7Zbti5HwOpbWDHylg8WjvVCIebtxMXtpJECaYzWK23auSdVcUMlVu5k4JCvl6L5xfB84ZLB6VKW4LkQS0FTO3KjP055KoIXdvOHGGA%2BhFF3CqlXQQC6evWQs7D1h4uk2qyuwnRfnsdcP0Vote%2FknnYETzeKktdSdms2XLWek272ijtk3Q8RbwlNY531ofTLRzpuisDgLmYr1671xY4%2BXXh2Bj1z6tLZ7lwaVx22%2FZz7W5IS0eycLYy8mNntwf8hhTqnf3GvN3mU0LgwH%2FEGZ48OGIQul9dvU%2F6Tsw%2Fsyb0gY6sQH8IpcFuP1cO16MlgZbEkyeQyFsuzR4lE4zc%2B3jnS7y6ipaRiViIV%2FdSJc%2BO14yCl2zu819wJCPP%2Bu7Sr8x3OrHM8CE6q6Kn5PmLCiy7%2BsVbialfgZI69v%2BxAVSDjHuDiMwcmVjMFhatTDGQT0iLPRM%2BmKHiJEzGUmYtf0TUkLhfazFZXsT0Jewy%2FeVMbCJtJFNzWH%2FQAyzjbkExzCRHJSYthWvxnFAtxyPqbLOhTj1oEY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2cea8b15752e182506f06be8d4c5b9b5c714b0776a3e0af99edc29bb9e7881d3",
+      "file_size": 385973,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-12-19T12:59:41.901Z",
+  "allow_singular_disclosure_after": -16903563.243015565,
+  "singular_disclosure_allowed": true,
+  "vote_count": 21,
+  "voters": [
+    "orange303",
+    "yoyomiski",
+    "mohaned0101",
+    "thalaivar304",
+    "sisi0x",
+    "2026",
+    "vidang04",
+    "rester01",
+    "najjix",
+    "ch1llc0d3",
+    "and 11 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.5,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 154,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/revive-adserver/revive-adserver",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3413890",
+  "votes": 21,
+  "latest_disclosable_activity_at": "2025-11-19T13:00:00.552Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:25:45.374835",
+    "source": "https://hackerone.com/reports/3413890.json",
+    "report_id": 3413890
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDEzODkw",
+    "databaseId": "3413890",
+    "title": "Unrestricted setPerPage allows huge result sets / resource exhaustion / mass log retrieval",
+    "url": "https://hackerone.com/reports/3413890",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-11-19T13:00:00.724Z",
+    "created_at": "2025-11-06T08:45:09.752Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEyMA==",
+      "name": "Allocation of Resources Without Limits or Throttling",
+      "external_id": "cwe-770"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.5
+    },
+    "reporter": {
+      "username": "vidang04"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjM2Nw==",
+      "handle": "revive_adserver",
+      "name": "Revive Adserver",
+      "url": "https://hackerone.com/revive_adserver",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0MTM4OTA=",
+    "_id": "3413890",
+    "disclosed": true,
+    "votes": 21,
+    "latest_disclosable_activity_at": "2025-11-19T13:00:00.552Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDEzODkw",
+      "databaseId": "3413890",
+      "title": "Unrestricted setPerPage allows huge result sets / resource exhaustion / mass log retrieval",
+      "url": "https://hackerone.com/reports/3413890",
+      "disclosed_at": "2025-11-19T13:00:00.724Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjM2Nw==",
+      "handle": "revive_adserver",
+      "name": "Revive Adserver",
+      "url": "https://hackerone.com/revive_adserver",
+      "currency": "usd"
+    }
+  }
+}

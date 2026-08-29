@@ -1,0 +1,181 @@
+{
+  "id": 132777,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzI3Nzc=",
+  "url": "https://hackerone.com/reports/132777",
+  "title": "Labels created in private projects are leaked",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-20T03:52:17.524Z",
+  "submitted_at": "2016-04-20T03:52:17.524Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-05-03T01:00:20.457Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-05-03T00:55:01.373Z",
+  "team_member_agreed_on_going_public_at": "2016-05-03T01:00:20.401Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Vulnerability details\nAn insecure direct object reference vulnerability exists in the code that assigns labels to issues and merge requests, that allows an attack to read labels of private projects. This probably doesn't leak a lot of super confidential data, but since it's hard to predict how people use labels, it'd be good to fix this issue.\n\n# Proof of concept\n**Note**: this proof of concept demonstrates the attack with an issue, but the same issue exists when a merge request is created. To start off, sign in as a victim (`jane`) and create a project (`private-project`). Set the visibility level to private for this project. When this is set up, create a label at http://gitlab-instance/jane/private-project/labels. When I reproduced this issue for myself, I used `SomeCompany Secret feature` as label name. The label had ID `1`. Now sign in as the attacker (`john`). John wants access to the label that Jane created for her private program. John creates a new project called `random-project` and creates a new issue at http://gitlab-instance/john/random-project/issues. No need to select a label in the New issue form.\n\nNow intercept the traffic before you click the \"Submit issue\" button. The request that is sent to the GitLab server looks something like this:\n\n```\nPOST /john/random-project/issues HTTP/1.1\nHost: 159.xxx.xxx.xxx\n...\n\nutf8=%E2%9C%93&authenticity_token=zD0fqQphsFSNP6gl6KWhTw5iaTtk3cGlDz1Gn563roNyiSq2ACIXGp8%2FmBMo9q70ZP3M0mCWmsq7XJCmzkdADg%3D%3D&issue%5Btitle%5D=a&issue%5Bdescription%5D=a&issue%5Bassignee_id%5D=&issue%5Bmilestone_id%5D=&issue%5Blabel_ids%5D%5B%5D=\n```\n\nNow add the label ID that you want access to as value to the `issue[label_ids][]` array. The request will now look something like this (note the appended `1`):\n\n```\nPOST /john/random-project/issues HTTP/1.1\nHost: 159.xxx.xxx.xxx\n...\n\nutf8=%E2%9C%93&authenticity_token=zD0fqQphsFSNP6gl6KWhTw5iaTtk3cGlDz1Gn563roNyiSq2ACIXGp8%2FmBMo9q70ZP3M0mCWmsq7XJCmzkdADg%3D%3D&issue%5Btitle%5D=a&issue%5Bdescription%5D=a&issue%5Bassignee_id%5D=&issue%5Bmilestone_id%5D=&issue%5Blabel_ids%5D%5B%5D=1\n```\n\nForward the request and go back to the browser. You'll see that the label that belongs to the private project shows up as attached label:\n\n{F88003}\n\n# Impact\nAn attacker could easily iterate over all existing label IDs to attach all labels to an issue. This way potential confidential information (either in the name or description) is revealed to an attacker. Like said in the introduction, because you don't know how people use these labels, this can contain confidential information.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 88003,
+      "file_name": "Screen_Shot_2016-04-19_at_20.42.27.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/088/003/28a81e5485a11cde5256098d3e9f4ed60c32589a/Screen_Shot_2016-04-19_at_20.42.27.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-04-19_at_20.42.27.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-04-19_at_20.42.27.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV72VIOIN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070358Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIB3Oj6sOYExuqx2B6Fk13wa1jckhu4Gh2KtjrfM29oQeAiEAwEhXRK2GZDeYSYwkSYtntPYy0as9ZF9Tr%2Bm%2FmReYvNAqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDH%2F7JK%2BVHQcHWvPNVyqOBe6a4iXTcuMuluhRW2UAb2Qf3Rv7XIMfFje5Kshy%2FFQHH6EA3KpEzpHmWYYbV0EAAkqWni5JdXrA9HhLifdO1inXCEtmy3435j83eOeUsQiMVYvpd0ZmMO3ck8D7S4p%2BWnv9AXJW0sqTog2qGKE3hP4XSEzfYtTBF3kdXeCBDWOFd4oJZYuW2EBuCkQxgdQMO1rgcSU9RSJAwLK1sd%2BdGGFiV8W0Y7uOduyDPfcmtT9KCoZ0b0lMr3dI06VIuAs25J%2BZxszI4n9dn3fYB9njsPZaKLC8inrahs8FRSlkJenJlMGQrPN8D9H2r8%2FzUOvqW1KQz7s3f6ty8lGF1WvrzcIV8jP%2B2l1StNbHTBEQSa765U1VexckJS4R8yke%2FWKGHQOXmy3ZQ%2BkT65QXDSGN4DUCGwAkRoDhjtkEHOwYYqrM6UX1kTSy%2BvhJizJbrF11adIy4AUj34pKaIUXNYEpVGPlM9nsjqeOiqo5xAiFE7omUnjDz9M8VF%2FyURwfb9WNjFVOit%2B2U9taHHINEuXrcFppSXZgVt4XwN4zpsMA8ms%2B83AfCqnPUW0irnYT%2BA9xGeIOfRAse5XNVEnf9LF4mInU6160OWL5OelYc%2BjhB44bTLePbkpduUGBSUOk5jFxrchhKo6IQOEBR1hov8Mh7OQr%2BE7kiABUM6lfdla%2BnpfDDHygOMObAKUlBj8%2FTI3OdObmZsjK9jViYs2JKrHf5Oq9NkdTR4P9PwfvBVayH2quo%2FH8J%2Bs2fGp80kX1fARRYeJDqt%2BsNvY%2FuKA26Inh5UbTnjGQDBsZtC7XpaDFXFO7%2BFQCIPIQsOtVAq5PHeJOW0X%2FzmTLOXU7AoTuieAr9mlKR7nWpF9x76TXE48G5DDh0bfSBjqxAZcfvHgpSLXvPWFT9vTH2fRpCVPCuaiJTP5BlUl1JCOITQ%2FKdona%2B1MydhkwH%2BFUfpMg9bftup17%2BsMYUdqrpEYpqoUdsD%2BRwtFJMAcY6EGjK3hLOk38w%2FO0RBWxysjFp5JVA%2FHq5258G7RmQFHOwD2fx09ocYELWfE2uqMHjPoltdY8jmVhI14MtEURNepwMbe7CLu4mZT3LLwkM72ixe6d8EL%2FKnjfWRCDjfhFlbk6QA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c932c9544199badc2f75b91035a8f8b3cfabf77f602435cbd5ad02d879e5f089",
+      "file_size": 32581,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-06-02T00:55:01.472Z",
+  "allow_singular_disclosure_after": -318665337.4804663,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "eveeez",
+    "spetr0x",
+    "martijn",
+    "dyabla",
+    "cryptosector",
+    "pei",
+    "dragon0x1"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "132777",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2016-05-03T01:00:20.477Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:03:59.071448",
+    "source": "https://hackerone.com/reports/132777.json",
+    "report_id": 132777
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzI3Nzc=",
+    "databaseId": "132777",
+    "title": "Labels created in private projects are leaked",
+    "url": "https://hackerone.com/reports/132777",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-05-03T01:00:20.457Z",
+    "created_at": "2016-04-20T03:52:17.524Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzMjc3Nw==",
+    "_id": "132777",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2016-05-03T01:00:20.477Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzI3Nzc=",
+      "databaseId": "132777",
+      "title": "Labels created in private projects are leaked",
+      "url": "https://hackerone.com/reports/132777",
+      "disclosed_at": "2016-05-03T01:00:20.457Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

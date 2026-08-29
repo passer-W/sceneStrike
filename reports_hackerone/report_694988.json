@@ -1,0 +1,178 @@
+{
+  "id": 694988,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTQ5ODg=",
+  "url": "https://hackerone.com/reports/694988",
+  "title": "Resource leak when using a normal site as DOH server",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "none",
+  "readable_substate": "Informative",
+  "created_at": "2019-09-14T20:45:50.296Z",
+  "submitted_at": "2019-09-14T20:45:50.296Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "pauldreik",
+    "url": "/pauldreik",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-02-08T07:54:50.365Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2021-01-08T08:23:48.009Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nIf a DOH server is used, which is not really a DOH server but just a normal web server, the DNS request is sent but the reply will not be the expected DNS payload. In that case, curl correctly thinks DNS resolution failed, but it does not clean up allocated memory properly.\n\n## Steps To Reproduce:\nSee the attached demonstration program. It can use either no DOH, a valid DOH, a garbage DOH address, or a valid web server not serving DOH.\nValgrind sees that it leaks memory only in the last case, the others are cleaned up properly.\n\n### Leaking case\nThis will use https://example.com/ both as the URL to reach and as a DOH.\n```\nvalgrind ./a.out notadoh\n (snip)\n==3096== HEAP SUMMARY:\n==3096==     in use at exit: 98,252 bytes in 1,043 blocks\n==3096==   total heap usage: 101,296 allocs, 100,253 frees, 9,473,596 bytes allocated\n==3096== \n==3096== LEAK SUMMARY:\n==3096==    definitely lost: 8,564 bytes in 3 blocks\n==3096==    indirectly lost: 88,144 bytes in 995 blocks\n==3096==      possibly lost: 0 bytes in 0 blocks\n==3096==    still reachable: 1,544 bytes in 45 blocks\n==3096==         suppressed: 0 bytes in 0 blocks\n==3096== Rerun with --leak-check=full to see details of leaked memory\n```\n### Normal case - no DOH\nThis will use https://example.com/ without DOH.\n```\nvalgrind ./a.out none\n(snip)\n==3217== HEAP SUMMARY:\n==3217==     in use at exit: 1,544 bytes in 45 blocks\n==3217==   total heap usage: 37,396 allocs, 37,351 frees, 3,332,013 bytes allocated\n==3217== \n==3217== LEAK SUMMARY:\n==3217==    definitely lost: 0 bytes in 0 blocks\n==3217==    indirectly lost: 0 bytes in 0 blocks\n==3217==      possibly lost: 0 bytes in 0 blocks\n==3217==    still reachable: 1,544 bytes in 45 blocks\n==3217==         suppressed: 0 bytes in 0 blocks\n```\n### Normal case - working DOH\nThis will use https://example.com/ with cloudflare DOH.\n```\nvalgrind ./a.out cloudflare\n(snip)\n==3376== HEAP SUMMARY:\n==3376==     in use at exit: 1,656 bytes in 49 blocks\n==3376==   total heap usage: 101,564 allocs, 101,515 frees, 9,062,588 bytes allocated\n==3376== \n==3376== LEAK SUMMARY:\n==3376==    definitely lost: 0 bytes in 0 blocks\n==3376==    indirectly lost: 0 bytes in 0 blocks\n==3376==      possibly lost: 0 bytes in 0 blocks\n==3376==    still reachable: 1,656 bytes in 49 blocks\n==3376==         suppressed: 0 bytes in 0 blocks\n```\n\n## Supporting Material/References:\n\nSee the attached program.\n\n## Impact\n\nThe failed DOH is invisible to the end user, it seems to fallback to normal DNS.\nSo if the user has the wrong DOH adress (perhaps confused, or the DOH url changed slightly and now points to some generic hello page), I guess the memory leaks will add up, eventually leading to denial of service because of resource depletion.\n\nIt does not feel like a serious issue but I wanted to go through hackerone instead of filing a public report right away.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 583031,
+      "file_name": "dohleak.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qCYz8EsnyC7fW9cFfjgi3NYU?response-content-disposition=attachment%3B%20filename%3D%22dohleak.c%22%3B%20filename%2A%3DUTF-8%27%27dohleak.c&response-content-type=text%2Fx-csrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQU3CE4HIO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064514Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQD5sXNabI8KBOI89i0uBYkLTLny2Cc3GMz77aNKyMaK5QIhAO3fyLL9Hurbdy0Nfm79Ik8Lb%2BPicQPauP2ZMW0QXXmuKrEFCAcQAxoMMDEzNjE5Mjc0ODQ5IgwCa8f4Buc73fcEqTcqjgU%2Fb%2B%2BzK9nrge%2B0Bu0ylHRm9FXSIgq%2FIVXc30Uywya2VDuZe%2FwdpDYnpxIXry1JQexsLcMgIbq0jQzNj4SAZ%2Bhj0zP%2FZI4UJIeW%2FRowR3jso3gnGFP4a6xd46AxoIFOrC31Y3voaMIzqPlwDDsbbo2GEzAsp7KE7KapUGXC5XNJZW%2BvloJMDwB1K3W%2Fs%2Bn4Bx%2B4avKqH1vbT9YmL6tUG9JJPFsekRQFGEP6%2BYSStJmhNmBSjqgs1M8QSSWrQYzFXQ4UqWClHt56dR2yrXhWInDDxHR%2FNa48ejsWeulI9ulPszSj0lqxHtA27Gez3xRgGJz2LzT2Phh7m0i4JJNqaBO6hc0ri%2FPrGg2AH8ozO%2BDfgLyNuKqKB8rgyCJgrX2WlLeoprNLk3AWiwewuJtdPmA80x8RYTl%2BJDYp4YhQW6auPijufv21xX%2BlFmhTrh7Xw4hrRt5%2BNHqpugXyvHfv5b0MMsoa60wQLdf4%2BS38R5PxrXZLqzndZN7CvdaOpZPYBd96%2B4EdDES9r2YDahn4U6V%2B1CsWGxWjbzCp7vWDVmiYivWZxAgjeT1pr8hNebHghJe0Oo%2F91n3T%2B8GJ7lGvdgrfeO1bxDBNVNyxGoif%2FynU2WVfndh7Kw5YDFDfiUoXgjZbL3PX1EOT0lycBiymohOReeDdO33KQylh%2FTaKZYrZTOhux1vIUDmsq8b0i2GV2H9j3QpmbAq2t21qgCUNfFO2BZjsAhDDyCHxl1e6TFB2fM8aI59CixopyTQSdAYAug4A%2Fx0EtmRE%2F7SLxcNTTJ6aFlPSEKl98FN8y95zA9T3%2BGpnYO9vEXSZwXGuvTzL%2B0meEhEonCLA381WYgHdhmzl%2BlxEBLcOh%2Ba4fDfUeGAwv6Cd0gY6sAGMh8Mjk00%2FOOsPd7YjGl6MyTLULsmVTrKhCiPDrKeu5fv2T8aDxjZgc%2BGsYb3pQwhjepVUAG6nvcVSL4AloEKXCScikjCn72i42sGPwsoIq2SG2llMsN2Uif1kM3Vn5xXVcq7lxm2NvH3mXljXjVFnGtKTpXp4UgZTF4wk4cHOU%2BgYMyeUyUxBBlCVVUdnzoQURkkpGj%2BJKyOgHjQ4jVxOzY4mXjoCDqd1e%2FzRvS8SpQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b4cb6d87da88c991eefeee8463f724e37f122637e7b836d10a170249fb458524",
+      "file_size": 2283,
+      "type": "text/x-csrc",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 1,
+  "voters": [
+    "monke"
+  ],
+  "severity": {
+    "rating": "none",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "694988",
+  "votes": 1,
+  "latest_disclosable_activity_at": "2021-02-08T07:54:50.289Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T14:45:14.147494",
+    "source": "https://hackerone.com/reports/694988.json",
+    "report_id": 694988
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTQ5ODg=",
+    "databaseId": "694988",
+    "title": "Resource leak when using a normal site as DOH server",
+    "url": "https://hackerone.com/reports/694988",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2021-02-08T07:54:50.365Z",
+    "created_at": "2019-09-14T20:45:50.296Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "none",
+      "score": null
+    },
+    "reporter": {
+      "username": "pauldreik"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY5NDk4OA==",
+    "_id": "694988",
+    "disclosed": true,
+    "votes": 1,
+    "latest_disclosable_activity_at": "2021-02-08T07:54:50.289Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82OTQ5ODg=",
+      "databaseId": "694988",
+      "title": "Resource leak when using a normal site as DOH server",
+      "url": "https://hackerone.com/reports/694988",
+      "disclosed_at": "2021-02-08T07:54:50.365Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

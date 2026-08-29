@@ -1,0 +1,210 @@
+{
+  "id": 1018790,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDE4Nzkw",
+  "url": "https://hackerone.com/reports/1018790",
+  "title": "Subdomains takeover of  register.acronis.com, promo.acronis.com, info.acronis.com and promosandbox.acronis.com",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "high",
+  "readable_substate": "N/A",
+  "created_at": "2020-10-26T12:31:00.000Z",
+  "submitted_at": "2020-10-26T12:31:00.445Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ashmek",
+    "url": "/ashmek",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/rvPJiPKds9fqnJ7Ecx3mhQB1/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13428,
+    "url": "https://hackerone.com/acronis",
+    "handle": "acronis",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Acronis",
+      "twitter_handle": "Acronis",
+      "website": "https://www.acronis.com",
+      "about": "Complete integrated cybersecurity and data protection for MSPs and IT teams"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-02-08T09:12:37.155Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-01-31T17:58:43.479Z",
+  "team_member_agreed_on_going_public_at": "2022-02-08T09:12:37.040Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThe Subdomains  https://register.acronis.com,  https://promo.acronis.com, https://info.acronis.com  and  https://promosandbox.acronis.com \nare vulnerable to takeover due to unclaimed marketo CNAME records.  Anyone is able to own these  subdomains at the moment.\n\nThis vulnerability is called subdomain takeover. You can read more about it here:\n\n    https://blog.sweepatic.com/subdomain-takeover-principles/\n    https://hackerone.com/reports/32825\n    https://hackerone.com/reports/779442\t\n    https://hackerone.com/reports/175070\n\n## Steps To Reproduce:\n\n```\nnslookup register.acronis.com\nNon-authoritative answer:\nName: sjh.mktossl.com\nAddresses:104.17.74.206\n          104.17.72.206\n          104.17.70.206\n          104.17.73.206\n          104.17.71.206\nAliases:  register.acronis.com\n          acronis.mktoweb.com\n\nnslookup promo.acronis.com\nNon-authoritative answer:\nName:    sjh.mktossl.com\nAddresses:  104.17.71.206\n          104.17.70.206\n          104.17.74.206\n          104.17.72.206\n          104.17.73.206\nAliases:  promo.acronis.com\n          acronis.mktoweb.com\n\n```\n\nCNAMES entries to corresponding  domains are as:\n```\npromo.acronis.com                               acronis.mktoweb.com\npromosandbox.acronis.com                   acronissandbox2.mktoweb.com\nregister.acronis.com                            acronis.mktoweb.com\ninfo.acronis.com  \t                             mkto-h0084.com\n```\n\nAs  register.acronis.com and promo.acronis.com pointing to CNAME record as  acronis.mktoweb.com  and are aliases to acronis.mktoweb.com . http://acronis.mktoweb.com/ is giving 404, page not found  with message \"The requested URL was not found on this server\"  which can  be claimed by anyone now and would result in subdomain takeover.\n\nThe marketo document to Customize Your Landing Page URLs with a CNAME\nhttps://docs.marketo.com/display/public/DOCS/Customize+Your+Landing+Page+URLs+with+a+CNAME\n\n**As marketo is a paid service and offers account for marketing automation, I don't have a registered account. \nI wrote to Marketo technical support team and they claim the availability of listed domains as the listed domains are not in use or configured anymore.**\n\n## Supporting Material/References:\nPlease refer to attached screenshots.\n\n## Impact\n\nWith this, I can clearly see XSS impact in your case. Please have a look at your /v2/account request intercepted below:\nRequest:\n```\nPUT /v2/account HTTP/1.1\nHost: account.acronis.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0\nAccept: application/json, text/plain, */*\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nContent-Type: application/json;charset=utf-8\nContent-Length: 702\nOrigin: https://register.acronis.com\nConnection: close\nReferer: https://account.acronis.com/\nCookie: _gcl_au=1.1.36144172.1601449011; _ga=GA1.2.1290766356.1601449012; _fbp=fb.1.1601449012432.633797135; _hjid=a7dd36be-ea53-40b1-b04e-c2a96f5ebc3c; optimizelyEndUserId=oeu1601449014822r0.42778295429069313; OptanonConsent=isIABGlobal=false&datestamp=Mon+Oct+26+2020+16%3A35%3A28+GMT%2B0530+(India+Standard+Time)&version=6.6.0&hosts=&consentId=07081eac-3ae3-443d-8451-79f5327d9351&interactionCount=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0004%3A1%2CC0003%3A1%2CC0002%3A1&AwaitingReconsent=false&geolocation=IN%3BHR; _mkto_trk=id:929-HVV-335&token:_mch-acronis.com-1601449020651-40834; OptanonAlertBoxClosed=2020-10-26T11:05:28.204Z; visid_incap_1638029=Bol4fqOiQTKxMXB55rfSHvSPlF8AAAAAQUIPAAAAAACe+MbhqMW1sJI4dpZBH6DI; _hjTLDTest=1; nlbi_1638029=ibxAVmtdEHzy/Y9u+BxnEAAAAAB308NLs7A3ARoQwyk4Cyrg; incap_ses_745_1638029=ddKxJtFthhy2IeNut8VWCvWPlF8AAAAACuwA/vpt+9dXQmj6hoxBWQ==; _gid=GA1.2.639811834.1603690260; _gac_UA-149943-47=1.1603691724.Cj0KCQjwxNT8BRD9ARIsAJ8S5xZC0_Hlxu0wgG7xA0-jU5eIi2BxoGFsRealW_kNcbHRyB_H8h3z-y0aAjFAEALw_wcB; AcronisSID.en=8a4d91ace2ecadca23dda91cdcb5abc5; AcronisUID.en=1438137573; _hjAbsoluteSessionInProgress=1; _uetsid=6d516b50174c11eb8ef2b18637bee740; _uetvid=b490e7509541648c67826dc18a0c7c46; _gat_UA-149943-47=1\n```\n\nResponse:\n```\nHTTP/1.1 200 OK\nServer: nginx\nDate: Mon, 26 Oct 2020 11:59:18 GMT\nContent-Type: application/json\nConnection: close\nCache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0\npragma: no-cache\nexpires: -1\nX-RateLimit-Limit: 100\nX-RateLimit-Remaining: 97\nAccess-Control-Allow-Origin: https://register.acronis.com\nAccess-Control-Allow-Credentials: true\nAccess-Control-Allow-Headers: Accept, Accept-Encoding, Accept-Language, Authorization, Cache-Control, Connection, DNT, Keep-Alive, If-Modified-Since, Origin, Save-Data, User-Agent, X-Requested-With, Content-Type\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\np3p: CP=IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT\nX-Frame-Options: SAMEORIGIN\nStrict-Transport-Security: max-age=31536000; includeSubDomains; preload\nX-XSS-Protection: 1; mode=block\nContent-Length: 714\n```\nSee in response below,:\n```\nAccess-Control-Allow-Origin: https://register.acronis.com\nAccess-Control-Allow-Credentials: true\n```\nAccess-Control-Allow-Credentials are true for Access-Control-Allow-Origin as *.acronis.com which makes Credentials  true for all subdomains of acronis.com. Cross-Origin Resource Sharing (CORS) allows cross-domain access from all subdomains of acronis.com\n\nTherefore, by taking over listed subdomains or finding any XSS vulnerability in any of the listed subdomains  can  steal user information  or read arbitrary data from the accounts of other users. \n\nThe Subdomain takeover allows various attacks.\n\n    Malware distribution\n    Phishing / Spear phishing\n    XSS\n    Authentication bypass\n    ...\n\nList goes on and on. Since some certificate authorities (Let's Encrypt) require only domain verification, SSL certificate can be easily generated.\nAn attacker can utilize these domains for targeting the organization by fake login forms, or steal sensitive information of teams (credentials,  information, etc)\n\nFIX & MITIGATION\n**You should immediately remove the CNAME  entries for these domains or point it elsewhere if you don't use marketo services.**\n\nPlease let me know if more info needed or any help.\n\nBest Regards,\nAshmek",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1052130,
+      "file_name": "404.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/YTrnjhJ6fVLMTmtaECRtL684?response-content-disposition=attachment%3B%20filename%3D%22404.PNG%22%3B%20filename%2A%3DUTF-8%27%27404.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054138Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6b144a4adc8b136e9ca879f0adac44edb2df155f63b2b2dc81cb30f037c1cfd0",
+      "file_size": 432878,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1052137,
+      "file_name": "dns-1.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/EhyzYLnRTg5ictwesrXiSmQw?response-content-disposition=attachment%3B%20filename%3D%22dns-1.PNG%22%3B%20filename%2A%3DUTF-8%27%27dns-1.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054138Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3dd46868aea05f3780974c0c6a9d4e6a5bd36e970ca274b53e635657734d28dc",
+      "file_size": 24909,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1052138,
+      "file_name": "dns-2.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/GTATSiXBLqZKPBJNjWBA55Mz?response-content-disposition=attachment%3B%20filename%3D%22dns-2.PNG%22%3B%20filename%2A%3DUTF-8%27%27dns-2.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054138Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3b0708e4d59c7045fb555fb249c827ec4b1899b08a83eea48f8d9fd146bad7fc",
+      "file_size": 6771,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1052139,
+      "file_name": "info-404.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ToC99NzDvyfHyhiQgBUdESZV?response-content-disposition=attachment%3B%20filename%3D%22info-404.PNG%22%3B%20filename%2A%3DUTF-8%27%27info-404.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054138Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=0a888ec695d1705c57cf9d6fde201200f3becd5887223c0c5e4b1b39f067f076",
+      "file_size": 7904,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 2,
+  "voters": [
+    "rzap",
+    "zhaorunzi"
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 50773,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.acronis.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1018790",
+  "votes": 2,
+  "latest_disclosable_activity_at": "2022-02-08T09:12:37.212Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:41:38.728013",
+    "source": "https://hackerone.com/reports/1018790.json",
+    "report_id": 1018790
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDE4Nzkw",
+    "databaseId": "1018790",
+    "title": "Subdomains takeover of  register.acronis.com, promo.acronis.com, info.acronis.com and promosandbox.acronis.com",
+    "url": "https://hackerone.com/reports/1018790",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2022-02-08T09:12:37.155Z",
+    "created_at": "2020-10-26T12:31:00.000Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "ashmek"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwMTg3OTA=",
+    "_id": "1018790",
+    "disclosed": true,
+    "votes": 2,
+    "latest_disclosable_activity_at": "2022-02-08T09:12:37.212Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDE4Nzkw",
+      "databaseId": "1018790",
+      "title": "Subdomains takeover of  register.acronis.com, promo.acronis.com, info.acronis.com and promosandbox.acronis.com",
+      "url": "https://hackerone.com/reports/1018790",
+      "disclosed_at": "2022-02-08T09:12:37.155Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    }
+  }
+}

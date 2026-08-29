@@ -1,0 +1,240 @@
+{
+  "id": 1700276,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzAwMjc2",
+  "url": "https://hackerone.com/reports/1700276",
+  "title": "Take over subdomains of r2.dev using R2 custom domains",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-09-14T16:05:12.737Z",
+  "submitted_at": "2022-09-14T16:05:12.886Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "albertspedersen",
+    "url": "/albertspedersen",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/57i177382uzbptw7rg8wpc509mll/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 41,
+    "url": "https://hackerone.com/cloudflare",
+    "handle": "cloudflare",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/041/a819f0d518a4854df667be26210167805f38a6a4_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/041/a819f0d518a4854df667be26210167805f38a6a4_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Cloudflare Public Bug Bounty",
+      "twitter_handle": "cloudflare",
+      "website": "https://www.cloudflare.com/disclosure",
+      "about": "Help us build a better Internet"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-09-28T12:49:46.895Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-09-15T13:07:37.600Z",
+  "team_member_agreed_on_going_public_at": "2022-09-28T12:49:46.795Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "> **███████** ████ [████ █████████]██████████████████ ███ ██████████\n\nIt is possible to take over any subdomain of `r2.dev` (possible also the base domain) and have it serve the contents of an R2 bucket in your account.\n\n### Requirements\n\nAccess to R2 public buckets in the dashboard is currently behind a flag. The server-side check for access to R2 public buckets was recently removed, so you can just use an mitmproxy script to toggle the flag client-side.\n\n```py\nimport json\nimport mitmproxy\nimport re\n\n\nclass R2PublicBuckets:\n\tasync def response(self, flow: mitmproxy.http.HTTPFlow):\n\t\tif re.match(r'https?://dash\\.cloudflare\\.com/api/v4/accounts/[0-9a-f]{32}/flags', flow.request.url):\n\t\t\tdata = json.loads(flow.response.text)\n\t\t\tdata['result']['workers']['r2_publicbuckets'] = True\n\t\t\tflow.response.text = json.dumps(data, separators=(',', ':'))\n\naddons = [\n\tR2PublicBuckets()\n]\n```\n\n### Steps\n\n1. Add `r2.dev` to your Cloudflare account and follow the steps until you're asked to complete zone ownership verification.\n\n2. Create an R2 bucket if you don't already have one and add e.g. `albert.r2.dev` as a custom domain in the \"Domain Access\" section.\n\n{F1926348}\n\n3. Wait a few seconds and then refresh the page. The custom domain should now show \"Status: Active\". In case \"Access to Bucket\" is \"Not allowed\", click the three dots besides the domain and then \"Enable domain\".\n\n{F1926346}\n\n4. Visit the custom domain and notice how it serves content from your R2 bucket.\n\n{F1926347}\n\nAdditionally, this vulnerability can also be used to *block* another domain from being used as an R2 custom domain. Simply repeat step one and two for the target zone/domain. If the user tries to add the domain as a custom domain for their R2 bucket, the API will throw an error and the custom domain will be activated in your account. The target domain will then serve the contents of your bucket until the user deletes the custom domain (which will show \"Status: Error\") on their end. An example of this is https://r2.walshy.dev/.\n\n### Cause\n\nThis vulnerability exists because the API does not check if the zone is active before adding the specified domain as an SSL for SaaS custom hostname. I presume taking over subdomains of `r2.dev` is only possible because they're in the same zone as the fallback origin, and/or there's already a CNAME record on `*.r2.dev` pointing to the fallback origin (`public.r2.dev`).\n\n## Impact\n\nEvery R2 bucket has a `pub-<public_id>.r2.dev` subdomain which, when public bucket access is enabled, will serve the contents of the bucket. This vulnerability can be used to take over those subdomains and instead have them serve content from your bucket.",
+  "bounty_amount": "1125.0",
+  "formatted_bounty": "$1,125",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1926346,
+      "file_name": "custom-domain-active.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9ln06v2v2i8shfa2w7m2vrb0wcht?response-content-disposition=attachment%3B%20filename%3D%22custom-domain-active.png%22%3B%20filename%2A%3DUTF-8%27%27custom-domain-active.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050550Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=28c67e101b42153034c1495e62b3ede0c6b04493938ef8aa40f3ba59686765b3",
+      "file_size": 7406,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1926347,
+      "file_name": "visit-custom-domain.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7b594roqld8ynelsy8vbse1gmdug?response-content-disposition=attachment%3B%20filename%3D%22visit-custom-domain.png%22%3B%20filename%2A%3DUTF-8%27%27visit-custom-domain.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050550Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=455bc4a0dc372e8f5338969e879fd34e858c25fc9c394fb680dbd9e00d7961d0",
+      "file_size": 36891,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1926348,
+      "file_name": "add-custom-domain.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/hnucg39ob10ykt5pxteq0v3qtkgq?response-content-disposition=attachment%3B%20filename%3D%22add-custom-domain.png%22%3B%20filename%2A%3DUTF-8%27%27add-custom-domain.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050550Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f9a41929127e3d40fb09020ef5d832c7a129addfdd30babf099f3b6405776a9a",
+      "file_size": 42438,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 28,
+  "voters": [
+    "dninjadave",
+    "lamber",
+    "n1m0",
+    "zy9ard3",
+    "hrithikbot",
+    "thalaivar304",
+    "ashrafabdelrazik",
+    "khizer47",
+    "kerolesmagdy",
+    "pishangshedappp",
+    "and 18 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 103824,
+    "asset_type": "OTHER",
+    "asset_identifier": "Cloudflare R2",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 195006,
+      "category": "team",
+      "content": "The Cloudflare R2 Custom Domain feature could be used to take over any subdomain of r2.dev without being verified.\nThe Cloudflare Custom Domain feature allows the customer to configure a CNAME pointing to the r2.dev bucket URL.\nThis attack was possible due to lack of domain validation when the user adds a domain to the account.\nA control has been implemented to verify that the R2 Custom Domain added has been verified and belongs to the same Cloudflare account. \nAfter investigation, it was concluded that there is no evidence of abuse of this issue by anyone other than the researcher and there was no impact to any customer.",
+      "updated_at": "2022-09-22T14:01:20.565Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1982881,
+        "username": "y0ka1",
+        "name": "Jonathan N",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2021-09-24T07:51:07.909Z",
+        "url": "https://hackerone.com/y0ka1",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "medium": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "xtralarge": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1700276",
+  "votes": 28,
+  "latest_disclosable_activity_at": "2022-09-28T12:49:46.937Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T13:05:50.652991",
+    "source": "https://hackerone.com/reports/1700276.json",
+    "report_id": 1700276
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzAwMjc2",
+    "databaseId": "1700276",
+    "title": "Take over subdomains of r2.dev using R2 custom domains",
+    "url": "https://hackerone.com/reports/1700276",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-09-28T12:49:46.895Z",
+    "created_at": "2022-09-14T16:05:12.737Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "albertspedersen"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQx",
+      "handle": "cloudflare",
+      "name": "Cloudflare Public Bug Bounty",
+      "url": "https://hackerone.com/cloudflare",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MjI2MTk=",
+            "amount": "1125.00",
+            "awarded_amount": "1125.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-09-15T14:00:57.556Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3MDAyNzY=",
+    "_id": "1700276",
+    "disclosed": true,
+    "votes": 28,
+    "latest_disclosable_activity_at": "2022-09-28T12:49:46.937Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzAwMjc2",
+      "databaseId": "1700276",
+      "title": "Take over subdomains of r2.dev using R2 custom domains",
+      "url": "https://hackerone.com/reports/1700276",
+      "disclosed_at": "2022-09-28T12:49:46.895Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQx",
+      "handle": "cloudflare",
+      "name": "Cloudflare Public Bug Bounty",
+      "url": "https://hackerone.com/cloudflare",
+      "currency": "usd"
+    }
+  }
+}

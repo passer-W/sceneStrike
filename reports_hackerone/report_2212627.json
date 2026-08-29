@@ -1,0 +1,220 @@
+{
+  "id": 2212627,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMjEyNjI3",
+  "url": "https://hackerone.com/reports/2212627",
+  "title": "Delete external storage of any user",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2023-10-17T00:08:29.562Z",
+  "submitted_at": "2023-10-17T00:08:29.709Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "cx75fa",
+    "url": "/cx75fa",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/0r7pp45t3pml4bfrs0854y7yb1g5/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2023-48239"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-11-21T09:22:22.998Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-11-21T09:22:22.917Z",
+  "team_member_agreed_on_going_public_at": "2023-11-21T05:27:32.839Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "A security vulnerability was uncovered that allowed standard users to remove external storage resources from any user account in the application. This flaw was particularly concerning because it enabled unauthorized users to delete these resources based on a system-generated ID, which automatically incremented, without requiring any special privileges. This issue didn't grant access to the data but allowed for the indiscriminate removal of external storage associated with user accounts, potentially leading to data loss and disruption of service for affected users.\n\nReproduction Steps:\n1.Begin by logging in with a standard user account and establish an external storage connection.\n2. Afterward, update the storage configuration. Observe that the following request is generated:\n```\nPUT /apps/files_external/userstorages/<storage_id> HTTP/1.1\nHost: 127.0.0.1:9090\n[REDACTED]\n\n{\"mountPoint\":\"simpleuser\",\"backend\":\"owncloud\",\"authMechanism\":\"password::logincredentials\",\"backendOptions\":{\"host\":\"cq6xxrdnw1941wu9jk4gcyfuglmfa4.oastify.com\",\"root\":\"\",\"secure\":true},\"testOnly\":true,\"id\":<storage_id>,\"mountOptions\":{\"enable_sharing\":true,\"encoding_compatibility\":false,\"encrypt\":true,\"filesystem_check_changes\":1,\"previews\":true,\"readonly\":false}}\n```\n3.Next, log in to the application with an administrative user account or any other role and establish a storage connection.\n4.Observe that each new storage created increments the ID automatically. For instance, it could become 28.\n5. Using the standard user role, issue the request once more to modify the ID linked to the administrative storage. Observe that this action leads to the removal of the storage from the administrator's account.\n\nVIDEO POC:\n{F2778950}\n\n## Impact\n\nThis finding has a huge impact on the application, including data loss, service disruption, unauthorized actions, data privacy concerns, security risks, and potential reputation damage.",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2778950,
+      "file_name": "delete_storage.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/6ri1dttcueld38dbdgnwfugbutp1?response-content-disposition=attachment%3B%20filename%3D%22delete_storage.mp4%22%3B%20filename%2A%3DUTF-8%27%27delete_storage.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRSPBDIUZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044827Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIFtb5s6ZmCmioCex3qtmAeFjdWHd7bMfCBvHt7gQr7zzAiBgvW5xzcC9me7079ob%2F1qjVnoHs7xx4DXEUh6kjG7n0SqxBQgGEAMaDDAxMzYxOTI3NDg0OSIM3QC0WOVbFFcjqA0YKo4F%2Bbi43LYZIJkoUGFv%2F1QpHaEa8d%2F%2FJzNj%2FKxU5K8nnK9%2FqHwZqiaGyfy04BQ7F%2F%2BVBkclDtkAIEfRteYgd25XPXzI5R8LGwNw1NIulZpBqGMNNFgxzjAh3wv6sv8Vh6DZJ8uJSxfssEKjt97PJG%2FVZdSjELWx%2BzKai%2BH9EPTuF4fmqaSV96LzCVr%2BOHO59jj%2FZ%2BQnn6o7PneCUebeTPqR8%2B%2F1X1PqL8b4NilRXM5OIUOD8YW8tTeOLhbfeNIwfN8nPUPS9vSD8RXD7MmzWFNBQ2AifabaZp2Sm5CzucY6iiDgiJCgpbUhXGKgUarUfyC33UG5q2xrYiVYivQrSTaG7IycHGn%2F7TI8k5e4EXNJ5qcswwfxjUfg941B%2FgwjWk0Ef1lRvz4gg3q0Y42wBzcFS0aXiyX2PwHpL7%2FLyz2dawiIiRdjBBuUQyT3lttlkQ8LOg2BRg0PmQPVxZpGNQ9C%2BFpp%2B7%2Bv358qM%2Bg3pH71BNpSzb1YDGcFQTRk8dH4%2FZ0ZA1iBhI1odKXeCeKXDB2Tq4XHLrRtSoh1AbedAklvyNrFEC%2B1i%2BZAdpprm8umH33bjDRjjVx1pPvH1ysqFG8BHI1oTBqDntp5tnohsCh1ZZOD7ipqIyzUDIraWn5JIZMFUXoYyP9q88YMp%2FresKssCZFNOb4cf1O%2BYCdmc90%2BLcE03F6YZ3ZLYqZO0FzudjMKZpngJib3yUXBm986d5%2FpvTxSvv5aNaQ2SXRxjYvnk5uuGPnYzYyoEUMT%2BRO8lCY5l9QKEFHmDcGIX25B62IKIbYPNKy%2FSe65Vpa4Nz5rEGPyKP7lpQ1c2UWWCPEINnYBJisqHSm3cLqfEzftVoksedoqtRHt5odrK4XqmLxPMMf0nNIGOrIBGOvWbRHm%2BfnMrBJjM%2FwNaCMKLR6chP3oTaU2g7akue4DChWrBMyjkJhBCX4z2PeNaWqysS6qYTsbku0XkeZpHHZst4ZZWcatxTyvQX7rZQB3c%2FzYBZHu7Gyc9rCu1rdbFhawso56lh%2BavhKnMxpJ2pUEeu0ioKCddi4bisL%2FoIRoCu6H4nM46tndYQMEyAmzpRG%2FIsCcXDcwp9ovipfZjW%2FCrESFeK9h2%2BLIy0Va4IDfjQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e460c235e50a6d492899b22a646e129b1ea5e9e7c77096a63345903fc001218c",
+      "file_size": 16541551,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-12-21T05:27:32.952Z",
+  "allow_singular_disclosure_after": -79917654.75782359,
+  "singular_disclosure_allowed": true,
+  "vote_count": 43,
+  "voters": [
+    "defenderwww",
+    "zy9ard3",
+    "themarkib0x0",
+    "nischalxd",
+    "shreyaschavhan",
+    "maholli",
+    "mohaned0101",
+    "shubham_srt",
+    "unknownsh",
+    "hesham_elsheme",
+    "and 33 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.5,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 13,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/server",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2212627",
+  "votes": 43,
+  "latest_disclosable_activity_at": "2023-11-21T09:22:23.066Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:48:27.827091",
+    "source": "https://hackerone.com/reports/2212627.json",
+    "report_id": 2212627
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMjEyNjI3",
+    "databaseId": "2212627",
+    "title": "Delete external storage of any user",
+    "url": "https://hackerone.com/reports/2212627",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-11-21T09:22:22.998Z",
+    "created_at": "2023-10-17T00:08:29.562Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.5
+    },
+    "reporter": {
+      "username": "cx75fa"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81MjY0MzE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2023-10-31T09:14:05.334Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIyMTI2Mjc=",
+    "_id": "2212627",
+    "disclosed": true,
+    "votes": 43,
+    "latest_disclosable_activity_at": "2023-11-21T09:22:23.066Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMjEyNjI3",
+      "databaseId": "2212627",
+      "title": "Delete external storage of any user",
+      "url": "https://hackerone.com/reports/2212627",
+      "disclosed_at": "2023-11-21T09:22:22.998Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

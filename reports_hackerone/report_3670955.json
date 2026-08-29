@@ -1,0 +1,200 @@
+{
+  "id": 3670955,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjcwOTU1",
+  "url": "https://hackerone.com/reports/3670955",
+  "title": "HMAC signature verification omits endpoint and payload allowing request forgery on CoinMate API",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2026-04-13T19:36:21.149Z",
+  "submitted_at": "2026-04-13T19:36:21.285Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "glferreira-devsecops",
+    "url": "/glferreira-devsecops",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/m4lqau1gjjzzggohm88mc2znakau/baa34b1e2ce7ca90d10947b06bb87e22077ae049630946f120aa68d72aec03aa"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 440,
+    "url": "https://hackerone.com/coinmate",
+    "handle": "coinmate",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/440/e3088fe967412b4eabd1c6f7f62d26bcee9a177f_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/440/e3088fe967412b4eabd1c6f7f62d26bcee9a177f_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "CoinMate.io",
+      "twitter_handle": "CoinmateBT",
+      "website": "https://coinmate.io",
+      "about": "CoinMate.io is a crypto trading platform"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": true,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2026-05-20T09:26:10.741Z",
+  "bug_reporter_agreed_on_going_public_at": "2026-04-20T09:25:57.607Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# ZERO-DAY VULNERABILITY REPORT\n**Asset:** `coinmate.io` (Core REST API - https://coinmate.io/api)\n**Vulnerability Type:** CWE-325 (Missing Required Cryptographic Step) / CWE-345 (Payload Malleability & Request Forgery)\n**Severity Category:** High (CVSS v3.0: 8.1 - AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N)\n\n> **Important Triage Note:** To prevent false negatives during verification, please carefully read the \"Attacker Execution Methodology\" section before attempting manual reproduction. Manual re-use of cURL signatures will fail due to the Database's Nonce Replay Protection. We have provided an automated Python PoC to simulate the precise network conditions of the exploit.\n\n---\n\n## 1. Executive Summary & Impact\n\nThe CoinMate API employs HMAC-SHA256 signatures for authentication. However, a systemic architectural flaw exists in how the backend constructs the HMAC pre-image.\n\nCurrently, the signature is calculated strictly using:\n`HMAC(private_key, nonce + clientId + publicKey)`\n\n**CRITICAL FINDING: The cryptographic signature completely omits the HTTP Endpoint (URL Path) and the Request Body (Payload/Parameters).**\n\nBecause identity (the Signature) is not bound to intent (the Payload/Endpoint), the implementation lacks integrity and non-repudiation.\n\n### The Attack Vector (Man-in-the-Middle)\nAn attacker intercepting network traffic (e.g., via a rogue public WiFi, compromised ISP layer, or malicious browser extension) can steal a valid API signature intended for a harmless, read-only action (such as `/api/balances`). \nBy **dropping** the harmless request from reaching Coinmate, the attacker prevents the `nonce` from being consumed by your database. The attacker then injects malicious POST parameters (e.g., `amount`, `price`, `currencyPair`) and forwards the hijacked signature to a destructive trading or withdrawal endpoint (e.g., `/api/sellLimit`). \n\nThe Coinmate backend mathematically verifies the HMAC, sees a valid, unburned Nonce, and executes the forged payload on the destructive endpoint without realizing the data was altered in transit.\n\n**Security Impact:** Complete compromise of API-connected accounts. An attacker can drain funds, execute Flash Crashes via market manipulation, and bypass all intended API Key endpoint restrictions, resulting in catastrophic loss of user assets.\n\n---\n\n## 2. Exploitation Flow (Malleability Diagram)\n\n```text\n[Victim Device] -----> (Initiates: POST /api/balances with Signature X & Nonce 1) -----> [Attacker]\n                                                                                             |\n                                                                [Attacker DROPS the packet]\n                                                                [Attacker HIJACKS Signature X]\n                                                                [Attacker INJECTS 'sellLimit' parameters]\n                                                                                             |\n[Coinmate Database] <----- (Attacker Forges: POST /api/sellLimit with Signature X) <---------/\n         |\n[Coinmate verifies Signature X is mathematically valid]\n[Coinmate executes the SELL ORDER based on the Attacker's forged parameters]\n```\n\n---\n\n## 3. Steps to Reproduce (Using Attached E2E PoC)\n\n**Why Manual cURL Testing Often Fails (False Positives):**\nIf a security analyst tries to test this by sending a valid request to `/balances`, taking the signature from that successful request, changing the URL/body, and sending it again via cURL to `/sellLimit`, the backend will reject it with `\"Access denied\"`. **This is NOT because the signature validation caught the changed payload; it is because the backend's Anti-Replay mechanism saw that the `nonce` was already used.** \n\nIn a real attack, the attacker intercepts and *drops* the first request, preserving the freshness of the nonce.\n\n**To irrefutably prove the vulnerability, use the attached automated Python validation script:**\n\n1. Download the attached `02_Coinmate_Exploit_E2E_Validator_Script.py`.\n2. Open the script and insert your active isolated testing API Keys into the `CLIENT_ID`, `PUBLIC_KEY`, and `PRIVATE_KEY` variables.\n3. Ensure Python and the requests library are installed (`pip install requests`).\n4. Run the script: `python3 02_Coinmate_Exploit_E2E_Validator_Script.py`\n\n### What the Script Automatically Proves (Wire-by-Wire):\n*   **Action 1 (Safeguard Check):** The script validates your keys by hitting `/balances`.\n*   **Action 2 (Proving the Nonce Trap):** The script intentionally reuses the signature from Action 1. It receives `Access denied`, demonstrating to the analyst the exact behavior of Nonce Exhaustion.\n*   **Action 3A (Body Malleability Isolation):** The script injects malicious POST parameters (`MALICIOUS_INJECTION=HACKED_DATA`) into a secure request. CoinMate processes it perfectly, proving the Hash completely ignores the Payload Body.\n*   **Action 3B (Zero-Day Cross-Endpoint Hijacking):** The script generates a *fresh* signature for `/balances`, intercepts it internally, injects forged trading variables (`currencyPair=BTC_EUR`), and redirects the payload to a completely different endpoint (`/api/openOrders`).\n*   **Conclusion:** Coinmate processes the hijacked payload and returns `200 OK` (or a business logic error inside a 200 response), officially bypassing the Cryptographic HMAC constraints and proving the CWE-325 and CWE-345 vulnerabilities simultaneously across two different vectors.\n\n---\n\n## 4. Required Remediation (API Authentication Upgrade)\n\nTo secure the Mainnet API, CoinMate must immediately deprecate the current signature logic and adopt the industry standard for cryptographic API validation (utilized by Binance, Kraken, and Coinbase).\n\nThe CoinMate backend must be updated to expect and verify signatures that include the full request context:\n`HMAC = SHA256( private_key, nonce + HTTP_METHOD + REQUEST_PATH + POST_BODY_STRING + clientId + publicKey )`\n\nBy enforcing this structure, any MITM attacker attempting to alter an `/api/balances` request into an `/api/openOrders` request will instantly break the Hash integrity, causing the backend to throw a legitimate cryptography exception.\n\n---\n**Scope Declaration:** This vulnerability resides entirely within CoinMate's proprietary backend API architecture algorithms. It is not a vulnerability in a third-party application, but rather a systemic flaw in the core REST API authentication framework.\n\n## Impact\n\nComplete compromise of API-connected accounts. An attacker can drain funds, execute Flash Crashes via market manipulation, and bypass all intended API Key endpoint restrictions, resulting in catastrophic loss of user assets. Because identity (the Signature) is not bound to intent (the Payload/Endpoint), the implementation lacks integrity and non-repudiation.",
+  "weakness": {
+    "id": 39,
+    "name": "Missing Required Cryptographic Step"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5727334,
+      "file_name": "H1_Weaponized_Threat_Model_Coinmate.md",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5s6ngiewc732ovkjyreqnbw4pwkc?response-content-disposition=attachment%3B%20filename%3D%22H1_Weaponized_Threat_Model_Coinmate.md%22%3B%20filename%2A%3DUTF-8%27%27H1_Weaponized_Threat_Model_Coinmate.md&response-content-type=text%2Fmarkdown&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041842Z&X-Amz-Expires=1047&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e665c424b89d3174f5075a02bcbd547044e1dbceee993c053f09318835b6d45c",
+      "file_size": 2281,
+      "type": "text/markdown",
+      "moderated": null
+    },
+    {
+      "id": 5727335,
+      "file_name": "02_Coinmate_Exploit_E2E_Validator_Script.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qzb8k8duktnrm7zrt1lggpbxtcd0?response-content-disposition=attachment%3B%20filename%3D%2202_Coinmate_Exploit_E2E_Validator_Script.py%22%3B%20filename%2A%3DUTF-8%27%2702_Coinmate_Exploit_E2E_Validator_Script.py&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZALBSJWK%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041842Z&X-Amz-Expires=1047&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJGMEQCIFayXSN6XuOuCEHys75sK4s37Eaq%2FJUgwad9i995PmdCAiAEJVopqn88U%2BfjFBdADUFkQmn2t9%2FwJzqDruXQJoS1cyqxBQgAEAMaDDAxMzYxOTI3NDg0OSIMfwX22HKo5Rg%2Fou9IKo4FtilkHQ4Lr22sF%2BD6U57u3R0XrJj%2BwgHbh9yzoipdZaQMpf4dGhfSUm%2FZWL0lYJ2MVRdSMh3tlT4nZW%2FNylRhn8C19ZYub6OC7GCUJC6M9aaZIPu6Gn8GB%2Fq5JbfJx%2B8xn5VPF7taAB%2F9A6L%2BBDdLo%2B9%2BJEVNVyXKahQ2x%2BOGrAKWimLY9SffUKNZD2v4Wis70wApHzLR5nzZNcjo30iP3bcMORL9mPSEzp4yxTpwxxHe2UFxTPBYMXUaAjNcYBMKXseSE1HisOqDimmgHOy7V5CBuKw1PbOkGkKZYPeOO88m39fMXmC6EhlkOfcNTANDnSI93JzkXY4KzHo7mLbDlPSpIwNfENCwJO79jEHHxiixbi9e5ON1l4d1EEp5JSQ8HDPvp9vvQ3UEYPJnVtELFN%2BrgwQjKPQ2Cl7Y%2Bv3KBwwfbRoy58h1taBH%2FKfAIy4yMcM8uVCZhKhKqX1i%2BHtK34h8MWAMQhKI0hyG8wint9hhiE6vV8GPjmJ7rOTNywrM2P%2B1jWdFcVEvsRUpi2bq2SDVjpJ2ejaC8J71DgKdlSu2G16JKbeiXFBRiRRUykhVxZNPu3qngSzdtZSNckX2NQUG%2F6yp1eLepY%2Fq6d%2BqX0WcP4W%2BUZV7bPTgEwXZoXd0UzW36TnTxBjnDo38cophG22O6JiSqSLjxO3ZKCB4INsI9VJJEnmTwSeVfy1kyuIxKjQ2lk889PChWdoCtxjmbBG5ecbZnsV%2BC1NxmT%2Fwdwm0TKQZzIk3Ie5q42u6sU2NRkoEpr6ddzXf2yJXhaKkuicYJixmTeSq2FC%2BDGG4VgowPVjxvTQZ%2BqEEhbLpa7ytd%2FwYOFLAK1rj7mHK92YEj8lnZiV9XJoAUCqxczfEMP%2FKm9IGOrIBsssxKLtOXoRnPJntjSh9I0cGdG%2Fdm8awFfwotk%2BgjiNftvDnMkyRijcKhyWG7rUxdgNzM8ezkbT3jgWlLYgP%2FUEtBoHuFeIQsAj9GL9BwKyIAJraJgH2RSFNOTCFO9wPI6aTU1isGAMWoHu3PugSXdShXr7uSNT3VnSmh2s%2FVjMicF2fJ%2Fzi%2BVvIT%2FG5pjLhMD01336DMr%2BdlJHBTsilIvXJcsWd3n%2FzhhmFXh0xVSrVfA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f1f96051bb629fc476dfdd2fa42e6df13e335cc3fe5ed5c5c34b5becb11e4de8",
+      "file_size": 10995,
+      "type": "application/x-sh",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2026-05-20T09:25:57.715Z",
+  "allow_singular_disclosure_after": -3783164.57937038,
+  "singular_disclosure_allowed": true,
+  "vote_count": 66,
+  "voters": [
+    "tolga",
+    "zy9ard3",
+    "mohaned0101",
+    "2026",
+    "lexaa",
+    "mohammadtayb",
+    "stupiz",
+    "nightj",
+    "baba__yaga",
+    "glferreira-devsecops",
+    "and 56 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3670955",
+  "votes": 65,
+  "latest_disclosable_activity_at": "2026-05-20T09:26:14.583Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:18:42.406068",
+    "source": "https://hackerone.com/reports/3670955.json",
+    "report_id": 3670955
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjcwOTU1",
+    "databaseId": "3670955",
+    "title": "HMAC signature verification omits endpoint and payload allowing request forgery on CoinMate API",
+    "url": "https://hackerone.com/reports/3670955",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-05-20T09:26:10.741Z",
+    "created_at": "2026-04-13T19:36:21.149Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM5",
+      "name": "Missing Required Cryptographic Step",
+      "external_id": "cwe-325"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "glferreira-devsecops"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQ0MA==",
+      "handle": "coinmate",
+      "name": "CoinMate.io",
+      "url": "https://hackerone.com/coinmate",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2NzA5NTU=",
+    "_id": "3670955",
+    "disclosed": true,
+    "votes": 65,
+    "latest_disclosable_activity_at": "2026-05-20T09:26:14.583Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjcwOTU1",
+      "databaseId": "3670955",
+      "title": "HMAC signature verification omits endpoint and payload allowing request forgery on CoinMate API",
+      "url": "https://hackerone.com/reports/3670955",
+      "disclosed_at": "2026-05-20T09:26:10.741Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQ0MA==",
+      "handle": "coinmate",
+      "name": "CoinMate.io",
+      "url": "https://hackerone.com/coinmate",
+      "currency": "usd"
+    }
+  }
+}

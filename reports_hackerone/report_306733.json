@@ -1,0 +1,211 @@
+{
+  "id": 306733,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDY3MzM=",
+  "url": "https://hackerone.com/reports/306733",
+  "title": "Submitted reports state logs leakage",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2018-01-19T01:21:47.485Z",
+  "submitted_at": "2018-01-19T01:21:47.485Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "666reda",
+    "url": "/666reda",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/149/981/b207e55ae1ba9686fec694a6cf695150c29dca13_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-01-19T21:55:57.732Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-01-19T21:54:37.747Z",
+  "team_member_agreed_on_going_public_at": "2018-01-19T21:55:57.577Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi team,\n\nSummary\n----------\nThe endpoint `https://hackerone.com/<hacker>` returns a JSON response containing some informations about the `<hacker>`, the parameter signal is returned as a high precision float number (up to 14 digits after the comma), the fractional part of this JSON parameter can be used to disclose some informations including the exact number of Resolved, Informative, and N/A reports submitted by the researcher as demonstrated in the following of the report.\n\n\nDescpription\n---------------------\nThe signal is calculated server-side by applying `(-5*N/A + 0*Informative + 7*Resolved) / (N/A+Informative+Resolved)`, self-closed reports and Duplicates are not included in signal calculations, I also ignored Spam reports because it's very rarely submitted by actif researchers. After the calculation is done, the signal value is returned as it is in `https://hackerone.com/<hacker>` even if only 2 digits after the comma is shown in the hacker profile, for instance, the following GET request to @fransrosen profile \n`curl -H 'X-Requested-With: XMLHTTPRequest' -H 'Accept: application/json' https://hackerone.com/fransrosen` will give us `...\"signal\":6.47740667976424`.\n\n\n{F255410}\n\n\nKeeping in mind that the number of Resolved reports are publicly disclosed in the `report_count` JSON parameter, it's enough to know Informative and N/A reports to have all the details about the hacker. To proceed, one should calculate *x* and *y* with `signal = x*(-5)+y*(0)+report_count*7 / x+y+report_count`, note that the signal is a high precision float number so the equation won't have more than solution, especially if we designate an estimation of the max number of submitted reports, and that's what I did in my exploit.\n\nWhile this cannot not be accomplished mathematically (AFAIK), it can be easily done brue-force.\n\n\nExploitation\n---------------------\nI wrote a small python program to exploit this issue, the script can be used with the syntax : `python H1-signal.py <hacker> <max-reports>`\nwith `<hacker>` is the hacker to attack, and `<max-reports>` is an estimation of the max number of reports submitted by him, the estimation can be made depending on the hacker profile, the script will make a call to `https://hackerone.com/<hacker>` then recover the necessary parameters, then start the brute-force process, if `<hacker>` has really submitted less than `<max-reports>` reports, we will get the exact number of every submitted report by state.\n\n\nPOC\n---------------------\nLet's test on my own profile @██████\n\n1- make an estimation of the max report number submitted by @███████, he has only 3 found bugs with 1.35 signal, so let's say 15 reports.\n\n2- lunch `python H1-signal.py ███████ 15`\n3- after a few moments we got :\n\n\n{F255408}\n\n\nAnd that's my exact log, because `2 N/A`, `3 Informatives` and `3 Resolveds` is the only combination which produce the signal `1.375`\n\n\nPOC 2\n---------------------\nAnother test with ███████ and ████████ (sorry for this, please redact the names if you plan to publicly disclose the report, I already redacted them from the screenshot)\n\n1- make an estimation of the max report number submitted the researchers.\n\n2- lunch `python H1-signal.py ███ 25 && python H1-signal.py █████ 20`\n\n3- after a few moments we got :\n\n\n██████\n\n\nthese will be their submitted reports logs, because they are the only possibilities that can result the returned signal.\n\n\nTesting Environment\n---------------------\n**Linux kali 4.9.0** with **Python 2.7.13** and **curl 7.55.1**.\n\n## Impact\n\nInformation Disclosure via knowing the exact log of submitted reports with no user interation.\n\n\nLimitations\n---------------------\nIt takes much time when it's about more that 30 reports, especially if we took into consideration Spam reports, so of course, not all hackers can be targeted by exploiting this bug.\nHowever, hundreds of H1 users has submitted less than 30 reports, and can be easily targeted, so I guess you still want to fix this, right ?\n\n\nMitigation\n---------------------\nDo everything server-side and send back only the signal with 2 digits after the comma which will be directly displayed in the hacker profile, or include Duplicate reports in the signal calculation.\n\n\nReferences\n---------------------\nhttps://support.hackerone.com/hc/en-us/articles/207377903-What-are-Signal-and-Impact-\nhttps://support.hackerone.com/hc/en-us/articles/205624695-What-are-the-states-of-a-report-\n\n\nLet me know if you have any additional questions,\nRegards.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 255407,
+      "file_name": "H1-signal.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/255/407/c760268769ddfef8a0b31e679b54a26b1cb078f6/H1-signal.py?response-content-disposition=attachment%3B%20filename%3D%22H1-signal.py%22%3B%20filename%2A%3DUTF-8%27%27H1-signal.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061244Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=4263c80f897b9a11eadfcb59e5bd090ec1caba52519e3d0a711bf6dbd92733ed",
+      "file_size": 2529,
+      "type": "text/x-python",
+      "moderated": null
+    },
+    {
+      "id": 255408,
+      "file_name": "poc1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/255/408/1a0f16331f8bb0fa6f1eb9c6f915adaf2f1eae82/poc1.png?response-content-disposition=attachment%3B%20filename%3D%22poc1.png%22%3B%20filename%2A%3DUTF-8%27%27poc1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061244Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3cb670bed6766093ea28178febdd5a8d96bad121a274d94f35ec619a2bcb2039",
+      "file_size": 130492,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 255410,
+      "file_name": "signal_ex.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/255/410/b9ce5851a1b4e4846dc6aa47b134171e86005955/signal_ex.png?response-content-disposition=attachment%3B%20filename%3D%22signal_ex.png%22%3B%20filename%2A%3DUTF-8%27%27signal_ex.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061244Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=707aebb96360642dbd0ae3ec74a0c2a91fe043eafc818e9bdeb27137bd4fb190",
+      "file_size": 149549,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 16,
+  "voters": [
+    "jokebookservice1",
+    "sp1d3rs",
+    "foobar7",
+    "s_p_q_r",
+    "shubham_srt",
+    "malcolmx",
+    "muhammad_uwais",
+    "t4ym",
+    "japz",
+    "silv3rpoision",
+    "and 6 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "306733",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2018-01-19T21:55:57.764Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:12:44.543181",
+    "source": "https://hackerone.com/reports/306733.json",
+    "report_id": 306733
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDY3MzM=",
+    "databaseId": "306733",
+    "title": "Submitted reports state logs leakage",
+    "url": "https://hackerone.com/reports/306733",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2018-01-19T21:55:57.732Z",
+    "created_at": "2018-01-19T01:21:47.485Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "666reda"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMwNjczMw==",
+    "_id": "306733",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2018-01-19T21:55:57.764Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDY3MzM=",
+      "databaseId": "306733",
+      "title": "Submitted reports state logs leakage",
+      "url": "https://hackerone.com/reports/306733",
+      "disclosed_at": "2018-01-19T21:55:57.732Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

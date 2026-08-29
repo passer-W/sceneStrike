@@ -1,0 +1,196 @@
+{
+  "id": 217610,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTc2MTA=",
+  "url": "https://hackerone.com/reports/217610",
+  "title": "kh_put_iv SEGFAULT - mruby 1.2.0",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2017-04-01T07:14:38.590Z",
+  "submitted_at": "2017-04-01T07:14:38.590Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ilsani",
+    "url": "/ilsani",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/034/984/3b77bc02e946405c4f4f77b7b678907d81f1946c_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-04-13T22:45:37.586Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-04-13T22:45:37.555Z",
+  "team_member_agreed_on_going_public_at": "2017-04-13T21:27:25.939Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "mruby v. 1.2.0 crashes in `kh_put_iv` function in `variable.c` file with a crafted input. I'm examining the bug in order to better understand the root cause of the issue.\n\nTest platform:\nLinux 4.2.0-1 SMP Debian 4.2.3-2 x86_64\n\nStacktrace:\n```\nProgram terminated with signal SIGSEGV, Segmentation fault.\n#0  0x000000000045329c in kh_put_iv (mrb=0x2744c10, h=0x2f2f3a7370747468, key=671, ret=0x0)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/variable.c:292\n292     KHASH_DEFINE(iv, mrb_sym, mrb_value, TRUE, kh_int_hash_func, kh_int_hash_equal)\n(gdb) backtrace \n#0  0x000000000045329c in kh_put_iv (mrb=0x2744c10, h=0x2f2f3a7370747468, key=671, ret=0x0)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/variable.c:292\n#1  0x0000000000459117 in iv_put (mrb=0x2744c10, t=0x2f2f3a7370747468, sym=671, val=...)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/variable.c:310\n#2  mrb_mod_cv_set (mrb=<optimized out>, c=<optimized out>, sym=<optimized out>, v=...)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/variable.c:838\n#3  0x000000000050e1e1 in mrb_vm_exec (mrb=<optimized out>, proc=<optimized out>, pc=<optimized out>)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/vm.c:979\n#4  0x000000000051f5bb in mrb_vm_run (proc=0x2746ef0, self=..., stack_keep=8, mrb=<optimized out>)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/vm.c:823\n#5  mrb_top_run (mrb=0x2744c10, proc=0x2746ef0, self=..., stack_keep=<optimized out>)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/src/vm.c:2614\n#6  0x00000000004d4f93 in mrb_load_exec (mrb=0x2744c10, p=<optimized out>, c=0x0)\n    at /home/msani/wrk/security/code-review/shopify/mruby/src/mruby/mrbgems/mruby-compiler/core/parse.y:5760\n#7  0x0000000000400c85 in main () at runtest.c:23\n(gdb) exploitable \n__main__:99: UserWarning: GDB v7.11 may not support required Python API\nDescription: Possible stack corruption\nShort description: PossibleStackCorruption (7/22)\nHash: 5696db2f9fc8b1e9b330173ee7ddc787.2627e5d3f14472e2e24f2d46a9038356\nExploitability Classification: EXPLOITABLE\nExplanation: GDB generated an error while unwinding the stack and/or the stack contained return addresses that were not mapped in the inferior's process address space and/or the stack pointer is pointing to a location outside the default stack region. These conditions likely indicate stack corruption, which is generally considered exploitable.\nOther tags: AccessViolation (21/22)\n\n```\n\nAttachment [1] is the crafted input.",
+  "bounty_amount": "800.0",
+  "formatted_bounty": "$800",
+  "weakness": {
+    "id": 2,
+    "name": "Memory Corruption - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 172696,
+      "file_name": "input.txt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/172/696/921460591414a3e09c204cab6df709aa0445c15f/input.txt?response-content-disposition=attachment%3B%20filename%3D%22input.txt%22%3B%20filename%2A%3DUTF-8%27%27input.txt&response-content-type=text%2Fx-c%2B%2B&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4RXP7525%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063814Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIGeC4%2Fnmkc5zv5spH8Zj0TKGu3QPJxWoKnwOXiS05B%2BTAiBnYw3eSKjxrZK%2BoVUelxP1xM3GzqvvHTld7YhDiLTcLCqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMD%2BFwCTUyAwW0X4akKo8FP2Oq%2BpBk1M4kzVg4cBBchRK%2BBhR7KiSLtBFHFE%2BNqDgi2JxdnjAUoX6d5ecnlBrMNpfE8Q8eN07QI1w1pJUkUgp9Iy3mVsFhxJ%2FMFS6aChlgb78DO7Z9FCxNsBE865Ly5thUUnJekM8MYK3KZHPlh8GLKw9949VBrMj5%2Bknpcvbb7IrCeyHQJ5%2BCqPlgo%2B6NhD68185JFFwIY06Wyx67llBqzK67SqFTZxlKO8zrbX6tWQc6%2BB%2FTdf7Z2n9rqKhB58zf9bMN1y%2FVoUs4gVySXq69OdG5BFatiqlreA598P8FWLUYzNBDGepfyAEY8h1QrlYFLwnPq1YrBuWy4ZdWD2pUcLHlziHQuiMDnUG0JMj9nPvook%2BUBuBdmFk0Uj18zGwIOai4vXHxrzBMxFMSxElh7fje6KvCMhOj41Xkd4L%2F67gE3nft86KphVlytdX8qBRyT8wpQTHgVmceMnQCvXjUj1Uyq2PGd1ZUot5s2%2FLARTGAC%2FC0wAQiujKm8%2Bzia5IrCV%2Fgu%2B8Qhl1gWoI%2FKJQyiYLspby5CIaiNVeLSW32lTdATEWZzBQE2a2GfYuXtKO2m6AldFZUWly5P1N1zoeHiH2U1SjkBRyCqg7MXRdvP3HVyNK1qKSWqZisFKdY5%2FcKC5YDKNIL25bI2s1uWinGOKjulcFcLyuq6UDry55jbG2oOLSuibF5xsVv3dgj1Wx7FWhgYF4qfjygddTfwy6UFzOlcPN72YqRr1HlicNPYMIunQrDKEhggeKXG7AySqDrhMTUsLzeGgbDglZy3Y3sF%2Fkk1B3wsAivIEsrxwvIjaVUyWtph3bcRU9lSaipoE0IeCVvD16fIjv48XY6pT%2FOGMjRUzCPJFnRlmwV%2FzDMy7fSBjqyAZA9binCEj3mEhDHWCBWP9D6EVq9xcuBjOaD3F6DEvRX6JipV6gadUQR6HIAK8MrB%2F0xxgz7yj8Miw8Mth01vK6JOHyp%2Bw9h7Tx%2BRsuptni%2FZoETExorAtFVeHfz7aBIS225Mv1ZpxPbLpK53QudOleMdeO8KkDukDzBbmcrw9uVgMe2m2BJ9WXEOh9Wd%2FEZO%2FBlqdTBoJyJoTeBGSDIqJ%2FeN%2F2e%2BfGRyEHDVV2RQsJ%2BnhI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d02b6537e4b4ccb0c5565480c468028cd61997f94f59a3baae4c51300c13167c",
+      "file_size": 301,
+      "type": "text/x-c++",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-05-13T21:27:25.981Z",
+  "allow_singular_disclosure_after": -288781848.8020112,
+  "singular_disclosure_allowed": true,
+  "vote_count": 3,
+  "voters": [
+    "eveeez",
+    "t4ym",
+    "spetr0x"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "217610",
+  "votes": 3,
+  "latest_disclosable_activity_at": "2017-04-13T22:45:37.601Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:38:15.050160",
+    "source": "https://hackerone.com/reports/217610.json",
+    "report_id": 217610
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTc2MTA=",
+    "databaseId": "217610",
+    "title": "kh_put_iv SEGFAULT - mruby 1.2.0",
+    "url": "https://hackerone.com/reports/217610",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-04-13T22:45:37.586Z",
+    "created_at": "2017-04-01T07:14:38.590Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI=",
+      "name": "Memory Corruption - Generic",
+      "external_id": "cwe-119"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "ilsani"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NTQ3Mg==",
+            "amount": "800.00",
+            "awarded_amount": "800.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-04-11T22:37:00.091Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxNzYxMA==",
+    "_id": "217610",
+    "disclosed": true,
+    "votes": 3,
+    "latest_disclosable_activity_at": "2017-04-13T22:45:37.601Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTc2MTA=",
+      "databaseId": "217610",
+      "title": "kh_put_iv SEGFAULT - mruby 1.2.0",
+      "url": "https://hackerone.com/reports/217610",
+      "disclosed_at": "2017-04-13T22:45:37.586Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "id": 531032,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzEwMzI=",
+  "url": "https://hackerone.com/reports/531032",
+  "title": "Slack DTLS uses a private key that is in the public domain, which may lead to SRTP stream hijack",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2019-04-08T09:20:55.916Z",
+  "submitted_at": "2019-04-08T09:20:55.916Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sandrogauci",
+    "url": "/sandrogauci",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/h1r9ltrlx7r5drucw3cbori5g2mx/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 69,
+    "url": "https://hackerone.com/slack",
+    "handle": "slack",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Slack",
+      "twitter_handle": "slackhq",
+      "website": "https://slack.com",
+      "about": "All your team communication in one place, instantly searchable, and available wherever you go."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-03-12T00:17:02.105Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-03-04T15:29:38.623Z",
+  "team_member_agreed_on_going_public_at": "2020-03-12T00:17:01.965Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "- Affects: Janus DTLS certificate\n\n### Description\n\nThe Janus server in use by Slack is configured using a certificate and private key that were previously distributed by default. This certificate is used to authenticate the DTLS _connection_ which is later used to exchange keys for the SRTP stream. As a result, the confidentiality of the WebRTC call over Slack cannot be ensured.\n\n\n### How to reproduce the issue\n\n1. Start Wireshark and set a display filter for stun\n2. In the web browser, open `about:webrtc-internals`\n3. Start a call on Slack\n4. Observe the packets containing the string _rainmaker_ which would be part of the DTLS certificate\n5. Notice that the `SetRemoteDescription` fingerprint in the `about:webrtc-internals` page is `C5:5F:DA:7D:84:47:B1:BF:6B:55:16:62:48:31:3E:D3:F1:7B:25:89:92:4A:4B:4D:4D:D9:D5:AF:EA:D8:15:44`\n\nThe old certificate can be obtained from the following commit where it was previously removed:\n\nhttps://github.com/meetecho/janus-gateway/commit/6f98f2dde644b3ead4a162c241dff9da1587ec13\n\nThe certificate's SHA256 checksum can be calculated using the OpenSSL command line tool as follows:\n\n```\nopenssl x509 -noout -fingerprint -sha256 -inform pem -in janus-cert1.crt \nSHA256 Fingerprint=C5:5F:DA:7D:84:47:B1:BF:6B:55:16:62:48:31:3E:D3:F1:7B:25:89:92:4A:4B:4D:4D:D9:D5:AF:EA:D8:15:44\n```\n\nAttachments:\n\n- `dump-stun.pcapng`: contains the data stream containing the TURN tunnelled DTLS exchange and SRTP stream that follows\n- `janus-cert1.crt` and `janus-cert1.key` are the certificate and key in use by Slack\n- `2019-04-07_16-06-wireshark.png` shows the certificate in the Wireshark dump\n- `2019-04-07_16-13-fingerprint.png` shows the SHA256 fingerprint which matches the public certificate and corresponding private key\n\nAn attacker would probably need to take the following steps to exploit this issue in the case of Slack:\n\n1. Start a man-in-the-middle attack using any known method (ARP cache poisoning, DNS cache poisoning, static routes on compromised network router etc)\n2. Actively hijack the Slack TURN servers between the victim and the Internet\n3. Wait for victim to make a Slack call\n4. Handle STUN packets from victim to attacker-controlled TURN server; allow authentication with any password\n5. Start DTLS exchange\n6. When DTLS certificate is required, present victim with the Janus default certificate\n7. The attacker does __NOT__ verify the victim's DTLS certificate\n8. The SRTP Master Key is set over this DTLS connection\n9. Attacker can now handle the SRTP stream between the victim and attacker\n\n### Solutions and recommendations\n\nIt is recommended to generate a new certificate and private key.\n\n## Impact\n\nAttackers positioned as man-in-the-middle may hijack the DTLS connection and set their own SRTP keys, handling the SRTP stream instead of Slack. This is still research in progress but it does not appear that attackers can perform a two-way MITM attack due to the mutual authentication required by the DTLS exchange. Therefore, it seems that this vulnerability can only be abused to hijack the SRTP stream between the WebRTC client and Slack but not the other way round.",
+  "bounty_amount": "2000.0",
+  "formatted_bounty": "$2,000",
+  "weakness": {
+    "id": 35,
+    "name": "Use of Hard-coded Cryptographic Key"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 464389,
+      "file_name": "janus-cert1.key",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/464/389/d33ecafb57f8569c6f20295f2bd8b9d84d599216/janus-cert1.key?response-content-disposition=attachment%3B%20filename%3D%22janus-cert1.key%22%3B%20filename%2A%3DUTF-8%27%27janus-cert1.key&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051227Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2165744bb6595e35b18d4fcc33c16e7c5a2d83672c3c6827927d99500ee5adf1",
+      "file_size": 493,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 464390,
+      "file_name": "janus-cert1.crt",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/464/390/db251066e5aea487b0021f9488c204548b27659c/janus-cert1.crt?response-content-disposition=attachment%3B%20filename%3D%22janus-cert1.crt%22%3B%20filename%2A%3DUTF-8%27%27janus-cert1.crt&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051227Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=14fd9aa5083f451a8fe71b073438b251df130cd750e12fc8c2b0a1ea0f90a112",
+      "file_size": 1139,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 464391,
+      "file_name": "dump-stun.pcapng",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/464/391/2be4cd04b9db0cb57fe01399bdfc5308a33a3993/dump-stun.pcapng?response-content-disposition=attachment%3B%20filename%3D%22dump-stun.pcapng%22%3B%20filename%2A%3DUTF-8%27%27dump-stun.pcapng&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051227Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=07f422f3c669b9aec12de3abe635bdcfd5bfaffdcd9507b2645ec6b06cf419b0",
+      "file_size": 44604,
+      "type": "application/octet-stream",
+      "moderated": null
+    },
+    {
+      "id": 464392,
+      "file_name": "2019-04-07_16-13-fingerprint.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/464/392/0bbee157af8baf99b0bd846d165a704e44aad9ad/2019-04-07_16-13-fingerprint.png?response-content-disposition=attachment%3B%20filename%3D%222019-04-07_16-13-fingerprint.png%22%3B%20filename%2A%3DUTF-8%27%272019-04-07_16-13-fingerprint.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051227Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=279d53e1dea74490a479c7f6de4c57efe0b511ade37ca99753d40fd147bdf813",
+      "file_size": 342633,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 464393,
+      "file_name": "2019-04-07_16-06-wireshark.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/464/393/375e0043a31b4f50d38e7bd5f9eb12bf28deac0d/2019-04-07_16-06-wireshark.png?response-content-disposition=attachment%3B%20filename%3D%222019-04-07_16-06-wireshark.png%22%3B%20filename%2A%3DUTF-8%27%272019-04-07_16-06-wireshark.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051227Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=83ab1b8f721fc120a94b46840ea5ca14eb54ab658d0c32020158e43bf85f692c",
+      "file_size": 939427,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-04-03T15:29:38.693Z",
+  "allow_singular_disclosure_after": -197559768.97230935,
+  "singular_disclosure_allowed": true,
+  "vote_count": 169,
+  "voters": [
+    "sandrogauci",
+    "sebd",
+    "0x800700e1",
+    "billm",
+    "a_d_a_m",
+    "base_64",
+    "rook1337",
+    "ali",
+    "tess",
+    "spam404",
+    "and 159 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.7,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 15516,
+    "asset_type": "URL",
+    "asset_identifier": "slack.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 20684,
+      "category": "researcher",
+      "content": "DTLS certificate used for Slack WebRTC calls was previously included in the Janus (WebRTC server) together with the private key, thus considered public domain.",
+      "updated_at": "2020-03-12T07:11:05.187Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 58642,
+        "username": "sandrogauci",
+        "name": "Sandro Gauci",
+        "bio": "CEO at Enable Security",
+        "cleared": false,
+        "verified": false,
+        "website": "https://www.enablesecurity.com",
+        "location": "",
+        "created_at": "2016-03-01T07:39:14.591Z",
+        "url": "https://hackerone.com/sandrogauci",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/h1r9ltrlx7r5drucw3cbori5g2mx/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/h1r9ltrlx7r5drucw3cbori5g2mx/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/h1r9ltrlx7r5drucw3cbori5g2mx/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "531032",
+  "votes": 169,
+  "latest_disclosable_activity_at": "2020-03-12T00:17:02.149Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:12:27.781284",
+    "source": "https://hackerone.com/reports/531032.json",
+    "report_id": 531032
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzEwMzI=",
+    "databaseId": "531032",
+    "title": "Slack DTLS uses a private key that is in the public domain, which may lead to SRTP stream hijack",
+    "url": "https://hackerone.com/reports/531032",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-03-12T00:17:02.105Z",
+    "created_at": "2019-04-08T09:20:55.916Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM1",
+      "name": "Use of Hard-coded Cryptographic Key",
+      "external_id": "cwe-321"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.7
+    },
+    "reporter": {
+      "username": "sandrogauci"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMzkzNTQ=",
+            "amount": "2000.00",
+            "awarded_amount": "2000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-05-23T14:34:28.059Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzUzMTAzMg==",
+    "_id": "531032",
+    "disclosed": true,
+    "votes": 169,
+    "latest_disclosable_activity_at": "2020-03-12T00:17:02.149Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MzEwMzI=",
+      "databaseId": "531032",
+      "title": "Slack DTLS uses a private key that is in the public domain, which may lead to SRTP stream hijack",
+      "url": "https://hackerone.com/reports/531032",
+      "disclosed_at": "2020-03-12T00:17:02.105Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    }
+  }
+}

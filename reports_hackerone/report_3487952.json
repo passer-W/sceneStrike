@@ -1,0 +1,192 @@
+{
+  "id": 3487952,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDg3OTUy",
+  "url": "https://hackerone.com/reports/3487952",
+  "title": "State Isolation Failure in Multiplexed Connections (Shared Auth Context)",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "severity_rating": "critical",
+  "readable_substate": "N/A",
+  "created_at": "2026-01-05T22:13:57.502Z",
+  "submitted_at": "2026-01-05T22:13:57.906Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "raulvdv",
+    "url": "/raulvdv",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-01-08T12:57:03.273Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-01-07T07:35:17.286Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Vulnerability: State Isolation Failure in Multiplexed Connections (Shared Auth Context) Product: libcurl Affected Versions: v7.43.0 - Current (v8.x) - All versions supporting HTTP/2 Multiplexing Severity: CRITICAL (CVSS: 9.1)\n\n1. Executive Summary\nA fundamental design flaw exists in libcurl's state management for HTTP/2 multiplexed connections. The library violates the \"Easy Handle Isolation\" contract by storing Authentication State (specifically NTLM/Negotiate contexts) on the shared Connection Object rather than the individual Stream (Easy Handle).\n\nThis violation allows a secondary, unauthenticated Easy Handle (\"Attacker Stream\") to effectively \"inherit\" the authentication context of a primary, privileged Easy Handle (\"Admin Stream\") if they share the same physical TCP connection. While often triggered by race conditions or specific flow control states (\"Ouroboros\"), the vulnerability is rooted in the Invariant Violation: Authentication State ⊂ Connection instead of Authentication State ⊂ Stream.\n\nThis is not a usage error. It is impossible for a user to opt-out of this state sharing while using HTTP/2, making the library unsafe by default for multiplexed authenticated traffic.\n\n2. Technical Chain Analysis\nThe exploit relies on the structural failure to isolate state:\n\nDefect A: Invariant Violation (STATE-001)\nLocation: \nlib/url.c\n / \nlib/transfer.c\n Description: The conn->ntlm and conn->negotiate structs are attached to the connectdata object. In HTTP/1.1 (1:1 mapping), this was acceptable. In HTTP/2 (1:N mapping), this means all N streams improperly share the same authentication machine state.\n\nDefect B: The Chronos Trigger (RACE-001)\nLocation: lib/multi.c\n Description: To weaponize the shared state, an attacker needs the \"Admin\" stream to keep the connection open and authenticated without consuming the response. The CURL_READFUNC_PAUSE or Network Backpressure states allow a stream to be \"paused\" indefinitely, creating a stable window where conn->ntlm.state is AUTHENTICATED, available for any new stream to pivot off.\n\n3. Proof of Concept (PoC)\nA functional C program (ouroboros_poc.c) is attached. Zero Preparation: The PoC uses standard curl_multi_add_handle calls. No memory corruption or special payload is required. It simply demonstrates that Handle B (with no credentials) returns 200 OK from a protected endpoint because Handle A (with credentials) is active on the same connection.\n\n4. Anticipated Objections & Rebuttals\nObjection A: \"NTLM/Negotiate are Connection-Oriented protocols, unaware of Multiplexing.\"\n\nRebuttal: Acknowledged. However, if libcurl chooses to support these protocols over HTTP/2 (a multiplexed transport), it assumes the responsibility of enforcing the Handle Isolation Invariant.\nIf the protocol cannot differentiate streams (like NTLM), libcurl MUST EITHER:\n- Block Multiplexing for that connection (downgrade to 1:1).\n- Lock the connection to the Authenticated Handle exclusively.\n- Allowing \"State Bleed\" because the underlying protocol is legacy is a failure of the Abstraction Layer (libcurl), not the Protocol itself.\n\nObjection B: \"This is an Application Logic Error. The App should not mix users on one Multi handle.\"\nRebuttal: False. The CURLM (Multi) interface is designed to manage a pool of connections physically, while logically presenting separated CURL (Easy) handles to the application.\n\nThe Application Developer has no granular control over which Easy Handles map to which physical TCP connection in an HTTP/2 context. libcurl manages this mapping internally.\nTherefore, the Developer cannot prevent this race condition via application logic (short of disabling HTTP/2 globally). The defect lies within the internal Connection Pool management.\n\n## Impact\n\nImpact Analysis (CVSS 9.1)\n\nConfidentiality: High. Credentials/Sessions are leaked across handle boundaries.\nIntegrity: High. Requests are authorized incorrectly.\nAvailability: None (in this context).\nVector: Network (AV:N).\nComplexity: Low (AC:L) - Default behavior on HTTP/2.\nPrivileges: None (PR:N).\nUser Interaction: None (UI:N).\nScope: Unchanged (S:U) - (Conservative scoring to avoid rejection, strictly affecting the application relying on curl).\nCVSS v3.1 Score: 9.1 (Critical) CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+  "weakness": {
+    "id": 700,
+    "name": "Exposure of Data Element to Wrong Session"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5190003,
+      "file_name": "ouroboros_poc.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/q6msfzjgx38nqzspey1do2hnhqy3?response-content-disposition=attachment%3B%20filename%3D%22ouroboros_poc.c%22%3B%20filename%2A%3DUTF-8%27%27ouroboros_poc.c&response-content-type=text%2Fx-c%2B%2Bsrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQY6WM27R6%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042357Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQCw73CRLz9sOJGZ68jR3COYrzYL3ILrCiO4Ldt1wAcDSgIhAME5n1ZBPtjrek4miyWIdOchrHmJn%2BJjRw%2FOjwY99XgHKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgxARN2DuvvpJZ2epWMqjwUO%2Bkmg9tr%2B6wqfKD9br9ucHuRS%2FIehwltTZbySAR4NCOkdmA78DoU30sj8NIUMUa4CB6825u5HJmurPDFwVxnBUd%2FsqMUlEUvRW08%2BZI3jmcKdmDbzytaJbrWWm8flrJKvR6y3ivBYg6iAwCY8k4PvhC4dahTn%2BtJNtGlkb92du%2B6nvxeQQ%2FrsMKj6EFZG2xulxGiqMzyN2crdMwj1hhFWon5yXIuTCk6njfG9N7tOknAYV%2F23NCvOD0zoSQ7hhDvO8V%2Fxy%2BHlqGZZJjkkEFaNxjeIzb3R%2BZ8aivYnj2MMbsGPeKuCHInB5jYzz2DhntusW2IIaBFwTroHLdPBXY%2BhH%2FPKq%2B7%2BPpW0j4LBlU5avT0rmYVlYVhIzfpGeWhRxMFLNgzm%2FMLDKv9gr0FloMqRAXfMoyNh0ZlKxdA4t40HBhXlOEfe4sQnTBUT7gEEu5GUme0ftpyct%2B2OfJXvmBuFHS%2FVtfrga6jKQYLDHTHkIwk2ZR15fOiuFtIqrblokJAu8kDg4favAijvluHqLz0vF3D4c33wNCp1T8FR6WM1LPOBG%2BdXtdF%2F0A09eL5aJNVeMFdd2nqamMf%2BORN0P6ncuN81ci9MrqabMg0RIGvhVCApDAGCTo3M9%2FJNUEZyQz%2B5TdLEfQaAX88TuASCjK3XqWvv5stZEUiI6as6ESxd2njeBTZQ2kWT5ljlS7zVazo5KI8vv4uHr%2BJd29b44vQdKU19Vl3lDuqtqh8wOo1ePMit%2BfXK9PL7Z79AJ%2FZxQlOD13z5olJ1ol7DZlJ5k3sADywbDfF0avYaZ1YfXUCi6tdTFbkmrTdlHegp0lfWcpOIvRI70B7XGspFQ6MgyAWEDlDQ8OTou%2Byb7dG73qqHMOzmnNIGOrABdjkpiCK7pXbgfyOEI8FdTrlOpemp4A%2BMTNlSvyRUUyY8CP6QWi7kn7GTiQqPPWV%2B6ick6o2sA1gGTX9Mt5bgwVsA0MjvFDLmSjcnZ6OJCLIHDycmE7Hi887Wj0q2aCdCkdjRqTUlo0icaleJQWwkMdcyvF%2F%2BrAAIBhAjwfGsQ1cpU%2FXcYFGq5p4iD65F6C90YZ7mDEYnAYavdpPSy9vFBoHLbkCRBTQELtbhQgATo2A%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=887879d08bac9c89c7ad26044dd81a3c007116deabdc069b08e05b35f249369d",
+      "file_size": 5536,
+      "type": "text/x-c++src",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 8,
+  "voters": [
+    "2026",
+    "ngvuthdanhh",
+    "corrinaalcoser",
+    "anon7119",
+    "b9b86d699d9d678779dac8b70de6e",
+    "randyjpi",
+    "sp33dyfox",
+    "honeydrop"
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3487952",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2026-01-08T12:57:02.942Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:23:57.834947",
+    "source": "https://hackerone.com/reports/3487952.json",
+    "report_id": 3487952
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDg3OTUy",
+    "databaseId": "3487952",
+    "title": "State Isolation Failure in Multiplexed Connections (Shared Auth Context)",
+    "url": "https://hackerone.com/reports/3487952",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2026-01-08T12:57:03.273Z",
+    "created_at": "2026-01-05T22:13:57.502Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcwMA==",
+      "name": "Exposure of Data Element to Wrong Session",
+      "external_id": "cwe-488"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "raulvdv"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0ODc5NTI=",
+    "_id": "3487952",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2026-01-08T12:57:02.942Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDg3OTUy",
+      "databaseId": "3487952",
+      "title": "State Isolation Failure in Multiplexed Connections (Shared Auth Context)",
+      "url": "https://hackerone.com/reports/3487952",
+      "disclosed_at": "2026-01-08T12:57:03.273Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

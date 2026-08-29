@@ -1,0 +1,199 @@
+{
+  "id": 2586433,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTg2NDMz",
+  "url": "https://hackerone.com/reports/2586433",
+  "title": "Insecure Invitation Link Handling",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2024-07-04T13:09:16.695Z",
+  "submitted_at": "2024-07-04T13:09:17.071Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mous_haxk",
+    "url": "/mous_haxk",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/244shqg0k0y5styekg9915i2dwmv/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 57997,
+    "url": "https://hackerone.com/productboard",
+    "handle": "productboard",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/2a2mh8qxtm5yqyl8l10ytya3adrb/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/2a2mh8qxtm5yqyl8l10ytya3adrb/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "ProductBoard, Inc.",
+      "twitter_handle": "productboard",
+      "website": "http://productboard.com",
+      "about": "Productboard is a suite of product management software tools that helps product managers understand customer needs, prioritize features"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-10-31T11:17:21.122Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-10-30T22:16:33.815Z",
+  "team_member_agreed_on_going_public_at": "2024-10-31T11:17:20.739Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThis report outlines a critical security vulnerability in the invitation link handling process of ''satismeter.com''. The issue allows unauthorized users to join an organization using invitation links sent to different email addresses. If exploited, this vulnerability can lead to unauthorized access, privilege escalation, data breaches, and other severe impacts.\nVulnerability Details\nDescription\nThe invitation system is designed to send unique links to specific email addresses, allowing them to join an organization. However, it was discovered that these links can be used by email addresses other than the intended recipients. This flaw occurs because the system does not adequately verify that the email address using the invitation link matches the email address to which the link was sent.\n\nNOTE:\nwhen you want to create account it will ask for email verification, but in the scenario described down i was able to bypass verification process  \n\n## Steps To Reproduce:\n1-victim send an invitation to attacker\n2-in attacker mailbox click on the invite you had received \n3-turn on burp\n4-set up your password and turn the interception on\n5- click signup and go to burp forward the request till you reach POST /graphql HTTP/2 with body\n```\n{\"operationName\":\"SignUp\",\"variables\":{\"input\":{\"email\":\"example@gmailll.com\",\"link\":null,\"password\":\"wxxxxxxx\",\"source\":\"invitation\"}},\"query\":\"mutation SignUp($input: SignUpInput!) {\\n  auth {\\n    signUp(input: $input)\\n    __typename\\n  }\\n}\"}\n```\n6-in the email parameter change the email to any email you want even one you don't own and finish signup process and you are now logged in with email that doesn't belong to you and have bypassed email verification \n\n## Supporting Material/References:\n  * [attachment / reference]\nF3410870\n\nRecommendations\nImmediate Actions\n    Token Validation:\nEnsure that the invitation link token is cryptographically tied to the specific email address. The token should include the email address and a unique identifier.\n    Email Address Verification:\nVerify that the email address of the user attempting to accept the invitation matches the email address associated with the token.\n    Multi-Factor Authentication:\nFor high-privilege roles, require additional verification steps, such as a one-time password (OTP) sent to the invited email address.\nLong-term Enhancements\n    Single-Use Tokens:\nEnsure that tokens are single-use and invalidate them after they are used.\n    Link Expiration:\nSet an expiration time for invitation links to limit their validity period.\n\n## Impact\n\nPotential Risks\n    Unauthorized Access:\nUnauthorized users can join the organization and gain access to sensitive information.\nPrivilege Escalation:\nIf the invitation grants high-privilege roles (e.g., owner), unauthorized users can perform actions restricted to these roles, potentially compromising the entire system.\nData Breach:\nConfidential and sensitive data may be exposed, leading to data breaches and loss of proprietary information.\nOperational Disruption:\nUnauthorized changes to configurations, deletion of data, or disruption of services can impact business operations.\nEmail verification bypass.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3410870,
+      "file_name": "bandicam_2024-07-04_13-40-31-849.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/z1t09grh35zxi05vvjsjp5thdg18?response-content-disposition=attachment%3B%20filename%3D%22bandicam_2024-07-04_13-40-31-849.mp4%22%3B%20filename%2A%3DUTF-8%27%27bandicam_2024-07-04_13-40-31-849.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043713Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a294459dfaa37ad38c0c88d4ea567f8dd95d2ce7d9e0102405757d78f48dbb98",
+      "file_size": 7282044,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 92,
+  "voters": [
+    "0x800700e1",
+    "ph4nt0mbyt3",
+    "k0ns0l",
+    "orange303",
+    "br0x1337",
+    "loaymorad",
+    "ganeshbagaria",
+    "ivoabreu",
+    "captn0sharky1",
+    "mohaned0101",
+    "and 82 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 181605,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.satismeter.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2586433",
+  "votes": 92,
+  "latest_disclosable_activity_at": "2024-10-31T11:17:21.349Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:37:13.326212",
+    "source": "https://hackerone.com/reports/2586433.json",
+    "report_id": 2586433
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTg2NDMz",
+    "databaseId": "2586433",
+    "title": "Insecure Invitation Link Handling",
+    "url": "https://hackerone.com/reports/2586433",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-10-31T11:17:21.122Z",
+    "created_at": "2024-07-04T13:09:16.695Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": 5.3
+    },
+    "reporter": {
+      "username": "mous_haxk"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNTc5OTc=",
+      "handle": "productboard",
+      "name": "ProductBoard, Inc.",
+      "url": "https://hackerone.com/productboard",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI1ODY0MzM=",
+    "_id": "2586433",
+    "disclosed": true,
+    "votes": 92,
+    "latest_disclosable_activity_at": "2024-10-31T11:17:21.349Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTg2NDMz",
+      "databaseId": "2586433",
+      "title": "Insecure Invitation Link Handling",
+      "url": "https://hackerone.com/reports/2586433",
+      "disclosed_at": "2024-10-31T11:17:21.122Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNTc5OTc=",
+      "handle": "productboard",
+      "name": "ProductBoard, Inc.",
+      "url": "https://hackerone.com/productboard",
+      "currency": "usd"
+    }
+  }
+}

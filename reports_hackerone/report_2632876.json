@@ -1,0 +1,250 @@
+{
+  "id": 2632876,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjMyODc2",
+  "url": "https://hackerone.com/reports/2632876",
+  "title": "Access to limited confidential information of private program as a Ex-reporter, Report Participant(external user) & Ex-staff member",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2024-07-31T13:42:58.072Z",
+  "submitted_at": "2024-08-03T08:26:48.061Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sarthakbhingare015",
+    "url": "/sarthakbhingare015",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ructzy1nrdl7lakuoiju9b0cq78a/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2024-12-24T08:48:15.122Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-11-24T08:48:12.380Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:**\nTechnically, there are four types of users on HackerOne: Reporter, Report Participant, Triager & Staff member. Each user is part of a private program in different ways. When any of these user leave the private program, they lose access to private program. And the report participant of a private program's report already doesn't have access to the private program. None of them can view the private program with the conditions mentioned.\n\nBut I have found that after leaving the program or as a report participant of private program's report- Reporter, Report Participant & Staff member can visit private program's policy page to view limited private program details. The information exposed includes the introduction, contact email, program highlights, current state of program, when was the program details last updated, top hackers on the program, vpn state and more setting related to program in graphql request. \n\nThis is due to a endpoint called `/:handle/hacker_demand` that seems to be for setting goals and parameters. Based on these, it shows a list of hackers who can be invited. This list of hackers is shown in a GraphQL request when you visit the endpoint. I'm sorry if this is incorrect, as I couldn't find any documentation about it. This endpoint leaks details of any program to any authenticated user on HackerOne (but this is not main concern in my report). For example: As a hacker I visited https://hackerone.com/security/hacker_demand\n{F3482988}\n\n**Description:**\nSo there are 3 actors in this bug- Report Participant, Ex-Staff Member & Ex-Reporter of a private program\n- Report Participant (confirmed)\n1. A user who is not part of private program is invited as a report participant on the private program's report. By default none of the report participant of a private program's report who is not a invited hacker/triager/staff of that program have access to the private program details.\n1. When a report participant visit the /:private_program_handle, 404 Not Found page is displayed.\n1. Now report participant visits /:private_program_handle/hacker_demand.\n1. It will be redirected to the page similar to screenshot below.\n{F3486623}\n1. Upon clicking Introduction, Program Highlights, Overview, or any button below it, the hacker will be redirected to the private program's policy page revealing introduction, contact email, program highlights, current state of program, when was the program details last updated, top hackers on the private program, vpn state and more setting related to program in graphql request.\n- Ex-Staff member (confirmed)\n1. As a staff member, the flow of attack is exactly same: Staff leaves/is removed from the program > Visits /:private_program_handle/hacker_demand > And all the information is exposed.\n1. But the only condition which must be true for Staff member is that there should be a report submitted by that staff member, only then this bug will be successful.\n- Ex-Reporter (unconfirmed)\n\n*Note: I am marking this as unconfirmed because I'm have not tested this bug for reporter. As a staff member is able to get access to the private program through a report, similarly I believe that the reporter might get too. I am informing this to make sure that the engineering team, fix this part of the bug too, if it is executable.*\n1. A hacker gets invited to private program.\n1. He/She submits couple of reports.\n1. Hacker leaves the program.\n1. When a hacker visit the /:private_program_handle, 404 Not Found page is displayed.\n1. Now hacker visits /:private_program_handle/hacker_demand.\n1. It will be redirected to the page similar to screenshot below.\n{F3486623}\n1. Upon clicking Introduction, Program Highlights, Overview, or any button below it, the hacker will be redirected to the private program's policy page revealing introduction, contact email, program highlights, current state of program, when was the program details last updated, top hackers on the private program, vpn state and more setting related to program in graphql request.\n\n## Reference report\n#2278865 - Some limited confidential information can still be accessed after a user exits a private program\n#386997 - Private program policy page still accessible after user left the program\n#347693 - Program metrics disclosed response_efficiency_percentage via /program_name json response despite the team decided not to show on their profile\n\n## Impact\n\nI classify this bug as a bypass of the referenced reports. The impact of this bug is High compared to the referenced reports. In those cases, HackerOne fixed the issue where only ex-reporters of a private program could access certain information. However, this bug leaks information to three different actors on the HackerOne platform. A report participant who was never part of a private program is able to view private program's information. This is a serious access control flaw. None of these users(Ex-reporter, Report Participant(external user) & Ex-staff member) have consent to access this data, yet they are able to.\n\n*I apologize for not providing video proof of concept (POC). I am unable to record a POC due to technical issues with my laptop, and the HackerOne screen recorder is also not working for me.*",
+  "weakness": {
+    "id": 26,
+    "name": "Improper Access Control - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3482988,
+      "file_name": "Screenshot_2024-07-31_19_09_54.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/iq1yjl7b6l4zvmcrljsj7worqe4l?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2024-07-31_19_09_54.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2024-07-31_19_09_54.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5JWKKLAA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043534Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIGmUuNjhdxnWEupJi36wHZN6DvGaELuy%2FR3vHGmdAQszAiAnBlYp6dvP62g3vbnx9HyljmPHzT81I0ZQbBBQYHrh0CqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMg%2FCa5pyDFFKtQiMKKo8Fh0Ojm98bMGnogsYij8htpLyJwhiO4D%2ByCTH6GRc6sUw9GfnqwwJBWg8cAX4Eu5dPgKPOGIagsSYZPtelUvS6EzCz82LepdCCHxQBcuCGVho6CAE0XJw5Mi4nRi1t1PZA8SlTkJ1PAlguxDuO5%2BrEWuDtDnoTTClbIHKBpipFvE2iYr8KksB%2Bw%2FYDCOUdND1Jm0TqWAZd6d6%2FxtNj0j3RDHRsXtoZK2Fk57Sd8cspg6n2IZUeoy%2Fklkte7fG0inEULigiycWD51Wp2OAqPLxR8ZRue9Ip%2FTqrZMtk6LRAMYFvvG%2FsiBq5s9cfjzmv%2Fg%2BSk%2BA6taeI%2FW9UB%2FzE8tsV3rEGWMww5fcOGzxmUoDM4c3accMY3IuHxiXxXUYVGlJ%2BGaRPpV7vt6ALAGn9eldyOhZUj3abrY1ZmHJsd5iwfJoesHKTj8W%2F3o7spYm9cEezIrYXS21pmzj1hOVzOatVOBD8EgPJ0RvsiEvoKPiUBRBZsMsRYVSOgFVwCPGXrhUZlKaAycMjSwHjlTUHloucr%2FeFepYO%2BQLGyCI181YJoJk6wtHfZzTDZfgh5oDRSy7ssuLAGfMpFQ3YAv8ePYM%2F%2FmVD7seI%2F600sSqV%2FrHpnydqn1e2kZ0cp%2BAE230ZgI2XmYzDVmCdU0OOGxaSKtzsy7DcZ83WlK1SQdoIH9q993V2%2BXopghSSOUEv6blDCF1vgrvmiDWDLP5KaNYrz1Bki3IxfAS6%2FPx1FYrJf5zOnPADUu3c%2Bl2mvtUt8RUHsojvBmgcZZt4vFgsmJUFUa%2FDoapTm%2FBqgLgO9Bh04Zpy0aXHkrRDskd0ITedZ89hxqe0F5x8htNKheu6FktuGuSkwtpasnpEcXgf6p8XkKGu7jDK5pzSBjqyAcAlSzwsT5PYmyNRpdGe2vvjFgpsvBt9%2ByeaCISqyImF%2FiwKLWZkHyHNN8zWWxG1fR7NN4StUAyms7pBFbj9y%2BxGTvCSXhjRY2KQP%2Brv1ru%2BekYtrK2lAEsGcJchNTaGvVb7cAr4P825HXAPHvIvz6ru7a2Oy2MjC9PFfCGmVKzG7B4W9KlMV%2FzKseLX7EsocbI2Yw2jYrwDqVXPF2j7b7ltaG1jQmd%2BZli8MiAvyuGByp0%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b48531423936312e1d8e066f1451e9e1d617f922bd50cabc4a56410d06f8a58f",
+      "file_size": 135163,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3486623,
+      "file_name": "Screenshot_2024-08-01_22_23_23.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/wavu013ft60enmab9s5l52r5apai?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_2024-08-01_22_23_23.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_2024-08-01_22_23_23.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5JWKKLAA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043534Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIGmUuNjhdxnWEupJi36wHZN6DvGaELuy%2FR3vHGmdAQszAiAnBlYp6dvP62g3vbnx9HyljmPHzT81I0ZQbBBQYHrh0CqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMg%2FCa5pyDFFKtQiMKKo8Fh0Ojm98bMGnogsYij8htpLyJwhiO4D%2ByCTH6GRc6sUw9GfnqwwJBWg8cAX4Eu5dPgKPOGIagsSYZPtelUvS6EzCz82LepdCCHxQBcuCGVho6CAE0XJw5Mi4nRi1t1PZA8SlTkJ1PAlguxDuO5%2BrEWuDtDnoTTClbIHKBpipFvE2iYr8KksB%2Bw%2FYDCOUdND1Jm0TqWAZd6d6%2FxtNj0j3RDHRsXtoZK2Fk57Sd8cspg6n2IZUeoy%2Fklkte7fG0inEULigiycWD51Wp2OAqPLxR8ZRue9Ip%2FTqrZMtk6LRAMYFvvG%2FsiBq5s9cfjzmv%2Fg%2BSk%2BA6taeI%2FW9UB%2FzE8tsV3rEGWMww5fcOGzxmUoDM4c3accMY3IuHxiXxXUYVGlJ%2BGaRPpV7vt6ALAGn9eldyOhZUj3abrY1ZmHJsd5iwfJoesHKTj8W%2F3o7spYm9cEezIrYXS21pmzj1hOVzOatVOBD8EgPJ0RvsiEvoKPiUBRBZsMsRYVSOgFVwCPGXrhUZlKaAycMjSwHjlTUHloucr%2FeFepYO%2BQLGyCI181YJoJk6wtHfZzTDZfgh5oDRSy7ssuLAGfMpFQ3YAv8ePYM%2F%2FmVD7seI%2F600sSqV%2FrHpnydqn1e2kZ0cp%2BAE230ZgI2XmYzDVmCdU0OOGxaSKtzsy7DcZ83WlK1SQdoIH9q993V2%2BXopghSSOUEv6blDCF1vgrvmiDWDLP5KaNYrz1Bki3IxfAS6%2FPx1FYrJf5zOnPADUu3c%2Bl2mvtUt8RUHsojvBmgcZZt4vFgsmJUFUa%2FDoapTm%2FBqgLgO9Bh04Zpy0aXHkrRDskd0ITedZ89hxqe0F5x8htNKheu6FktuGuSkwtpasnpEcXgf6p8XkKGu7jDK5pzSBjqyAcAlSzwsT5PYmyNRpdGe2vvjFgpsvBt9%2ByeaCISqyImF%2FiwKLWZkHyHNN8zWWxG1fR7NN4StUAyms7pBFbj9y%2BxGTvCSXhjRY2KQP%2Brv1ru%2BekYtrK2lAEsGcJchNTaGvVb7cAr4P825HXAPHvIvz6ru7a2Oy2MjC9PFfCGmVKzG7B4W9KlMV%2FzKseLX7EsocbI2Yw2jYrwDqVXPF2j7b7ltaG1jQmd%2BZli8MiAvyuGByp0%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6ecd873f3072378617280a71af51f367db6eb68973791a882c201aa00410903f",
+      "file_size": 128770,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-12-24T08:48:12.775Z",
+  "allow_singular_disclosure_after": -48023242.157854,
+  "singular_disclosure_allowed": true,
+  "vote_count": 76,
+  "voters": [
+    "plynatwara",
+    "loaymorad",
+    "guiggs",
+    "drsniper",
+    "fdeleite",
+    "zy9ard3",
+    "0-chrollo-0",
+    "im4x",
+    "ataturk1925",
+    "raslanco",
+    "and 66 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 3.1,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 609376,
+      "category": "researcher",
+      "content": "This report highlights more than just a bug—it exposes the frustrating silence and delay in responses from the program. Despite the valid security implications, the program ignored the researcher for months, only to eventually close the bypass as 'informative' without proper reasoning. A disappointing experience that shows how researchers' efforts can be undervalued. Let this serve as a cautionary tale for future researchers. Below is the timeline of events to provide readers with a clear picture of the experience:\n* 3rd August 2024: Report submitted with a valid security issue and clear steps to reproduce.\n* 23rd August 2024: Triager @h1_analyst_aaron validated the report but downgraded the severity to 'Low,' promising the internal team would finalize the severity. The report was marked as Pending program review—and left there.\n* 5th September 2024: @chriszo111 asked me for a retest.\n* 6th September 2024: I completed the retest promptly, and the report was marked as Resolved.\n* 7th–18th September 2024: I followed up multiple times for a bounty decision—each time met with silence.\n* 19th September 2024: Without any explanation, @h1_lorenzo rewarded the bounty with Low severity.\n* 19th September 2024: Requested mediation because I wasn’t satisfied with the severity and bounty decision.\n* 25th September 2024: Found a bypass of the issue and submitted it as a new report.\n* 3rd October 2024: Triager @h1_analyst_aaron validated the bypass report, downgraded the severity to Low, and again informed me that the final severity would be decided by the internal team. Report marked as Pending program review.\n* 4th October–15th December 2024: Followed up multiple times, and triager @h1_analyst_aaron kept saying that the team was “still reviewing” my bypass report. No meaningful updates provided.\n* 16th December 2024: Bypass report closed as Informative, claiming that the exposed data isn’t sensitive. If that’s the case, why was the original report considered valid and rewarded? This reasoning makes no sense.\n* 24th November 2024: After more than 3 months of waiting on my mediation request for the original report, it was automatically disclosed without any updates from @security or the mediation team.",
+      "updated_at": "2024-12-25T08:43:00.876Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 2666771,
+        "username": "sarthakbhingare015",
+        "name": "Sarthak Raju Bhingare‎",
+        "bio": "Don't find bugs, create your own! 😉",
+        "cleared": false,
+        "verified": true,
+        "website": null,
+        "location": "http://127.0.0.1/",
+        "created_at": "2023-04-25T13:09:24.424Z",
+        "url": "https://hackerone.com/sarthakbhingare015",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/ructzy1nrdl7lakuoiju9b0cq78a/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/ructzy1nrdl7lakuoiju9b0cq78a/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/ructzy1nrdl7lakuoiju9b0cq78a/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "2632876",
+  "votes": 76,
+  "latest_disclosable_activity_at": "2024-12-24T08:48:15.361Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:35:35.071106",
+    "source": "https://hackerone.com/reports/2632876.json",
+    "report_id": 2632876
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjMyODc2",
+    "databaseId": "2632876",
+    "title": "Access to limited confidential information of private program as a Ex-reporter, Report Participant(external user) & Ex-staff member",
+    "url": "https://hackerone.com/reports/2632876",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-12-24T08:48:15.122Z",
+    "created_at": "2024-07-31T13:42:58.072Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI2",
+      "name": "Improper Access Control - Generic",
+      "external_id": "cwe-284"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 3.1
+    },
+    "reporter": {
+      "username": "sarthakbhingare015"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82MTk2NzM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-09-19T12:47:06.887Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI2MzI4NzY=",
+    "_id": "2632876",
+    "disclosed": true,
+    "votes": 76,
+    "latest_disclosable_activity_at": "2024-12-24T08:48:15.361Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNjMyODc2",
+      "databaseId": "2632876",
+      "title": "Access to limited confidential information of private program as a Ex-reporter, Report Participant(external user) & Ex-staff member",
+      "url": "https://hackerone.com/reports/2632876",
+      "disclosed_at": "2024-12-24T08:48:15.122Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "id": 3085889,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDg1ODg5",
+  "url": "https://hackerone.com/reports/3085889",
+  "title": "Weak Rate Limiting Controls in the (LOGIN) page Expose System to Brute Force and DoS Attacks",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "critical",
+  "readable_substate": "Informative",
+  "created_at": "2025-04-09T14:25:04.343Z",
+  "submitted_at": "2025-04-09T14:25:04.801Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "hajjaj0x",
+    "url": "/hajjaj0x",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/rlxephttmoyr3fd2nyonkiovw5pa/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 48242,
+    "url": "https://hackerone.com/lichess",
+    "handle": "lichess",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/CbR2hQEVmv82Z9L1cfqd9SFQ/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/CbR2hQEVmv82Z9L1cfqd9SFQ/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Lichess",
+      "twitter_handle": "",
+      "website": "https://lichess.org",
+      "about": "The free chess server. No paywall, no tracking, no ads. Just the good stuff. Source code: https://lichess.org/source"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-05-15T11:11:04.687Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-04-30T06:42:11.647Z",
+  "team_member_agreed_on_going_public_at": "2025-05-15T11:11:04.342Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nThe login page lacks proper rate limiting, allowing an attacker to easily perform a brute-force attack. This vulnerability enables the attacker to systematically try different username and password combinations until they successfully compromise any account, which poses a significant security risk.\n\n## Steps To Reproduce:\n\n1.    Navigate to the login page.\n\n2. Attempt login with any valid credentials.\n\n 3.  Capture the request using a proxy tool (e.g., Burp Suite).\n\n  +  Modify the captured request by deleting the token parameter and the cookies to make the request look like this:\n====================================================================\nPOST /login HTTP/2\nHost: lichess.org\nContent-Length: 343\nCache-Control: max-age=0\nSec-Ch-Ua-Platform: \"Linux\"\nX-Requested-With: XMLHttpRequest\nAccept-Language: en-US,en;q=0.9\nSec-Ch-Ua: \"Not?A_Brand\";v=\"99\", \"Chromium\";v=\"130\"\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundaryc5GZocBapliqt011\nSec-Ch-Ua-Mobile: ?0\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36\nAccept: */*\nOrigin: https://lichess.org\nSec-Fetch-Site: same-origin\nSec-Fetch-Mode: cors\nSec-Fetch-Dest: empty\nReferer: https://lichess.org/login\nAccept-Encoding: gzip, deflate, br\nPriority: u=1, i\n\n------WebKitFormBoundaryc5GZocBapliqt011\nContent-Disposition: form-data; name=\"username\"\n\n§username§\n------WebKitFormBoundaryc5GZocBapliqt011\nContent-Disposition: form-data; name=\"password\"\n\n§password§\n------WebKitFormBoundaryc5GZocBapliqt011\nContent-Disposition: form-data; name=\"remember\"\n\ntrue\n------WebKitFormBoundaryc5GZocBapliqt011-- \n=================================================================================\n\n5.    Send the request to Burp's Intruder, adding a username wordlist for the \"username\" field and a password wordlist for the \"password\" field. Run the attack with the cluster bomb payload type.\n\n    +   The wordlists should be large and realistic, matching common usernames and passwords (this will prevent rate-limiting issues caused by a smaller wordlist).\n\n       + A smaller wordlist will cause the app to respond with 429 Too Many Requests due to insufficient time between attempts.\n\n6.    Launch the attack, and you should eventually find a valid pair of credentials (response code 200 OK).\n\n      + Ensure auto encoding is turned off in Burp Suite, as the credentials in the request are in plaintext.\n\n     +   Note: The valid username will match many incorrect password attempts before the correct password is found and the app will not even feel that or make any reaction\n\nCause of the Vulnerability:\n\nThe vulnerability exists because the rate-limiting mechanism only checks for excessive requests to individual usernames. It does not account for multiple requests being sent to different usernames, allowing an attacker to bypass the rate-limiting by targeting a range of usernames. This creates an opportunity for a brute-force attack across a large set of accounts.\n\n## Supporting Material/References:\n{F4234333}\n{F4234390}\n{F4234544}\n\n  * [attachment / reference]\n\n## Impact\n\nThis vulnerability can lead to account takeover, privilege escalation, and the theft of sensitive user data.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4234333,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/j93hm7qbr95rwcxbi70pqd23gfgi?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2SMZDL7H%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043147Z&X-Amz-Expires=486&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQD1SEzG4xUGm6jJeDXmIaSt4HEbBsRxntaxuhxlNuV29AIhANNtJmUGuTbAO2FmE6a5km13iFOn7xC9Gy1XbOy4SE%2F3KrsFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgxSyMrcjm46b6%2BREpMqjwVLWKCVvWOdURvGoCvmOO0URBHB8PT%2B%2BnyenTqhGtcFeS2h01Oo5D9kwxqV6qTANRcLwSGaIeLRptGuxLUIHtRdMt%2Ffta1GrcmhFuB8s1S3C9dbyvbwu0AtnNbwZCyTVsNrioWWrvwPSSpn%2BBlOj1GGTC9erm90%2F2zWFCsZXqPeakk%2FPhlBPJ3RMGdgKabWgEDlZkQ%2FO9nj40wkgwrjZox9lLL04gwIHVEVzTBeSZOgwd7RkHFwRulaywbVJQ4D3XpCLekmEii2fqCaEsafiCkTmsfuKKnagroJCXExI0zyX8cYCyVzCn3NHM2ESw87ejWguSoyi%2BdTTcKZp4fsizvDnbpvBrf5ZWzBmXIfjFXAbfGUvo6REfVcRcKqsSWbtxHU7CKgyV6TsqDQghHRuo0K2L%2BGf3zUulnjOySOJyKX2w8weOwr4k6MHcHlsHYkwrD31Qg88pb0L80OsZj3SkBRfVl%2BKJmcCurCs5%2F90rlPToTDrFKE2PnSKVi6HPkwN3i%2F609xMJkB%2FcNPh%2Bz2HFCbspbp%2FXH8YFvN0PrWn%2BxfsWu7t0B2l%2Bul6ue5EzPwxCSVegDAtyqsOWyeIqcN6Zqn2b4f3S4byVQem0gR9Cj818SfLOUQqfXwTUYfdCIttqz%2BEW%2FnUfKVrV3DY5Z8wV5xSrfZiqeWDR64n3LB5S6iBob0P%2BYYjBjfNs8E2LFnAqbAlKyb3fm5lCgT%2FijbZIYR79ddp27A3nVpAbGvD%2FWoB4lOhWwZ6FNNy2SGTpOUdgoGQlKY7ntQlQhfD71O4zEfYUQqATm1v9KLX%2B5ZI5RZcmtDliKBl3Nxn0YoauRswcE7SrBMo8REcXlljAfrs9cSFHaCbZG6nN6xsbL7TuGcMNjGm9IGOrABGNu2%2BYucoLMB5WhXeuxQuROCy60CJyIEyJV3UEryLF1z%2FoUqV5xnC0RKPiSgAljMTUKVkC83QiCFoPQNkxfpnGxJaeDcrz57oLRCICBpnkcIidZLmsoxnuwDKYoA34P%2BHPDNd%2BM9jjSD9%2FTjvaGlJh0qkh8WJZRsaM8%2BAWhMhqujNVuLjDthejTR7SD2sMmVsPGY4hEjgB13tpJstXbw35ScMujTb1y4Ri0Szuwgbhk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fbfc2c08c4bd3c52ffe431a25381fb7f83a390b4e7c56735cc46cd5e2131561d",
+      "file_size": 59538,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4234390,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7ervdk0up641sqrbky87651m9ilb?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2SMZDL7H%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043147Z&X-Amz-Expires=486&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQD1SEzG4xUGm6jJeDXmIaSt4HEbBsRxntaxuhxlNuV29AIhANNtJmUGuTbAO2FmE6a5km13iFOn7xC9Gy1XbOy4SE%2F3KrsFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgxSyMrcjm46b6%2BREpMqjwVLWKCVvWOdURvGoCvmOO0URBHB8PT%2B%2BnyenTqhGtcFeS2h01Oo5D9kwxqV6qTANRcLwSGaIeLRptGuxLUIHtRdMt%2Ffta1GrcmhFuB8s1S3C9dbyvbwu0AtnNbwZCyTVsNrioWWrvwPSSpn%2BBlOj1GGTC9erm90%2F2zWFCsZXqPeakk%2FPhlBPJ3RMGdgKabWgEDlZkQ%2FO9nj40wkgwrjZox9lLL04gwIHVEVzTBeSZOgwd7RkHFwRulaywbVJQ4D3XpCLekmEii2fqCaEsafiCkTmsfuKKnagroJCXExI0zyX8cYCyVzCn3NHM2ESw87ejWguSoyi%2BdTTcKZp4fsizvDnbpvBrf5ZWzBmXIfjFXAbfGUvo6REfVcRcKqsSWbtxHU7CKgyV6TsqDQghHRuo0K2L%2BGf3zUulnjOySOJyKX2w8weOwr4k6MHcHlsHYkwrD31Qg88pb0L80OsZj3SkBRfVl%2BKJmcCurCs5%2F90rlPToTDrFKE2PnSKVi6HPkwN3i%2F609xMJkB%2FcNPh%2Bz2HFCbspbp%2FXH8YFvN0PrWn%2BxfsWu7t0B2l%2Bul6ue5EzPwxCSVegDAtyqsOWyeIqcN6Zqn2b4f3S4byVQem0gR9Cj818SfLOUQqfXwTUYfdCIttqz%2BEW%2FnUfKVrV3DY5Z8wV5xSrfZiqeWDR64n3LB5S6iBob0P%2BYYjBjfNs8E2LFnAqbAlKyb3fm5lCgT%2FijbZIYR79ddp27A3nVpAbGvD%2FWoB4lOhWwZ6FNNy2SGTpOUdgoGQlKY7ntQlQhfD71O4zEfYUQqATm1v9KLX%2B5ZI5RZcmtDliKBl3Nxn0YoauRswcE7SrBMo8REcXlljAfrs9cSFHaCbZG6nN6xsbL7TuGcMNjGm9IGOrABGNu2%2BYucoLMB5WhXeuxQuROCy60CJyIEyJV3UEryLF1z%2FoUqV5xnC0RKPiSgAljMTUKVkC83QiCFoPQNkxfpnGxJaeDcrz57oLRCICBpnkcIidZLmsoxnuwDKYoA34P%2BHPDNd%2BM9jjSD9%2FTjvaGlJh0qkh8WJZRsaM8%2BAWhMhqujNVuLjDthejTR7SD2sMmVsPGY4hEjgB13tpJstXbw35ScMujTb1y4Ri0Szuwgbhk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e139eaaad4d0054cd221b3c5e58b9543999ed919399bd1e6ee1823ec3e710b41",
+      "file_size": 38165,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4234544,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/c69cu58sxxwi4avblf44umporsfk?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2SMZDL7H%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043147Z&X-Amz-Expires=486&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQD1SEzG4xUGm6jJeDXmIaSt4HEbBsRxntaxuhxlNuV29AIhANNtJmUGuTbAO2FmE6a5km13iFOn7xC9Gy1XbOy4SE%2F3KrsFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgxSyMrcjm46b6%2BREpMqjwVLWKCVvWOdURvGoCvmOO0URBHB8PT%2B%2BnyenTqhGtcFeS2h01Oo5D9kwxqV6qTANRcLwSGaIeLRptGuxLUIHtRdMt%2Ffta1GrcmhFuB8s1S3C9dbyvbwu0AtnNbwZCyTVsNrioWWrvwPSSpn%2BBlOj1GGTC9erm90%2F2zWFCsZXqPeakk%2FPhlBPJ3RMGdgKabWgEDlZkQ%2FO9nj40wkgwrjZox9lLL04gwIHVEVzTBeSZOgwd7RkHFwRulaywbVJQ4D3XpCLekmEii2fqCaEsafiCkTmsfuKKnagroJCXExI0zyX8cYCyVzCn3NHM2ESw87ejWguSoyi%2BdTTcKZp4fsizvDnbpvBrf5ZWzBmXIfjFXAbfGUvo6REfVcRcKqsSWbtxHU7CKgyV6TsqDQghHRuo0K2L%2BGf3zUulnjOySOJyKX2w8weOwr4k6MHcHlsHYkwrD31Qg88pb0L80OsZj3SkBRfVl%2BKJmcCurCs5%2F90rlPToTDrFKE2PnSKVi6HPkwN3i%2F609xMJkB%2FcNPh%2Bz2HFCbspbp%2FXH8YFvN0PrWn%2BxfsWu7t0B2l%2Bul6ue5EzPwxCSVegDAtyqsOWyeIqcN6Zqn2b4f3S4byVQem0gR9Cj818SfLOUQqfXwTUYfdCIttqz%2BEW%2FnUfKVrV3DY5Z8wV5xSrfZiqeWDR64n3LB5S6iBob0P%2BYYjBjfNs8E2LFnAqbAlKyb3fm5lCgT%2FijbZIYR79ddp27A3nVpAbGvD%2FWoB4lOhWwZ6FNNy2SGTpOUdgoGQlKY7ntQlQhfD71O4zEfYUQqATm1v9KLX%2B5ZI5RZcmtDliKBl3Nxn0YoauRswcE7SrBMo8REcXlljAfrs9cSFHaCbZG6nN6xsbL7TuGcMNjGm9IGOrABGNu2%2BYucoLMB5WhXeuxQuROCy60CJyIEyJV3UEryLF1z%2FoUqV5xnC0RKPiSgAljMTUKVkC83QiCFoPQNkxfpnGxJaeDcrz57oLRCICBpnkcIidZLmsoxnuwDKYoA34P%2BHPDNd%2BM9jjSD9%2FTjvaGlJh0qkh8WJZRsaM8%2BAWhMhqujNVuLjDthejTR7SD2sMmVsPGY4hEjgB13tpJstXbw35ScMujTb1y4Ri0Szuwgbhk%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=3bcdaedae6ffc5551ffaf007dce0a3de52a1dc8361d9a02debe77fea5db3b676",
+      "file_size": 84640,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 73,
+  "voters": [
+    "k0ns0l",
+    "ryel",
+    "mohaned0101",
+    "hajjaj0x",
+    "jmo740",
+    "2026",
+    "santoryuhunter",
+    "inputwhisperer",
+    "timfreitag07",
+    "the_ancient",
+    "and 63 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 50173,
+    "asset_type": "URL",
+    "asset_identifier": "lichess.org",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3085889",
+  "votes": 73,
+  "latest_disclosable_activity_at": "2025-05-15T11:11:05.074Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:31:47.441239",
+    "source": "https://hackerone.com/reports/3085889.json",
+    "report_id": 3085889
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDg1ODg5",
+    "databaseId": "3085889",
+    "title": "Weak Rate Limiting Controls in the (LOGIN) page Expose System to Brute Force and DoS Attacks",
+    "url": "https://hackerone.com/reports/3085889",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-05-15T11:11:04.687Z",
+    "created_at": "2025-04-09T14:25:04.343Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "critical",
+      "score": 9.8
+    },
+    "reporter": {
+      "username": "hajjaj0x"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDgyNDI=",
+      "handle": "lichess",
+      "name": "Lichess",
+      "url": "https://hackerone.com/lichess",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMwODU4ODk=",
+    "_id": "3085889",
+    "disclosed": true,
+    "votes": 73,
+    "latest_disclosable_activity_at": "2025-05-15T11:11:05.074Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDg1ODg5",
+      "databaseId": "3085889",
+      "title": "Weak Rate Limiting Controls in the (LOGIN) page Expose System to Brute Force and DoS Attacks",
+      "url": "https://hackerone.com/reports/3085889",
+      "disclosed_at": "2025-05-15T11:11:04.687Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDgyNDI=",
+      "handle": "lichess",
+      "name": "Lichess",
+      "url": "https://hackerone.com/lichess",
+      "currency": "usd"
+    }
+  }
+}

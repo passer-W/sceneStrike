@@ -1,0 +1,210 @@
+{
+  "id": 842462,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NDI0NjI=",
+  "url": "https://hackerone.com/reports/842462",
+  "title": "Pixel flood attack cause the javascript heap out of memory",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-04-07T11:02:53.744Z",
+  "submitted_at": "2020-04-07T11:02:53.744Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mayaseven",
+    "url": "/mayaseven",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/VajgkuGrCbpsYKBGmcPc8Q6Q/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23949,
+    "url": "https://hackerone.com/nodejs-ecosystem",
+    "handle": "nodejs-ecosystem",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/949/3ea3b2ae039a8f955a4a8fe65d99fe85dc817398_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js third-party modules",
+      "twitter_handle": "",
+      "website": "https://nodejs.org/en/security/",
+      "about": "This program was used to handle vulnerabilities in the Node.js ecosystem."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8175"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-05-21T08:18:00.595Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-05-21T08:18:00.531Z",
+  "team_member_agreed_on_going_public_at": "2020-05-20T08:55:24.229Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I would like to report Pixel flood attack in jimp\nIt allows flooding the memory and causing DoS by uploading a crafted image (5kb image), and the Jimp module will tries to allocate 4128062500 pixels into memory.\n\n# Module\n\n**module name:** jimp\n**version:** <=0.10.1\n**npm page:** `https://www.npmjs.com/package/jimp`\n\n## Module Description\n\n> An image processing library for Node written entirely in JavaScript, with zero native dependencies.\n\n## Module Stats\n\n1,053,700 Weekly Downloads\n\n# Vulnerability\n\n## Vulnerability Description\n\n> The jimp module will load the pixel from the image file to the memory, and processing the image in order to get a new image file such as resize, rotate, blur, etc. The jimp using EXIF data for picture orientation, which was causing run out of memory in the system. The attacker could manipulate the exif data in the image file such as change the image pixel to 64250x64250pixels. If the jimp module loaded the crafted image, it tries to allocate 4128062500 pixels into memory. \n\n## Steps To Reproduce:\n\n1. First, install the jimp module : `npm install --save jimp`\n2. Second, download a crafted image from the attachment (lottapixel.jpg).\n3. Finally, create index.js file as the PoC code below and execute. \n\n```\nvar Jimp = require('jimp');\n\nJimp.read('lottapixel.jpg', (err, lenna) => {\n  if (err) throw err;\n  lenna\n    .resize(256, 256) // resize\n    .quality(60) // set JPEG quality\n    .greyscale() // set greyscale\n    .write('image-small-bw.jpg'); // save\n});\n```\n\nThe output will display the error message like below when the memory is exhausted.\n>FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory\n\n## Patch\n\n> Disable ImageMagick's EXIF orientation.\n\n## Supporting Material/References:\n\n- Pixel flood attack `https://hackerone.com/reports/390`\n- Nodejs v13.12.0\n\n# Wrap up\n\n- I contacted the maintainer to let them know: N \n- I opened an issue in the related repository: N\n\n## Impact\n\nDenail of Service",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 777559,
+      "file_name": "lottapixel.jpg",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/JUPJqAQS52yeTvfo8vVegV2L?response-content-disposition=attachment%3B%20filename%3D%22lottapixel.jpg%22%3B%20filename%2A%3DUTF-8%27%27lottapixel.jpg&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T050739Z&X-Amz-Expires=2025&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=09ae147b835d9b774b013e4b59032e841aa9f9487e8e6fd12d8b6a4577c9bfea",
+      "file_size": 4856,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-06-19T08:55:24.299Z",
+  "allow_singular_disclosure_after": -190930334.88751742,
+  "singular_disclosure_allowed": true,
+  "vote_count": 25,
+  "voters": [
+    "ivarsvids",
+    "foobar7",
+    "ktg",
+    "its_afolic",
+    "subhashx",
+    "irksomeorangutan",
+    "doblodosky",
+    "m3ss",
+    "rodle1",
+    "waltertamboer",
+    "and 15 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 48051,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "jpeg-js",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "842462",
+  "votes": 25,
+  "latest_disclosable_activity_at": "2020-05-21T08:18:00.628Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:07:39.301716",
+    "source": "https://hackerone.com/reports/842462.json",
+    "report_id": 842462
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NDI0NjI=",
+    "databaseId": "842462",
+    "title": "Pixel flood attack cause the javascript heap out of memory",
+    "url": "https://hackerone.com/reports/842462",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-05-21T08:18:00.595Z",
+    "created_at": "2020-04-07T11:02:53.744Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.3
+    },
+    "reporter": {
+      "username": "mayaseven"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg0MjQ2Mg==",
+    "_id": "842462",
+    "disclosed": true,
+    "votes": 25,
+    "latest_disclosable_activity_at": "2020-05-21T08:18:00.628Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84NDI0NjI=",
+      "databaseId": "842462",
+      "title": "Pixel flood attack cause the javascript heap out of memory",
+      "url": "https://hackerone.com/reports/842462",
+      "disclosed_at": "2020-05-21T08:18:00.595Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzOTQ5",
+      "handle": "nodejs-ecosystem",
+      "name": "Node.js third-party modules",
+      "url": "https://hackerone.com/nodejs-ecosystem",
+      "currency": "usd"
+    }
+  }
+}

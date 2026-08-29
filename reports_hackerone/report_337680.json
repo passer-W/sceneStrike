@@ -1,0 +1,231 @@
+{
+  "id": 337680,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzc2ODA=",
+  "url": "https://hackerone.com/reports/337680",
+  "title": "burp does not validate the common name of the presented collaborator server certificate",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-04-14T09:38:54.788Z",
+  "submitted_at": "2018-04-14T09:38:54.788Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "morisson",
+    "url": "/morisson",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/263/947/11f9308e56cced4347da4cc2ed55cfeb168ee318_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15252,
+    "url": "https://hackerone.com/portswigger",
+    "handle": "portswigger",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/252/60e8778f4f1fee57ea2b164a7d2ec1e2d2dd7bc8_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/252/60e8778f4f1fee57ea2b164a7d2ec1e2d2dd7bc8_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "PortSwigger Web Security",
+      "twitter_handle": "Burp_Suite",
+      "website": "https://portswigger.net",
+      "about": "Burp Suite is the leading software for web security testing"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-06-13T16:14:32.117Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-06-13T16:05:45.849Z",
+  "team_member_agreed_on_going_public_at": "2018-06-13T16:14:31.963Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Burp is not validating correctly if the presented certificate in collaborator server. It warns if it is a self signed one, but if it is a legitimate one (any valid CA), it appears not to be checking the CN.\n\n\nThis is an issue for the polling service, since it allows for the connection to be intercepted and burp will happily send through the polling request.\n\nFor PoC, just use a valid certificate for a completely different domain than the one used on the burp collaborator server, and connect to it. All checks will be ok, and when polling the server (using the scanner for instance), there's no warning or failure, and burp connects.\nI haven't extensively tested all possible options, but using a valid wildcard certificate from a totally different domain works.\n\n(note: there's also the functional bug of burp stating the connections are ok, but the target being tested will then fail to connect to any TLS service on the collaborator)\n\n## Impact\n\nIf the attacker is able to perform a MITM on the tester (either adjacent to him, or to the collaborator server, or somewhere along the path), he will be able to intercept the HTTPS polling connection to the collaborator server, and potentially obtain the records.",
+  "weakness": {
+    "id": 30,
+    "name": "Man-in-the-Middle"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 285736,
+      "file_name": "collab_config.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/285/736/a99b2236ba3654732a4f8ac8e94c93565191e911/collab_config.png?response-content-disposition=attachment%3B%20filename%3D%22collab_config.png%22%3B%20filename%2A%3DUTF-8%27%27collab_config.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTGPTES2C%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060447Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIGLyn4NhoNv1l41PioN0NhKeIm3jWHYpQmtf2mCl8TvPAiEA9g1QlMAlZKwhBp6Zh4oKqA%2BD7P2eR%2FoKsHwdTI28OeAqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDGNq73vaOqXzcRmuFiqOBfrMIWiWoe6gpmPJzxXaY7CyoK1CDbV2vl7CRvx8YDpiZyUIDap6JkPDo3ugi88o5qApqCMPErN5PbHEEtqF%2FXYZcO9rdbX4wsHTKxkghvhLXpFKvLQmwGIZshivay6Ob%2FRLrFmzEaFpVnRiQNufJsLYpf9d%2BqLQMVe2JS4qgIxZd2bmmyaSMziyqConWWGqna%2FvpuEbySmVV5GH8EBtRlQZoTXLLikKjd6vVlqGDIuoctJmRU7Joe9%2F80FfdlMz%2FteY2PJ4eTUJQxQ%2BItDqwym%2FfzD3Tg5vvyAKldCWHa42gXEk5VcjiQXLa3FZ5TwVZQFfp7WlXQdKIRcx2uMAP6LS4ksjpESgbbNiMfQSNYXOPPQ86%2BYsfD3QwPm2SGS6eQDDXsaOvG80AAOvJsYIrCAAF3psUk%2Fg31QzDi8Za1S8wE0%2BFJ1pPrGrflQkzsntEOD3c1F7rUX4ge09OVKx4voTRZ1R1T100Wh316UHgj%2B4zTOHFgImylZVjnPJt4YJ5SylOxy6Ym8rjgw6b%2FjbubXdMkvWOzBiLLK8WshCz3sBPMjqYFKoy7ac%2FH4n4T7sOMPNnf7IYrNdswgT29umCtvYjUYoPgCDYplurFudkN49ZdvPLscb0f3rXVVwKzlLpfI2609nnxoafiafctdxpDh6ThgANLKM23zRLCUGJ5ssaLdY%2FOEMqf%2FUYocS1Xo0YQqyUuFetPeYLwxfs%2F7F%2BLrG%2F1fGtTkJ9P3ONdlbhC6agTO%2Bjc%2BmfiTTXEzJu2iDcp3y%2FaYcjiDgA9zFcOz480ma4fuyJ1nCEFqG6%2Fdufm%2FhZSg8lSxXD%2Fx99GPaLWZ9ztJRRbyqJnoOFwT7doffVoxWuSBg5VW1wXbBV0RHHjCXu7fSBjqxAZDYUZV7DYCTH7%2FiJuB5624%2FsPbWS4B2%2FpT0WgQIake%2BXwAt9nPd7WM0V3r7Kq8rtjheCkV81VySt5eLs%2BCHTq5IkzrRPWXOB%2BZa3otbLBHVlZo73VYxgINmDXA4k%2FyARnd22xiHRVqHxyfEo%2BF9Yp3m5vgQXw95YgEAbfLXXmejGGW9DBzZZnqvwXbSlWtUNov8BXgtRObNbsK91nP9RG92Gq3Hbv5SWsliffYh9Q36%2FA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=753efcb1cd04651f82ece812f606d392d637ff3da14697967191b946eecd7d0d",
+      "file_size": 26990,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 285737,
+      "file_name": "wrong_domain_certificate_ok.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/285/737/ba36b134e535743807e797fd0a5b1a6509b1b981/wrong_domain_certificate_ok.png?response-content-disposition=attachment%3B%20filename%3D%22wrong_domain_certificate_ok.png%22%3B%20filename%2A%3DUTF-8%27%27wrong_domain_certificate_ok.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTGPTES2C%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060447Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIGLyn4NhoNv1l41PioN0NhKeIm3jWHYpQmtf2mCl8TvPAiEA9g1QlMAlZKwhBp6Zh4oKqA%2BD7P2eR%2FoKsHwdTI28OeAqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDGNq73vaOqXzcRmuFiqOBfrMIWiWoe6gpmPJzxXaY7CyoK1CDbV2vl7CRvx8YDpiZyUIDap6JkPDo3ugi88o5qApqCMPErN5PbHEEtqF%2FXYZcO9rdbX4wsHTKxkghvhLXpFKvLQmwGIZshivay6Ob%2FRLrFmzEaFpVnRiQNufJsLYpf9d%2BqLQMVe2JS4qgIxZd2bmmyaSMziyqConWWGqna%2FvpuEbySmVV5GH8EBtRlQZoTXLLikKjd6vVlqGDIuoctJmRU7Joe9%2F80FfdlMz%2FteY2PJ4eTUJQxQ%2BItDqwym%2FfzD3Tg5vvyAKldCWHa42gXEk5VcjiQXLa3FZ5TwVZQFfp7WlXQdKIRcx2uMAP6LS4ksjpESgbbNiMfQSNYXOPPQ86%2BYsfD3QwPm2SGS6eQDDXsaOvG80AAOvJsYIrCAAF3psUk%2Fg31QzDi8Za1S8wE0%2BFJ1pPrGrflQkzsntEOD3c1F7rUX4ge09OVKx4voTRZ1R1T100Wh316UHgj%2B4zTOHFgImylZVjnPJt4YJ5SylOxy6Ym8rjgw6b%2FjbubXdMkvWOzBiLLK8WshCz3sBPMjqYFKoy7ac%2FH4n4T7sOMPNnf7IYrNdswgT29umCtvYjUYoPgCDYplurFudkN49ZdvPLscb0f3rXVVwKzlLpfI2609nnxoafiafctdxpDh6ThgANLKM23zRLCUGJ5ssaLdY%2FOEMqf%2FUYocS1Xo0YQqyUuFetPeYLwxfs%2F7F%2BLrG%2F1fGtTkJ9P3ONdlbhC6agTO%2Bjc%2BmfiTTXEzJu2iDcp3y%2FaYcjiDgA9zFcOz480ma4fuyJ1nCEFqG6%2Fdufm%2FhZSg8lSxXD%2Fx99GPaLWZ9ztJRRbyqJnoOFwT7doffVoxWuSBg5VW1wXbBV0RHHjCXu7fSBjqxAZDYUZV7DYCTH7%2FiJuB5624%2FsPbWS4B2%2FpT0WgQIake%2BXwAt9nPd7WM0V3r7Kq8rtjheCkV81VySt5eLs%2BCHTq5IkzrRPWXOB%2BZa3otbLBHVlZo73VYxgINmDXA4k%2FyARnd22xiHRVqHxyfEo%2BF9Yp3m5vgQXw95YgEAbfLXXmejGGW9DBzZZnqvwXbSlWtUNov8BXgtRObNbsK91nP9RG92Gq3Hbv5SWsliffYh9Q36%2FA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=521ccadf600907102bdf4c26fefd8b0a2eec9342a2ca98f832262f991a356e28",
+      "file_size": 60551,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 285738,
+      "file_name": "tls_error.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/285/738/e71bfb941ca6eb8cb4938336ee7e9a8c51f19c4f/tls_error.png?response-content-disposition=attachment%3B%20filename%3D%22tls_error.png%22%3B%20filename%2A%3DUTF-8%27%27tls_error.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTGPTES2C%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060447Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIGLyn4NhoNv1l41PioN0NhKeIm3jWHYpQmtf2mCl8TvPAiEA9g1QlMAlZKwhBp6Zh4oKqA%2BD7P2eR%2FoKsHwdTI28OeAqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDGNq73vaOqXzcRmuFiqOBfrMIWiWoe6gpmPJzxXaY7CyoK1CDbV2vl7CRvx8YDpiZyUIDap6JkPDo3ugi88o5qApqCMPErN5PbHEEtqF%2FXYZcO9rdbX4wsHTKxkghvhLXpFKvLQmwGIZshivay6Ob%2FRLrFmzEaFpVnRiQNufJsLYpf9d%2BqLQMVe2JS4qgIxZd2bmmyaSMziyqConWWGqna%2FvpuEbySmVV5GH8EBtRlQZoTXLLikKjd6vVlqGDIuoctJmRU7Joe9%2F80FfdlMz%2FteY2PJ4eTUJQxQ%2BItDqwym%2FfzD3Tg5vvyAKldCWHa42gXEk5VcjiQXLa3FZ5TwVZQFfp7WlXQdKIRcx2uMAP6LS4ksjpESgbbNiMfQSNYXOPPQ86%2BYsfD3QwPm2SGS6eQDDXsaOvG80AAOvJsYIrCAAF3psUk%2Fg31QzDi8Za1S8wE0%2BFJ1pPrGrflQkzsntEOD3c1F7rUX4ge09OVKx4voTRZ1R1T100Wh316UHgj%2B4zTOHFgImylZVjnPJt4YJ5SylOxy6Ym8rjgw6b%2FjbubXdMkvWOzBiLLK8WshCz3sBPMjqYFKoy7ac%2FH4n4T7sOMPNnf7IYrNdswgT29umCtvYjUYoPgCDYplurFudkN49ZdvPLscb0f3rXVVwKzlLpfI2609nnxoafiafctdxpDh6ThgANLKM23zRLCUGJ5ssaLdY%2FOEMqf%2FUYocS1Xo0YQqyUuFetPeYLwxfs%2F7F%2BLrG%2F1fGtTkJ9P3ONdlbhC6agTO%2Bjc%2BmfiTTXEzJu2iDcp3y%2FaYcjiDgA9zFcOz480ma4fuyJ1nCEFqG6%2Fdufm%2FhZSg8lSxXD%2Fx99GPaLWZ9ztJRRbyqJnoOFwT7doffVoxWuSBg5VW1wXbBV0RHHjCXu7fSBjqxAZDYUZV7DYCTH7%2FiJuB5624%2FsPbWS4B2%2FpT0WgQIake%2BXwAt9nPd7WM0V3r7Kq8rtjheCkV81VySt5eLs%2BCHTq5IkzrRPWXOB%2BZa3otbLBHVlZo73VYxgINmDXA4k%2FyARnd22xiHRVqHxyfEo%2BF9Yp3m5vgQXw95YgEAbfLXXmejGGW9DBzZZnqvwXbSlWtUNov8BXgtRObNbsK91nP9RG92Gq3Hbv5SWsliffYh9Q36%2FA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c04c4ec5c0eab8bb74f7d1f2e5d60345f820cdfaab6f3fe6778611f00a230ee1",
+      "file_size": 35976,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 285741,
+      "file_name": "not_this_domain.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/285/741/c5c38a5bd49e99a6ab04ef68e412b090601d2e82/not_this_domain.png?response-content-disposition=attachment%3B%20filename%3D%22not_this_domain.png%22%3B%20filename%2A%3DUTF-8%27%27not_this_domain.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTGPTES2C%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060447Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIGLyn4NhoNv1l41PioN0NhKeIm3jWHYpQmtf2mCl8TvPAiEA9g1QlMAlZKwhBp6Zh4oKqA%2BD7P2eR%2FoKsHwdTI28OeAqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDGNq73vaOqXzcRmuFiqOBfrMIWiWoe6gpmPJzxXaY7CyoK1CDbV2vl7CRvx8YDpiZyUIDap6JkPDo3ugi88o5qApqCMPErN5PbHEEtqF%2FXYZcO9rdbX4wsHTKxkghvhLXpFKvLQmwGIZshivay6Ob%2FRLrFmzEaFpVnRiQNufJsLYpf9d%2BqLQMVe2JS4qgIxZd2bmmyaSMziyqConWWGqna%2FvpuEbySmVV5GH8EBtRlQZoTXLLikKjd6vVlqGDIuoctJmRU7Joe9%2F80FfdlMz%2FteY2PJ4eTUJQxQ%2BItDqwym%2FfzD3Tg5vvyAKldCWHa42gXEk5VcjiQXLa3FZ5TwVZQFfp7WlXQdKIRcx2uMAP6LS4ksjpESgbbNiMfQSNYXOPPQ86%2BYsfD3QwPm2SGS6eQDDXsaOvG80AAOvJsYIrCAAF3psUk%2Fg31QzDi8Za1S8wE0%2BFJ1pPrGrflQkzsntEOD3c1F7rUX4ge09OVKx4voTRZ1R1T100Wh316UHgj%2B4zTOHFgImylZVjnPJt4YJ5SylOxy6Ym8rjgw6b%2FjbubXdMkvWOzBiLLK8WshCz3sBPMjqYFKoy7ac%2FH4n4T7sOMPNnf7IYrNdswgT29umCtvYjUYoPgCDYplurFudkN49ZdvPLscb0f3rXVVwKzlLpfI2609nnxoafiafctdxpDh6ThgANLKM23zRLCUGJ5ssaLdY%2FOEMqf%2FUYocS1Xo0YQqyUuFetPeYLwxfs%2F7F%2BLrG%2F1fGtTkJ9P3ONdlbhC6agTO%2Bjc%2BmfiTTXEzJu2iDcp3y%2FaYcjiDgA9zFcOz480ma4fuyJ1nCEFqG6%2Fdufm%2FhZSg8lSxXD%2Fx99GPaLWZ9ztJRRbyqJnoOFwT7doffVoxWuSBg5VW1wXbBV0RHHjCXu7fSBjqxAZDYUZV7DYCTH7%2FiJuB5624%2FsPbWS4B2%2FpT0WgQIake%2BXwAt9nPd7WM0V3r7Kq8rtjheCkV81VySt5eLs%2BCHTq5IkzrRPWXOB%2BZa3otbLBHVlZo73VYxgINmDXA4k%2FyARnd22xiHRVqHxyfEo%2BF9Yp3m5vgQXw95YgEAbfLXXmejGGW9DBzZZnqvwXbSlWtUNov8BXgtRObNbsK91nP9RG92Gq3Hbv5SWsliffYh9Q36%2FA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a9a3fc14542e7990c085ce9147741d9dd8e90e84c8aa2edb0ad9ad36fc9e7084",
+      "file_size": 67914,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-07-13T16:05:45.960Z",
+  "allow_singular_disclosure_after": -251992741.3396778,
+  "singular_disclosure_allowed": true,
+  "vote_count": 39,
+  "voters": [
+    "jokebookservice1",
+    "thepath",
+    "ramsexy",
+    "yumi",
+    "ali",
+    "sameerphad72",
+    "miguel_santareno",
+    "spam404",
+    "thalaivar304",
+    "fpatrik",
+    "and 29 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 169,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "Burp Suite Pro/Community",
+    "max_severity": "high"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "337680",
+  "votes": 39,
+  "latest_disclosable_activity_at": "2018-06-13T16:14:32.164Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:04:47.409430",
+    "source": "https://hackerone.com/reports/337680.json",
+    "report_id": 337680
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzc2ODA=",
+    "databaseId": "337680",
+    "title": "burp does not validate the common name of the presented collaborator server certificate",
+    "url": "https://hackerone.com/reports/337680",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-06-13T16:14:32.117Z",
+    "created_at": "2018-04-14T09:38:54.788Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzMw",
+      "name": "Man-in-the-Middle",
+      "external_id": "cwe-300"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "morisson"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1MjUy",
+      "handle": "portswigger",
+      "name": "PortSwigger Web Security",
+      "url": "https://hackerone.com/portswigger",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS84MDI2Nw==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-04-23T12:58:15.611Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMzNzY4MA==",
+    "_id": "337680",
+    "disclosed": true,
+    "votes": 39,
+    "latest_disclosable_activity_at": "2018-06-13T16:14:32.164Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMzc2ODA=",
+      "databaseId": "337680",
+      "title": "burp does not validate the common name of the presented collaborator server certificate",
+      "url": "https://hackerone.com/reports/337680",
+      "disclosed_at": "2018-06-13T16:14:32.117Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1MjUy",
+      "handle": "portswigger",
+      "name": "PortSwigger Web Security",
+      "url": "https://hackerone.com/portswigger",
+      "currency": "usd"
+    }
+  }
+}

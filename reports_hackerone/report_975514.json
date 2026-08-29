@@ -1,0 +1,213 @@
+{
+  "id": 975514,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NzU1MTQ=",
+  "url": "https://hackerone.com/reports/975514",
+  "title": "Arbitrary file download due to bad handling of Redirects in WebTorrent",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-09-06T04:58:15.826Z",
+  "submitted_at": "2020-09-06T04:58:16.107Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "d3f4u17",
+    "url": "/d3f4u17",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/g9aqrb62yg9d30babkitxz46x55s/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15688,
+    "url": "https://hackerone.com/brave",
+    "handle": "brave",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/688/2aad5641af643ee4f4402896e4747293f6e9c5ca_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/688/2aad5641af643ee4f4402896e4747293f6e9c5ca_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Brave Software",
+      "twitter_handle": "brave",
+      "website": "https://brave.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-06-30T17:46:38.080Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-01-11T02:22:25.904Z",
+  "team_member_agreed_on_going_public_at": "2022-06-30T17:46:37.953Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nPreviously I reported  #963155 how an attacker can trick user into downloading malicious files using \".save torrent\" feature, In this report I am going to reproduce the same behavior but by abusing a different feature.\n\n## Description\n\nWhile I was testing webtorrent on brave I noticed that whenever webtorrent detects a torrent file a request is made to the following extension scheme \n```\nchrome-extension://lgjmpdmojkpocjcopdikifhejkkjglho/extension/brave_webtorrent.html?{torrent_url/magnet_link}\n```\n\nWebTorrent also consider a URL a valid torrent file if a URI starts with a `magnet:` scheme or if it ends with a `.torrent` extension for example:-\n\n```\nchrome-extension://lgjmpdmojkpocjcopdikifhejkkjglho/extension/brave_webtorrent.html?http://xyz.com?x=.torrent\nchrome-extension://lgjmpdmojkpocjcopdikifhejkkjglho/extension/brave_webtorrent.html?magnet%3Ablahblah\n```\nBoth the above URIs will be considered as a valid torrent file by WebTorrent (Refer below SS).\n\n{F977576}\n\nAnother behavior that I observed was, when opening a URL `http://xyz.com?x=.torrent` will serve a normal response but one can force it to be opened with WebTorrent using the extensions scheme `chrome-extension://lgjmpdmojkpocjcopdikifhejkkjglho/extension/brave_webtorrent.html?http://xyz.com?x=.torrent`\n\nAlso, if a website for example, `http://xyz.com` redirects to `http://abc.com` then one can interrupt the redirection and can force it to open the source site via webtorrent before the redirection takes place. This behavior can be leveraged by an attacker to redirect a user to a malicious website or can force user to download a malicious file onto their system (for more better understanding please refer the Steps-to-Reproduce section) .\n\n## Tested on\n\n* Brave Version 1.12.114 Chromium: 84.0.4147.135 (Windows)\n\n## Steps To Reproduce:\n\n* Visit https://php-demo-app-shibli.cfapps.io/brave/brave-poc.html\n* Click on \"Save .torrent file\" option\n* \"Poison.bat\" file will be downloaded onto your machine\n\nAn attacker can also use this to redirect the user to a malicious webpage. See below POC video\n\n{F977593}\n\n## Impact\n\nRemote Code Execution\nRemote JavaScript execution\nInstalling malware on client's machine\nPhishing",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 977576,
+      "file_name": "ss1.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rgmem4ZiuE2Y48i4HAynq7hs?response-content-disposition=attachment%3B%20filename%3D%22ss1.PNG%22%3B%20filename%2A%3DUTF-8%27%27ss1.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3RASQ6XY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051031Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDS18M7KSJI%2FauGYju8kX7Na4bleFtlWe5Y3A2iV9%2BMwQIgckvcIr3JsTtWs7wP0myBxDK9JL%2F33OjL%2BIWDRt7t0pEqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDFDHSgKykWp9ydfH1CqOBXcTkLOcL%2FN9Va4Z0gFPBJn00gCqogJ5OhVCItBpRv30bsHzyg53FT1lHCDlVKN1Y9NePV%2Fg0n96mTqQmGbwPjvvGhiyrsSa%2FPfqBGTm6QdNHej3TbLs3rJKMQ4BpBvCNgtZGAX8qFVLtE5GosTXLDWv1bVdAzr16ZkcNb46jvF4Dwk3Mb0hYYRtTIs1OF3wzoMEuXkh4G21H7tHh4eNCGvo63GbP%2FUSnkSPLop70j1Y8MxjUHlyTH5XzGaNa9OKGpzsdlwX%2BXiPixCumu%2Fn4ANRzKVEhq7MGmCg6P6pxv4gG6NBKfGU%2F%2FHrLtrj%2F1XT0t000tS%2Fd0ScfIVpy4FHUhssDrM7bVdnUjpYLdSQ1w6E23GrGX81YakfHudFpdKiRsJMb2ck9YTxlBTb3jTgGip1CVAiiIanrvIQJvlvBodP%2Bl3BxKXLlrjJQXIxKIbdZcghRGoKxxIkBQGOEu6YWBrMimiR64y73bczt9EnjUeqsyJKIjWjsPFF2MpGbsgkmZFNCf92f0nVwlbub1qwRmQQIqZAoZ1tSsYVbdROodGcE2brlRmbiUOZGjc%2FX377hLTIIuDkp1UF4gjJmkx6Etor6LLYCyqPBKt58BhmUS47D1P%2FbM%2FFCcFHxzqLq6XIbIfFbA%2FaBATYq3AAsGS1xb4qMa3oe59NYfQbtclDeKRraP7oTTOa%2BvSGvi1AH6dvL2CTRG7%2BPxL5jDF%2Bh5ZvPnp31e6KwFOjKIGXOB%2BK%2F10u%2FmLryUlXMBl4qp1wa76rZK8FLnlonhpaq8oGX9nFB%2FmoEzzKdLHQzRfnZg38T8GYcdLF4kqFrEpc9FGXaLr29t57Gyr7PXnkyUWa7XTnhA5ReNvNIuhcYTEcAGSjbjCj9pzSBjqxAQUZWRRW5IyVo%2FYvbQNtMfhxyx8B3X4CA8t%2BRH9eJ8N0ce5ACRQajjY2oAHwh3XpCJ2qYeVoYWi8oVF7ydLlKr6%2F4vB3noDSLe9C61VGK5Z7GuwULm47S1VHfIxVFvSvj8V9s7c74Pzq73dlusopiEQE4%2BsPZM0FM36zrTdhjzI0lFcr63%2F%2BtTQb8pU6CS2X5gSDFUqtIEawl%2BLnk1JvaBJcsqU%2FLS9y%2FDFdng3lgzx0TQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6ec10a0df1ff85319997834537f9e115ee76f47d2185fe8af4c8bac718d97dbd",
+      "file_size": 28190,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 977593,
+      "file_name": "bandicam_2020-09-06_10-23-10-265.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/tUt5R6UHJ423sKw73GhHV9tR?response-content-disposition=attachment%3B%20filename%3D%22bandicam_2020-09-06_10-23-10-265.mp4%22%3B%20filename%2A%3DUTF-8%27%27bandicam_2020-09-06_10-23-10-265.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3RASQ6XY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051031Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDS18M7KSJI%2FauGYju8kX7Na4bleFtlWe5Y3A2iV9%2BMwQIgckvcIr3JsTtWs7wP0myBxDK9JL%2F33OjL%2BIWDRt7t0pEqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDFDHSgKykWp9ydfH1CqOBXcTkLOcL%2FN9Va4Z0gFPBJn00gCqogJ5OhVCItBpRv30bsHzyg53FT1lHCDlVKN1Y9NePV%2Fg0n96mTqQmGbwPjvvGhiyrsSa%2FPfqBGTm6QdNHej3TbLs3rJKMQ4BpBvCNgtZGAX8qFVLtE5GosTXLDWv1bVdAzr16ZkcNb46jvF4Dwk3Mb0hYYRtTIs1OF3wzoMEuXkh4G21H7tHh4eNCGvo63GbP%2FUSnkSPLop70j1Y8MxjUHlyTH5XzGaNa9OKGpzsdlwX%2BXiPixCumu%2Fn4ANRzKVEhq7MGmCg6P6pxv4gG6NBKfGU%2F%2FHrLtrj%2F1XT0t000tS%2Fd0ScfIVpy4FHUhssDrM7bVdnUjpYLdSQ1w6E23GrGX81YakfHudFpdKiRsJMb2ck9YTxlBTb3jTgGip1CVAiiIanrvIQJvlvBodP%2Bl3BxKXLlrjJQXIxKIbdZcghRGoKxxIkBQGOEu6YWBrMimiR64y73bczt9EnjUeqsyJKIjWjsPFF2MpGbsgkmZFNCf92f0nVwlbub1qwRmQQIqZAoZ1tSsYVbdROodGcE2brlRmbiUOZGjc%2FX377hLTIIuDkp1UF4gjJmkx6Etor6LLYCyqPBKt58BhmUS47D1P%2FbM%2FFCcFHxzqLq6XIbIfFbA%2FaBATYq3AAsGS1xb4qMa3oe59NYfQbtclDeKRraP7oTTOa%2BvSGvi1AH6dvL2CTRG7%2BPxL5jDF%2Bh5ZvPnp31e6KwFOjKIGXOB%2BK%2F10u%2FmLryUlXMBl4qp1wa76rZK8FLnlonhpaq8oGX9nFB%2FmoEzzKdLHQzRfnZg38T8GYcdLF4kqFrEpc9FGXaLr29t57Gyr7PXnkyUWa7XTnhA5ReNvNIuhcYTEcAGSjbjCj9pzSBjqxAQUZWRRW5IyVo%2FYvbQNtMfhxyx8B3X4CA8t%2BRH9eJ8N0ce5ACRQajjY2oAHwh3XpCJ2qYeVoYWi8oVF7ydLlKr6%2F4vB3noDSLe9C61VGK5Z7GuwULm47S1VHfIxVFvSvj8V9s7c74Pzq73dlusopiEQE4%2BsPZM0FM36zrTdhjzI0lFcr63%2F%2BtTQb8pU6CS2X5gSDFUqtIEawl%2BLnk1JvaBJcsqU%2FLS9y%2FDFdng3lgzx0TQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7bf9cb9ee8e3059628dd617e3ea7a7cb2903b1ffd096a12ddf270bb8fcc6910d",
+      "file_size": 899775,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 15,
+  "voters": [
+    "zy9ard3",
+    "ali",
+    "d3f4u17",
+    "f1ras",
+    "musashi42",
+    "shivammusic",
+    "heydc7",
+    "chicken-shawarma",
+    "one1tech",
+    "idlefire",
+    "and 5 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 7942,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "https://laptop-updates.brave.com/latest/winx64",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "975514",
+  "votes": 15,
+  "latest_disclosable_activity_at": "2022-06-30T17:46:38.136Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:10:31.536044",
+    "source": "https://hackerone.com/reports/975514.json",
+    "report_id": 975514
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NzU1MTQ=",
+    "databaseId": "975514",
+    "title": "Arbitrary file download due to bad handling of Redirects in WebTorrent",
+    "url": "https://hackerone.com/reports/975514",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-06-30T17:46:38.080Z",
+    "created_at": "2020-09-06T04:58:15.826Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "d3f4u17"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1Njg4",
+      "handle": "brave",
+      "name": "Brave Software",
+      "url": "https://hackerone.com/brave",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNDU2NDI=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-09-16T19:30:25.440Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzk3NTUxNA==",
+    "_id": "975514",
+    "disclosed": true,
+    "votes": 15,
+    "latest_disclosable_activity_at": "2022-06-30T17:46:38.136Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC85NzU1MTQ=",
+      "databaseId": "975514",
+      "title": "Arbitrary file download due to bad handling of Redirects in WebTorrent",
+      "url": "https://hackerone.com/reports/975514",
+      "disclosed_at": "2022-06-30T17:46:38.080Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1Njg4",
+      "handle": "brave",
+      "name": "Brave Software",
+      "url": "https://hackerone.com/brave",
+      "currency": "usd"
+    }
+  }
+}

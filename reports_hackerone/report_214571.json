@@ -1,0 +1,261 @@
+{
+  "id": 214571,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ1NzE=",
+  "url": "https://hackerone.com/reports/214571",
+  "title": "Login form on non-HTTPS page",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2017-03-18T22:57:53.641Z",
+  "submitted_at": "2017-03-18T22:57:53.641Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "scraps",
+    "url": "/scraps",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/rjjgitwtyi52qhnizz30wpx3e9qr/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 2143,
+    "url": "https://hackerone.com/rockstargames",
+    "handle": "rockstargames",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/143/db40b290ac0adcde231da85c33a668f610e6f4df_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/002/143/db40b290ac0adcde231da85c33a668f610e6f4df_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Rockstar Games",
+      "twitter_handle": "RockstarGames",
+      "website": "http://www.rockstargames.com/",
+      "about": "Publishers of such popular games as Grand Theft Auto, Max Payne, Red Dead Redemption, L.A. Noire, Bully & more."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-04-26T20:16:58.273Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-03-27T20:16:53.141Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Summary:\n=======\nA page on a microsite is not fully protected by an SSL certificate. This could allow an attacker in a Man-in-the-Middle position to obtain usernames and passwords of users visiting the site. \n\nDescription:\n=======\nOn the Red Dead Redemption subpage, the comments section on news articles allows registered social club users to post comments. When posting a comment, the user first has to login, which appears as if it is done over a non-secure page:\n\nhttp://www.rockstargames.com/reddeadredemption/news/article/52645/rockstar-fan-art-gallery-gta-in-a-bottle-8-bit-bully-red.html/#comments\n\nNote the warning in screenshot 1, firefox has identified that this page is not protected with an SSL certificate, therefore the username and password will be sent over a plaintext connection. In itself, this may be enough to put some users off using your page. \n\nInterestingly, if you manually change the address bar to be https, it does redirect to a https version of the same page, albeit with a mixed content error (screenshot 2). This indicates that an SSL certificate is in place for this page, however not all requests are sent through HTTPS by default. \n\nOnce submit is pressed on the comment, it appears as though the request is sent over a HTTPS connection (when seen through Burp Suite or Wireshark), which suggests that the page does protect the username and password with SSL/TLS, see packets 167501-167519 in screenshot 3. Although this will work in most cases, there are techniques that can defeat this, such as using the [sslstrip][1] tool. There are several in-depth descriptions of how this works, such as this [one][2]\n\nAn example of using this is shown in screenshots 4 and  5 below, which was carried out solely on my own computer and against my own user account (scrapsH1).\n\n[1]: https://moxie.org/software/sslstrip/ \"sslstrip\"\n[2]: https://avicoder.me/2016/02/22/SSLstrip-for-newbies/ \"one\"\n\nSteps to reproduce:\n=============\n1. On a Kali Linux machine, set up sslstrip as per screenshot 3\n2. Set the browser settings to use the Kali machine as a proxy server. NB, this was done in this example for convenience. In a real-world attack, an attacker could force everyone on the network to use his machine as a proxy using a technique such as [ARP Spoofing][3], thereby requiring no interaction from the user\n3. When the user submits a comment, rather than their POST request being protected by HTTPS, the attacking machine will negotiate the HTTPS connection with the rockstargames server, but trick the user machine into believing that the request should be sent as a HTTP request rather than HTTPS\n4. As the request has been sent via HTTP, the POST request is now visible to sslstrip, which collects the credentials entered by the user, as per screenshot 5.\n\n[3]: https://en.wikipedia.org/wiki/ARP_spoofing \"ARP Spoofing\"\n\nImpact:\n=====\nIf a user were to visit this page from a public or shared network (eg, starbucks, airport, library, etc) and submit a comment, a malicious user on the same network would be able to obtain that users username and password by conducting a Man-in-the-Middle attack using sslstrip and wireshark.\n\nThis would allow the malicious user complete access to the user's account. \n\nRemediation:\n=========\n1. If any part of a site is required to be protected by SSL, the entire site should be protected by SSL. Ts this would stop the attack outlined above from working, as a certificate error would be displayed to the user. \n2. HTTP Strict Transport [security][4] could be used to mitigate this attack, which would tell all browsers not to allow a HTTP connection to the rockstargames website\n\n[4]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security \"security\"",
+  "bounty_amount": "350.0",
+  "formatted_bounty": "$350",
+  "weakness": {
+    "id": 34,
+    "name": "Cleartext Transmission of Sensitive Information"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 169871,
+      "file_name": "rockstar_screenshot1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/169/871/17c5e35d45a2b6b40c63c39b5ea7b98d19f401c0/rockstar_screenshot1.png?response-content-disposition=attachment%3B%20filename%3D%22rockstar_screenshot1.png%22%3B%20filename%2A%3DUTF-8%27%27rockstar_screenshot1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063702Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b21f0355fcbbc6ecf38eee934dcff56cb55cd897230171a7c2b19192c4786c70",
+      "file_size": 1392935,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 169873,
+      "file_name": "rockstar_screenshot2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/169/873/0e849094fbf09c0bc86b6153e5c89927aee8fb15/rockstar_screenshot2.png?response-content-disposition=attachment%3B%20filename%3D%22rockstar_screenshot2.png%22%3B%20filename%2A%3DUTF-8%27%27rockstar_screenshot2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063702Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2048ab5a0be5fbca535df7f5030964fe1bde6b355cd7a51c75a877088106bd44",
+      "file_size": 1135134,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 169874,
+      "file_name": "rockstar_screenshot3.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/169/874/9cbc94f4a24fd67abdcbab77895e3771aefa0cb5/rockstar_screenshot3.png?response-content-disposition=attachment%3B%20filename%3D%22rockstar_screenshot3.png%22%3B%20filename%2A%3DUTF-8%27%27rockstar_screenshot3.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063702Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c021fb0d57a2fd5b1522cdb34210847b6c18c025287c592297ad622bb982b73a",
+      "file_size": 60125,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 169875,
+      "file_name": "rockstar_screenshot5.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/169/875/1e4499c2a4d45b7e47e54542fca93a3a8f9b3699/rockstar_screenshot5.png?response-content-disposition=attachment%3B%20filename%3D%22rockstar_screenshot5.png%22%3B%20filename%2A%3DUTF-8%27%27rockstar_screenshot5.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063702Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=6a910f10ccba0fe87f8fab08f40580549c36cf6b7983f2d83efe33438e7ae713",
+      "file_size": 45423,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 169876,
+      "file_name": "rockstar_screenshot4.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/169/876/669728632aad32ad6d17fcc4f3b5b88ad5843de3/rockstar_screenshot4.png?response-content-disposition=attachment%3B%20filename%3D%22rockstar_screenshot4.png%22%3B%20filename%2A%3DUTF-8%27%27rockstar_screenshot4.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7ZQ64IHF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T063702Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIH66ULUjNnS2co8ugkBObjEHglx5O5HYemXAeKU1Dp4tAiAXF6poxlhlK74A3pJSywfr3Zei1lEgAKuKLxI%2Fxix4RyqyBQh%2FEAMaDDAxMzYxOTI3NDg0OSIMaCZn4A7FqO0L88uMKo8F2P2iUNosIbgYaH9qJTfgmFQmbaO1yPBWMdDbSrot%2Fh5BHJ%2FLJzrSCrSOOTBv9vkmRYCCQr6%2B%2FGc7eSoHHY%2Fg9KKE0aNe84VPmXShj2UBhPuZGGShOJbG78Gqp%2BfQuDUH0AAjYSMLUbDNknlnGj16IxXkyL5wwQgyGJKz%2Fv3Vje32bIxUKL5N1Ht624C0eOcrW8yUiXfCrm3%2BDNqAcA1Dep6s3RUTJCk%2BhaWiFGvg5IFaxhv%2Bg16QlhH50de95%2BXHVKq9PIgF8PrfcPb5oKyU%2BPjmvFFdhT8qbuinulc%2BQK4rt8PMFV9uYtfAxcOuF0j13fZiOeYBvSZUT5yvMqUyhXQ2ZOsfrj7TQRqINYvpCL89RH5NZx9x%2BnyhcZyXgD9ZCRNKkgu61C6tUPfEvKmfdrKyiLQ4XMo6zSqACbjIBFo2WF5Dtk0ybZDOfpbmxf00XeD%2FGtf3nPjbiGzLJe38nBvMant%2BMJBdM1CIwwGWvS9Bre9RuOo2iOBINoXV%2FqcSjM7At%2FYWVo6tcx6lN%2Be7tTz8vMX9U7tD61%2BfSWq0PphzCSLsCexOQvL%2Fgy4vpvHeEuai8K793hoeQ%2BAGt2PaHFNzJ%2FTpG%2BOvt%2FFNrrq15dMwC4YqDq%2BQ5W%2FyuoClSRyU5aBKI9xlFsQuIg4VrgzUjIxFFngYBeIxBa%2B5ako7%2BdJnrPpsvNmWaJTZbBC1WOeAGq%2Frm8LGvnPpUQDG7OUgIG%2FtTqnKxRpAkBKmZo%2BcbN0JThKkd2XUdnNxSphUTSdmuEqgQ9dHFPx%2FiSwyKNlyZFH68CWXW4F7b0glV33eAdG4e3QIp4TCvtPjEeWMrrk8DUIvGpUbimuKmwBYGrJIspJUbPXc6y9M2sFqBYnF0DDJy7fSBjqyAchyFc4ea2IppZTorm6qat7%2F97hfwMJSSCZZp3eNGFh1bL5WlLyfY22jrLJFGMuXCk4vSye5j3X78XEsRVu8jkeegmL8pYROGepMrrj%2BafytPOmYXXwmV65dEyj00hxGZGaBH4pz7vtdNQnUcA4ZcCE0jE4ryzgHhjaqQQJsDTkzMb0TgYA%2BOYnLs%2Fn%2B2XsCr%2B79DO3BbNAVEqotswkh1pm0SKyeFLdOhP8THcbN6t3SIPc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=35238697220309152c2d9bcf3d2960d4acc18e98a5152dbcbdfac386586b488b",
+      "file_size": 80019,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-04-26T20:16:53.190Z",
+  "allow_singular_disclosure_after": -290254809.0560683,
+  "singular_disclosure_allowed": true,
+  "vote_count": 24,
+  "voters": [
+    "gankd",
+    "bogdantc",
+    "sameerphad72",
+    "spam404",
+    "ysx",
+    "pr0f0x01",
+    "mpz",
+    "muhammad_uwais",
+    "eveeez",
+    "t4ym",
+    "and 14 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 39584,
+    "asset_type": "URL",
+    "asset_identifier": "*.rockstargames.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "214571",
+  "votes": 24,
+  "latest_disclosable_activity_at": "2017-04-26T20:16:58.292Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:37:02.373429",
+    "source": "https://hackerone.com/reports/214571.json",
+    "report_id": 214571
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ1NzE=",
+    "databaseId": "214571",
+    "title": "Login form on non-HTTPS page",
+    "url": "https://hackerone.com/reports/214571",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-04-26T20:16:58.273Z",
+    "created_at": "2017-03-18T22:57:53.641Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzM0",
+      "name": "Cleartext Transmission of Sensitive Information",
+      "external_id": "cwe-319"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.7
+    },
+    "reporter": {
+      "username": "scraps"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIxNDM=",
+      "handle": "rockstargames",
+      "name": "Rockstar Games",
+      "url": "https://hackerone.com/rockstargames",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NDU2Mg==",
+            "amount": "250.00",
+            "awarded_amount": "250.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-03-27T17:37:14.219Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NDg3Nw==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "100.00",
+            "created_at": "2017-03-30T15:40:30.743Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxNDU3MQ==",
+    "_id": "214571",
+    "disclosed": true,
+    "votes": 24,
+    "latest_disclosable_activity_at": "2017-04-26T20:16:58.292Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTQ1NzE=",
+      "databaseId": "214571",
+      "title": "Login form on non-HTTPS page",
+      "url": "https://hackerone.com/reports/214571",
+      "disclosed_at": "2017-04-26T20:16:58.273Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIxNDM=",
+      "handle": "rockstargames",
+      "name": "Rockstar Games",
+      "url": "https://hackerone.com/rockstargames",
+      "currency": "usd"
+    }
+  }
+}

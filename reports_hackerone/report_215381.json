@@ -1,0 +1,195 @@
+{
+  "id": 215381,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTUzODE=",
+  "url": "https://hackerone.com/reports/215381",
+  "title": "CSRF on Periscope Web OAuth authorization endpoint ",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2017-03-22T16:01:27.460Z",
+  "submitted_at": "2017-03-22T16:01:27.460Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "filedescriptor",
+    "url": "/filedescriptor",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 61,
+    "url": "https://hackerone.com/x",
+    "handle": "x",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ikx4ept298unt534kpz4am2bd4zs/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/ikx4ept298unt534kpz4am2bd4zs/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "X / xAI",
+      "twitter_handle": "XSecurity",
+      "website": "https://x.com",
+      "about": "X helps you create and share ideas and information instantly, without barriers."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2017-07-26T23:02:48.018Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-07-20T16:00:28.912Z",
+  "team_member_agreed_on_going_public_at": "2017-07-26T23:02:47.960Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\nI would like to report an issue in the OAuth authorization endpoint on Periscope Web. This allows a malicious 3rd party application to gain full API access to a victim's Periscope account.\n\n#Details\nPeriscope has developer APIs that allow a 3rd party application to access resources on behalf of a user. The authorizion page is like this https://www.periscope.tv/oauth?client_id=█████████&redirect_uri=https://getmevo.com/oauth/periscope\n\nIt was found that the authorize endpoint does not have any protection against CSRF. The request to authorize a 3rd party application to access one's Periscope account is as follows:\n```http\nPOST https://www.periscope.tv/oauthAuthorize HTTP/1.1\nHost: www.periscope.tv\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36\nContent-Type: application/x-www-form-urlencoded\nCookie: sid=[...]\n\nclient_id=████&redirect_uri=https%3A%2F%2Fgetmevo.com%2Foauth%2Fperiscope?abc\n```\nAs one can see, there is no CSRF token or Origin validation.\n\nAfter a 3rd party application gets the *authorization code* from *redirect_uri*, it can then exchange it for an access token.\n\n#Impact\nSince the Developer APIs are not public, I have no information what the APIs can perform. Based on the the description on the authorization page however, it looks intimidating that it has **full access** to an account.\n{F170579}\nAt minimum, I found endpoints that allow creating a broadcast (https://public-api.periscope.tv/v1/broadcast/create), tweeting it (https://public-api.periscope.tv/v1/broadcast/publish) and deleting a broadcast (https://public-api.periscope.tv/v1/broadcast/delete).\n\n#PoC\n1. Make sure you are logged into Periscope Web (https://periscope.tv)\n2. Go to http://innerht.ml/pocs/periscope-oauth-csrf/\n3. You will be redirected to something like https://getmevo.com/oauth/periscope?code=abcde&state=, copy the *code* value in the parameter\n4. Go to http://innerht.ml/pocs/periscope-oauth-csrf/code.php?code=abcde and replace the above code in the parameter\n5. A tweet will be posted in your timeline with a broadcast\n\nThe behind the scene is:\n1. Exchange *code* for *access_token* (https://public-api.periscope.tv/v1/oauth/token)\n2. Create a broadcast (https://public-api.periscope.tv/v1/broadcast/create)\n3. Publish it (https://public-api.periscope.tv/v1/broadcast/publish)\n\nNote that a real attack does not require user interaction. In this PoC the manual copying of *code* is because I don't have a 3rd party Periscope application. \n\n#Fix\nAdd CSRF protection",
+  "weakness": {
+    "id": 45,
+    "name": "Cross-Site Request Forgery (CSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 170579,
+      "file_name": "periscope-fullaccess.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/170/579/3e178eb084c267491a3e41fddee17c764739889e/periscope-fullaccess.PNG?response-content-disposition=attachment%3B%20filename%3D%22periscope-fullaccess.PNG%22%3B%20filename%2A%3DUTF-8%27%27periscope-fullaccess.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUBZL3SMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T062626Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC0vd9qwWGGlJ5R6u1w%2FJDTEgxnnEX%2F66Z0y%2FDYDIrKogIhAMmNkpSlsAfDjpOMsGnPN%2FfULnz8pf6lMWaQAHeNhfKJKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgysijxSd9ouNs36KaUqjwUD0hBxjr%2FslcqCGno5SyyxVHX7ZsWXMYXblgWRxlnYMv2sVGB7P0GPCL0Q%2BgNF9E2XuWdW1Q7EIfU9Dun6GivHAYADWtlEnvYCmCnArQPyewGkBRHPJ8s1dmAAWer7c2sEs4jy0PxKNKQGcov0hq2jTDCUo%2Baxi2sz5MpKAjnC26Da1Lr%2B29NQjvWcBTyJCUUR3NvkN2UD44OL1wXIoV3JYeLh2x8qh0GJTWHkxerxRxME1IunjIshD5fjFlc2LQM16pi%2Bjs8sPolrf4lWgWM8D7ivQPEo%2Fq8gbt24Qrs8XDlERppmJmz%2FuYOSN2gqmaAyzD7Eu6o88%2Fpu9GBkda7RjG2%2FCX8%2B76t07zz1UTAh1MYxOc4lcY%2BYvJKWzz%2F8DNoBlvcA1mVFaW9NQeZhsm8XpdUdVqiXvwfyBYHVqPrN%2FBFewhyIuyjkeF17nWyCfSJn6tz%2BXH83FAEYHY67r2Tlp5F9wfBDWaW5gbxZLaWnjOAGJPmHFup%2FuQBSQYqhHGHcM%2FXT2hdZTxiRiQq4wFVhRrrzrpEaVb771%2B%2FwEBg%2Bs1NrFFBa1hzy%2F5oLOHVpk7GBIHJVVqrFgrFlXH8z7K4hNHvcvf5KSU97hLPE2OM1n%2FgozkWNSYh%2BTeGv0dmhM1Di32Gs1TLuJmfracd2zO5tcfL9U1dLR02F6OmtFvx7B8Yo1I5ahbvv%2BiKK25akKqT%2BOuQCGkxOTfmMlZ1Gw0lQ7fMj0H%2B9w%2FIZhy%2Bah9OqcwEvuaBGJ62GpNpR2Vw79O1TWtybkP9SWj8EHrrG96oEMkfdfRQURtwWNVSc4Dnp7iRVTNkAJW5jIObwNohK9qnON8iRS9V6tRlAicG3ZcWtZQ3kutBiP9fP4TJX9rJ2MKzLt9IGOrABTXz5zSXYJEpkSFwGSgTe1z%2FJz01I3KATBTQ6qV3JoMW0ktzuiCH6rDLfhJ04qfCeEzmk4cPqSGYcJOpIMMuV0dt2InOF37EP678V1J3jqnTxHbtFOaQb7MJ%2B1UPOJS6i9bjMKau8QswoHyj1vXaaMa7ZBAIWnLRcJhPFHp3frrjOemsArtrg4fkriDp4mPK3xZgX9iLmty2VPJFjfO407HcC0pNZ0WHeauSCnSAk6v8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ac9b621be0ad8f1b3cb6902ace327117ecb94597fc46eb2c1b390693841ff30e",
+      "file_size": 40126,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-08-19T16:00:28.960Z",
+  "allow_singular_disclosure_after": -280333557.16641074,
+  "singular_disclosure_allowed": true,
+  "vote_count": 74,
+  "voters": [
+    "he4am",
+    "viperblitzz",
+    "mr-medi",
+    "flamezzz",
+    "n1m0",
+    "jensec",
+    "cdl",
+    "7odamoo",
+    "tess",
+    "cubed",
+    "and 64 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "215381",
+  "votes": 74,
+  "latest_disclosable_activity_at": "2017-07-26T23:02:48.038Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:26:26.238615",
+    "source": "https://hackerone.com/reports/215381.json",
+    "report_id": 215381
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTUzODE=",
+    "databaseId": "215381",
+    "title": "CSRF on Periscope Web OAuth authorization endpoint ",
+    "url": "https://hackerone.com/reports/215381",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-07-26T23:02:48.018Z",
+    "created_at": "2017-03-22T16:01:27.460Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ1",
+      "name": "Cross-Site Request Forgery (CSRF)",
+      "external_id": "cwe-352"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "filedescriptor"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYx",
+      "handle": "x",
+      "name": "X / xAI",
+      "url": "https://hackerone.com/x",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80NjY0MA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-04-28T18:11:31.602Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxNTM4MQ==",
+    "_id": "215381",
+    "disclosed": true,
+    "votes": 74,
+    "latest_disclosable_activity_at": "2017-07-26T23:02:48.038Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTUzODE=",
+      "databaseId": "215381",
+      "title": "CSRF on Periscope Web OAuth authorization endpoint ",
+      "url": "https://hackerone.com/reports/215381",
+      "disclosed_at": "2017-07-26T23:02:48.018Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYx",
+      "handle": "x",
+      "name": "X / xAI",
+      "url": "https://hackerone.com/x",
+      "currency": "usd"
+    }
+  }
+}

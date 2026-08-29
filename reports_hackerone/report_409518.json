@@ -1,0 +1,215 @@
+{
+  "id": 409518,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDk1MTg=",
+  "url": "https://hackerone.com/reports/409518",
+  "title": "\"More on Wikipedia\" link disclose \"Referrer\" and leak `window.opener` reference for arbitrary websites",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2018-09-13T22:58:28.376Z",
+  "submitted_at": "2018-09-13T22:58:28.376Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "metnew",
+    "url": "/metnew",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/jdthvavflc07lpt5x37qarrub1jt/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22746,
+    "url": "https://hackerone.com/superhuman",
+    "handle": "superhuman",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/23p3otm27f7hjxfsde7xx0ol3jhf/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/23p3otm27f7hjxfsde7xx0ol3jhf/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Superhuman (formerly Grammarly)",
+      "twitter_handle": "",
+      "website": "https://superhuman.com/",
+      "about": "Superhuman (formerly Grammarly) unites Grammarly, Superhuman Mail, Coda, and Go with AI to unlock superhuman potential in everyone."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2019-04-30T06:08:30.542Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-04-23T14:01:58.378Z",
+  "team_member_agreed_on_going_public_at": "2019-04-30T06:08:29.864Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\n### \"Referrer\" leak\n\n`http://` link to Wikipedia transferring `Referrer` header allows a remote attacker with MITM access to sniff Referrer URL for important tokens after following  \"More on Wikipedia\" link.\n\n### Controllable page [MITM] with `window.opener` pointing to the navigation-initiated webpage\n\n`http://` link \"More on Wikipedia\" allows a remote attacker with MITM access to obtain a `window.opener`reference to the website initiating new window opening.\n\n## Description:\n\nGrammarly extension shows a card with a meaning of the currently focused word on dblclick.\nSome of these cards have \"More on Wikipedia\" link depending on the selected word. (e.g., AFAIR \"our\" word).\n\"More on Wikipedia\" link is an HTTP link that discloses referrer and opener to the  Wikipedia.\nSince it's an HTTP link, a remote attacker could use MITM attack to hijack \"Referrer\" and `window.opener`.\n\n## Browsers Verified In:\n\nChrome: 68.0.3440.106\nGrammarly: 14.868.1844\n\n## Steps To Reproduce:\n\n**IMPORTANT:** Luckily for Grammarly, Wikipedia enables HSTS for all further requests, so you'll need a clean browser to repro this vulnerability.\n\n### `Referrer`\n\n0. Setup MITM. e.g., by modifying `/etc/hosts`: `127.0.0.1 en.wikipedia.org`. Make sure no HSTS enabled for Wikipedia.\n1. Start `referrer-mitm.js`\n2. Go to an arbitrary webpage\n3. Find a `<grammarly-card>` with \"More on Wikipedia\" link (e.g., \"Our\"/\"Your\" words should work)\n4. Follow the link\n5. Alert on `http://en.wikipedia.org` with referrer\n\n### `window.opener` hijacking\n\n0. Setup MITM. e.g., by modifying `/etc/hosts`: `127.0.0.1 en.wikipedia.org`. Make sure no HSTS enabled for Wikipedia.\n1. Start `opener-mitm.js`\n2. Go to an arbitrary webpage\n3. Find a `<grammarly-card>` with \"More on Wikipedia\" link\n4. Follow the link\n5. `window.opener` navigates to `https://github.com/Metnew/uxss-db`\n\n**NOTE:** You could play with #405056 to pwn websites that don't share `window.opener` by default. #409400 is also great.\n\n## Supporting Material/References:\n\n- Exploits attached\n\n## Impact\n\n### Referrer\n\nA remote attacker with a MITM access could sniff URL of the active webpage after user will follow \"More on Wikipedia\" link.\n\n**RESULT:** #738 and #6884 show how leaked \"Referrer\" could lead to a leak of sensitive info (tokens in URLs, sensitive URL  params, etc.).\n\nThe impact is the same, however, it spreads on all websites, ignoring their level of defence.\n\n### `window.opener`\n\nLeaked `window.opener` allows exploiting vulnerabilities relying on `window.opener` such as #409400 and #405056 on arbitrary origins, ignoring the level of defense of the webpages.\n\n**RESULT:** Attacker obtains access to previously unexploitable pages those don't share `opener`.\n\n\n### Summary\n\nThe vulnerability requires a particular (high) level of user assistance: not all cards have \"More on Wikipedia\" link + navigation required.\n\n > I hope I correctly estimated a CVSS v3  score (5.2): Low Integrity (`window.opener`) + Low Confidentiality (Referrer may disclose sensitive info) + High attack complexity. However, the score may not reflect the actual severity as usual (sadly for me, it's much closer to \"Low\", because of HSTS on Wikipedia).\n\nThe vulnerability  is interesting, mostly because of `window.opener` reference, but in very rare cases \"Referrer\" may become even a more powerful attack vector.",
+  "weakness": {
+    "id": 57,
+    "name": "Violation of Secure Design Principles"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 346024,
+      "file_name": "referrer-mitm.js",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/346/024/d83670f443a7c63db8b5f276e8c0a7e85225f573/referrer-mitm.js?response-content-disposition=attachment%3B%20filename%3D%22referrer-mitm.js%22%3B%20filename%2A%3DUTF-8%27%27referrer-mitm.js&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053413Z&X-Amz-Expires=431&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b50058b7f1982c58559bb4afa13e7a58b18d16140117a55cb2d13ddc4d42f1e7",
+      "file_size": 218,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 346025,
+      "file_name": "opener-mitm.js",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/346/025/ada27af5b7fbab5a3cc9ca79143319d941b50d1e/opener-mitm.js?response-content-disposition=attachment%3B%20filename%3D%22opener-mitm.js%22%3B%20filename%2A%3DUTF-8%27%27opener-mitm.js&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3YSDWNDF%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T053413Z&X-Amz-Expires=431&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELD%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQCwwfFjioEhfY%2Bwb60ql6FArVzckS5sBGWectkgJHSiSgIhAMg5oJs2Vi45XaA3jLZ2k7owjovTAeGYKaz2ZgprJ4daKrEFCHgQAxoMMDEzNjE5Mjc0ODQ5IgyHAVH19B7%2Bs6s7jh0qjgXr86e104GIaQeBunZEASWCsjAMuh3eD3PvJBmvp6Wl3OXIxrMZfqsbpg6rYZKJOvvPIFR8zfEofSjYl%2BnUMc%2BXTIRPlXyVyfZW5mS%2FNp1SBDZaRkVsOX2XeLhwqRzLjjRHbCCBKuwAtUuL%2BQwszogk%2FPOVZA3hdoh6e9ocyMZ0ewl2In3Ntrak9886%2B3%2F6wFjlgmSoBY1uDW5cO2wcr7JtmW7xwjOAEYGxOWWZZbRF%2FvnUaY2Gz5VKwgVSw2M34R9ICi%2FRDJydMC8%2BiYEBgfoyGvMB5PKPvgamgLOdBVqF5%2F0EIKN6j86sZ8tE8Vi8EaRoOODzeNgfKq2aYLorPc40GOWAqmTsrUwaXGW3JTX%2Fj7FHNNcRyhj%2FTy1D6unM0QA6xs85oKKLkdyOwExYpDGqil8Vkh7v2jL%2FGlYcZQDiw7fhkfzqu298Nut4MI7eEEx2JnXtp528mghxkY6ZMUEP4Y77avzAUQQlrrnVNU3W6CyYrEsERtt34yiYNLQzegzZJKsRsHgkJwzbqiKUuy54wskGtVsUr7ai8mIIvg3LJF75EKFa9y%2FiXWOcOBP8KMPnooxn10GtlIsS2kWxrl20cAVtzayraGtGddpY%2FusVMi%2BU8KumcKs0p%2FVongyD3pBSHo2Z%2F2J3kwZcmUhe6eGOSQGnjCYiXzSNX98KBaEh4OvYBhBRLQz9BiHg9y34RI4BauhPKhX7TJVr%2BhTYiUljmQq83%2FnwrSnBjESbtMMQ8dFTfZdfRw%2FeNwm%2BRmQD5wYLdZZwbY5zPwEANR7ZuaTvjpGH5RYjtAG0r3812YgsbXXpcGTIZFYnINVIc1s%2BLayjc%2Fzpn%2BM%2F5meBJ6pLcHpf5v54n4j0CHHvQvz%2FWyYwlZO20gY6sAEN5%2BUNgMxXD3xAi%2FsU2DhmXnzCQ86ZQxAEYi705Du4MZp7rAtO161kywB3XDYzDAR5D4cMOtVsGBRcjBar3zL942v9D8VKuViyRyDKcHm4gScnVXJjLMOduwMYhkrO77paEUp%2FPqPuv6T42C0l4nq6vDI8Hcj6w%2FmwGHPF4hKyZJH3RM4Emb5dFBp%2BskpszRvw4zYDyv9Jar6qYlwhlt0TDAWXvjyeOu1TfvTKWEeZqg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=723216b7648d036e5246008bb50d8f2d22d356121f72e784823270824b6ff7b5",
+      "file_size": 274,
+      "type": "text/html",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-05-23T14:01:58.454Z",
+  "allow_singular_disclosure_after": -224868734.62888953,
+  "singular_disclosure_allowed": true,
+  "vote_count": 29,
+  "voters": [
+    "ajinkyadeokar7",
+    "ali",
+    "metnew",
+    "savitar0x01",
+    "2026",
+    "eveeez",
+    "khizer47",
+    "bb00x",
+    "pandaonair",
+    "m7mdharoun",
+    "and 19 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 3577,
+    "asset_type": "OTHER",
+    "asset_identifier": "Grammarly Browser Extensions",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "409518",
+  "votes": 29,
+  "latest_disclosable_activity_at": "2019-04-30T06:08:30.573Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:34:13.251361",
+    "source": "https://hackerone.com/reports/409518.json",
+    "report_id": 409518
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDk1MTg=",
+    "databaseId": "409518",
+    "title": "\"More on Wikipedia\" link disclose \"Referrer\" and leak `window.opener` reference for arbitrary websites",
+    "url": "https://hackerone.com/reports/409518",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-04-30T06:08:30.542Z",
+    "created_at": "2018-09-13T22:58:28.376Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU3",
+      "name": "Violation of Secure Design Principles",
+      "external_id": "cwe-657"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "metnew"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNzQ2",
+      "handle": "superhuman",
+      "name": "Superhuman (formerly Grammarly)",
+      "url": "https://hackerone.com/superhuman",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMDE4Nzk=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-09-25T19:27:03.326Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQwOTUxOA==",
+    "_id": "409518",
+    "disclosed": true,
+    "votes": 29,
+    "latest_disclosable_activity_at": "2019-04-30T06:08:30.573Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDk1MTg=",
+      "databaseId": "409518",
+      "title": "\"More on Wikipedia\" link disclose \"Referrer\" and leak `window.opener` reference for arbitrary websites",
+      "url": "https://hackerone.com/reports/409518",
+      "disclosed_at": "2019-04-30T06:08:30.542Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNzQ2",
+      "handle": "superhuman",
+      "name": "Superhuman (formerly Grammarly)",
+      "url": "https://hackerone.com/superhuman",
+      "currency": "usd"
+    }
+  }
+}

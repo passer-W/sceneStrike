@@ -1,0 +1,218 @@
+{
+  "id": 301526,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDE1MjY=",
+  "url": "https://hackerone.com/reports/301526",
+  "title": "Invitation token leaks to https://bat.bing.com",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2017-12-31T12:10:46.226Z",
+  "submitted_at": "2017-12-31T12:10:46.226Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "zuriel",
+    "url": "/zuriel",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/217/627/50b5d3118d160c5d1d0728385de090f0567a6170_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13,
+    "url": "https://hackerone.com/security",
+    "handle": "security",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/013/fa942b9b1cbf4faf37482bf68458e1195aab9c02_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "HackerOne",
+      "twitter_handle": "Hacker0x01",
+      "website": "https://hackerone.com",
+      "about": "Vulnerability disclosure should be safe, transparent, and rewarding."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-01-11T18:57:53.679Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-01-11T18:57:53.023Z",
+  "team_member_agreed_on_going_public_at": "2018-01-11T17:15:38.431Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary**\n\nInvitation page contains iframes that points to https://b5s.hackerone-ext-content.com/#!/invitations/<invitation token> and https://a4l.hackerone-ext-content.com/#!/invitations/<invitation token>. A *GET* request to these endpoints executes a script that points to `https://bat.bing.com/bat.js`. The corresponding request to bing contains the invitation tokens.\n\n**Description**\n\nWhile checking the source code of an team invitation page (https://hackerone.com/invitations/8e44119f60be8670d1e3f99a01359cbc), I found two iframe links - `https://b5s.hackerone-ext-content.com/#!/invitations/8e44119f60be8670d1e3f99a01359cbc` and `https://a4l.hackerone-ext-content.com/#!/invitations/8e44119f60be8670d1e3f99a01359cbc` where `8e44119f60be8670d1e3f99a01359cbc`is the invitation token. {F250542}\n\n\nTo find out more about these endpoints,i issued a simple GET requests to these urls. GET requests to these endpoints returned a page that contains a script that points to - `https://bat.bing.com/bat.js`.\n\nThe response of the GET request to https://b5s.hackerone-ext-content.com/#!/invitations/8e44119f60be8670d1e3f99a01359cbc looks as follows: \n\n```\n<!DOCTYPE html>\n<html>\n  <head></head>\n  <body style=\"background-color: transparent\">\n    <script>\n      (function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:\"5295042\"};o.q=w[u],w[u]=new UET(o),w[u].push(\"pageLoad\")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!==\"loaded\"&&s!==\"complete\"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,\"script\",\"https://bat.bing.com/bat.js\",\"uetq\");\n    </script>\n    <noscript>\n      <img src=\"//bat.bing.com/action/0?ti=5295042&Ver=2\" height=\"0\" width=\"0\" style=\"display:none; visibility: hidden;\" />\n    </noscript>\n  </body>\n</html>\n```\n\nAs we can see the page calls a script at `https://bat.bing.com/bat.js` and the script is executed. \n\nThe script fires a corresponding request to bat.bing.com that contains the invitation token. It looks as follows:\n\n```\nhttps://bat.bing.com/action/0?ti=5295042&Ver=2&mid=ab8e7bd3-541b-59ea-0551-7041b2ede6e3&evt=pageLoad&sid=bbebc657-0&lt=127&pi=1001431019&lg=en-US&sw=1366&sh=768&sc=24&p=https://b5s.hackerone-ext-content.com/#!/invitations/8e44119f60be8670d1e3f99a01359cbc&r=&msclkid=███\n```\n\nThe `p` parameter contains the entire url along with the invitation token - `p=https://b5s.hackerone-ext-content.com/#!/invitations/8e44119f60be8670d1e3f99a01359cbc` where `8e44119f60be8670d1e3f99a01359cbc`is the invitation token.\n\nThus the invitation token is sent to bat.bing.com as a part of the request.\n\n## Impact\n\n1. Leaking member invitation tokens can reveal pretty much everything about a program. \n1. Private programs could be adversely affected by leaking private invitation tokens.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 250542,
+      "file_name": "bl1.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/250/542/3f971cfcde7ebce7a37941a9ab9805f7976ea13e/bl1.PNG?response-content-disposition=attachment%3B%20filename%3D%22bl1.PNG%22%3B%20filename%2A%3DUTF-8%27%27bl1.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQUCAS5DEL%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T061303Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQC2TJliBdJI%2Fx2arwFR5bw4Y%2BAnJgmpsOmJeRuH4gP%2FswIhALJJEvlY7AsOo3zXRxt651X7VhwP51jzm%2FN9mJk7gxaoKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgxTquK%2BpB6PmOEKecoqjgWXTdzpbNEHOqG9CHAi%2BI%2FNxFigauQuP1TitmWdVwdHrNW61R4zVsezIrWXn2U0OwQaMOIWTzvyEspD9A7UpI9S0LEScw9MY%2FjkJURHxeBCrTUH5%2FxFISUJjXnMzSSFI4t18NRpx%2BAjMWmELFdkaiSYTl5WVGh4mPwJoakbnzUJVb93o5JFvpVacfBwnTa98YEhKRt64FcLA8U%2F%2BoAz7r4nhXybUxynvj%2F4cuob8BAPcCX3mh1XaSSdEX9BCUchW8MbjVR%2Ba3Isad7kiVZ2nT73OUil9E2cu%2BNic4ieji%2FfZUvYnwz0P3olAqDcj%2F7aA8GcMy2o9DOmyZuStiOpAFN48SD8KYab0ottA4mOjhmvfRq0198b%2FIQvsGfb2TH0deq6TDa6qsOCk8u2vYUJRnfEYBp7C7FNSthd9hEP%2BD%2BHtnRmeRsBrwML33KuZEKOEMB%2BDPJvs6pXKAGMhGh%2BndigGywKqWvRQ8sI%2Ff3ONaCvEl5V2%2BROryQ8OzBYF1Fk03fXRUXFykPWdmSIejXpqPhafatpGz%2BMk6sxNiF%2FGmYgLry4g%2BxoWjaUXjSp6fwzjdycD7js5C4S6jw8R6A33fVoCLyFMp%2Fyc88XHf4F0JEYsP6lBs921SlHtc0A%2Bso%2BRA1f1yfP7lC8nOTvkqQDSInICQFxLY2%2BpkgPsOHFQvN%2FoRc65em9ktRtPwOlVO5EEpEN%2BQHLzqwtmFauYCvGU1Xqq0IWu%2FvqWxkWOQfBSFpdtMcl1F6uxeHp7ox%2Fcr3KZugicC%2BiGy3otZM%2FuSxnqUy3Sc2PzhZNcbY5zcjxmXhrtQ5vetx4AWBrdceGUeBOoD7J7UvHZRibVoqf0Wt3tz5ZKlYI6Lz6F4rmgEBxfcgwzr630gY6sAG31F%2BCKFjNLrdiPwt3HYa%2BJHguapVDZyCu7xBDmhafgu2U8pGJ3VCUNwV%2FtBVUAooI0eo81sfGbEemgCTFhRDSajlSkWrbwh5W5gNbAtygNTiz8HNY6y1MrmS21ftU5rMyCwKRP4kAY3g0dF92Ap5%2Fb5kFKdfqh2AppPWrGS6KK1SAvYizhC31rPAReNJfIYk0mv4Uvd1Ikms8S3%2FxGsgho0ZzFvsZb5JNY6ZTRmla3Q%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=30bceb6381511b3204f12d05d11b96c8285e17733f04afc9be3ffb6a55fe9cb3",
+      "file_size": 95937,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-02-10T17:15:38.611Z",
+  "allow_singular_disclosure_after": -265208245.29998767,
+  "singular_disclosure_allowed": true,
+  "vote_count": 36,
+  "voters": [
+    "jokebookservice1",
+    "byq",
+    "europa",
+    "bl4de",
+    "flashdisk",
+    "harrymg",
+    "dmatrix",
+    "asad0x01_",
+    "pr0f0x01",
+    "r3y",
+    "and 26 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "score": 2.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "high",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3,
+    "asset_type": "URL",
+    "asset_identifier": "hackerone.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "301526",
+  "votes": 36,
+  "latest_disclosable_activity_at": "2018-01-11T18:57:53.735Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:13:04.045983",
+    "source": "https://hackerone.com/reports/301526.json",
+    "report_id": 301526
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDE1MjY=",
+    "databaseId": "301526",
+    "title": "Invitation token leaks to https://bat.bing.com",
+    "url": "https://hackerone.com/reports/301526",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-01-11T18:57:53.679Z",
+    "created_at": "2017-12-31T12:10:46.226Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "low",
+      "score": 2.7
+    },
+    "reporter": {
+      "username": "zuriel"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS82ODMyMQ==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2018-01-05T18:25:39.861Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMwMTUyNg==",
+    "_id": "301526",
+    "disclosed": true,
+    "votes": 36,
+    "latest_disclosable_activity_at": "2018-01-11T18:57:53.735Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMDE1MjY=",
+      "databaseId": "301526",
+      "title": "Invitation token leaks to https://bat.bing.com",
+      "url": "https://hackerone.com/reports/301526",
+      "disclosed_at": "2018-01-11T18:57:53.679Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEz",
+      "handle": "security",
+      "name": "HackerOne",
+      "url": "https://hackerone.com/security",
+      "currency": "usd"
+    }
+  }
+}

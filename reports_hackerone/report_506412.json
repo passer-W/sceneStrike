@@ -1,0 +1,231 @@
+{
+  "id": 506412,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MDY0MTI=",
+  "url": "https://hackerone.com/reports/506412",
+  "title": "Enrolling to a CA that returns an empty response crashes the node process",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2019-03-07T20:23:54.652Z",
+  "submitted_at": "2019-03-07T20:23:54.652Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mttrbrts",
+    "url": "/mttrbrts",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22522,
+    "url": "https://hackerone.com/hyperledger",
+    "handle": "hyperledger",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/4unr4nty3m2omunib0bwxy2s189l/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/4unr4nty3m2omunib0bwxy2s189l/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Linux Foundation Decentralized Trust",
+      "twitter_handle": "lfdecentralized",
+      "website": "https://www.lfdecentralizedtrust.org/",
+      "about": "An industry-wide open source initiative to advance blockchain technology, governed by The Linux Foundation."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-08-06T17:37:09.974Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2022-07-07T17:37:05.167Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "If a CA server responds with an empty response during enrollment, an exception is thrown in the event emitter on `end`. This is an uncaughtException and causes the containing node process to exit.\n\n# To replicate:\nWith the attached files, run:\n```\nnpm install\nnode badCa.js &\nnode index.js\n```\n\nThis starts a simple malicious CA server that provides a response that triggers the exception. The `index.js` script tries 2 different scenarios:\n- 1. With a known bad URL, which throws an exception which can be caught by the client application\n- 2. With a malicious CA, which throws an exception which cannot be caught by the client application because of the EventEmitted behaviour in node.\n\n> From https://nodejs.org/api/events.html#events_error_events\n> If an EventEmitter does not have at least one listener registered for the 'error' event, and an 'error' event is emitted, the error is thrown, a stack trace is printed, and the Node.js process exits.\n\n# Fix\n\nReplace https://github.com/hyperledger/fabric-sdk-node/blob/c10865cfb20d063fdef4c7d96c25c1581f309e84/fabric-ca-client/lib/FabricCAClient.js#L457\n`util.format('Enrollment failed with HTTP status code', JSON.parse(data).statusCode)));`\nwith \n`util.format('Enrollment failed with HTTP status code', response.statusCode)));`\n\nThe same issue is present at https://github.com/hyperledger/fabric-sdk-node/blob/0d24cec10f7a3e0153fcf3f0158a89c5eaa0cfab/fabric-ca-client/lib/FabricCAClient.js#L318\n\n## Impact\n\nThis attack allows an attacker to cause any node client application using the fabric-ca-node SDK to exit. In scenarios where the SDK is used in a server-side application, this will have the effect of denying the use of that server to other users.",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 437247,
+      "file_name": "badCa.js",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/437/247/acf7167f00905446c23c83a262574a3038561579/badCa.js?response-content-disposition=attachment%3B%20filename%3D%22badCa.js%22%3B%20filename%2A%3DUTF-8%27%27badCa.js&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3RASQ6XY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050843Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDS18M7KSJI%2FauGYju8kX7Na4bleFtlWe5Y3A2iV9%2BMwQIgckvcIr3JsTtWs7wP0myBxDK9JL%2F33OjL%2BIWDRt7t0pEqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDFDHSgKykWp9ydfH1CqOBXcTkLOcL%2FN9Va4Z0gFPBJn00gCqogJ5OhVCItBpRv30bsHzyg53FT1lHCDlVKN1Y9NePV%2Fg0n96mTqQmGbwPjvvGhiyrsSa%2FPfqBGTm6QdNHej3TbLs3rJKMQ4BpBvCNgtZGAX8qFVLtE5GosTXLDWv1bVdAzr16ZkcNb46jvF4Dwk3Mb0hYYRtTIs1OF3wzoMEuXkh4G21H7tHh4eNCGvo63GbP%2FUSnkSPLop70j1Y8MxjUHlyTH5XzGaNa9OKGpzsdlwX%2BXiPixCumu%2Fn4ANRzKVEhq7MGmCg6P6pxv4gG6NBKfGU%2F%2FHrLtrj%2F1XT0t000tS%2Fd0ScfIVpy4FHUhssDrM7bVdnUjpYLdSQ1w6E23GrGX81YakfHudFpdKiRsJMb2ck9YTxlBTb3jTgGip1CVAiiIanrvIQJvlvBodP%2Bl3BxKXLlrjJQXIxKIbdZcghRGoKxxIkBQGOEu6YWBrMimiR64y73bczt9EnjUeqsyJKIjWjsPFF2MpGbsgkmZFNCf92f0nVwlbub1qwRmQQIqZAoZ1tSsYVbdROodGcE2brlRmbiUOZGjc%2FX377hLTIIuDkp1UF4gjJmkx6Etor6LLYCyqPBKt58BhmUS47D1P%2FbM%2FFCcFHxzqLq6XIbIfFbA%2FaBATYq3AAsGS1xb4qMa3oe59NYfQbtclDeKRraP7oTTOa%2BvSGvi1AH6dvL2CTRG7%2BPxL5jDF%2Bh5ZvPnp31e6KwFOjKIGXOB%2BK%2F10u%2FmLryUlXMBl4qp1wa76rZK8FLnlonhpaq8oGX9nFB%2FmoEzzKdLHQzRfnZg38T8GYcdLF4kqFrEpc9FGXaLr29t57Gyr7PXnkyUWa7XTnhA5ReNvNIuhcYTEcAGSjbjCj9pzSBjqxAQUZWRRW5IyVo%2FYvbQNtMfhxyx8B3X4CA8t%2BRH9eJ8N0ce5ACRQajjY2oAHwh3XpCJ2qYeVoYWi8oVF7ydLlKr6%2F4vB3noDSLe9C61VGK5Z7GuwULm47S1VHfIxVFvSvj8V9s7c74Pzq73dlusopiEQE4%2BsPZM0FM36zrTdhjzI0lFcr63%2F%2BtTQb8pU6CS2X5gSDFUqtIEawl%2BLnk1JvaBJcsqU%2FLS9y%2FDFdng3lgzx0TQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8a307afa30ce3c36879dd52bebb95b0a173e77571f96a9bf134a5c7fd5d0661a",
+      "file_size": 287,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 437248,
+      "file_name": "index.js",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/437/248/85040846c67c7405c569c874cc68a00c9331479e/index.js?response-content-disposition=attachment%3B%20filename%3D%22index.js%22%3B%20filename%2A%3DUTF-8%27%27index.js&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3RASQ6XY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050843Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDS18M7KSJI%2FauGYju8kX7Na4bleFtlWe5Y3A2iV9%2BMwQIgckvcIr3JsTtWs7wP0myBxDK9JL%2F33OjL%2BIWDRt7t0pEqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDFDHSgKykWp9ydfH1CqOBXcTkLOcL%2FN9Va4Z0gFPBJn00gCqogJ5OhVCItBpRv30bsHzyg53FT1lHCDlVKN1Y9NePV%2Fg0n96mTqQmGbwPjvvGhiyrsSa%2FPfqBGTm6QdNHej3TbLs3rJKMQ4BpBvCNgtZGAX8qFVLtE5GosTXLDWv1bVdAzr16ZkcNb46jvF4Dwk3Mb0hYYRtTIs1OF3wzoMEuXkh4G21H7tHh4eNCGvo63GbP%2FUSnkSPLop70j1Y8MxjUHlyTH5XzGaNa9OKGpzsdlwX%2BXiPixCumu%2Fn4ANRzKVEhq7MGmCg6P6pxv4gG6NBKfGU%2F%2FHrLtrj%2F1XT0t000tS%2Fd0ScfIVpy4FHUhssDrM7bVdnUjpYLdSQ1w6E23GrGX81YakfHudFpdKiRsJMb2ck9YTxlBTb3jTgGip1CVAiiIanrvIQJvlvBodP%2Bl3BxKXLlrjJQXIxKIbdZcghRGoKxxIkBQGOEu6YWBrMimiR64y73bczt9EnjUeqsyJKIjWjsPFF2MpGbsgkmZFNCf92f0nVwlbub1qwRmQQIqZAoZ1tSsYVbdROodGcE2brlRmbiUOZGjc%2FX377hLTIIuDkp1UF4gjJmkx6Etor6LLYCyqPBKt58BhmUS47D1P%2FbM%2FFCcFHxzqLq6XIbIfFbA%2FaBATYq3AAsGS1xb4qMa3oe59NYfQbtclDeKRraP7oTTOa%2BvSGvi1AH6dvL2CTRG7%2BPxL5jDF%2Bh5ZvPnp31e6KwFOjKIGXOB%2BK%2F10u%2FmLryUlXMBl4qp1wa76rZK8FLnlonhpaq8oGX9nFB%2FmoEzzKdLHQzRfnZg38T8GYcdLF4kqFrEpc9FGXaLr29t57Gyr7PXnkyUWa7XTnhA5ReNvNIuhcYTEcAGSjbjCj9pzSBjqxAQUZWRRW5IyVo%2FYvbQNtMfhxyx8B3X4CA8t%2BRH9eJ8N0ce5ACRQajjY2oAHwh3XpCJ2qYeVoYWi8oVF7ydLlKr6%2F4vB3noDSLe9C61VGK5Z7GuwULm47S1VHfIxVFvSvj8V9s7c74Pzq73dlusopiEQE4%2BsPZM0FM36zrTdhjzI0lFcr63%2F%2BtTQb8pU6CS2X5gSDFUqtIEawl%2BLnk1JvaBJcsqU%2FLS9y%2FDFdng3lgzx0TQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=754e30e1dc2a82db5c524000dfab447e663957fe633dbddd1acbdf77f0e39d6c",
+      "file_size": 915,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 437249,
+      "file_name": "package.json",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/437/249/8404b536b4880684ffc7b644d96d09047e1e86ef/package.json?response-content-disposition=attachment%3B%20filename%3D%22package.json%22%3B%20filename%2A%3DUTF-8%27%27package.json&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3RASQ6XY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T050843Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDS18M7KSJI%2FauGYju8kX7Na4bleFtlWe5Y3A2iV9%2BMwQIgckvcIr3JsTtWs7wP0myBxDK9JL%2F33OjL%2BIWDRt7t0pEqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDFDHSgKykWp9ydfH1CqOBXcTkLOcL%2FN9Va4Z0gFPBJn00gCqogJ5OhVCItBpRv30bsHzyg53FT1lHCDlVKN1Y9NePV%2Fg0n96mTqQmGbwPjvvGhiyrsSa%2FPfqBGTm6QdNHej3TbLs3rJKMQ4BpBvCNgtZGAX8qFVLtE5GosTXLDWv1bVdAzr16ZkcNb46jvF4Dwk3Mb0hYYRtTIs1OF3wzoMEuXkh4G21H7tHh4eNCGvo63GbP%2FUSnkSPLop70j1Y8MxjUHlyTH5XzGaNa9OKGpzsdlwX%2BXiPixCumu%2Fn4ANRzKVEhq7MGmCg6P6pxv4gG6NBKfGU%2F%2FHrLtrj%2F1XT0t000tS%2Fd0ScfIVpy4FHUhssDrM7bVdnUjpYLdSQ1w6E23GrGX81YakfHudFpdKiRsJMb2ck9YTxlBTb3jTgGip1CVAiiIanrvIQJvlvBodP%2Bl3BxKXLlrjJQXIxKIbdZcghRGoKxxIkBQGOEu6YWBrMimiR64y73bczt9EnjUeqsyJKIjWjsPFF2MpGbsgkmZFNCf92f0nVwlbub1qwRmQQIqZAoZ1tSsYVbdROodGcE2brlRmbiUOZGjc%2FX377hLTIIuDkp1UF4gjJmkx6Etor6LLYCyqPBKt58BhmUS47D1P%2FbM%2FFCcFHxzqLq6XIbIfFbA%2FaBATYq3AAsGS1xb4qMa3oe59NYfQbtclDeKRraP7oTTOa%2BvSGvi1AH6dvL2CTRG7%2BPxL5jDF%2Bh5ZvPnp31e6KwFOjKIGXOB%2BK%2F10u%2FmLryUlXMBl4qp1wa76rZK8FLnlonhpaq8oGX9nFB%2FmoEzzKdLHQzRfnZg38T8GYcdLF4kqFrEpc9FGXaLr29t57Gyr7PXnkyUWa7XTnhA5ReNvNIuhcYTEcAGSjbjCj9pzSBjqxAQUZWRRW5IyVo%2FYvbQNtMfhxyx8B3X4CA8t%2BRH9eJ8N0ce5ACRQajjY2oAHwh3XpCJ2qYeVoYWi8oVF7ydLlKr6%2F4vB3noDSLe9C61VGK5Z7GuwULm47S1VHfIxVFvSvj8V9s7c74Pzq73dlusopiEQE4%2BsPZM0FM36zrTdhjzI0lFcr63%2F%2BtTQb8pU6CS2X5gSDFUqtIEawl%2BLnk1JvaBJcsqU%2FLS9y%2FDFdng3lgzx0TQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c1033493b35a7e1ab4916f4f964f04d79c61177440eed5aeee295e1d50100334",
+      "file_size": 294,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-08-06T17:37:05.312Z",
+  "allow_singular_disclosure_after": -123247898.29207785,
+  "singular_disclosure_allowed": true,
+  "vote_count": 6,
+  "voters": [
+    "zy9ard3",
+    "cryptographer",
+    "shivammusic",
+    "sirdamment",
+    "bhaskar_ram",
+    "killa_"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.7,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 3011,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/hyperledger/fabric-sdk-node",
+    "max_severity": "medium"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "506412",
+  "votes": 6,
+  "latest_disclosable_activity_at": "2022-08-06T17:37:10.025Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:08:43.705984",
+    "source": "https://hackerone.com/reports/506412.json",
+    "report_id": 506412
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MDY0MTI=",
+    "databaseId": "506412",
+    "title": "Enrolling to a CA that returns an empty response crashes the node process",
+    "url": "https://hackerone.com/reports/506412",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-08-06T17:37:09.974Z",
+    "created_at": "2019-03-07T20:23:54.652Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.7
+    },
+    "reporter": {
+      "username": "mttrbrts"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNTIy",
+      "handle": "hyperledger",
+      "name": "Linux Foundation Decentralized Trust",
+      "url": "https://hackerone.com/hyperledger",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMzQzNzA=",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-04-17T23:18:59.556Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzUwNjQxMg==",
+    "_id": "506412",
+    "disclosed": true,
+    "votes": 6,
+    "latest_disclosable_activity_at": "2022-08-06T17:37:10.025Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC81MDY0MTI=",
+      "databaseId": "506412",
+      "title": "Enrolling to a CA that returns an empty response crashes the node process",
+      "url": "https://hackerone.com/reports/506412",
+      "disclosed_at": "2022-08-06T17:37:09.974Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyNTIy",
+      "handle": "hyperledger",
+      "name": "Linux Foundation Decentralized Trust",
+      "url": "https://hackerone.com/hyperledger",
+      "currency": "usd"
+    }
+  }
+}

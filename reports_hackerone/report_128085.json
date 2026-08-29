@@ -1,0 +1,209 @@
+{
+  "id": 128085,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjgwODU=",
+  "url": "https://hackerone.com/reports/128085",
+  "title": "Bypassing password authentication of users that have 2FA enabled",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-04-04T01:43:51.988Z",
+  "submitted_at": "2016-04-04T01:43:51.988Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "jobert",
+    "url": "/jobert",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-04-18T06:59:28.512Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-04-14T20:27:32.135Z",
+  "team_member_agreed_on_going_public_at": "2016-04-18T06:59:28.439Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "# Proof of Concept\nWhen a user has 2FA enabled, it's possible to sign in as that user without the need to know its password. To reproduce this attack, you need two users that both have 2FA enabled. For the sake of this PoC, lets call them Jane and John. Jane is the attacker and wants to get access to John's account. John his username is `john`. Jane knows John's username. Here's how you can reproduce it:\n\n - as Jane, go to the sign in page and enter your username and password\n - in the background, it sets Jane's user ID in `session[:otp_user_id]`\n - you now need to enter Jane's 2FA code in order to get access to the account\n - now intercept all your network traffic with a tool like Burp Suite and capture the request that is send when you submit the 2FA token - it looks like this:\n\n```\n> POST /users/sign_in HTTP/1.1\n> Host: 159.xxx.xxx.xxx\n> ...\n\n> ----------1881604860\n> Content-Disposition: form-data; name=\"user[otp_attempt]\"\n> \n> 212421\n> ----------1881604860--\n```\n\n - now add the `login` header to the request - the request now looks like:\n\n```\n> POST /users/sign_in HTTP/1.1\n> Host: 159.xxx.xxx.xxx\n> ...\n\n> ----------1881604860\n> Content-Disposition: form-data; name=\"user[otp_attempt]\"\n> \n> 212421\n> ----------1881604860\n> Content-Disposition: form-data; name=\"user[login]\"\n> \n> john\n> ----------1881604860--\n```\n\n - now, instead of `212421`, send a valid OTP code for `john` to the server\n - Jane is now signed in as John by entering her own password and John's OTP code - Jane still doesn't know John's password\n\n# Impact\nThe OTP codes are 6 numbers that change every 30 seconds. I haven't looked whether the server allows time drift. This would increase the chance that an attacker guesses the right OTP code for the account. As a PoC, I could run a small attack against GitLab.com, but I haven't been able to reach @sytsem to ask for permission. ;)\n\n# Origin of the issue \nThis issue originates from the `find_user` method in the `SessionsController`. It returns a `User` object in two different ways: the first returns the object based on `params[:login]` parameter. The second one if `sessions[:otp_user_id]`. The `params[:login]` parameter takes precedence over the ID stored in the session. This means that if the `params[:login]` is specified in the request when the 2FA code needs to be verified, a different user can be selected to verify the code against. Here's the method:\n\n```ruby\n# app/controllers/sessions_controller.rb:58\ndef find_user\n  if user_params[:login]\n    User.by_login(user_params[:login])\n  elsif user_params[:otp_attempt] && session[:otp_user_id]\n    User.find(session[:otp_user_id])\n  end\nend\n```\n\n# Fix\nHere's a fix (needs specs to proof that it works): F83019.",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 83019,
+      "file_name": "2fa-password-bypass.diff",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/083/019/95fc79353e8b6294611e55df7cbb7901e61f8f61/2fa-password-bypass.diff?response-content-disposition=attachment%3B%20filename%3D%222fa-password-bypass.diff%22%3B%20filename%2A%3DUTF-8%27%272fa-password-bypass.diff&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWQT5U37W%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070512Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCDyqQLF%2BkR4flNCO5eYRIl2VZUj9aXCGDg3hQE3fuKIQIgHkpb1AHSYtE5IH1S188y%2FYTraHk0FAIFAR110sMKwKoqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDJr4C%2BIgzwopKwGtBCqOBUhOr2DiTArv4XwQBHj9nr%2FiSiSsxgvpqVOwiW2xonYeUIyxGESORoFRBMTC%2BwLY8Z6wLzJ%2BEtU%2BZ2r%2B4oBKGzRh25v3yg%2Bc%2F97227GLFe0kZxA%2FjIRcqIQ%2BnXLtx%2B9Tu3i0jA6n955ndp74LgTMaTCfqzPvh7ChxsvWpIaWQra4XIBuS3h%2BOzS3%2Fw4lqvoZfTZs8mwOg6sOSE4%2FBbwpAqCmsfOFd9v8Epe9qDuUWqYDTOPGYmAb5YVsyVfoeU0iGhi7aEBkLjoLF2tKSW0%2B7Q4J6%2FuRiQ%2FR6%2BFVlVupOdVRsCn1ssigmzOOF2mkkIGdl8r%2FUoqYb6qVUHdq8RiqkTBtTHSCVLxaussgLN5u8TkrR63iBK77NSjj0o1TIG9dDMrEN0Ea8bZ%2BiXkz6iLU3kBhUD%2BcZwd1N%2BvCIalY660pJe9lfEr7CtFmp2G8lTXlVAApVakFEfADAvkvBYHDXtsHAL%2FkWUroc6x5Muz7b7BprKt4Za6acygxCW%2B3rinNa%2BQR0bVVqPUh2C9PZrBVy95RaKZfEoaygj5jIhO8Fo%2FseY%2FN2O0E5fNCNzuXnHXdeIUsip90FQOZR1vYncK5fWOeyjzJrNQIF%2FMBJMGMnRTfY3fP0al5Pn5JatyvLFCFUHLAF5Hao1i7JY5R0v8KdNDHtkX5soH0%2FcxY7SXsuNyKoH4NQQk1e5kFI4O6HReLGZBRhadnR6KmIfSE9N7h8xKFn3coNtmgQvKYmsBODxHFaixdVQDdQ%2FM2URB6zQUA6eddNyVqrny7iE0EealVv%2Bu0iRSJCQrn1wfkfrL6VbwS7YebIdFG5E0Z8KTEkj%2BOTsld5%2FDt%2B4eFBYnH5FaUmSkD6w%2BrQ2KX5QhTv09AwTCW3LfSBjqxATHFDUFOulj4%2FjRfKEvU6NH4%2BmPudNJEZNyl%2Fm6FigHj8Zy1JgSe4s9MdexMyKc12Mf2XSEDovb3qwDwVf1i7bJTEF7yjBHA7T89lZ9iGqejsHbAw8L0twkJ0cvHCAIn9FitIHm3chM8kUxqZucYvIWtd6BlHeHa833ttqxRvYBvQ45XSpM%2F5WSCcXDHGZpqWtqEfJk4DZritUr45SlFNg%2FHyvoIEFCtFhNtqCCAntlYzg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f5249151ca673dc69dfa2c1d0447f5874d11db7ae92793a51bece84b986c677d",
+      "file_size": 1025,
+      "type": "text/x-diff",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-05-14T20:27:32.220Z",
+  "allow_singular_disclosure_after": -320236660.4533854,
+  "singular_disclosure_allowed": true,
+  "vote_count": 27,
+  "voters": [
+    "michiel",
+    "mohaned0101",
+    "spam404",
+    "2026",
+    "pr0f0x01",
+    "eveeez",
+    "bb00x",
+    "pavanw3b",
+    "infosechelper",
+    "silv3rpoision",
+    "and 17 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 1677,
+      "category": "researcher",
+      "content": "This vulnerability allowed password authentication to be bypassed when two-factor authentication was enabled for a user. @GitLab resolved this 2 days after I reported it to them. The commit that fixed the bug can be found at https://gitlab.com/gitlab-org/gitlab-ce/commit/00da609cfd8bf1105fe433dfc92ab263d6205eaf. The bug has been fixed in GitLab version 8.6.5.",
+      "updated_at": "2016-04-14T21:07:17.684Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 2,
+        "username": "jobert",
+        "name": "Jobert",
+        "bio": "Co-founder of HackerOne. ಠ_ಠ",
+        "cleared": false,
+        "verified": false,
+        "website": "https://hackerone.com",
+        "location": "San Francisco, CA",
+        "created_at": "2013-03-08T01:17:12.256Z",
+        "url": "https://hackerone.com/jobert",
+        "hackerone_triager": false,
+        "hackerone_employee": true,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/ht4b9SmcYNqmpbyCFXd7cxHB/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    }
+  ],
+  "databaseId": "128085",
+  "votes": 27,
+  "latest_disclosable_activity_at": "2016-04-18T06:59:28.532Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:05:12.790878",
+    "source": "https://hackerone.com/reports/128085.json",
+    "report_id": 128085
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjgwODU=",
+    "databaseId": "128085",
+    "title": "Bypassing password authentication of users that have 2FA enabled",
+    "url": "https://hackerone.com/reports/128085",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-04-18T06:59:28.512Z",
+    "created_at": "2016-04-04T01:43:51.988Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "jobert"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEyODA4NQ==",
+    "_id": "128085",
+    "disclosed": true,
+    "votes": 27,
+    "latest_disclosable_activity_at": "2016-04-18T06:59:28.532Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMjgwODU=",
+      "databaseId": "128085",
+      "title": "Bypassing password authentication of users that have 2FA enabled",
+      "url": "https://hackerone.com/reports/128085",
+      "disclosed_at": "2016-04-18T06:59:28.512Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

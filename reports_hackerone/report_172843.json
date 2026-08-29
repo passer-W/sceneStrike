@@ -1,0 +1,207 @@
+{
+  "id": 172843,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzI4NDM=",
+  "url": "https://hackerone.com/reports/172843",
+  "title": "DOM based reflected XSS in rockstargames.com/newswire/tags through cross domain ajax request",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2016-09-29T08:28:52.602Z",
+  "submitted_at": "2016-09-29T08:28:52.602Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "zombiehelp54",
+    "url": "/zombiehelp54",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/mevfgipw1pc7n4wy86swdq1yaeuq/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 2143,
+    "url": "https://hackerone.com/rockstargames",
+    "handle": "rockstargames",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/002/143/db40b290ac0adcde231da85c33a668f610e6f4df_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/002/143/db40b290ac0adcde231da85c33a668f610e6f4df_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Rockstar Games",
+      "twitter_handle": "RockstarGames",
+      "website": "http://www.rockstargames.com/",
+      "about": "Publishers of such popular games as Grand Theft Auto, Max Payne, Red Dead Redemption, L.A. Noire, Bully & more."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-03-17T15:06:23.980Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-03-17T01:11:36.007Z",
+  "team_member_agreed_on_going_public_at": "2017-03-17T15:06:23.936Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\nI have found a reflected XSS issue in `http://www.rockstargames.com/newswire/tags` which is , IMO , somekinda tricky. \n\n#PoC:\n- **URL:** `http://www.rockstargames.com/newswire/tags#/?tags=\\%2e%2e\\%2e%2e\\%2e%2e\\comments_dal\\users\\getGlobalLoginSettings%2ejson?callback=alert(%2fxss%2f);%2f%2f` \n- **Vulnerable Parameter:** `#/?tags=` \n- **Payload:** `\\%2e%2e\\%2e%2e\\%2e%2e\\comments_dal\\users\\getGlobalLoginSettings%2ejson?callback=alert(%2fxss%2f);%2f%2f`  \n\n{F123778}\n\nThe value of the `tags` parameter is sent as an XHR request to `/newswire/tagContent/[tags_param]/1` and the response gets printed in the page , also I have found that if the `content-type` of the response is `application/javascript` , it gets executed as javascript. \nAfter digging for a while I found this endpoint `www.rockstargames.com/comments_dal/users/getGlobalLoginSettings.json` which returns a callback function in the response if the request is XHR. so I used the callback function to execute javascript through `?callback=alert(/xss/);//` \n\nThanks!",
+  "weakness": {
+    "id": 60,
+    "name": "Cross-site Scripting (XSS) - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 123778,
+      "file_name": "xss_rockstargames.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/123/778/92a8cb3a78d97ad24da10724865b2ea65d1ba304/xss_rockstargames.png?response-content-disposition=attachment%3B%20filename%3D%22xss_rockstargames.png%22%3B%20filename%2A%3DUTF-8%27%27xss_rockstargames.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7G5NZYMZ%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064023Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCxGN07r1uVbMWvIvYC2t%2B%2FcGJvcNDRyUhf57EtmDK8yQIgG%2B0q0cs69snxepjtSyhLT5F2BDtA7cTXK4BC26EJhjkqsQUIfxADGgwwMTM2MTkyNzQ4NDkiDMm3%2FwzD3KnjAAnfByqOBVVdMOUpCw4KxnkZ%2BV71Ji%2BLOfMTHTmsF8ayYTH8IpPcxtY1%2FCBdlYZXil73OPW0haR1HKhs1j7FS%2B6aruxR5w%2FlwW%2FFsqq4MncAVxgUnFOsDuoiE7TFjtRH%2BjqmQsok3zoYW%2BTMWs%2BeLg6YYyG2d7X2AnmnrQOUW1fpG9BPtaV4NAv4zH1jErYSTyhTYXJcbBIpi7oPljA4QnWkxVmULkjp2Dne1UhIzw3VeWaJUUS6k9VtTYiKhZjcopTTdBkvCLdxfrDvHzhX394IZjsMPWGEcKmvV%2F3jJonolaugxvafffROPPTgmOchVe84dypzs3zAoipPRBhH1axw7Q2WobX6sRV3Ah6S0TMQpn%2FQEvvH6PEvPbUdWsh0Yz1IFIE31DHK5yzlqyTijRa6i52g60%2F4LQavkGzcHm4jJ%2FnKTAEjENBTuNiOz9dLcDwgiKcnEtUlUrL2yxtn5IksmF2trdOFyu4jFG%2FIIl2UmWeBqHOB3FKfat8b8WngHA%2BvTdhBjtiLt2NQ8LtC%2BTRNTkvrWFBMQ8BmxkTD95i%2FajpPre6lPZKso%2Fqe0tq9EGaI6GXza4XI%2BO5E7DFffCDJdhxrIIOTNA%2BNga2gCdYQwendOXcbBlufzLIoStaMvtLI0o6l8bLl80Qe7RTG406Ebk8ExL5SV648ARpIBsiM21Z4pfu%2FXeSSrJKSxiz6f%2F0f5IhGr7f2%2BTxOEmw9n3ZJP2KQo5%2BsKEw0fzYingjDYZcG%2ByEb8jpIPDUZ%2FHOZllU1PEOFDYZjByrjIinF0p24kdxZMD60WicIBt7o2moRsXH9M83ZF6S77KRFLKgJK6gCdRlpWTRfQo%2BcP3aeHLzRnp3sSEXq%2Fi4PFol%2FR0Dn0v3CnDCXxLfSBjqxATYTXilxV%2FNllwSZIU15bQshj4sqLiDzcUiJYT5IwZ1S5u6ptYH3%2FcX3WjOMdVW37nV%2FCy%2FrySD29Tn2%2Fmgljzfp4Z3vfBt9O6Ls5ozqO%2FRe8Uc3WIKa0uT9C3uSEkCC3kvlE6%2Bn6P3igLvQkS3W3sRcybduXYA1QTbAliW%2BgcRy2nt8IUD3Dj1MAKfdaioguBLflGC9Oq%2FEwf5skmA8lIraqCAbOss9oqPNHC6cVEYUCw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ac401424bc025bcaa9d0ba29e45ef2d55a4e4440ad54e34850ba6901f3880e97",
+      "file_size": 283240,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-04-16T01:11:36.063Z",
+  "allow_singular_disclosure_after": -291187727.2495492,
+  "singular_disclosure_allowed": true,
+  "vote_count": 27,
+  "voters": [
+    "delimitry",
+    "bogdantc",
+    "hogarth45",
+    "yaworsk",
+    "mahmoud0x00",
+    "mpz",
+    "eveeez",
+    "0xbarq",
+    "khalidamin",
+    "m16",
+    "and 17 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 39584,
+    "asset_type": "URL",
+    "asset_identifier": "*.rockstargames.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "172843",
+  "votes": 27,
+  "latest_disclosable_activity_at": "2017-03-17T15:06:24.000Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:40:23.451006",
+    "source": "https://hackerone.com/reports/172843.json",
+    "report_id": 172843
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzI4NDM=",
+    "databaseId": "172843",
+    "title": "DOM based reflected XSS in rockstargames.com/newswire/tags through cross domain ajax request",
+    "url": "https://hackerone.com/reports/172843",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-03-17T15:06:23.980Z",
+    "created_at": "2016-09-29T08:28:52.602Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYw",
+      "name": "Cross-site Scripting (XSS) - Generic",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "zombiehelp54"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIxNDM=",
+      "handle": "rockstargames",
+      "name": "Rockstar Games",
+      "url": "https://hackerone.com/rockstargames",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNDU0MA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-09-29T17:02:02.445Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3Mjg0Mw==",
+    "_id": "172843",
+    "disclosed": true,
+    "votes": 27,
+    "latest_disclosable_activity_at": "2017-03-17T15:06:24.000Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzI4NDM=",
+      "databaseId": "172843",
+      "title": "DOM based reflected XSS in rockstargames.com/newswire/tags through cross domain ajax request",
+      "url": "https://hackerone.com/reports/172843",
+      "disclosed_at": "2017-03-17T15:06:23.980Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIxNDM=",
+      "handle": "rockstargames",
+      "name": "Rockstar Games",
+      "url": "https://hackerone.com/rockstargames",
+      "currency": "usd"
+    }
+  }
+}

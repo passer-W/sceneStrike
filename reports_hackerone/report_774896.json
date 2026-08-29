@@ -1,0 +1,209 @@
+{
+  "id": 774896,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NzQ4OTY=",
+  "url": "https://hackerone.com/reports/774896",
+  "title": "Kubelet resource exhaustion attack via metric label cardinality explosion from unauthenticated requests",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-01-14T18:01:27.545Z",
+  "submitted_at": "2020-01-14T18:01:27.545Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "mr_incompetent",
+    "url": "/mr_incompetent",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/MocsZSz46DMkf2Q9gdr3xw4w/47c72a82657a929c13ab24e11674f7e10ea2bf67b1b9e7116b522cd7ede42f15"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 39386,
+    "url": "https://hackerone.com/kubernetes",
+    "handle": "kubernetes",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/039/386/486f4380e09776d05a912ca9f46be23f72fe8197_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Kubernetes",
+      "twitter_handle": "kubernetesio",
+      "website": "https://kubernetes.io/",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2020-8551"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2020-10-31T10:26:46.443Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-10-31T10:26:46.363Z",
+  "team_member_agreed_on_going_public_at": "2020-10-30T21:29:10.410Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Report Submission Form\n\n## Summary:\nMalicious clients can potentially DOS a kubelet by sending a high amount of specially crafted requests to the kubelet's HTTP server. \n\nFor each request the kubelet updates/sets 3 metrics:\n- [kubelet_http_requests_total (Counter)](https://github.com/kubernetes/kubernetes/blob/v1.17.0/pkg/kubelet/server/metrics/metrics.go#L33-L44)\n- [kubelet_http_requests_duration_seconds (Histogram with 7 buckets)](https://github.com/kubernetes/kubernetes/blob/v1.17.0/pkg/kubelet/server/metrics/metrics.go#L46-L56)\n- [kubelet_http_inflight_requests (Counter)](https://github.com/kubernetes/kubernetes/blob/v1.17.0/pkg/kubelet/server/metrics/metrics.go#L58-L66)\n\nEach metric has the label `path` which will contain the path of each request.\nIt does not matter if the request is authenticated or not - The metrics will be set/updated regardless.\nWith each unique path, the kubelet creates 16 new time series.\nBy sending a high amount of requests with random path values, the kubelet's memory usage will grow and eventually the kubelet will get OOM killed.\n\nIt's also possible that the kubelet evicts all workloads before being OOM killed (Which might be worse than an OOM kill) \n\nThe corresponding kubelet server code: https://github.com/kubernetes/kubernetes/blob/v1.17.0/pkg/kubelet/server/server.go#L859-L865\n\n## Kubernetes Version:\n- v1.17.0 kubeadm (tested)\n- v1.16.4 kubeadm (tested)\n- v1.15.7 kubeadm (tested)\n\n## Component Version:\nKubelet\n\n## Steps To Reproduce:\n```bash\nNODE_NAME=\"my-poor-node\"\nNODE_IP=\"192.168.1.100\"\n\n# Perform random requests from an unauthenticated client\ncurl --insecure https://${NODE_IP}:10250/foo\ncurl --insecure https://${NODE_IP}:10250/bar\ncurl --insecure https://${NODE_IP}:10250/baz\n\n# Run in a dedicated shell to be able to get the metrics\nkubectl proxy\n\n# Load metrics from node\n# For each path (foo, bar, baz) 16 time series got created\ncurl http://127.0.0.1:8001/api/v1/nodes/${NODE_NAME}/proxy/metrics 2>&1 | grep 'kubelet_http_requests_total\\|kubelet_http_requests_duration_seconds\\|kubelet_http_inflight_requests'\n\n# Perform more random requests & see the output of the metrics endpoint to grow.\n```\n\n## Supporting Material/References:\n\nA gist with an additional go tool which spams the kubelet\nhttps://gist.github.com/mrIncompetent/c6cbe483298c36668374363baf52a35d\n\n## Impact\n\nKill the kubelet / Make the kubelet consume all resources so it starts to evict pods.",
+  "weakness": {
+    "id": 48,
+    "name": "Uncontrolled Resource Consumption"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": "2020-11-29T21:29:10.543Z",
+  "allow_singular_disclosure_after": -176801184.10110065,
+  "singular_disclosure_allowed": true,
+  "vote_count": 9,
+  "voters": [
+    "ali",
+    "akashhamal0x01",
+    "sa1tama0",
+    "m0ti0nl3ss_",
+    "hexachroma",
+    "yrobla",
+    "kevin163com",
+    "martenzo7",
+    "karca"
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.0,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "adjacent",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 32459,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/kubernetes/kubernetes",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "774896",
+  "votes": 9,
+  "latest_disclosable_activity_at": "2020-10-31T10:26:46.708Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T12:55:34.759697",
+    "source": "https://hackerone.com/reports/774896.json",
+    "report_id": 774896
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NzQ4OTY=",
+    "databaseId": "774896",
+    "title": "Kubelet resource exhaustion attack via metric label cardinality explosion from unauthenticated requests",
+    "url": "https://hackerone.com/reports/774896",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-10-31T10:26:46.443Z",
+    "created_at": "2020-01-14T18:01:27.545Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ4",
+      "name": "Uncontrolled Resource Consumption",
+      "external_id": "cwe-400"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.0
+    },
+    "reporter": {
+      "username": "mr_incompetent"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xOTY4NTM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-02-04T01:45:53.065Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc3NDg5Ng==",
+    "_id": "774896",
+    "disclosed": true,
+    "votes": 9,
+    "latest_disclosable_activity_at": "2020-10-31T10:26:46.708Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83NzQ4OTY=",
+      "databaseId": "774896",
+      "title": "Kubelet resource exhaustion attack via metric label cardinality explosion from unauthenticated requests",
+      "url": "https://hackerone.com/reports/774896",
+      "disclosed_at": "2020-10-31T10:26:46.443Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM5Mzg2",
+      "handle": "kubernetes",
+      "name": "Kubernetes",
+      "url": "https://hackerone.com/kubernetes",
+      "currency": "usd"
+    }
+  }
+}

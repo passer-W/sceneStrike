@@ -1,0 +1,218 @@
+{
+  "id": 458842,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NTg4NDI=",
+  "url": "https://hackerone.com/reports/458842",
+  "title": "Malformed save files (.sav) allow to write files with arbitrary extensions and content in GoldSrc-based games.",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2018-12-07T20:40:15.649Z",
+  "submitted_at": "2018-12-07T20:40:15.649Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "splatt581",
+    "url": "/splatt581",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/313/403/f1ad01d998f7a50baab8dd5ba6a40ed16b37a3e2_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 23363,
+    "url": "https://hackerone.com/valve",
+    "handle": "valve",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/023/363/c78d46a7d0ea39e3a15a7c19c1a48634f2571eb9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Valve",
+      "twitter_handle": "",
+      "website": "https://www.valvesoftware.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-02-24T07:05:14.073Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-03-22T17:10:51.363Z",
+  "team_member_agreed_on_going_public_at": "2020-02-24T07:05:13.997Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The structure of the save file implies unpacking of temporary files with extensions ```.HL1```, ```.HL2``` and ```.HL3```. In the code of command 'load', there is a check for invalid substrings, such as ```..```, so unpacking the files into the top directories will not work. Also, it seems, there is a code for checking the file extension by substring ```*.HL?```. So, the problem is that it seems that checking for the presence of this substring is valid throughout the file path, and not just at its end. Therefore, such a check can be bypassed by inserting a substring in the middle of the file path and setting its extension.\n\nIn the attached archive there is a demonstration file ```fakeresource.sav```, which in turn unpacks the file ```test.HL1.dll``` with the ASCII string 'Hello World!' inside.\n\nHow to reproduce it:\n1) Put the file ```fakeresource.sav``` in the path ```%gamedir%/SAVE/```;\n2) Launch the game client and type in the console ```load fakeresource```;\n\nThe file ```test.HL1.dll``` will appear in the folder ```SAVE``` next to the file ```fakeresource.sav```.\n\nAlso, files can be unpacked into internal child directories, with the help of this it can be loaded into memory, the game client simply starts to connect to the mailicious server:\n1) The server downloads the file ```SAVE/fakeresource.sav``` to the game client;\n2) After downloading the file, the server, using the messages ```SVC_StuffText``` or ```SVC_Director```, execute the following string in the client console ```_setgamedir %gamedir%_downloads;_restart```. Let's take a closer look at this string:\n\n* ```_setgamedir %gamedir%_downloads``` - sets the directory in which the .sav file is downloaded, for its subsequent load;\n* ```_restart``` - applying the above changes.\n\n3) Since the client was on the server, when the engine is restarted, it starts to reconnect to it. This time the server executes the following string in the client console ```logsdir SAVE/test.HL1/cl_dlls;log on;_setgamedir %gamedir%_downloads/SAVE/test.HL1;load fakeresource;_restart```. Consider more:\n\n* ```logsdir SAVE/test.HL1/cl_dlls;log on``` - creates directories into which the .dll file will be unpacked, because files cannot be unpacked in non-existent directories;\n* ```_setgamedir %gamedir%_downloads/SAVE/test.HL1``` - sets the directory against which the engine will try to load the client library 'cl_dlls/client.dll' into memory when restarted;\n* ```load fakeresource``` - unpacks the file along the path ```SAVE/test.HL1/cl_dlls/client.dll```;\n* ```_restart``` - restarts the engine to apply changes and load the new library into memory.\n\nAs a proof, there is a video in the attached archive showing the connection to the test server, which downloads such a .dll file to the client with a call to MsgBox.\n\n## Impact\n\nA malicious server can download the .sav file to the game client, execute commands on the client console to unpack a binary file, such as .dll, and load its malicious code into the client’s memory.",
+  "bounty_amount": "1500.0",
+  "formatted_bounty": "$1,500",
+  "weakness": {
+    "id": 76,
+    "name": "Malware"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 387170,
+      "file_name": "extractfile.zip",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/387/170/1013fb496217111717626b2b79dc484090da458e/extractfile.zip?response-content-disposition=attachment%3B%20filename%3D%22extractfile.zip%22%3B%20filename%2A%3DUTF-8%27%27extractfile.zip&response-content-type=application%2Fzip&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ4GK4YVI7%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051331Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIEMJB%2FqQEz0K231g2FOWONfFkU67sjlEa%2B%2BAqeNuoMEbAiAkY4Xrnxp%2FAGJiA7GuTzIRiUE00vnlVzXeWUcdj98sQCqxBQh9EAMaDDAxMzYxOTI3NDg0OSIMc5aTH9xEr8n5o%2FMAKo4F214fS2jooHbXn%2Fwdi8OHh%2FCTZ4RYBpY7FbHYRd6TZBatdpwFruR0zV2iBRxv4NwagpGxEVtyvZ5DM8h2h65kxXIrQzSYthm%2BbFaDgFLGBDAGYCdmp0oV3QfW65xj%2F8sY5QmwN7FHtW42jLDzkJ1ouyRSS2an5CteJ5c7VFGXWaMpXZChnEByWUMWsrQFjy1XYnqyyhZ8Ks2k0mNLlethcHadrhASO13e6Vr9Ws%2BgDrNgu5%2F2uTo1P1ReoBsW9evBkh7dxZyO%2ByJ37C7of01HpNs1JS54jE9Liq53w5ssrdvNVRkfHt2us0f%2BI2Wsvooy64Xqalauz0MmTuxtOuVAvE77qXw%2FH5jbNa%2FtwfY%2BItQdTLfkxktoyEsXnZS0akzRtwbjqqBYxcXPTHY338M9lWzQXGvnZ7moi%2FZmj9g7eIE0G4%2FYCd1m84nBoEj0OaoxKNYNI2Q2yALYzHWEWkICdCazNkwUmXwDhMN9g84xnLdsZ0lH%2Bohki3QHpHPv1o9e9rS3G0GYuZ8MrW4lyudIfjMzRyPi0PIuy6a9ZeaIqUbFGjlsp4Vrp15g6Ojf6RJwtlnkyCyHus6vl1xPAil0OKcZ7GzH1hljUG1SHwzkKOPomxVSo4MaDZ3g6ZRRhZc56Hab3xjDjolfLh%2Flr%2FVzzdnjIZltcUY0WC5aqatWz0dAZFvJYRFAi2vE9nVfm%2BwaXpIKPPPcHo5pg1J61JbPITnd4ba8e7RjlurcYUV0wPtFqLMkIVqF6%2BSlGymi%2Bya1uw1lHqJxV%2FZvKX9NSowObqHXmrUezGc4YgSLLXKWecBJVSZly7%2B5Eqgn8ULaMuaDgqYMfhUCnt%2F5jae2zC2%2B275TjzrQptFxoxiI9q0tMLigt9IGOrIBOvEbQM6BFimP0uSFSqj3o6b%2FXZx%2BzgQNMvFaTv3tRb%2FxhKCYdhTfWfAJhNw6Dd1TEU7PiOju5cN0nTFrhT0qHNWFUMSZ3%2BjGn0xr5HghdX0IrvIfVoVdNdb7ESn6xb%2FroVN0G5B3wDv9rJuINaI4siCETriQEthwUnOHW3AdS0JoSiKm4e1mybdeJKrN%2FCuR0YkaRtU8Di8PVIJBV%2F9Kd3JxBIUL42mXG%2F3o3QUuvRtrFw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=563b17c4bbda288071a826bf42fac8af5a81135bcf90213b1fd2ac9589d5107c",
+      "file_size": 5411747,
+      "type": "application/zip",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 99,
+  "voters": [
+    "aituglo",
+    "a_d_a_m",
+    "zonduu",
+    "base_64",
+    "mvc",
+    "ali",
+    "tess",
+    "cubed",
+    "salahhasoneh",
+    "b911bade858ce8e6a0f50f8",
+    "and 89 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.7,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 1289,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "hl.exe",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "458842",
+  "votes": 99,
+  "latest_disclosable_activity_at": "2020-02-24T07:05:14.092Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:13:31.487715",
+    "source": "https://hackerone.com/reports/458842.json",
+    "report_id": 458842
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NTg4NDI=",
+    "databaseId": "458842",
+    "title": "Malformed save files (.sav) allow to write files with arbitrary extensions and content in GoldSrc-based games.",
+    "url": "https://hackerone.com/reports/458842",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-02-24T07:05:14.073Z",
+    "created_at": "2018-12-07T20:40:15.649Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc2",
+      "name": "Malware",
+      "external_id": "capec-549"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.7
+    },
+    "reporter": {
+      "username": "splatt581"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xMjE5MjU=",
+            "amount": "1500.00",
+            "awarded_amount": "1500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-02-08T19:49:40.303Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQ1ODg0Mg==",
+    "_id": "458842",
+    "disclosed": true,
+    "votes": 99,
+    "latest_disclosable_activity_at": "2020-02-24T07:05:14.092Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80NTg4NDI=",
+      "databaseId": "458842",
+      "title": "Malformed save files (.sav) allow to write files with arbitrary extensions and content in GoldSrc-based games.",
+      "url": "https://hackerone.com/reports/458842",
+      "disclosed_at": "2020-02-24T07:05:14.073Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIzMzYz",
+      "handle": "valve",
+      "name": "Valve",
+      "url": "https://hackerone.com/valve",
+      "currency": "usd"
+    }
+  }
+}

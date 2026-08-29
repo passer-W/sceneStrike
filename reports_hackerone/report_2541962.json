@@ -1,0 +1,242 @@
+{
+  "id": 2541962,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTQxOTYy",
+  "url": "https://hackerone.com/reports/2541962",
+  "title": "Disclose Hidden Comments on Media Section of hub.vroid.com",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2024-06-07T22:30:27.484Z",
+  "submitted_at": "2024-06-07T22:30:28.375Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "giwadaoud",
+    "url": "/giwadaoud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/b1sirxnsh04qvbggekwuhqj0dwqp/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 29446,
+    "url": "https://hackerone.com/pixiv",
+    "handle": "pixiv",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/zwZW6NWs5m7fkL6SV9jkncqW/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/zwZW6NWs5m7fkL6SV9jkncqW/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "pixiv",
+      "twitter_handle": "pixiv",
+      "website": "https://www.pixiv.net",
+      "about": "Online community platform for creators all over the world."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-01-18T11:24:28.994Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-07-26T10:42:28.223Z",
+  "team_member_agreed_on_going_public_at": "2026-01-18T11:24:28.715Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "I discovered a vulnerability related to hidden comments in the Media section on https://hub.vroid.com. Initially, a user allowed comments on their media post but later disable them, making all comments invisible to everyone except the admin. However, by intercepting a request where a user can like any comment with a specific ID, I found that it is possible to like hidden comments by inputting their IDs. The response from the server not only confirms the like action but also reveals the content of the hidden comment, which should only be visible to the original poster of this media. This vulnerability in the endpoint allows unauthorized disclosure of hidden comments on any posts in the Media section.\n\n{F3340195}\n\n## Steps To Reproduce:\n\n**UserAttacker**\n**UserVictim**\n\n  1. Create two random accounts on https://accounts.pixiv.net/\n  1. Login then both on https://hub.vroid.com\n  1. From UserVictim navigate to **submit character** and submit a character then scroll down you will see:\n\n{F3340256}\n\n  4. Upload media here and allow comments\n  5. Post any random comment then disable comments section on the media of the UserVictim\n  6. From UserVictim we need to get the comment ID to use it later (this step only for testing, real attack dont need this step), for that, click ctrl + U to view the page source then ctrl + F and search for **entityIds**\n\n{F3340234}\n\n  7. Save the comment ID to use it later.\n  8. From UserAttacker, intercept any POST request made to https://hub.vroid.com/ and send it to the repeater\n  9. Update the POST request URL and parameter to the below:\n\n```\nPOST /api/statuses/PASTE_ID_HERE/hearts HTTP/2\nHost: hub.vroid.com\nCookie: ATTACKER_COOKIES\nSec-Ch-Ua: \"Opera\";v=\"109\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"\nAccept: application/json, text/plain, */*\nContent-Type: application/json\nX-Api-Version: 11\nSec-Ch-Ua-Mobile: ?0\nContent-Length: 2\n\n{}\n```\n\n  10. Send the request, and you will find the content of the comment and its owner in the response. In this case, the attacker will be able to disclose any hidden comment.\n\n{F3340305}\n\n## Impact\n\nThis vulnerability allows an attacker to disclose hidden comments of any user due to a vulnerable endpoint. These hidden comments should only be visible to the admin.",
+  "bounty_amount": "500.0",
+  "formatted_bounty": "$500",
+  "weakness": {
+    "id": 55,
+    "name": "Insecure Direct Object Reference (IDOR)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3340195,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bdfk5pdj294841buacvhqx40gm78?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042223Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2c92e89f5b800229590b17e8b5ec7d4f88c8c6b0771ee81fa8e6f3c97f693bfb",
+      "file_size": 9308,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3340234,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/zuehigglhxew58rvwu74ulmmiqb2?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042223Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=4393737b9c5cbd3216c14eb8ac7e80901762a72bc39bfd8f4b1b6c0420ac08c9",
+      "file_size": 2405,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3340256,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qv2bo8vzo1kgslcnevdfmq62nmka?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042223Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=29966b6e2c01a31fcd52cb6d77bf1b7911ad212e23dd657491152453a1c71679",
+      "file_size": 2094,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 3340305,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/6owuwh479w4oo2gfrqpkm5wb24yg?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ2MOJT4AN%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042223Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIQD3Qjko6tbjizyJdE0klDA5VJAURtGrnfIoBa0Zb0SvDQIgMKE0ULk0Hq4jsTUmSbEqVZwX6cL91heM7XyCJX2h8IsqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDLiiVIDwkmmpDCBZxCqPBUEp6QGtufdyUiB6GcdmRp6D1wiJfn51kkIaW0JNlMlPklDIWVvhp3vbd2Xz1lCljyE13mOi%2BayGrMtwfu70hXMJB%2BU9m6SgPth%2FE8V%2Fbf586aKgih%2FItM7Ccg%2BbNHwkMz7DfxssSi3%2FJW9k6nQKndhT4xvi%2B5a%2F%2FkQNCwojQX57kRtl9GFWPQ%2BHugT0OhJUedT%2FLp3965hC82MXIOHPGqWkhD4qD50V1IZk0pHdA%2F3bnVJc1DCMCKrmSlVWkQkOsi6dmbOp%2Befnq6cLg3wyOUjK39lVEj4WTFcfhP7oLhZVscjQMSlZtWYz97dm0rAQOYUbzMO2DfXy6C0YoBk5zksqNZAiRjtS3EmiZlpgCKYZl%2FN3egd%2FR8BfnCkwQqXrR7uqFndqhNFbBSxWIYxXS3hDUAHusThLJau9aoRehQX63k1wbiWa6dd25Ev9yxj5WMSoUEwlte3LGHLn4nu0OfC%2F%2F980LLot4%2FGUSrJjVWmeX9DhAKzEXt51g6dfpssffXYGYoRiUu8w6KxPvYtEci3zPkZz4pOIxf%2BxlxOwFsenYVyXDcn%2BxkZXLxU6zAjySuk5RT1cOAk5n7B14KKV48uVyMUPVKUdZ3tVtazEvu9Hik7e7Froia8Mqk8VxzrsPRX8ftSLN%2B2ZkEtnLzyEgyQ83VOQ6B8e093JvBGPsCPsD2FEbUosXS8wIBeQ%2FZ9c1jqdgr%2FB%2F4keEDNfPSEBltngo9kYIbmMZGwXVdPuWYm7QPt2b0zAGxI7j%2BKR0UXra19lArYZ6uPI0c2XldcGUNrdXgq47mra425UedmiuqquQnZuHfqtq4stDToASDinGUMLTRu67Hs7E7Ojn6gUIqRSCn9rlmGsveDgdVOut8Ywht2c0gY6sQEsLT6vQmAICUjWpMBi8VXGYlPxWMJ6lZo5e9c4n6%2FoXQGh%2B4vcMgc1A2J0pQJT4CMpLcATLzm%2BFQcDgK14NK6E4D14M7A5yUrNChNvCOMwqWzVu3VokeUVwQg0zJfSnPC42Q9f5RQ7iI7%2B%2B71mkYtVpuMX1xsHKcyacBxLb7N0ekpwxFleAJV7HRkqU5qS6ILgKdob4cjYiD598PdXl%2FI5uApKbLpCyly7WEbGfTn9KvI%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2244e02a07839cf2ad518ab2c05458c663e180a03a603c699538c63637faf6d8",
+      "file_size": 20131,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 137,
+  "voters": [
+    "ezzra",
+    "orange303",
+    "qbit_",
+    "neat_panda",
+    "loaymorad",
+    "aboalezz",
+    "ganeshbagaria",
+    "zy9ard3",
+    "0-chrollo-0",
+    "alejandroar",
+    "and 127 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.6,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 36612,
+    "asset_type": "URL",
+    "asset_identifier": "hub.vroid.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2541962",
+  "votes": 137,
+  "latest_disclosable_activity_at": "2026-01-18T11:24:29.197Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:22:23.202041",
+    "source": "https://hackerone.com/reports/2541962.json",
+    "report_id": 2541962
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTQxOTYy",
+    "databaseId": "2541962",
+    "title": "Disclose Hidden Comments on Media Section of hub.vroid.com",
+    "url": "https://hackerone.com/reports/2541962",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2026-01-18T11:24:28.994Z",
+    "created_at": "2024-06-07T22:30:27.484Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU1",
+      "name": "Insecure Direct Object Reference (IDOR)",
+      "external_id": "cwe-639"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.6
+    },
+    "reporter": {
+      "username": "giwadaoud"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI5NDQ2",
+      "handle": "pixiv",
+      "name": "pixiv",
+      "url": "https://hackerone.com/pixiv",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81OTcyMzQ=",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-07-16T08:34:14.734Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI1NDE5NjI=",
+    "_id": "2541962",
+    "disclosed": true,
+    "votes": 137,
+    "latest_disclosable_activity_at": "2026-01-18T11:24:29.197Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNTQxOTYy",
+      "databaseId": "2541962",
+      "title": "Disclose Hidden Comments on Media Section of hub.vroid.com",
+      "url": "https://hackerone.com/reports/2541962",
+      "disclosed_at": "2026-01-18T11:24:28.994Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI5NDQ2",
+      "handle": "pixiv",
+      "name": "pixiv",
+      "url": "https://hackerone.com/pixiv",
+      "currency": "usd"
+    }
+  }
+}

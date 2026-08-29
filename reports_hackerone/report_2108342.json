@@ -1,0 +1,242 @@
+{
+  "id": 2108342,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTA4MzQy",
+  "url": "https://hackerone.com/reports/2108342",
+  "title": "Error when editing a calendar appointment returns stacktrace and query",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2023-08-14T08:18:51.937Z",
+  "submitted_at": "2023-08-14T08:18:52.033Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "st0nzy",
+    "url": "/st0nzy",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fk5wgv65wokqj5vq6tzitby16lti/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13291,
+    "url": "https://hackerone.com/nextcloud",
+    "handle": "nextcloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/hsgut1vi1cv8housqai9cm9383yx/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Nextcloud",
+      "twitter_handle": "nextclouders",
+      "website": "https://nextcloud.com",
+      "about": "Access, share and protect your files, calendars, contacts, communication & more at home and in your enterprise."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2023-48308"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2024-01-17T08:25:02.428Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2023-12-18T08:25:02.185Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\nAfter some testing in Calendar App, i found when im trying to Edit calendar appointment details and change the appointment  to non-exsist id there is ```HTTP/1.1 500 Internal Server Error``` that disclose full path & internal SQL query.\n\n\n## Steps To Reproduce:\n\n-  login and navigate to ```/nextcloud/index.php/apps/calendar/dayGridMonth/now```\n\n{F2599201}\n\n- Edit Appointment and save the request\n\n- in the below request change  ```id ``` value to 4 like example\n\n## Request\n```\nPUT /nextcloud/index.php/apps/calendar/v1/appointment_configs/3 HTTP/1.1\nHost: localhost\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0\n.\n.\n.\n\n{\"id\":3,\"token\":\"scjGreGCEkTQ\",\"name\":\"abc\",\"description\":\"\",\"location\":\"\",\"visibility\":\"PRIVATE\",\"targetCalendarUri\":\"personal\",\"availability\":{\"timezoneId\":\"Asia/Riyadh\",\"slots\":{\"MO\":[{\"start\":1691992800,\"end\":1692021600}],\"TU\":[{\"start\":1691992800,\"end\":1692021600}],\"WE\":[{\"start\":1691992800,\"end\":1692021600}],\"TH\":[{\"start\":1691992800,\"end\":1692021600}],\"FR\":[{\"start\":1691992800,\"end\":1692021600}],\"SA\":[],\"SU\":[]}},\"length\":300,\"increment\":900,\"preparationDuration\":0,\"followupDuration\":0,\"timeBeforeNextSlot\":0,\"futureLimit\":5184000,\"calendarFreeBusyUris\":[]}\n```\n\n##Resonse\n\n```\n\nHTTP/1.1 500 Internal Server Error\n.\n.\n.\n.\n\n{\n    \"status\": \"error\",\n    \"message\": \"Could not find a record for id\",\n    \"data\": {\n        \"type\": \"OCA\\\\Calendar\\\\Exception\\\\ClientException\",\n        \"message\": \"Could not find a record for id\",\n        \"code\": 0,\n        \"trace\": [\n            {\n                \"file\": \"/var/www/html/nextcloud/apps/calendar/lib/Controller/AppointmentConfigController.php\",\n                \"line\": 254,\n                \"function\": \"findByIdAndUser\",\n                \"class\": \"OCA\\\\Calendar\\\\Service\\\\Appointments\\\\AppointmentConfigService\"\n            },\n            {\n                \"file\": \"/var/www/html/nextcloud/lib/private/AppFramework/Http/Dispatcher.php\",\n                \"line\": 230,\n                \"function\": \"update\",\n                \"class\": \"OCA\\\\Calendar\\\\Controller\\\\AppointmentConfigController\"\n            },\n            {\n                \"file\": \"/var/www/html/nextcloud/lib/private/AppFramework/Http/Dispatcher.php\",\n                \"line\": 137,\n                \"function\": \"executeController\",\n                \"class\": \"OC\\\\AppFramework\\\\Http\\\\Dispatcher\"\n            },\n            {\n                \"file\": \"/var/www/html/nextcloud/lib/private/AppFramework/App.php\",\n                \"line\": 183,\n                \"function\": \"dispatch\",\n                \"class\": \"OC\\\\AppFramework\\\\Http\\\\Dispatcher\"\n            },\n            {\n                \"file\": \"/var/www/html/nextcloud/lib/private/Route/Router.php\",\n                \"line\": 315,\n                \"function\": \"main\",\n                \"class\": \"OC\\\\AppFramework\\\\App\"\n            },\n            {\n                \"file\": \"/var/www/html/nextcloud/lib/base.php\",\n                \"line\": 1071,\n                \"function\": \"match\",\n                \"class\": \"OC\\\\Route\\\\Router\"\n            },\n            {\n                \"file\": \"/var/www/html/nextcloud/index.php\",\n                \"line\": 36,\n                \"function\": \"handleRequest\",\n                \"class\": \"OC\"\n            }\n        ],\n        \"previous\": {\n            \"type\": \"OCP\\\\AppFramework\\\\Db\\\\DoesNotExistException\",\n            \"message\": \"Did expect one result but found none when executing: query \\\"SELECT `id`, `token`, `name`, `description`, `location`, `visibility`, `user_id`, `target_calendar_uri`, `calendar_freebusy_uris`, `availability`, `start`, `end`, `length`, `increment`, `preparation_duration`, `followup_duration`, `time_before_next_slot`, `daily_max`, `future_limit` FROM `*PREFIX*calendar_appt_configs` WHERE (`id` = :dcValue1) AND (`user_id` = :dcValue2)\\\"; \",\n            \"code\": 0,\n            \"trace\": [\n                {\n                    \"file\": \"/var/www/html/nextcloud/lib/public/AppFramework/Db/QBMapper.php\",\n                    \"line\": 361,\n                    \"function\": \"findOneQuery\",\n                    \"class\": \"OCP\\\\AppFramework\\\\Db\\\\QBMapper\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/apps/calendar/lib/Db/AppointmentConfigMapper.php\",\n                    \"line\": 55,\n                    \"function\": \"findEntity\",\n                    \"class\": \"OCP\\\\AppFramework\\\\Db\\\\QBMapper\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/apps/calendar/lib/Service/Appointments/AppointmentConfigService.php\",\n                    \"line\": 138,\n                    \"function\": \"findByIdForUser\",\n                    \"class\": \"OCA\\\\Calendar\\\\Db\\\\AppointmentConfigMapper\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/apps/calendar/lib/Controller/AppointmentConfigController.php\",\n                    \"line\": 254,\n                    \"function\": \"findByIdAndUser\",\n                    \"class\": \"OCA\\\\Calendar\\\\Service\\\\Appointments\\\\AppointmentConfigService\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/lib/private/AppFramework/Http/Dispatcher.php\",\n                    \"line\": 230,\n                    \"function\": \"update\",\n                    \"class\": \"OCA\\\\Calendar\\\\Controller\\\\AppointmentConfigController\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/lib/private/AppFramework/Http/Dispatcher.php\",\n                    \"line\": 137,\n                    \"function\": \"executeController\",\n                    \"class\": \"OC\\\\AppFramework\\\\Http\\\\Dispatcher\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/lib/private/AppFramework/App.php\",\n                    \"line\": 183,\n                    \"function\": \"dispatch\",\n                    \"class\": \"OC\\\\AppFramework\\\\Http\\\\Dispatcher\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/lib/private/Route/Router.php\",\n                    \"line\": 315,\n                    \"function\": \"main\",\n                    \"class\": \"OC\\\\AppFramework\\\\App\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/lib/base.php\",\n                    \"line\": 1071,\n                    \"function\": \"match\",\n                    \"class\": \"OC\\\\Route\\\\Router\"\n                },\n                {\n                    \"file\": \"/var/www/html/nextcloud/index.php\",\n                    \"line\": 36,\n                    \"function\": \"handleRequest\",\n                    \"class\": \"OC\"\n                }\n            ],\n            \"previous\": null\n        }\n    },\n    \"code\": 0\n}\n.\n\n```\n\n{F2599200}\n\nas you can see, internal paths,files functions disclosed also SQL query: \n\n\"message\": \"Did expect one result but found none when executing: query \\\"SELECT `id`, `token`, `name`, `description`, `location`, `visibility`, `user_id`, `target_calendar_uri`, `calendar_freebusy_uris`, `availability`, `start`, `end`, `length`, `increment`, `preparation_duration`, `followup_duration`, `time_before_next_slot`, `daily_max`, `future_limit` FROM `*PREFIX*calendar_appt_configs` WHERE (`id` = :dcValue1) AND (`user_id` = :dcValue2)\\\"; \",\n \n\n\n## Supporting Material/References:\n\nhttps://hackerone.com/reports/1841408\n\n## Impact\n\ninternal paths & internal SQL query of the website are disclosed.",
+  "weakness": {
+    "id": 18,
+    "name": "Information Disclosure"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2599200,
+      "file_name": "request.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/75l5n72ud5tzh19i9dm8u0k9xzqf?response-content-disposition=attachment%3B%20filename%3D%22request.JPG%22%3B%20filename%2A%3DUTF-8%27%27request.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044648Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=42c04f24821ecdfc9862da43ccdb90c7c6e05f433fac074c1b3038833c534ad2",
+      "file_size": 97853,
+      "type": "image/jpeg",
+      "moderated": null
+    },
+    {
+      "id": 2599201,
+      "file_name": "calender-page.JPG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/otyxn9t8qy47n0viaipo8f81nasx?response-content-disposition=attachment%3B%20filename%3D%22calender-page.JPG%22%3B%20filename%2A%3DUTF-8%27%27calender-page.JPG&response-content-type=image%2Fjpeg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXKBXT3GZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044648Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIBuzpoT964t6j5E9yRe6BT5krtUgfcT0TLMAtzsC9scaAiEAswdiYKGR6kXJekUpT6R8D2MBN39wxPji5JKPPDzz6K0qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDFtqVdLiHT7JKh7EliqOBUKUgE9naJvfsqGbhsoHjX1gUDYic%2BD2S3Hz5cZOjI8BoKxlE%2BqFYu3IVS%2Bhpmnl4h7zZBCwzhmdG3NUh2YQzTz%2BsyYELx6OJUaxvDPwXKCpsp2k1hltbZni4pA8t5D4xF1TE3Nre8AZ0YqPGdTr044IpngFQz4qPC7wz5pkbWARqi%2BXMjHtwMehkoHzsFOzUPJlslBS7RwDf%2BGkBun4XJUiGG07EU8JURA4heTyvbXDh94lyf5NeYokkolx%2BrytXUGNLcnuoX0u5nXei2PilYmRwIC6FyrcvbuIUZZp8RokYP7aZyd6AWtHgtlW0RNpk31ib1ZnxbAyf96904nbuVYF0eyyx2wuL7N7J3%2BsQv%2BMqQxevcYeCCA6j8wgtB9MD4m%2BMKVu6olavEG2Xl4gWhK%2B%2FTWDMXSVYVmPNOF2e4hd29hs5ps3IIG6lmMdU03fqDhxhQmLdwvNPDDYX%2FWYw5foz23L75fPPLo7G7RKx7UmeXyLqatIbcLkfiuq4ikQQCcis2g%2FyU388vWwXwGDRgRRsKyWbb9szRgWoOa8OwoGm%2BNe4z82o5U%2Bj1zO4KfPAcDCwzDaS5O39Rt3htqXdXpUd6F0CtULomKYhgrs3QjpivgjdhnfJIDgnU8E0fBeAQC0DU3yKc5%2BXABo%2Fz4YhbJ9wf89r8x6MTepZAcZOP0BVAy%2BEY%2F0oMShofndKDEg4d5yaoRvFacpJwpH%2BQOKVn8cPl1y%2FEjrIxWTHPVEGeG%2F%2BqDcz4YpI15cW0sAPuYN7KWCyM92Er%2F2qyKTFy2s0iqWjduOFoK8kYv0ne1ysNiOhFKP29PZh3c4Q2xG%2F4ojH3gg%2FPEQf1%2FGqaY7IPzL6XA4wC5AZ1Hb7tHm1HFyxzCZ5pzSBjqxAXcJP98jJDS1zjL1ntkerB7H%2Fgh5MZMjuygOVNtFE8tnLdfIhov8C9nA4IDMoHKPg%2BNz4JOPEmAAAab0lM4D%2B46apivzyJ6Icf1UUjYQ%2F1WtMQYT80440R9EwU6t6clcV7FEuiaMFDH86QZR55w1vFLADmZ3Nd6%2BjV3gLXdO7sf%2B%2FpxtqUkmfVoM5q4CNjGSQB%2FegpD9oOPMeAJzm0o8RCQTULeyVKLrQiTX5KsJxtzX2A%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e3938815114ff9b7d5346ff067d4da93ee1cc92755fc0d108be556554baac165",
+      "file_size": 74605,
+      "type": "image/jpeg",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-01-17T08:25:02.351Z",
+  "allow_singular_disclosure_after": -77574105.77053425,
+  "singular_disclosure_allowed": true,
+  "vote_count": 16,
+  "voters": [
+    "8910jq",
+    "riodrwn",
+    "exec_iq",
+    "roland_hack",
+    "zy9ard3",
+    "never_die",
+    "shubham_srt",
+    "jmo740",
+    "hundredpercent",
+    "shivammusic",
+    "and 6 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 4.3,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 68217,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "nextcloud/calendar",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 375463,
+      "category": "team",
+      "content": "Security advisory at https://github.com/nextcloud/security-advisories/security/advisories/GHSA-fv3c-qvjr-5rv8",
+      "updated_at": "2023-11-20T08:02:55.305Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 89223,
+        "username": "nickvergessen",
+        "name": "Joas Schilling",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": null,
+        "location": "Germany",
+        "created_at": "2016-07-01T08:17:59.061Z",
+        "url": "https://hackerone.com/nickvergessen",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "company",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/5DBbeB7om4ZiKgskrEoeTyGH/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2108342",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2024-01-17T08:25:02.545Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:46:48.250494",
+    "source": "https://hackerone.com/reports/2108342.json",
+    "report_id": 2108342
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTA4MzQy",
+    "databaseId": "2108342",
+    "title": "Error when editing a calendar appointment returns stacktrace and query",
+    "url": "https://hackerone.com/reports/2108342",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-01-17T08:25:02.428Z",
+    "created_at": "2023-08-14T08:18:51.937Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzE4",
+      "name": "Information Disclosure",
+      "external_id": "cwe-200"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 4.3
+    },
+    "reporter": {
+      "username": "st0nzy"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxMDgzNDI=",
+    "_id": "2108342",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2024-01-17T08:25:02.545Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTA4MzQy",
+      "databaseId": "2108342",
+      "title": "Error when editing a calendar appointment returns stacktrace and query",
+      "url": "https://hackerone.com/reports/2108342",
+      "disclosed_at": "2024-01-17T08:25:02.428Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzMjkx",
+      "handle": "nextcloud",
+      "name": "Nextcloud",
+      "url": "https://hackerone.com/nextcloud",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "id": 108082,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDgwODI=",
+  "url": "https://hackerone.com/reports/108082",
+  "title": "Exploiting unauthenticated encryption mode",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-01-04T14:29:23.501Z",
+  "submitted_at": "2016-01-04T14:29:23.501Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "hanno",
+    "url": "/hanno",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/020/918/74da560ef66bf8cc239e219843444b441a7dfac6_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 3059,
+    "url": "https://hackerone.com/owncloud",
+    "handle": "owncloud",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/003/059/d31dc64427bbbf2e428a0b0b97bce59b98d2ba0d_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "ownCloud",
+      "twitter_handle": "ownCloud",
+      "website": "https://www.owncloud.com",
+      "about": "ownCloud GmbH is the company behind the ownCloud Project - the most downloaded open source project for data and file sync, share and view."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2016-04-04T13:18:46.126Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2016-03-08T16:39:48.452Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "The owncloud file storage encryption uses the AES encryption algorithm in CFB mode without any authentication. The encryption module is advertised as a way to use a potentially untrusted external storage [1].\n\nLet's assume someone uses owncloud with the encryption module and an untrusted storage and expects the data to be safe. A windows software application gets uploaded and shared in this owncloud instance. As an example we can use the putty.exe file [2].\n\nMost Windows EXE files have a very unique structure. By Xor-ing data one can manipulate that. CFB mode allows bitwise manipulations, but these will cause the next block to contain garbage data.\n\nThe PoC attack I developed will:\na) First flip a single bit in the third block of the file. This will cause the fourth block to contain garbage and thus the file will no longer be a valid PE file. Thereby Windows will execute the DOS part of that executable.\nb) EXE files contain usually a DOS stub that is almost always the same. We can now Xor our own code over that DOS part and thus backdoor the Executable.\n\nThis gives one 16 bytes of code execution. This is quite limited, but it can be extended by doing more manipulations on the file and jumping to other manipulated blocks. I haven't done that, but it's definitely doable. My PoC will create an EXE file that prints out the chars \"PWN\".\n\nTo mount the attack:\n* Unpack the attched tarball\n* run \"make\" in the pwncloud dir\n* run \"pwncloud [file]\" with [file] being an exe file in an encrypted owncloud storage\nThe attach script itself is written in bash, it requires a small C tool to xor files and a small piece of assembly code that is compiled with nasm.\n\nThis attack is made even easier by the fact that the filename is not hidden from the attacker. He can see which files are EXE files and backdoor them all. A variant of this attack could be executed if there are files in the storage with other file formats and content known to the attacker (e.g. a zip file or tarball from a popular application).\n\nThe bottom line is: Using encryption without any authentication or signatures is dangerous. It should not be used in any circumstances. In its current form the owncloud encryption module should not be used and not be trusted.\n\n\n[1] https://owncloud.org/blog/how-owncloud-uses-encryption-to-protect-your-data/\n[2] http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html\n",
+  "bounty_amount": "350.0",
+  "formatted_bounty": "$350",
+  "weakness": {
+    "id": 32,
+    "name": "Cryptographic Issues - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 67754,
+      "file_name": "pwncloud.tar.xz",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/067/754/4cdfeeaac1926f5d162db2b13e18422fa0286acb/pwncloud.tar.xz?response-content-disposition=attachment%3B%20filename%3D%22pwncloud.tar.xz%22%3B%20filename%2A%3DUTF-8%27%27pwncloud.tar.xz&response-content-type=application%2Fx-xz&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQWEIVJ7DN%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T070602Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQDt03NwMCzftlc5DRE3vqi2kqqsY5fCCVmNJWog%2Fe9FLwIgBdJXChSfErwwurC409x9ULuxj0U7Mjo2yqQuaNWxGxgqugUIgP%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgwwMTM2MTkyNzQ4NDkiDCr7JDp9GDdC6s%2BTzCqOBTP9u8TA%2BTdEOQZ0OpjSyNKLIMn4EyJ%2FUUOM%2BlhtP7rLazQVlj7VL82ny1Ry87O%2F67ikVMnTuWzOWADshZFo6Qitpu6lXxjp%2BX9hKfhVsHuRGV%2BFzrPeGls%2B63CG0Ce8QWXPjOKg1plAvzZB0%2FPJUXD4V6zEYEDqWEad62fuAdXnnXDrfhchzaaeoqS2TnS5DTXLIfK6h2adwogXfyxzCE4aDNy4qsmbPPLIblgH4Kn7K1SuJuNdJei1r2Oti3jJ6QCPSpmnmWRnoBp6RLmfEHeNZWhDQs3bsNl2ktyPKZ0q64u%2BqKmaYeEfA4Fr0HnQwGlHr0NQG8Kt0sTi%2FZedt3xCMYjeNWAkEyB7sAUsn05DP1ps9VbtFGp1SWxxgr3DOtNh%2FiJTjp1BxTpGoCTelMYjpRbYHsaGt9jaMM86tabw3DqyE8sBOsQgPLuDRNh5q1a64AjHuZUwZy5JQ8bQ0AtzBPXSEi0xnRjrDbodhzw4AEfHKBMHqWkci37y%2FUo1Oa4UitHUH7Eij%2B71AikWqN%2BK1lu5m2cZw2fkpRcbfQgpjx%2FaQFBKES8C65NerPuqdTXXfuliAqr2iX2HV0%2BJZYc9QSoK2s2EfuRB5RwY2P4WPaJa1AKLi8rwN19PBZ%2FKD4jHf2fV%2FkqPw0UQwhOE4D5icP4h95F1jfwKouMLqfNXP49O%2FeGRTbS764%2FmU7HgKvsx089ZkS0Z4QMIJ83wmGuAA3H0L%2FjMLBzU3bTTbkO3K6hxfy0Y7Esnb5LqHlg0d4aCfmjCeI%2FMAg6HRpsBCAC21UB30ZoWPUonDiosavpbi3PSnipnp6RhwTY12xHn8a22gsLczy1QOloj80UKuLPPKAl2DQTW%2B35U0FnxCjCe5rfSBjqxAb3oPIs5pmXDFn94pTK%2BwBbiEm7Ec784oAMrxohvpWF%2F7x96gVusuL0XJNxMIhFoxELOOOqMBiuO5kJxa3QU0cfhXOTcQPoX%2BJDOctm4Bz4VuwlVXIK6omaJ3qAuMKRjORfcEExshQqvHovrTD%2F%2FiV9eAfoy7XO7t%2F0alwpSHXLetB365DlYekBbKUie7%2BntCRAOM1xrN40bGaE7cj4OwSXHM1BF3Wev5Xs2dAT1dst9TA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a1935a4779bd704e0350dfd189b983906c70ab0a19be3753a888be719217d1a2",
+      "file_size": 1520,
+      "type": "application/x-xz",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2016-04-07T16:39:48.568Z",
+  "allow_singular_disclosure_after": -323447173.53382427,
+  "singular_disclosure_allowed": true,
+  "vote_count": 4,
+  "voters": [
+    "lukasreschke",
+    "bapt",
+    "armansameer",
+    "dyabla"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "id": 1451,
+      "category": "team",
+      "content": "Hanno Böck reported a vulnerability within the optional encryption plugin used by ownCloud. This plugin can be enabled to encrypt the file contents with a per-user key.\n\nDue to the missing Authenticated Encryption a malicious storage administrator could tamper with the encrypted ciphertext. In case of binary files such as EXE files this may for example allow an attacker to inject arbitrary code into the encrypted files.\n\nAs an hardening measure to ownCloud 9.0 we have done the first step to mitigate this attack vector: We've introduced authenticated encryption. Due to this in a properly configured ownCloud server a storage administrator can't modify files anymore, if a file gets tampered it won't be downloadable anymore.\n\nWe're aware that the ownCloud Encryption module is not yet perfect and are constantly working on improving it. As a next step we're aiming at [encrypting file names](https://github.com/owncloud/core/issues/22105).\nWe were technically aware of this vulnerability and the report of @hanno has increased it's severity given his proof of concept for modifying binary files. This was also the reason why we didn't mention encryption as a measure to ensure integrity, in older ownCloud it simply guaranteed that a storage admin could not access the file content.\n\nWe recommend administrators using the ownCloud Encryption module to read [our documentation](https://doc.owncloud.org/server/9.0/admin_manual/configuration_files/encryption_configuration.html) with more information about the ownCloud encryption.\n\n------\n\nA [blog post by Hanno Böck](https://blog.hboeck.de/archives/880-Pwncloud-bad-crypto-in-the-Owncloud-encryption-module.html) covering this issue is also available. ",
+      "updated_at": "2016-04-04T13:15:03.813Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 37891,
+        "username": "lukasreschke",
+        "name": "Lukas Reschke",
+        "bio": "",
+        "cleared": false,
+        "verified": false,
+        "website": "https://statuscode.ch",
+        "location": "Germany",
+        "created_at": "2015-08-05T13:37:40.660Z",
+        "url": "https://hackerone.com/lukasreschke",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/000/037/891/e7fea4d5383dc07d1fe767b02f3bda2bc7639c63_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/000/037/891/e7fea4d5383dc07d1fe767b02f3bda2bc7639c63_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/000/037/891/e7fea4d5383dc07d1fe767b02f3bda2bc7639c63_original.png/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "108082",
+  "votes": 4,
+  "latest_disclosable_activity_at": "2016-04-04T13:18:46.035Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T15:06:02.219889",
+    "source": "https://hackerone.com/reports/108082.json",
+    "report_id": 108082
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDgwODI=",
+    "databaseId": "108082",
+    "title": "Exploiting unauthenticated encryption mode",
+    "url": "https://hackerone.com/reports/108082",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2016-04-04T13:18:46.126Z",
+    "created_at": "2016-01-04T14:29:23.501Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzMy",
+      "name": "Cryptographic Issues - Generic",
+      "external_id": "cwe-310"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "hanno"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNTg2Ng==",
+            "amount": "350.00",
+            "awarded_amount": "350.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2016-01-06T18:09:36.478Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwODA4Mg==",
+    "_id": "108082",
+    "disclosed": true,
+    "votes": 4,
+    "latest_disclosable_activity_at": "2016-04-04T13:18:46.035Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDgwODI=",
+      "databaseId": "108082",
+      "title": "Exploiting unauthenticated encryption mode",
+      "url": "https://hackerone.com/reports/108082",
+      "disclosed_at": "2016-04-04T13:18:46.126Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzMwNTk=",
+      "handle": "owncloud",
+      "name": "ownCloud",
+      "url": "https://hackerone.com/owncloud",
+      "currency": "usd"
+    }
+  }
+}

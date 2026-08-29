@@ -1,0 +1,179 @@
+{
+  "id": 2441029,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDQxMDI5",
+  "url": "https://hackerone.com/reports/2441029",
+  "title": "Potential DoS due to PasswordPoliciesNotMet in errors.go",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2024-03-29T09:42:28.106Z",
+  "submitted_at": "2024-03-29T09:42:28.184Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "sinic",
+    "url": "/sinic",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/hg69trfzratonsl2f0656eeito9u/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 25570,
+    "url": "https://hackerone.com/passhash",
+    "handle": "passhash",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/025/570/f4e9387615b8331dbaf8558631fdaf6d5cae6f85_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/025/570/f4e9387615b8331dbaf8558631fdaf6d5cae6f85_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "passhash",
+      "twitter_handle": "",
+      "website": "https://github.com/dhui/passhash",
+      "about": "Simple and secure password management in Go"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-03-27T07:16:28.897Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2024-04-06T04:39:39.419Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nPossible DoS depending on amount of `PasswordPolicyError` instances that can be created in a short time\n\n```\ntype PasswordPoliciesNotMet struct {\n\tUnMetPasswordPolicies []PasswordPolicyError\n}\n\nfunc (e PasswordPoliciesNotMet) Error() string {\n\terrorStrs := make([]string, 0, len(e.UnMetPasswordPolicies))\n\tfor _, ppe := range e.UnMetPasswordPolicies {\n\t\terrorStrs = append(errorStrs, ppe.Error())\n\t}\n\treturn fmt.Sprintf(\"Password policies not met due to: %s\", strings.Join(errorStrs, \", \"))\n}\n```\n\n## Bug:\nThe possible vulnerability is in the `PasswordPoliciesNotMet` struct. This struct collects all errors when password policies fail. But it does not limit the number of errors it can collect. If multiple instance of policies fail together, the struct will have huge number of errors. This can make system use lot of memory or even crash due to flood of errors.\n\n## Fix:\nTo fix this, we need to make sure the `PasswordPoliciesNotMet` struct doesn't collect an unlimited number of errors. Set a limit on how many errors it can store or find some other way to handle a large number of errors in better way.\n\n## Impact\n\nCan lead to lot of memory consumption or denial of service(DoS) attack if many policies fail together.",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 19,
+  "voters": [
+    "2026",
+    "theaikoisdead",
+    "adem_zayani",
+    "dpixls",
+    "rutuj",
+    "0xblackzero",
+    "ingenia",
+    "janitor_auditor",
+    "l3v14th4n_",
+    "hackanoid",
+    "and 9 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 5623,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/dhui/passhash",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2441029",
+  "votes": 19,
+  "latest_disclosable_activity_at": "2026-03-27T07:16:28.698Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:20:48.025038",
+    "source": "https://hackerone.com/reports/2441029.json",
+    "report_id": 2441029
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDQxMDI5",
+    "databaseId": "2441029",
+    "title": "Potential DoS due to PasswordPoliciesNotMet in errors.go",
+    "url": "https://hackerone.com/reports/2441029",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-03-27T07:16:28.897Z",
+    "created_at": "2024-03-29T09:42:28.106Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "sinic"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjU1NzA=",
+      "handle": "passhash",
+      "name": "passhash",
+      "url": "https://hackerone.com/passhash",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI0NDEwMjk=",
+    "_id": "2441029",
+    "disclosed": true,
+    "votes": 19,
+    "latest_disclosable_activity_at": "2026-03-27T07:16:28.698Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yNDQxMDI5",
+      "databaseId": "2441029",
+      "title": "Potential DoS due to PasswordPoliciesNotMet in errors.go",
+      "url": "https://hackerone.com/reports/2441029",
+      "disclosed_at": "2026-03-27T07:16:28.897Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vMjU1NzA=",
+      "handle": "passhash",
+      "name": "passhash",
+      "url": "https://hackerone.com/passhash",
+      "currency": "usd"
+    }
+  }
+}

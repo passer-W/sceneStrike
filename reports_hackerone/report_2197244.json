@@ -1,0 +1,226 @@
+{
+  "id": 2197244,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTk3MjQ0",
+  "url": "https://hackerone.com/reports/2197244",
+  "title": "Account deletion using the /v1/account/destroy API endpoint using account password without 2FA verification",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2023-10-07T14:53:36.890Z",
+  "submitted_at": "2023-10-07T14:53:37.059Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "erdy",
+    "url": "/erdy",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 61236,
+    "url": "https://hackerone.com/mozilla",
+    "handle": "mozilla",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/0p8e6gg8xoy45dhjxs5wh4iti6k8/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/0p8e6gg8xoy45dhjxs5wh4iti6k8/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Mozilla",
+      "twitter_handle": "",
+      "website": "https://www.mozilla.org",
+      "about": "Mozilla web bug bounty program specific to encouraging security research in Mozilla's products and web services."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2024-06-17T07:01:10.088Z",
+  "bug_reporter_agreed_on_going_public_at": "2024-06-09T00:03:36.731Z",
+  "team_member_agreed_on_going_public_at": "2024-06-17T07:01:09.810Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nThe account deletion endpoint at `POST /v1/account/destroy` does not check for 2FA and doesn't require an authorization header. Therefore, an unauthenticated attacker who knows the password of a user can delete their account without the need of 2FA.\n\n## Steps To Reproduce:\n\n  1. Send a POST request to https://api-accounts.stage.mozaws.net/v1/account/destroy with the following body (do not include an Authorization header, if it is included and doesn't match the e-mail in the body, the request will fail):\n```\n{\"email\":\"<email>\",\"authPW\":\"<authPW>\"}\n```\nThe authPW can be calculated by the attacker since it is created client-side and the source code is [publicly available](https://github.com/mozilla/fxa/blob/fd716ec3f3461d22b847f337f6b1e899d671ee0d/packages/fxa-auth-client/lib/crypto.ts#L18).\n\nPlease refer to {F2756126} to calculate the authPW.\n\n## Supporting Material/References:\n\nAn example of a successful account deletion:\n{F2756132}\n\n## Impact\n\n## Summary:\nAn unauthenticated attacker can delete Firefox accounts of other users without needing 2FA, if the attacker knows their password.",
+  "bounty_amount": "1000.0",
+  "formatted_bounty": "$1,000",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 2756126,
+      "file_name": "calculate_authpw.ts",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/sf037vudmtit1tc13r8l1jd73zk2?response-content-disposition=attachment%3B%20filename%3D%22calculate_authpw.ts%22%3B%20filename%2A%3DUTF-8%27%27calculate_authpw.ts&response-content-type=text%2Fvnd.trolltech.linguist&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3OB3UFE5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044234Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIHCC4eyABQohB591sm46CI%2Fpm9SYrEoJ9jyfp57d5ppVAiEA2bgbDUXbtNfXGzV9V8AUdAMZlauaWG5bvuZXuuizIs4qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDGPwkWKoYw8jK9I6DyqOBXbQc1CbTZRuRvTMhV9x1WRAjEdylqNAoR9hYS%2FTRjLHohdrfB3lBn6U0kb1jD0b6S5x%2B4eywDtCR7kJLDXtdsDqXtxgXZIP6huoVgpk008QC%2FFBaIrBChZ%2FPrKjEE96OwZ1ogE05JPHoScZdCKpDf9nynRShyDxH0oSH6nSEDJsT7bpL7Tt9Wm%2FQKjhWI%2B6iNeOyTG4GzdHCw2QLfpY8BvuZbM%2BdojiUOS2TRGCgnSmotfzPHx55tKlyzTLvV%2BNYims%2Fpporo%2FLwSEl%2FSKJwI72vnUPv%2FQIdFggvBDDdRpqtl7woOxM3IrqZlruScfZE%2FANHlavrr94BWsvvtTofKgySIIJVbVFEi5kP4PKI2qVjEARzAgc1PGMhEjMHXZeg%2BT%2BQI770VujP8RvwhyQtkxiP2SxgnwXGk7iaW%2FHzYECANbKQRJl4EZlEeknVNQZQ0o93NuR12OxxL9qLOj%2Fj6ylba7LrYseGRN3krER97aPqW9uuZWbIJFErClBZWKjNwy9PmxdPzVzpZzPSmgaE%2F2Ho6LAfQ3UaxYG7rnPhvUUwDeQFhkCpWElj3gUujUkhvhs1EbyXLMUgcYt2eOQ%2BQ2nqGnf7%2FmJGNJRBqWzyeHD%2BH8ZOJdvLgTY1e6RVKIVvPDe13RxPMTyDWbcqjW8gEajEOeGvaze8ENqZ02RKJNLkLdl7t6Ug%2Ffu1caTj7nMyl%2FwIXMVPyNDOvzfNhrqPEEq3zyr8l7Sv2RoFCbZZH6AURf%2FwyM8Xx7yYrsnPJmE12zxYQuRN%2Bc2ee2DHja7rbK5%2F8op0zEohcZQ8TFjL6JJ9xFn3kT3AGpdy3GfQzK2ck64yLZvDVv9Dvj5sSHoPfKcIGbvvGKXu9jbz4Df2jCE4pzSBjqxATZI8kIVr2Je%2Ff3JkWJxmZ54zDy8D9yXIeffqjRJ4Cz0JYR7nz5qNvo88pGUzJZzUFGdfC%2BO7oD%2BhRpqpAmv7wjqxSG3SO3I%2B6FHfgsdghUS6ngc2fi1S1vKSd2BRNuhdNAAUi26vdtRmezQsDFwsUUadmUN3OJMmcZIXY5edSIzOSghVcdtMrkapkBKNCw%2FXZmnz4wOjpIa18pxgubYOKLw2e9qzHlQv0RXI3FZn9ubNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=99816e3cbf51a0eb70a47db6da6b0c9c2eef3ba79ef914fe33590c03786d60f9",
+      "file_size": 1815,
+      "type": "text/vnd.trolltech.linguist",
+      "moderated": null
+    },
+    {
+      "id": 2756132,
+      "file_name": "Successful_AccountDeletion.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/fou0c0ju5tgyv646n8d8ru9wqeon?response-content-disposition=attachment%3B%20filename%3D%22Successful_AccountDeletion.png%22%3B%20filename%2A%3DUTF-8%27%27Successful_AccountDeletion.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3OB3UFE5%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T044234Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIHCC4eyABQohB591sm46CI%2Fpm9SYrEoJ9jyfp57d5ppVAiEA2bgbDUXbtNfXGzV9V8AUdAMZlauaWG5bvuZXuuizIs4qsQUIBRADGgwwMTM2MTkyNzQ4NDkiDGPwkWKoYw8jK9I6DyqOBXbQc1CbTZRuRvTMhV9x1WRAjEdylqNAoR9hYS%2FTRjLHohdrfB3lBn6U0kb1jD0b6S5x%2B4eywDtCR7kJLDXtdsDqXtxgXZIP6huoVgpk008QC%2FFBaIrBChZ%2FPrKjEE96OwZ1ogE05JPHoScZdCKpDf9nynRShyDxH0oSH6nSEDJsT7bpL7Tt9Wm%2FQKjhWI%2B6iNeOyTG4GzdHCw2QLfpY8BvuZbM%2BdojiUOS2TRGCgnSmotfzPHx55tKlyzTLvV%2BNYims%2Fpporo%2FLwSEl%2FSKJwI72vnUPv%2FQIdFggvBDDdRpqtl7woOxM3IrqZlruScfZE%2FANHlavrr94BWsvvtTofKgySIIJVbVFEi5kP4PKI2qVjEARzAgc1PGMhEjMHXZeg%2BT%2BQI770VujP8RvwhyQtkxiP2SxgnwXGk7iaW%2FHzYECANbKQRJl4EZlEeknVNQZQ0o93NuR12OxxL9qLOj%2Fj6ylba7LrYseGRN3krER97aPqW9uuZWbIJFErClBZWKjNwy9PmxdPzVzpZzPSmgaE%2F2Ho6LAfQ3UaxYG7rnPhvUUwDeQFhkCpWElj3gUujUkhvhs1EbyXLMUgcYt2eOQ%2BQ2nqGnf7%2FmJGNJRBqWzyeHD%2BH8ZOJdvLgTY1e6RVKIVvPDe13RxPMTyDWbcqjW8gEajEOeGvaze8ENqZ02RKJNLkLdl7t6Ug%2Ffu1caTj7nMyl%2FwIXMVPyNDOvzfNhrqPEEq3zyr8l7Sv2RoFCbZZH6AURf%2FwyM8Xx7yYrsnPJmE12zxYQuRN%2Bc2ee2DHja7rbK5%2F8op0zEohcZQ8TFjL6JJ9xFn3kT3AGpdy3GfQzK2ck64yLZvDVv9Dvj5sSHoPfKcIGbvvGKXu9jbz4Df2jCE4pzSBjqxATZI8kIVr2Je%2Ff3JkWJxmZ54zDy8D9yXIeffqjRJ4Cz0JYR7nz5qNvo88pGUzJZzUFGdfC%2BO7oD%2BhRpqpAmv7wjqxSG3SO3I%2B6FHfgsdghUS6ngc2fi1S1vKSd2BRNuhdNAAUi26vdtRmezQsDFwsUUadmUN3OJMmcZIXY5edSIzOSghVcdtMrkapkBKNCw%2FXZmnz4wOjpIa18pxgubYOKLw2e9qzHlQv0RXI3FZn9ubNA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5d03740e88a26e85725b6d2c093ce6c05eb748eefa613edd0a0b0bc890c0b6ed",
+      "file_size": 88048,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": "2024-07-09T00:03:36.928Z",
+  "allow_singular_disclosure_after": -62570337.1782258,
+  "singular_disclosure_allowed": true,
+  "vote_count": 51,
+  "voters": [
+    "ninjeeter",
+    "ertzeus",
+    "orange303",
+    "0x1git",
+    "ryuku",
+    "ganeshbagaria",
+    "maskopatol",
+    "zy9ard3",
+    "yassinek3ch",
+    "mohaned0101",
+    "and 41 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 297507,
+    "asset_type": "URL",
+    "asset_identifier": "accounts.firefox.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2197244",
+  "votes": 51,
+  "latest_disclosable_activity_at": "2024-06-17T07:01:10.259Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:42:34.253309",
+    "source": "https://hackerone.com/reports/2197244.json",
+    "report_id": 2197244
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTk3MjQ0",
+    "databaseId": "2197244",
+    "title": "Account deletion using the /v1/account/destroy API endpoint using account password without 2FA verification",
+    "url": "https://hackerone.com/reports/2197244",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2024-06-17T07:01:10.088Z",
+    "created_at": "2023-10-07T14:53:36.890Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "erdy"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYxMjM2",
+      "handle": "mozilla",
+      "name": "Mozilla",
+      "url": "https://hackerone.com/mozilla",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81MjE2ODA=",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2023-10-16T15:12:43.216Z"
+          }
+        },
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS81NDY5MDc=",
+            "amount": "500.00",
+            "awarded_amount": "500.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2024-01-29T16:21:33.856Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzIxOTcyNDQ=",
+    "_id": "2197244",
+    "disclosed": true,
+    "votes": 51,
+    "latest_disclosable_activity_at": "2024-06-17T07:01:10.259Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yMTk3MjQ0",
+      "databaseId": "2197244",
+      "title": "Account deletion using the /v1/account/destroy API endpoint using account password without 2FA verification",
+      "url": "https://hackerone.com/reports/2197244",
+      "disclosed_at": "2024-06-17T07:01:10.088Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYxMjM2",
+      "handle": "mozilla",
+      "name": "Mozilla",
+      "url": "https://hackerone.com/mozilla",
+      "currency": "usd"
+    }
+  }
+}

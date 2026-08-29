@@ -1,0 +1,226 @@
+{
+  "id": 1071832,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDcxODMy",
+  "url": "https://hackerone.com/reports/1071832",
+  "title": "Local privilege escalation via insecure MSI file",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2021-01-05T10:38:02.909Z",
+  "submitted_at": "2021-01-05T10:38:03.082Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "twvyy3vyaw8k",
+    "url": "/twvyy3vyaw8k",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/XhmDkdkQhpNmN3jLUxdkos4k/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 13428,
+    "url": "https://hackerone.com/acronis",
+    "handle": "acronis",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/e54TDdWdgLKsH3h1oFpK26bq/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Acronis",
+      "twitter_handle": "Acronis",
+      "website": "https://www.acronis.com",
+      "about": "Complete integrated cybersecurity and data protection for MSPs and IT teams"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-08-07T19:11:30.813Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-08-07T19:11:30.709Z",
+  "team_member_agreed_on_going_public_at": "2021-08-05T08:23:25.521Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\nI've found a vulnerability which leads to a local privilege escalation starting from a non-admin user.\n\nWhen `True Image` client installs it drops 2 MSI files into `C:\\Windows\\Installer` folder.\nSince this folder (by default) is readable by anyone, a non-admin user can execute commands like `msiexec /fa installer_name.msi`, which forces `installer_name.msi` to \"repair\" the program.\n\nOne of these 2 MSIs (i can't named it because MSI file names are random and unique for every installation) when forced to repair it creates a dll in `%TEMP%\\random_name` and then, after some time, `MsiExec.exe` loads it. Since `MsiExec.exe` auto-escalate privileges when executed and `%TEMP%` is writable by anyone, this behavior could be abused to gain `nt authority\\system` privileges.\n\n## Steps To Reproduce\n  1.  Open `%TEMP%` and `C:\\Windows\\Installer`\n  2.  Locate the MSI file in the installer folder: it's 1.3 GB large and has `Acronis` as author \n  3.  Open `cmd.exe` and execute `msiexec /fa C:\\Windows\\Installer\\installer_name.msi`.  After few seconds a new folder will appear in `%TEMP%`\n  4.  Replace `schedule.dll` inside that folder with the `schedule.dll` attachment  in this report\n  5.  Wait until the process finishes. After some time a UAC should prompt, just select \"no\"\n  6.  A new cmd should pop up. Type `whoami` to confirm the new privileges\n\n\nI've also recorded a PoC video in case something it's not clear.\n\n## Recommendations\nDo not use local `%TEMP%` to create `schedule.dll`, use `C:\\Windows\\TEMP`.\n\n## Impact\n\nLPEs like this one are often used by malwares to evade antivirus engines, install rootkits, spread over the network, etc...\nA malware author could use this exploit to target Acronis end users.",
+  "bounty_amount": "250.0",
+  "formatted_bounty": "$250",
+  "weakness": {
+    "id": 75,
+    "name": "Privilege Escalation"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1145030,
+      "file_name": "true_image_LPE_PoC.mp4",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/1s7zssmfykugjgj52ipzxpxioxnz?response-content-disposition=attachment%3B%20filename%3D%22true_image_LPE_PoC.mp4%22%3B%20filename%2A%3DUTF-8%27%27true_image_LPE_PoC.mp4&response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQX4QA6WRZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063310Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDtrzjP929ataIN1EfqWl2DxF2qDg49LqpLaDQOA%2B8WngIhAI1560K6aofYbGAbLoFW%2BD3r3Xwjm5MSOHSK%2BCitEtIYKrIFCAcQAxoMMDEzNjE5Mjc0ODQ5IgzchiJhsvR51PhDh60qjwVw7bXXQJEe6%2FQemhplik%2FTu17roMvZ52h%2BsviOz%2F%2FFaEg9h0o0kOPbdBN7mTn%2Fy%2FdJXt5Y0WiABpOGr1fL11bC1%2F9V4Ql6oJRIPEoqbiLEZvEc53mf47kosTlYMFmzTtvwAE3JrSybOYREIdB1DDrbxElXjd8rcgts9q71cEtSNkEIFf8ZSbXe%2Bhl3S1FKRUUmPi86ZDFpb%2FpRvxapGUoMxjICl24quRfpj%2FFDvbOTnNszsi%2BVQh36ZdzYECujcUzVssaB7GrrkwHUviemSNBuC3NdT%2FforG5i13zPzjPX4cDWxBAZM0xIW4kQbGIqSGW6Gtl3cjld6kbfxE1nIEHSc87eN64HXXvuHiEbOaFpxpafOO19So6Bv%2F86rYqE0CtCKfBXb%2Ba11%2Ba%2FGpUX%2F5sbfHiwZp%2FAU3n0Qzzf0an9QvAPg%2BFDKklkZolGIlEReopPBybQI9p0jGM20Jf7jSY2ORjRcrL%2F6HQwAonzpg1x9Rz8nZPwhZRYLF778Jjf%2F2V6Ue0SP2DW0B%2F5fukYG%2BgJjhausevY7YH9yIowxi%2B3O798zmxsDRSbID6kaPeAh%2FmVwHLDageprvM%2FS9tTUNxow5A%2B%2F6SUR8HXX2mdipf7iI3f2eLeilT0Q5%2Fn7d61%2FTxg9r7Die25pSoBQH%2Fh6lQnkRgCpKLv9nc3HCbt5l677E4xtfx4ZGHNST3cGGRkq95VbxAimwmD6hXJy4pMJlM1WYTKv5JgTEqMs06LE1HMmgCNqV6yiyrzIaZoQMjbbtVVBisZWa%2Bf2DPHUAmQys4xIBN5JM5DuCrY7gZjBRygl1fXKhHr%2FFTN9DDW4ubVRQDCad%2FOPMvYdGonQJp9ZGiWzH3Nsv1zkK4soSNSk3BiMN%2BTndIGOrABDjmbk1aZ3UMRucdr1T366QPaKMuyXOE%2BOZ4pP96aukL7TFXxtg68DfEuy5xuaMPHCOT%2Fo%2BIWv6ycxqty4hZdLKc3ClDudUCTwaOptDXvgNGnIFkqxlGv0p6GsQMhiN8RQ1ulNcaFYB%2BAPC2XsDX14p7h2AAcLHiCyTyi5R%2FeQpySCZ0fBwJp6TSR%2BGugLV17nsMU9fTbr7N5imFsn7PgfR5alUghLd%2BeuYfeC60y2PE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=82637609ac62607a8cc33744d18269de8aa62ce69a1bcc0420316b939c58f53f",
+      "file_size": 3263666,
+      "type": "video/mp4",
+      "moderated": null
+    },
+    {
+      "id": 1145031,
+      "file_name": "schedule.dll",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ym898h1u9dcjaxqa4x8plqd29r4n?response-content-disposition=attachment%3B%20filename%3D%22schedule.dll%22%3B%20filename%2A%3DUTF-8%27%27schedule.dll&response-content-type=application%2Fx-ms-dos-executable&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQX4QA6WRZ%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063310Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJIMEYCIQDtrzjP929ataIN1EfqWl2DxF2qDg49LqpLaDQOA%2B8WngIhAI1560K6aofYbGAbLoFW%2BD3r3Xwjm5MSOHSK%2BCitEtIYKrIFCAcQAxoMMDEzNjE5Mjc0ODQ5IgzchiJhsvR51PhDh60qjwVw7bXXQJEe6%2FQemhplik%2FTu17roMvZ52h%2BsviOz%2F%2FFaEg9h0o0kOPbdBN7mTn%2Fy%2FdJXt5Y0WiABpOGr1fL11bC1%2F9V4Ql6oJRIPEoqbiLEZvEc53mf47kosTlYMFmzTtvwAE3JrSybOYREIdB1DDrbxElXjd8rcgts9q71cEtSNkEIFf8ZSbXe%2Bhl3S1FKRUUmPi86ZDFpb%2FpRvxapGUoMxjICl24quRfpj%2FFDvbOTnNszsi%2BVQh36ZdzYECujcUzVssaB7GrrkwHUviemSNBuC3NdT%2FforG5i13zPzjPX4cDWxBAZM0xIW4kQbGIqSGW6Gtl3cjld6kbfxE1nIEHSc87eN64HXXvuHiEbOaFpxpafOO19So6Bv%2F86rYqE0CtCKfBXb%2Ba11%2Ba%2FGpUX%2F5sbfHiwZp%2FAU3n0Qzzf0an9QvAPg%2BFDKklkZolGIlEReopPBybQI9p0jGM20Jf7jSY2ORjRcrL%2F6HQwAonzpg1x9Rz8nZPwhZRYLF778Jjf%2F2V6Ue0SP2DW0B%2F5fukYG%2BgJjhausevY7YH9yIowxi%2B3O798zmxsDRSbID6kaPeAh%2FmVwHLDageprvM%2FS9tTUNxow5A%2B%2F6SUR8HXX2mdipf7iI3f2eLeilT0Q5%2Fn7d61%2FTxg9r7Die25pSoBQH%2Fh6lQnkRgCpKLv9nc3HCbt5l677E4xtfx4ZGHNST3cGGRkq95VbxAimwmD6hXJy4pMJlM1WYTKv5JgTEqMs06LE1HMmgCNqV6yiyrzIaZoQMjbbtVVBisZWa%2Bf2DPHUAmQys4xIBN5JM5DuCrY7gZjBRygl1fXKhHr%2FFTN9DDW4ubVRQDCad%2FOPMvYdGonQJp9ZGiWzH3Nsv1zkK4soSNSk3BiMN%2BTndIGOrABDjmbk1aZ3UMRucdr1T366QPaKMuyXOE%2BOZ4pP96aukL7TFXxtg68DfEuy5xuaMPHCOT%2Fo%2BIWv6ycxqty4hZdLKc3ClDudUCTwaOptDXvgNGnIFkqxlGv0p6GsQMhiN8RQ1ulNcaFYB%2BAPC2XsDX14p7h2AAcLHiCyTyi5R%2FeQpySCZ0fBwJp6TSR%2BGugLV17nsMU9fTbr7N5imFsn7PgfR5alUghLd%2BeuYfeC60y2PE%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9d978bcf2cd75958079e83abc61f3f3ba8e49b0dffa55bb81313a1d4529b208a",
+      "file_size": 10240,
+      "type": "application/x-ms-dos-executable",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 25,
+  "voters": [
+    "arist0phanes",
+    "mr-medi",
+    "tcwr",
+    "osman1337",
+    "rzx007x",
+    "ali",
+    "bl4de",
+    "akashhamal0x01",
+    "h4x0r_dz",
+    "2026",
+    "and 15 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.9,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 50772,
+    "asset_type": "DOWNLOADABLE_EXECUTABLES",
+    "asset_identifier": "Acronis Cyber Protect Home Office (formerly Acronis True Image)",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1071832",
+  "votes": 25,
+  "latest_disclosable_activity_at": "2021-08-07T19:11:30.865Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:33:10.468373",
+    "source": "https://hackerone.com/reports/1071832.json",
+    "report_id": 1071832
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDcxODMy",
+    "databaseId": "1071832",
+    "title": "Local privilege escalation via insecure MSI file",
+    "url": "https://hackerone.com/reports/1071832",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-08-07T19:11:30.813Z",
+    "created_at": "2021-01-05T10:38:02.909Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzc1",
+      "name": "Privilege Escalation",
+      "external_id": "capec-233"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.9
+    },
+    "reporter": {
+      "username": "twvyy3vyaw8k"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yNzA1OTY=",
+            "amount": "250.00",
+            "awarded_amount": "250.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-01-12T09:28:27.834Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEwNzE4MzI=",
+    "_id": "1071832",
+    "disclosed": true,
+    "votes": 25,
+    "latest_disclosable_activity_at": "2021-08-07T19:11:30.865Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMDcxODMy",
+      "databaseId": "1071832",
+      "title": "Local privilege escalation via insecure MSI file",
+      "url": "https://hackerone.com/reports/1071832",
+      "disclosed_at": "2021-08-07T19:11:30.813Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzNDI4",
+      "handle": "acronis",
+      "name": "Acronis",
+      "url": "https://hackerone.com/acronis",
+      "currency": "usd"
+    }
+  }
+}

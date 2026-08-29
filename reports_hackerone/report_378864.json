@@ -1,0 +1,196 @@
+{
+  "id": 378864,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNzg4NjQ=",
+  "url": "https://hackerone.com/reports/378864",
+  "title": "Torrent extension: Cross-origin downloading + \"URL spoofing\" + CSP-blocked XSS",
+  "state": "Closed",
+  "substate": "duplicate",
+  "severity_rating": "medium",
+  "readable_substate": "Duplicate",
+  "created_at": "2018-07-07T14:50:05.579Z",
+  "submitted_at": "2018-07-07T14:50:05.579Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "metnew",
+    "url": "/metnew",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/jdthvavflc07lpt5x37qarrub1jt/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15688,
+    "url": "https://hackerone.com/brave",
+    "handle": "brave",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/688/2aad5641af643ee4f4402896e4747293f6e9c5ca_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/688/2aad5641af643ee4f4402896e4747293f6e9c5ca_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Brave Software",
+      "twitter_handle": "brave",
+      "website": "https://brave.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2018-09-24T23:40:38.734Z",
+  "bug_reporter_agreed_on_going_public_at": "2018-09-19T16:20:30.341Z",
+  "team_member_agreed_on_going_public_at": "2018-09-24T23:40:38.607Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n\n> \\#378809 allows navigating to `chrome-extension://`\n> \\#378805 allows displaying alert windows on `chrome-extension://` origin\n\nAs I said in #378809, navigation to `chrome-extension://` allows attacking dependencies/components of extensions.\n\nBrave has only 3 extensions installed by default (w\\o Metamask):\n- Brave Sync - according to my observations, it doesn't have vulnerable components\n- PDF\n- Torrent\n\n### Torrent\n\n#### \"Save Torrent File...\"\n\nWe need alert modal from #378805 to ask a user to click \"Save Torrent File\" button.\n\"Save Torrent File\" initiates navigation using `a [rel=noopener] [download]` to `location.hash.slice(1)`\n\n#### `http://www.google.com` - \"URL spoofing\"\n\nOmnibox in Torrent extension displays only `location.hash.slice(1)`. Hence, `chrome-extension://fmdpfempfmekjkcfdehndghogpnpjeno/webtorrent.html#https://www.google.com` will be shown in the address bar as `https://www.google.com`. \n> In reality, it's hard to leverage this bug, but that looks like bad behavior. \n\n#### `http://www.google.com` - websites downloading\n\nAs I said, \"Save Torrent File\" initiates downloading. CORS page downloads are forbidden.\nHowever, click on \"Save Torrent File\" in `chrome-extension://fmdpfempfmekjkcfdehndghogpnpjeno/webtorrent.html#https://www.google.com` downloads `www.google.com`.\n \n> Because of Torrent extension privileges\n\n#### `file:///etc/passwd` - local files downloading\n\n**URL:** `chrome-extension://fmdpfempfmekjkcfdehndghogpnpjeno/webtorrent.html#file:///etc/passwd`\n\nClick on \"Save Torrent File\" initiates downloading of local files.\nSame \"useless URL spoofing\". (`file://etc/passwd` in omnibox)\n\n#### `ssh://`\n\nTorrent can't trigger ssh sessions without confirmation (like privileged `about:blank`). Not interesting.\n\n#### `javascript:` - CSP-blocked XSS\n\nThe most interesting case. \n**URL:** `chrome-extension://fmdpfempfmekjkcfdehndghogpnpjeno/webtorrent.html#javascript:alert()`\nAs of `a` element initiates navigation, it's possible navigating to `javascript:` URI to initiate code execution.\nUnfortunately, this XSS is blocked by CSP :(\n\n## Products affected: \n\nBrave: 0.23.31 \nV8: 6.7.288.46 \nrev: 3148acef36dba0fce89108638bb27927c4937f90 \nMuon: 7.1.5 \nOS Release: 17.6.0 \nUpdate Channel: Release \nOS Architecture: x64 \nOS Platform: macOS \nNode.js: 7.9.0 \nBrave Sync: v1.4.2 \nlibchromiumcontent: 67.0.3396.103\n\n## Steps To Reproduce:\n\n1. Start ftp server (sample ftp server attached, `npm i ftpd && node ftp-server.js`)\n2. Open ftp://localhost:7002/exploit.html\n\n## Impact\n\nAn attacker could init an alert modal to trick the user into pressing \"Save Torrent file\" button using #378805.\n\nIt's possible to download local files and files from the web (websites too) using \"Save Torrent file\" in Torrent extension (requires user gesture).\n\nIt's also possible to initiate CSP-blocked XSS by clicking on \"Save Torrent File\".",
+  "original_report_id": 378805,
+  "original_report_url": "https://hackerone.com/reports/378805",
+  "attachments": [
+    {
+      "id": 316851,
+      "file_name": "ftp-server.js",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/316/851/1b57af3bce15953c31b9e9c6d89532c6ee5ac2a4/ftp-server.js?response-content-disposition=attachment%3B%20filename%3D%22ftp-server.js%22%3B%20filename%2A%3DUTF-8%27%27ftp-server.js&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ67G6VXDE%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060002Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCFAqAd0hBTXrbZIIzOrNA8GMvM0aOjeq4AUgMtTauzewIgEhx8cr0fiskT%2FyowIyR0msUz1EI7lh%2B1SbIFaXTJdUQqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDJ98pIawrVFB0%2FVgvSqPBRpflQm5buRGV6W0zw%2Bh7tZccFjTLUchaN2QewFnZ8k%2BPWwZCR7Uit6%2BSphhJ5T1FKD8k7sUPCjfAupObtxcUROEd9HgI9uk4iucbvhXETm3Zk9GmC5wZqE2xlkHqFKwQU8xIZmyDRzaGvz5LWcFSxbVBSQEPMn8n%2FSQGWFvO0dn1c%2FXVMZTzJqspZ4st%2Bc7UcwixUVV3ddIDVlh1VtWbnkUO3bWfnh54zeNypCHQ2MVCVFkeuqIkJNc77nikuuIUj7%2B2pDQsli3I3gvMWGQCqHIca5AMnmokyrJ5eKqd3DOBjn0tIMTKtZ7tVG1%2F6d6rzxXRyHmma7GIKgMnmVyVPrDswiP%2BJK245AYdiH2MJ5suO6SQbAoWyIFIwoBYkswS2snHT2VWqaSk48R2GNPlkvD3IbPmp1xujZ2AptcxfAsU2nn%2BX%2F2QhYbW0vySRJVa4%2BTB4sBQA166EZrjt41fCy0BIZbl%2FplT%2Bq%2Fuxxzs9%2BCnOb9%2FxEhL7nBe8a0pt4Dgkt9LOw7lBoZlgGwXEg9P%2B8JT640b5hyzFTcpwwZTfFZEBjHUiskDOdssCJyMaMpfogHEnAKdwLCORjBbdsXo4Ee%2BeF8EtMyZRRzkwTiHddlDQPCFU8Qfp0Yw2bT%2Fn6qfxXg92DpRjAy84CiOS%2Bj5vn8IgxH2W8FcbOh%2BI49HVw3wl%2FuclESUXiSFxjcgeZIYb9bIHSTn3e4x66g06O0m1cf2iVY8hJCRGns5bngjLPenbSLMNjaguMXy%2Ft1KPpG4Iyt1QV1Q%2F9m57dF6nTo1jZ%2FAXnaZkiwjL8%2BtpvLhP1pjyv0iyk4EqiFOX5qwX6gZdovLVPRq%2B7HlvvkKhMUD1HBg%2FHWswQHEg9stLTaEh8wq7S30gY6sQHgw4vYPGwH65EwNsG1ddciYNRwKnJUMcAHXx8e2eIyHCrC4goyQjE35uH%2FXpZI5UVITWOiCN93lRIzJ4Cl7ykwhzx8ttiORcXFbUILgnXIQ0BEizu7mpLzZnZDAz8LGtNhpgtQ8QcJ2ltEw3Qr6WR75fM9QZf8u71%2BlCRUpMFUPk2aewOEhgQHzuW2by6A7gWbS9iEEKil8OxTZvqp41215NLFLYjQwTfe1x4zxsBLexc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=95d4d8d1199eb787c191252ba10ae2fa0c2f032e2289407451df72c79dc68321",
+      "file_size": 1321,
+      "type": "text/plain",
+      "moderated": null
+    },
+    {
+      "id": 316852,
+      "file_name": "exploit.html",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/316/852/75dd6a9b63f7aa0c8c196f6eb09a8620d253c151/exploit.html?response-content-disposition=attachment%3B%20filename%3D%22exploit.html%22%3B%20filename%2A%3DUTF-8%27%27exploit.html&response-content-type=application%2Foctet-stream&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ67G6VXDE%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T060002Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCFAqAd0hBTXrbZIIzOrNA8GMvM0aOjeq4AUgMtTauzewIgEhx8cr0fiskT%2FyowIyR0msUz1EI7lh%2B1SbIFaXTJdUQqsgUIfhADGgwwMTM2MTkyNzQ4NDkiDJ98pIawrVFB0%2FVgvSqPBRpflQm5buRGV6W0zw%2Bh7tZccFjTLUchaN2QewFnZ8k%2BPWwZCR7Uit6%2BSphhJ5T1FKD8k7sUPCjfAupObtxcUROEd9HgI9uk4iucbvhXETm3Zk9GmC5wZqE2xlkHqFKwQU8xIZmyDRzaGvz5LWcFSxbVBSQEPMn8n%2FSQGWFvO0dn1c%2FXVMZTzJqspZ4st%2Bc7UcwixUVV3ddIDVlh1VtWbnkUO3bWfnh54zeNypCHQ2MVCVFkeuqIkJNc77nikuuIUj7%2B2pDQsli3I3gvMWGQCqHIca5AMnmokyrJ5eKqd3DOBjn0tIMTKtZ7tVG1%2F6d6rzxXRyHmma7GIKgMnmVyVPrDswiP%2BJK245AYdiH2MJ5suO6SQbAoWyIFIwoBYkswS2snHT2VWqaSk48R2GNPlkvD3IbPmp1xujZ2AptcxfAsU2nn%2BX%2F2QhYbW0vySRJVa4%2BTB4sBQA166EZrjt41fCy0BIZbl%2FplT%2Bq%2Fuxxzs9%2BCnOb9%2FxEhL7nBe8a0pt4Dgkt9LOw7lBoZlgGwXEg9P%2B8JT640b5hyzFTcpwwZTfFZEBjHUiskDOdssCJyMaMpfogHEnAKdwLCORjBbdsXo4Ee%2BeF8EtMyZRRzkwTiHddlDQPCFU8Qfp0Yw2bT%2Fn6qfxXg92DpRjAy84CiOS%2Bj5vn8IgxH2W8FcbOh%2BI49HVw3wl%2FuclESUXiSFxjcgeZIYb9bIHSTn3e4x66g06O0m1cf2iVY8hJCRGns5bngjLPenbSLMNjaguMXy%2Ft1KPpG4Iyt1QV1Q%2F9m57dF6nTo1jZ%2FAXnaZkiwjL8%2BtpvLhP1pjyv0iyk4EqiFOX5qwX6gZdovLVPRq%2B7HlvvkKhMUD1HBg%2FHWswQHEg9stLTaEh8wq7S30gY6sQHgw4vYPGwH65EwNsG1ddciYNRwKnJUMcAHXx8e2eIyHCrC4goyQjE35uH%2FXpZI5UVITWOiCN93lRIzJ4Cl7ykwhzx8ttiORcXFbUILgnXIQ0BEizu7mpLzZnZDAz8LGtNhpgtQ8QcJ2ltEw3Qr6WR75fM9QZf8u71%2BlCRUpMFUPk2aewOEhgQHzuW2by6A7gWbS9iEEKil8OxTZvqp41215NLFLYjQwTfe1x4zxsBLexc%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=5cd59aa8a2b905d8c66409da3687e9267351353931affc88567c2f19d66f606e",
+      "file_size": 647,
+      "type": "text/html",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 12,
+  "voters": [
+    "foobar7",
+    "ali",
+    "sameerphad72",
+    "dawgyg",
+    "bl4de",
+    "savitar0x01",
+    "eveeez",
+    "japz",
+    "cryptographer",
+    "0x08",
+    "and 2 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 7933,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/brave/browser-laptop",
+    "max_severity": "none"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "378864",
+  "votes": 12,
+  "latest_disclosable_activity_at": "2018-09-24T23:40:38.769Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T14:00:02.812960",
+    "source": "https://hackerone.com/reports/378864.json",
+    "report_id": 378864
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNzg4NjQ=",
+    "databaseId": "378864",
+    "title": "Torrent extension: Cross-origin downloading + \"URL spoofing\" + CSP-blocked XSS",
+    "url": "https://hackerone.com/reports/378864",
+    "state": null,
+    "substate": "duplicate",
+    "disclosed_at": "2018-09-24T23:40:38.734Z",
+    "created_at": "2018-07-07T14:50:05.579Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": null
+    },
+    "reporter": {
+      "username": "metnew"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1Njg4",
+      "handle": "brave",
+      "name": "Brave Software",
+      "url": "https://hackerone.com/brave",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM3ODg2NA==",
+    "_id": "378864",
+    "disclosed": true,
+    "votes": 12,
+    "latest_disclosable_activity_at": "2018-09-24T23:40:38.769Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNzg4NjQ=",
+      "databaseId": "378864",
+      "title": "Torrent extension: Cross-origin downloading + \"URL spoofing\" + CSP-blocked XSS",
+      "url": "https://hackerone.com/reports/378864",
+      "disclosed_at": "2018-09-24T23:40:38.734Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1Njg4",
+      "handle": "brave",
+      "name": "Brave Software",
+      "url": "https://hackerone.com/brave",
+      "currency": "usd"
+    }
+  }
+}

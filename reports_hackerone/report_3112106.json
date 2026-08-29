@@ -1,0 +1,247 @@
+{
+  "id": 3112106,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTEyMTA2",
+  "url": "https://hackerone.com/reports/3112106",
+  "title": "BAC – Bypass chatbot restrictions via unauthorized mention injection",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2025-04-25T08:45:06.262Z",
+  "submitted_at": "2025-04-25T08:45:06.524Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "yoyomiski",
+    "url": "/yoyomiski",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/8srnz0lecmhwpfwsnijwsi6mw9a4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": true,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 96398,
+    "url": "https://hackerone.com/dust",
+    "handle": "dust",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/g9pcp90s23rz0kq1duus45xaaov9/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/g9pcp90s23rz0kq1duus45xaaov9/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Dust",
+      "twitter_handle": "dust4ai",
+      "website": "http://dust.tt",
+      "about": "Dust is building an enterprise agent operating system, allowing teams to augment internal workflows with easy-to-customise and context-aware AI."
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-05-06T14:24:05.516Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-05-06T13:38:58.165Z",
+  "team_member_agreed_on_going_public_at": "2025-05-06T14:24:01.403Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n- A member user who is not authorized to use the Gemini chatbot can still send and receive messages from this chatbot by manually editing the request and changing the ```mention``` and ```configurationId```. This bypasses the permission control from the Admin side, leading to abuse of the chatbot beyond the scope of permission.\n- Similar to other chatbots, if disabled, members can still use it.\n\n## Steps To Reproduce:\n1. Login admin (████████)\n2. Go to “Manage Agents”Verify. That the **Gemini agent is disabled** or not available\n{F4285482}\n3. Now go back to  the member account (█████). we make a new chat . When chatting nomally. we select “which agent would you like to chat with?”\n{F4285485}\n4. In the step, turn on Burp and capture the request, we capture the request with API:\n```POST /api/w/BSsJ1zPUYE/assistant/conversations/PdBk9DSYXA/messages/UyXjPLmW5j/edit```\n{F4285487}\n5. This request is passed to mention, we change mention and configurationId to gemini's ```gemini-pro``` and forward the request, the result is that we can chat with chatbot ```gemini``` even though the admin does not grant us permission to chat with this chatbot\n```{\"content\":\":mention[gemini-pro]{sId=gemini-pro} how are you?\",\"mentions\":[{\"type\":\"agent\",\"configurationId\":\"gemini-pro\"}]}```\n{F4285490}\n\nResponse:\n{F4285491}\n{F4285493}\n{F4285494}\n\n##HTTP header:\n```\nPOST /api/w/BSsJ1zPUYE/assistant/conversations/PdBk9DSYXA/messages/UyXjPLmW5j/edit HTTP/2\nHost: eu.dust.tt\nCookie: …\nContent-Length: 124\nSec-Ch-Ua-Platform: \"Windows\"\nAccept-Language: en-US,en;q=0.9\nSec-Ch-Ua: \"Chromium\";v=\"135\", \"Not-A.Brand\";v=\"8\"\nContent-Type: application/json\nSec-Ch-Ua-Mobile: ?0\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36\nAccept: */*\nOrigin: [https://eu.dust.tt](https://eu.dust.tt/)\nSec-Fetch-Site: same-origin\nSec-Fetch-Mode: cors\nSec-Fetch-Dest: empty\nReferer: https://eu.dust.tt/w/BSsJ1zPUYE/assistant/PdBk9DSYXA\nAccept-Encoding: gzip, deflate, br\nPriority: u=1, i\n\n{\"content\":\":mention[gemini-pro]{sId=gemini-pro} how are you?\",\"mentions\":[{\"type\":\"agent\",\"configurationId\":\"gemini-pro\"}]}\n```\n\n## Impact\n\n- Member users are not granted permissions, but can still use Gemini chatbot by editing requests → Clear violation of authorization policy",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4285482,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9ls3wxjgaa9resf8386s9ma11ku2?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=41b75417b8318bed0dfc62f90ef533c30f276ee0d88e4152bd319c20032b80be",
+      "file_size": 411330,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4285485,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/022epzbvt18zhcfbo5pkg5r919dk?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ac45e7cf40f466baf71a8fe94920fe1955846f0c246317fbdbe81a8fd5914785",
+      "file_size": 205495,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4285487,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/k94ocztoar89kmcav62hj2arpfv5?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1fd1f0aa61cbc0883abf3d5a70f7b6a1732016201554f1a6c01d8d190bc7fa76",
+      "file_size": 459208,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4285490,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/3u2xq44anmzd4kn0an0291r2gl3k?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=66382559a780e32d5ccf1737a682654bffc4e151be503028139cd7d6b3dec462",
+      "file_size": 930968,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4285491,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ryiw2rs6hyz3g7slkcnas0z38deg?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a05d95b0cb5ec354f2a2072032d53e7d2a4c77a7479092f1d900c017d0da4ab5",
+      "file_size": 132729,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4285493,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/935er0iyc3tbbknnd85uanm50ddz?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ab7cb99e496a44fe762c537c779ba512a64c0f4c2f93c3bee3ead1c128cf6e64",
+      "file_size": 123081,
+      "type": "image/png",
+      "moderated": false
+    },
+    {
+      "id": 4285494,
+      "file_name": "image.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/qq38t17mbl9gh7j6gb3kin11nq8i?response-content-disposition=attachment%3B%20filename%3D%22image.png%22%3B%20filename%2A%3DUTF-8%27%27image.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7CHC37ST%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043210Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJHMEUCIH2IRHH4nfuCVcEOIZx%2B6%2Br3sBoe9WkbUBattYQpMsCbAiEA%2Bfpl9E33ny207izL1kCLnkpyzqIWjHRFv2vNyc4jrxwqsgUIBRADGgwwMTM2MTkyNzQ4NDkiDB%2BW7dvcDvgy8m4XFiqPBbDmUuLbs4m7XlrceNwPyWP1pFMCX%2BUXvaZAb7pq1u18B21LOIG6jbbGChmk6wSs5zRABv2NKB8wUCga1vT2wiGTHFO%2FznMrKkSdyZ5jeaHicC3VRfpLDUdMJ0tqpEb4Nam4pRHEs5ShxvQtMTSJIdaD5oZxuij3%2BK3Tsc85Nl98dQY9PhP1vIWKXYaeqnKehpqGzYUSKQjPXJNfVEWxKNY4%2BfxyuVLl73rDn6s8w%2F1tM1JwNSmnE31apGa9mCl%2B3kBh%2FxGeQVP5AaUtTEXfj6g9dc1vzod4WZSICZCPcFaacdO6qi1miDso2XA8TjUlFvFQhm9Q4i2yYQteUhAKh5zSXBJYirHdE9neYLNDWdDLRw7IEPmTek0%2BdxcEi07QG7aoPem4E%2B5GyQsiNwjJanq4Aa%2FEIZDFkYzR4QrpiPntfF1R1Uz4sa0Ig0P1w5tD92j97%2FbwzYxYwfgaJATgvaVYW4Bd6zTKg5cZi8bzXVIlFBGzGzlVFFZNSyaEyvQeblzLoZ%2BX5L%2BwC4IPwAp3hX9HvD5bOK6OFSgfCoXysRgu6UPYYmDnge0JyHnNnDlamTyLwpGWHuQZoC3mAPubux5ZUVBJr%2FAHWLg9%2Fg%2Bjv3b5utoqhXWJa3LbRdifTeV4rzwXJjNalU2N6XpOt3dATTUqA%2FFn2K94k0WPFgWWt69z6cFEnwXnr5Q5Ewpbtt%2BZjPyvjRtUJa87qc%2BvmkN2mwjpgFNG3j6F0FDFC%2BngiLDsZTOCBMn5ECMPMDmxhc2gMx4Z%2BMPCbO8A2WvlrPobQsVe9f6VJkCxXZDS63YwZyNjAvbrMnQqeuwIdNGn2NSiemMhdu40WNmi9d8uugVgCWOCxujFoPh8lHQGqe861oEwl%2Bic0gY6sQGRbYbqE1lORhnf68FLy%2F5XRtM8FvhrYdo%2BIVFe4ydA4r%2B7JkiJ0w1vUQlQ1NRNy%2Bcpq6cQUOHsd%2FLzoo2FJKrcSq%2BNdUpkasD5ci1WG0GaTHoaNP6Gr30%2FIwnWcWYWsPeO7DUcbqGHiNOybA25zqzalc9LVTTi8KgJkg0LbjdCmy4nnrDm3dqIB%2BAIqIxNlSTcgSvFU2qZpATg646KLXGpI72yDx7Az%2Fs6nUQHONcXwOY%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=a3874ccd9f197b771cbcbe11ce1e2baac4de4c36aca02f0583fd4f2f5dc00e7c",
+      "file_size": 180227,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 64,
+  "voters": [
+    "achabi7",
+    "k0ns0l",
+    "orange303",
+    "loaymorad",
+    "bewgsy",
+    "yoyomiski",
+    "mohaned0101",
+    "thalaivar304",
+    "lazyar",
+    "sisi0x",
+    "and 54 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.4,
+    "author_type": "User",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 842488,
+    "asset_type": "URL",
+    "asset_identifier": "https://eu.dust.tt/",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3112106",
+  "votes": 64,
+  "latest_disclosable_activity_at": "2025-05-06T14:24:08.361Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:32:10.177146",
+    "source": "https://hackerone.com/reports/3112106.json",
+    "report_id": 3112106
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTEyMTA2",
+    "databaseId": "3112106",
+    "title": "BAC – Bypass chatbot restrictions via unauthorized mention injection",
+    "url": "https://hackerone.com/reports/3112106",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-05-06T14:24:05.516Z",
+    "created_at": "2025-04-25T08:45:06.262Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": 5.4
+    },
+    "reporter": {
+      "username": "yoyomiski"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vOTYzOTg=",
+      "handle": "dust",
+      "name": "Dust",
+      "url": "https://hackerone.com/dust",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMxMTIxMDY=",
+    "_id": "3112106",
+    "disclosed": true,
+    "votes": 64,
+    "latest_disclosable_activity_at": "2025-05-06T14:24:08.361Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMTEyMTA2",
+      "databaseId": "3112106",
+      "title": "BAC – Bypass chatbot restrictions via unauthorized mention injection",
+      "url": "https://hackerone.com/reports/3112106",
+      "disclosed_at": "2025-05-06T14:24:05.516Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vOTYzOTg=",
+      "handle": "dust",
+      "name": "Dust",
+      "url": "https://hackerone.com/dust",
+      "currency": "usd"
+    }
+  }
+}

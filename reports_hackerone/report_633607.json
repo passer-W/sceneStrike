@@ -1,0 +1,193 @@
+{
+  "id": 633607,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MzM2MDc=",
+  "url": "https://hackerone.com/reports/633607",
+  "title": "Invalid read in `str_replace_partial`",
+  "state": "Closed",
+  "substate": "resolved",
+  "readable_substate": "Resolved",
+  "created_at": "2019-07-02T06:34:49.653Z",
+  "submitted_at": "2019-07-02T06:34:49.653Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "dgaletic",
+    "url": "/dgaletic",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 15668,
+    "url": "https://hackerone.com/shopify-scripts",
+    "handle": "shopify-scripts",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/015/668/ebbe467de8ef2fc936053593e1289e30f04c3b06_original.jpg/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "shopify-scripts",
+      "twitter_handle": "",
+      "website": "",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2019-09-04T13:34:59.341Z",
+  "bug_reporter_agreed_on_going_public_at": "2019-09-03T10:30:25.094Z",
+  "team_member_agreed_on_going_public_at": "2019-09-04T13:34:59.230Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "PoC\n===\nThe attached POC shows an invalid read.\n\nDebug info\n==========\nThe issue happens when `memmove` is called inside `str_replace_partial`.\n\nvalgrind report:\n\n```\n0==27051== Invalid read of size 1\n==27051==    at 0x483FA10: memmove (vg_replace_strmem.c:1270)\n==27051==    by 0x135D60: str_replace_partial (string.c:1193)\n==27051==    by 0x1359CB: mrb_str_aset (string.c:1226)\n==27051==    by 0x131AE8: mrb_str_aset_m (string.c:1255)\n==27051==    by 0x1656FE: mrb_f_send (vm.c:633)\n==27051==    by 0x169C3E: mrb_vm_exec (vm.c:1441)\n==27051==    by 0x166540: mrb_vm_run (vm.c:949)\n==27051==    by 0x17A5C7: mrb_top_run (vm.c:2837)\n==27051==    by 0x153113: mrb_load_exec (parse.y:6318)\n==27051==    by 0x1533E6: mrb_load_file_cxt (parse.y:6327)\n==27051==    by 0x10DC3C: main (mruby.c:270)\n==27051==  Address 0x4da9370 is 176 bytes inside an unallocated block of size 2,796,832 in arena \"client\"\n```\n\ngit bisect shows the issue was introduced in [0d452073](https://github.com/mruby/mruby/commit/0d452073f46fc46496200db610ce785e514cdb65).\n\nTest platform\n=============\n* Arch Linux\n\nThank you,\nDinko Galetic\nDenis Kasak\n\n## Impact\n\nPotential information disclosure.",
+  "bounty_amount": "1000.0",
+  "formatted_bounty": "$1,000",
+  "weakness": {
+    "id": 8,
+    "name": "Out-of-bounds Read"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 520481,
+      "file_name": "poc",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/000/520/481/02b862e64d0f8a58d7bc71c2225e3d9a9f4f9112/poc?response-content-disposition=attachment%3B%20filename%3D%22poc%22%3B%20filename%2A%3DUTF-8%27%27poc&response-content-type=text%2Fplain&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSFJKHVNY%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T052824Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIQCjuEkQAi0bVphvxb2YIS24XTbu4maMI36DkWuuXywLGwIgenezN49Uj2Nx3XW8lbKqExaGduSeuFT7m%2BXGwOz8gHYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG9kWqzXR2KD1AnCsiqOBUqSUkQHAUcY6ROmOZCw4ie2uHvOeOYG7H3UvQ7FOQc9i6L6ubmZVVdKkd6COOvUxdlNVPSJPjDL1sIx8iYaWO3kV42fJS04oqKI9ns4qXOHduDiHHnUrzFndS1C7fv9qmHyJJ9mcVCQp7kk1w%2F9NppHgzt06jqP%2BcDf%2Fb%2F17qFAzF9QpVJfrQ9UoPmIlDyetils2%2FdyWsGMHfWCQsu33Z2%2FWp3J0zqvGJD0qR1SGjR2X7fc0W8wvTUu%2B03hR56RtvFMUJvnGjF8joWhhdXJFTtas13wr5tjxjFNH6TXJwo2Uoka3lo4jXRsdJ7UuzYyetNOexVLI32rbCOXN821PUJUC5IEBIz3iBQmUB3T23KeqxsY%2F2QxJPgzlpokSOX8rHDV4Bq8Mj1DjnShjpMsUIb2QNjCoIca3%2Fd%2Fq5ZlOkY%2FoVrHqGFnZhSInKZdLjH5uSp8jiEK5Vrm13PQCA7J1uNp%2B9r6rAKqTjqX3wUhoc2IxUQn%2FNG3qWN5GVQWo29%2FBcbrE%2BM30od%2FqejmgoBu5K98I0YRrUsLa%2BtlpAi6MVt9KLfVdLCsi8RM1ihYV9n%2FX6NgjSv010ztqEC%2B0BBmnpHHx2P2kozVRQZu3PSSXwlMxWtpMJoBibYDe32ROGIVcv%2F2KqWd%2BPRMeVNGj6Klwl1IqLsDaQgeRJQLa2ysfOcDBDyBxTXeox7eI0jR6C5Xfcoa1Xo3RepEwz17KoIujC%2FZuv70ado8Yc8m1tGorAKUXn2zIATs46f%2BfWKN5LuP%2BDp%2B0Lb8OowWGsBg%2B%2FHXD4yE8pmZCGiSD0cujQLdICFrYrNAmi3eCx2CjUYTljqZOEj3Xg0kd1%2FpVdxVl3ZZJ20YGR2rjKG%2Fj4%2FDIY%2BKqzDwr7fSBjqxAdq%2BMf1fpetBU8NvS0lII8LkEfpwd0A8Shz0a%2F954DGsd4rUfuJSy%2FkL3JkrwBdnpjyLIuELKFmD8PjyxCOQmgwieKKSTpmWgiiK4JzjZ6oayo6718h95ZCptIguWi65U7ZXCqGQci2EN7KNdpjWEm8iRihrO%2Bldj5%2BJM%2Bv7DgdrPO99mG45zFe%2FmJSFMkGWiGWc1%2BoMcl5%2F0eq2Nt79ccj7qaogFg1W5xt8HooK4ZZWGw%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=03196b9f453eeb60cdd8558643ec3574a7b5e0363f05c80713cb592b3c96ab2c",
+      "file_size": 597,
+      "type": "text/plain",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2019-10-03T10:30:25.159Z",
+  "allow_singular_disclosure_after": -213389878.85975128,
+  "singular_disclosure_allowed": true,
+  "vote_count": 7,
+  "voters": [
+    "ali",
+    "mik317",
+    "cryptographer",
+    "z41b1337_",
+    "quixoticluck",
+    "formerslice",
+    "tej333"
+  ],
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "633607",
+  "votes": 7,
+  "latest_disclosable_activity_at": "2019-09-04T13:34:59.365Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T13:28:24.161155",
+    "source": "https://hackerone.com/reports/633607.json",
+    "report_id": 633607
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MzM2MDc=",
+    "databaseId": "633607",
+    "title": "Invalid read in `str_replace_partial`",
+    "url": "https://hackerone.com/reports/633607",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2019-09-04T13:34:59.341Z",
+    "created_at": "2019-07-02T06:34:49.653Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzg=",
+      "name": "Out-of-bounds Read",
+      "external_id": "cwe-125"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "dgaletic"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNDU5NDc=",
+            "amount": "1000.00",
+            "awarded_amount": "1000.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-07-04T18:44:43.723Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzYzMzYwNw==",
+    "_id": "633607",
+    "disclosed": true,
+    "votes": 7,
+    "latest_disclosable_activity_at": "2019-09-04T13:34:59.365Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC82MzM2MDc=",
+      "databaseId": "633607",
+      "title": "Invalid read in `str_replace_partial`",
+      "url": "https://hackerone.com/reports/633607",
+      "disclosed_at": "2019-09-04T13:34:59.341Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzE1NjY4",
+      "handle": "shopify-scripts",
+      "name": "shopify-scripts",
+      "url": "https://hackerone.com/shopify-scripts",
+      "currency": "usd"
+    }
+  }
+}

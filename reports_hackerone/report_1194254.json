@@ -1,0 +1,218 @@
+{
+  "id": 1194254,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTk0MjU0",
+  "url": "https://hackerone.com/reports/1194254",
+  "title": "XSS by clicking Jira's link",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2021-05-12T16:10:03.499Z",
+  "submitted_at": "2021-05-12T16:10:03.660Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "ooooooo_q",
+    "url": "/ooooooo_q",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/012/811/4b35334fa2fcf93b2e510174e09470fb42bbf03a_original.gif/f287f761e822d68f6d2a6fdde3cb8c84c04060fd04f19b5dab1fe20f75f44886"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 264,
+    "url": "https://hackerone.com/gitlab",
+    "handle": "gitlab",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/f0hovtq73f9ap815a0r1w42bocp4/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "GitLab",
+      "twitter_handle": "gitlab",
+      "website": "https://about.gitlab.com",
+      "about": "A single application for the entire software development lifecycle."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2022-06-08T14:07:40.490Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-11-01T06:55:08.065Z",
+  "team_member_agreed_on_going_public_at": "2022-06-08T14:07:40.241Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "### Summary\n\nSince the value of `/-/jira_connect/users?return_to=xxx` of `xxx` is used as a link as it is, it becomes XSS in some browsers.\n\n### Steps to reproduce\n\n1. Prepare a gitlab environment with no CSP configured (e.g. `localhost`)\n2. Logged in with safari browser\n3. Go to the `https://localhost/-/jira_connect/users?return_to=javascript:alert(location)` URL\n4. click `Return to GitLab for Jira` button\n\n### Impact\n\nXSS\n\n### Examples\n\nAffects logged-in users regardless of project.\n\n### What is the current *bug* behavior?\n\nhttps://gitlab.com/gitlab-org/gitlab/-/blob/v13.11.3-ee/app/controllers/jira_connect/users_controller.rb\n\n```ruby\nclass JiraConnect::UsersController < ApplicationController\n  feature_category :integrations\n\n  layout 'signup_onboarding'\n\n  def show\n    @jira_app_link = params.delete(:return_to)\n  end\nend\n```\n\nhttps://gitlab.com/gitlab-org/gitlab/-/blob/v13.11.3-ee/app/views/jira_connect/users/show.html.haml\n\n```haml\n  - if @jira_app_link\n    %p= external_link s_('Integrations|Return to GitLab for Jira'), @jira_app_link, class: 'gl-button btn btn-confirm'\n```\n\nhttps://gitlab.com/gitlab-org/gitlab/-/blob/v13.11.3-ee/app/helpers/external_link_helper.rb\n\n```haml\nmodule ExternalLinkHelper\n  def external_link(body, url, options = {})\n    link_to url, { target: '_blank', rel: 'noopener noreferrer' }.merge(options) do\n      \"#{body}#{sprite_icon('external-link', css_class: 'gl-ml-1')}\".html_safe\n    end\n  end\nend\n```\n`external_link` has not verified the validity of the url.\n\n### What is the expected *correct* behavior?\n\nIf it is a link other than http and https, it will not work.\n\n### Relevant logs and/or screenshots\n\n{F1298918}\n\n### Output of checks\n\nBlocked by CSP at GitLab.com\n\n#### Results of GitLab environment info\n\n```\n# gitlab-rake gitlab:env:info\n\nSystem information\nSystem:\nCurrent User:\tgit\nUsing RVM:\tno\nRuby Version:\t2.7.2p137\nGem Version:\t3.1.4\nBundler Version:2.1.4\nRake Version:\t13.0.3\nRedis Version:\t6.0.12\nGit Version:\t2.31.1\nSidekiq Version:5.2.9\nGo Version:\tunknown\n\nGitLab information\nVersion:\t13.11.3\nRevision:\tb321336e443\nDirectory:\t/opt/gitlab/embedded/service/gitlab-rails\nDB Adapter:\tPostgreSQL\nDB Version:\t12.6\nURL:\t\thttps://gitlab.example.com\nHTTP Clone URL:\thttps://gitlab.example.com/some-group/some-project.git\nSSH Clone URL:\tgit@gitlab.example.com:some-group/some-project.git\nUsing LDAP:\tno\nUsing Omniauth:\tyes\nOmniauth Providers:\n\nGitLab Shell\nVersion:\t13.17.0\nRepository storage paths:\n- default: \t/var/opt/gitlab/git-data/repositories\nGitLab Shell path:\t\t/opt/gitlab/embedded/service/gitlab-shell\nGit:\t\t/opt/gitlab/embedded/bin/git\n```\n\n## Impact\n\nIt becomes XSS when the user is directed to the user who is logged in with the Safari browser to the instance where CSP is not set.\n\nChrome and Firefox showed other tabs and javascript was not executed.",
+  "bounty_amount": "1130.0",
+  "formatted_bounty": "$1,130",
+  "weakness": {
+    "id": 61,
+    "name": "Cross-site Scripting (XSS) - Reflected"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1298918,
+      "file_name": "jira_safari_xss.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/x3h0k2ldk9c8kuzj1g5revte5lao?response-content-disposition=attachment%3B%20filename%3D%22jira_safari_xss.png%22%3B%20filename%2A%3DUTF-8%27%27jira_safari_xss.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQQFGVW4KO%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T051136Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJGMEQCIGxo3b5XV%2FxPTqhfuI54b3MGIBW9d%2Bmn4M6eQ5FnA992AiAZLM6%2FPGYj9ztH2raUwHKRrtzbUtZMpMshbmkuRiUxgCqxBQgGEAMaDDAxMzYxOTI3NDg0OSIMAOlhmkQEr%2FICw0FIKo4FenlppRZg6jvWQps40NqeeqGIxfHzoRjeN66eDtVywr4BDJlD%2BEGPxuBSU%2BcqVLZ3p%2F3yr8LjOAQZ7%2Bil91ndFmWTqwBxr%2BrXK%2BWmkh9Vds9gOn0De6DpOD1RNIhdtXz8eJClumO%2BO54WIC28thFHN4ZyPDdl%2FMlgDxpJn4fD3%2B%2FqnAtT%2Fjk7q0IX3ATBqLPNRl92h%2FL%2Fw%2BgLSnU3Z6rSc7uca5%2BjyrcIwXvkSj0n%2B9jvyFtafPvu8vgu2CzVcI%2FXgl%2FQEhCycOQZ9SO58bg%2BUtOT1B9J2i3ga4j8VcywFD%2FDlrX6c%2Fr90uJwUUTxGjs3qVI94bUUDmTmXH0NLUdCNERqtnd%2Bi6pn73XQJmDlodDODh5bISrIEMw667GU7hTJc0wXp3%2BewAZ6yEesj1nr83m098hiVB7aa3ClFtjNq0Q4%2B5oIv37UwlhJrrVrBg0KXrFdFi8lQuGKG5zxhO1EdVbDuiI%2FcUtqxViKW7jR3w%2FH6s7ui11ZKaM9ydto5KhX4y1R02bJmcooOCNru5p%2FHT0yY2ZS3ZIzba7cIAtFsL1wElkbicyccD48xXIXOR02aidTepU1Bf4W4CfjZKFAAWOL6%2FAB07iyLhlaDbNFSQQJSry%2FbwtZeLz4oy03mANo4bx%2BaisrdYVLkoK6vn%2FRzmIYjSgK3BtwJFSlOtma9K1z%2FHLA5cDIp8TsfAjCFKcqiRUOHSWOxjwV4Kn2YvYbBhPrtKyf%2F5kyWzbfWG6GKprgS47oSTjgREkdxRBhf9zMt9rj9TYlDSh7t2RjluOhIVL1Y9n5EkFcPP5GJ5bj48un7ylRIWzU1FHjD4q9uK8hOJjpl%2Bv9nAAu%2F7H4XAMPZh4o%2BsVZiCvxr9gpS3MJMKj%2BnNIGOrIB%2FyBpE8DgGI7cVadvcZGDxVg96HMSmqWCKeLXwcIgfo1y60vReADggvWF4EACYz7FkEW%2ByQ5%2FomoJI7waLs7CFwjgvT86S%2Fa79hScuVvEXBqFzIryQMi9ourpT5561M7Y2iF3KA7%2F9qYTU9wB9bz%2F3DQMJdnVeFK2Fulr0tY7HN5qMqQurQGmRzt4f%2BPQc6p0j7bJk9jasV2CfG5LovxeUirBr%2BTpwXZzsBcZjuLo3QmPIA%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=7123a548bf6a28fdcdcbdf8f4b4776d877a0f00b98d611369878c9c04b115d94",
+      "file_size": 525928,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 12,
+  "voters": [
+    "loaymorad",
+    "zy9ard3",
+    "bl4de",
+    "shivammusic",
+    "kalendra456",
+    "astronut",
+    "uzakichan",
+    "klacyk",
+    "furcht",
+    "ittafunahashi",
+    "and 2 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 5.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "low",
+      "user_interaction": "required",
+      "scope": "changed",
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 55897,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://gitlab.com/gitlab-org/gitlab",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1194254",
+  "votes": 12,
+  "latest_disclosable_activity_at": "2022-06-08T14:07:40.558Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T13:11:36.174071",
+    "source": "https://hackerone.com/reports/1194254.json",
+    "report_id": 1194254
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTk0MjU0",
+    "databaseId": "1194254",
+    "title": "XSS by clicking Jira's link",
+    "url": "https://hackerone.com/reports/1194254",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2022-06-08T14:07:40.490Z",
+    "created_at": "2021-05-12T16:10:03.499Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzYx",
+      "name": "Cross-site Scripting (XSS) - Reflected",
+      "external_id": "cwe-79"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 5.8
+    },
+    "reporter": {
+      "username": "ooooooo_q"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8zNDIwMzQ=",
+            "amount": "1130.00",
+            "awarded_amount": "1130.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-10-14T09:44:39.346Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExOTQyNTQ=",
+    "_id": "1194254",
+    "disclosed": true,
+    "votes": 12,
+    "latest_disclosable_activity_at": "2022-06-08T14:07:40.558Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTk0MjU0",
+      "databaseId": "1194254",
+      "title": "XSS by clicking Jira's link",
+      "url": "https://hackerone.com/reports/1194254",
+      "disclosed_at": "2022-06-08T14:07:40.490Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzI2NA==",
+      "handle": "gitlab",
+      "name": "GitLab",
+      "url": "https://hackerone.com/gitlab",
+      "currency": "usd"
+    }
+  }
+}

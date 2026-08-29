@@ -1,0 +1,195 @@
+{
+  "id": 3480712,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgwNzEy",
+  "url": "https://hackerone.com/reports/3480712",
+  "title": "Telnet Suboption Buffer Pointer Underflow in lib/telnet.c leads to Out-of-Bounds Read",
+  "state": "Closed",
+  "substate": "informative",
+  "severity_rating": "low",
+  "readable_substate": "Informative",
+  "created_at": "2025-12-28T16:15:31.727Z",
+  "submitted_at": "2025-12-28T16:15:31.954Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "stif",
+    "url": "/stif",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/5n2egpluzo60hhi5zb0s4ub68iir/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-12-29T15:46:46.753Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-12-29T09:14:34.625Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\n\nA buffer pointer underflow vulnerability exists in curl's telnet protocol handler (`lib/telnet.c`). When processing telnet suboptions in the `CURL_TS_SE` state, the code unconditionally decrements the suboption buffer pointer by 2 (`subpointer -= 2`), even when the `CURL_SB_ACCUM` macro skips writing due to a full buffer. This leads to an out-of-bounds read when `suboption()` and `printsub()` are subsequently called.\n\n## Affected Version\n\n- All curl versions with telnet support containing this code pattern\n- Tested on latest curl source from GitHub (master branch)\n- File: `lib/telnet.c`\n- Vulnerable lines: 1210 and 1226\n\n## Technical Analysis\n\n### Vulnerable Code Pattern\n\nIn `lib/telnet.c`, the `CURL_SB_ACCUM` macro (lines 69-73) conditionally writes to the buffer:\n\n```c\n#define CURL_SB_ACCUM(x, c)                                   \\\n  do {                                                        \\\n    if(x->subpointer < (x->subbuffer + sizeof(x->subbuffer))) \\\n      *x->subpointer++ = (c);                                 \\\n  } while(0)\n```\n\nHowever, in the `CURL_TS_SE` state handling (lines 1207-1211 and 1223-1227), the pointer decrement is unconditional:\n\n**Path 1 (line 1207-1211):**\n```c\nCURL_SB_ACCUM(tn, CURL_IAC);\nCURL_SB_ACCUM(tn, c);\ntn->subpointer -= 2;    // UNCONDITIONAL - causes underflow when buffer is full\nCURL_SB_TERM(tn);\n```\n\n**Path 2 (line 1223-1227):**\n```c\nCURL_SB_ACCUM(tn, CURL_IAC);\nCURL_SB_ACCUM(tn, CURL_SE);\ntn->subpointer -= 2;    // UNCONDITIONAL - causes underflow when buffer is full\nCURL_SB_TERM(tn);\n```\n\n### Exploitation Flow\n\n1. Malicious telnet server sends suboption data to fill the 512-byte buffer (`SUBBUFSIZE`)\n2. Server sends `IAC` followed by another byte while buffer is full\n3. `CURL_SB_ACCUM` macro does nothing (buffer full check passes)\n4. `subpointer -= 2` executes unconditionally, causing pointer underflow\n5. `CURL_SB_TERM` sets `subend = subpointer` (now pointing before buffer start)\n6. `suboption()` is called with corrupted pointer\n7. `CURL_SB_LEN` macro calculates negative/wrapped length\n8. `printsub()` reads out-of-bounds memory in verbose mode\n\n### Memory Layout (struct TELNET)\n\n```c\nstruct TELNET {\n  // ... other fields ...\n  struct dynbuf out;              // Contains heap pointers\n  unsigned char subbuffer[512];   // The suboption buffer\n  unsigned char *subpointer;      // Points into subbuffer\n  unsigned char *subend;          // End marker\n  // ...\n};\n```\n\nWhen `subpointer` underflows, it points to the `dynbuf out` structure, which contains heap pointers that may be leaked.\n\n## Steps To Reproduce\n\n1. Save the attached PoC script as `curl_telnet_poc.py`\n\n2. Run the malicious telnet server:\n```bash\npython3 curl_telnet_poc.py -p 2323\n```\n\n3. In another terminal, connect with curl in verbose mode:\n```bash\ncurl -v telnet://127.0.0.1:2323\n```\n\n4. Observe the verbose output for:\n   - Anomalous suboption data in the output\n   - Potential non-printable characters indicating memory leak\n   - Possible crash (depending on memory layout)\n\n5. For better observation, build curl with AddressSanitizer:\n```bash\n./configure CFLAGS=\"-fsanitize=address -g\"\nmake\n./src/curl -v telnet://127.0.0.1:2323\n```\n\nASan should report an out-of-bounds read.\n\n## Supporting Material/References\n\n- Attached: `curl_telnet_poc.py` - Python PoC server script\n- Source file: https://github.com/curl/curl/blob/master/lib/telnet.c\n- Vulnerable lines: 1210, 1226\n- Related macros: lines 63-76 (CURL_SB_CLEAR, CURL_SB_TERM, CURL_SB_ACCUM, CURL_SB_GET, CURL_SB_LEN)\n```\n\n## Impact\n\n## Impact\n\n### Security Impact\n\n1. **Information Disclosure (Low-Medium)**: When curl is run in verbose mode (`-v`), the `printsub()` function may read and display memory contents from before the suboption buffer. This could potentially leak:\n   - Heap pointers (useful for ASLR bypass in chained exploits)\n   - Contents of the `dynbuf out` structure\n   - Other sensitive data in adjacent memory\n\n2. **Denial of Service (Low)**: Depending on memory layout and access patterns, the out-of-bounds read could cause a crash.\n\n### Attack Scenario\n\nAn attacker controlling a malicious telnet server could:\n1. Wait for a victim to connect using `curl -v telnet://malicious-server`\n2. Send crafted telnet suboption data to trigger the vulnerability\n3. Potentially observe leaked memory contents in error messages or logs\n4. Use leaked heap pointers to aid in exploiting other vulnerabilities\n\n### Limitations\n\n- Requires victim to connect to attacker-controlled telnet server\n- Most impactful in verbose mode (`-v` flag)\n- Telnet protocol is deprecated and rarely used\n- No direct code execution capability",
+  "weakness": {
+    "id": 10,
+    "name": "Buffer Under-read"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 5163392,
+      "file_name": "curl_telnet_poc.py",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/uzuw76s5785lgs2zav2led918oe4?response-content-disposition=attachment%3B%20filename%3D%22curl_telnet_poc.py%22%3B%20filename%2A%3DUTF-8%27%27curl_telnet_poc.py&response-content-type=application%2Fx-sh&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQZ3GYDQVI%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042430Z&X-Amz-Expires=444&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDYaCXVzLXdlc3QtMiJGMEQCIFEErVE1KAEqpjNMQAsJvJg66aBY80BoJcXcOOHc69mVAiAYM0qSTOia5YefUVlQXSnlGOBz09CZ7PBtAygQ2ZbeUCq6BQj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAMaDDAxMzYxOTI3NDg0OSIMOU%2BM4m2WY8E4OxiOKo4F4pGSnW5N1%2FLVWuLVMELCstKFJ83IMJww75g56gai8hol026RxlA7hGOQrtWUx16DhqLejG2tigCFi6zInuuKyTMMdnHAA1%2B4u7%2FVPAlhNZ%2FiyadJv4BL1DkueWk5KMMDX3KJe78ZzNYOMvCpvnZjjrkN9IOyWDpROAPPMLtBXT2TZNZTndAo%2BdwTSVtCMHJffiYwrIRieIw%2Bp6hPNkFtM95%2FgIhY05VSAE%2B70PMPEYNJ4A9swI4BVCcUBN0kN5EDUtGrap7gO871RboYyORt4LLQWyTBfL2Zni%2FK4AOJVTDFod8OndScR1Ev812v83bQ2BBer45XyQQsa2QckS6M5mCNRSW2jJOPiYotq8YX23AJx7yAC1h20m0HryKC8G8DijzfkQqSrZ6Ab%2B9YAOv41mmxy7lKxwpRZ3iWHE3%2FSOF98%2FmJlGJzqPzYqAnQkFmKeLQbujw1J5kPHcdr8ByG7J3cIsPxy0%2BJyVHrAxka%2BsViK2zy7WO%2FCISVuNpH5aXrH9l%2B%2B76jiWryIcZDIuyqce5m78Pc6HO6ZuGkXVqckSpuKwR9%2BUYJqEdKwnvcwTh4F8MWd2rxXixazhiTAUQPJKiShKxpJtzg4x2jLEK%2FEPvmRUg%2FIqSDCoNPxs9l%2BnCZYCUjpSrqxbyr4gI2%2BZskmWcKkKpTOk1KTX%2BL%2FmzLHMjheJjz%2Bi1gP22yveKIW03AjT466N2jbVtV7JFccDIA0oM2GffpVfC6BkbbiAfsTNhE8dT7PFQSyyeROWZOd54Vns3nmGJWFPMgmcXRmKE7i5rHwA6IGHtnxtQkNb9r%2F2umt9Cdno6lKdKEsL1j5BVtdDiHxH5VJDeP3XBG2V5VCpty4IHHnCs7K5vjW7TQMOzAm9IGOrIBq37F61VqgsEMjgcH4tjHnG8swr8LK2ejeqNn%2FLL20z%2FlYEYviagjgnhooH1kN0DooAAavQbOZfqVsnYfgAiG2DQNZYOXrb%2B1Lf4iWQ%2BPF7CHAdF0CRW7Vbt0XE7Gm5F11x41lgO0J%2BjDvGYIij9ywz6XBJcc9TVCuZBo273tmF1QI1rDsrrRbapX1qxjNU3MxF8pgwgtNrJVtGVyyBPR8Pfh%2BBCWSo95xcSbZBqp6xoW2w%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=68f9a9af6f43b845cdd57d9005384adbcb497313180456866fec75813fae95f9",
+      "file_size": 8911,
+      "type": "application/x-sh",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 16,
+  "voters": [
+    "2026",
+    "stif",
+    "nitin-8551",
+    "i-amlogan",
+    "junkieguk",
+    "hoss_a",
+    "cyphervision",
+    "ngorzz",
+    "randomname7",
+    "isk_3",
+    "and 6 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3480712",
+  "votes": 16,
+  "latest_disclosable_activity_at": "2025-12-29T15:46:46.597Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:24:30.432877",
+    "source": "https://hackerone.com/reports/3480712.json",
+    "report_id": 3480712
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgwNzEy",
+    "databaseId": "3480712",
+    "title": "Telnet Suboption Buffer Pointer Underflow in lib/telnet.c leads to Out-of-Bounds Read",
+    "url": "https://hackerone.com/reports/3480712",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-12-29T15:46:46.753Z",
+    "created_at": "2025-12-28T16:15:31.727Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzEw",
+      "name": "Buffer Under-read",
+      "external_id": "cwe-127"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "stif"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzM0ODA3MTI=",
+    "_id": "3480712",
+    "disclosed": true,
+    "votes": 16,
+    "latest_disclosable_activity_at": "2025-12-29T15:46:46.597Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zNDgwNzEy",
+      "databaseId": "3480712",
+      "title": "Telnet Suboption Buffer Pointer Underflow in lib/telnet.c leads to Out-of-Bounds Read",
+      "url": "https://hackerone.com/reports/3480712",
+      "disclosed_at": "2025-12-29T15:46:46.753Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

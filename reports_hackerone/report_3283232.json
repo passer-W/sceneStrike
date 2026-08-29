@@ -1,0 +1,228 @@
+{
+  "id": 3283232,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjgzMjMy",
+  "url": "https://hackerone.com/reports/3283232",
+  "title": "Use After Free (that leads to arbitrary Write for some versions) ",
+  "state": "Closed",
+  "substate": "informative",
+  "readable_substate": "Informative",
+  "created_at": "2025-08-02T16:30:30.343Z",
+  "submitted_at": "2025-08-02T16:30:30.764Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "letshack9707",
+    "url": "/letshack9707",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ufak6b5s1bowv5ch0qf9m4be06qx/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 35663,
+    "url": "https://hackerone.com/curl",
+    "handle": "curl",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/035/663/2faf4c279d437d64bfda6d23d62ce1833813a4d9_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "paused",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": false,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "curl",
+      "twitter_handle": "",
+      "website": "https://curl.se",
+      "about": "cURL is an Open Source project providing a library and command-line tool doing internet transfers"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": true,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2025-08-06T15:34:22.164Z",
+  "bug_reporter_agreed_on_going_public_at": null,
+  "team_member_agreed_on_going_public_at": "2025-08-06T14:55:28.006Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary:\n  - Use-After-Free vulnerability that leads to arbitrary write/READ \n\nYES, I used IA along with mermaind editor (online one) to generate this graph that show these paths for (allocation, free and use after free)\nF4637660: bug_svg.png\n\n## Affected version\n  - curl 8.13.0 (x86_64-pc-linux-gnu) libcurl/8.13.0 OpenSSL/3.5.0 zlib/1.3.1 brotli/1.1.0 zstd/1.5.5 libpsl/0.21.2 (Arbitrary write/READ) \n+ F4637640: asan_crash_log_curl_8.13.0-Arbitrary-READ.log\n+ F4637641: asan_crash_log_curl_8.13.0-Arbitrary-WRITE.log\n  - curl 8.14.0 (x86_64-pc-linux-gnu) libcurl/8.14.0 OpenSSL/3.5.0 zlib/1.3.1 brotli/1.1.0 zstd/1.5.5 libpsl/0.21.2 (Arbitrary write/READ) \n+ F4637642: asan_crash_log_curl_8.14.0-Arbitrary-READ.log\n+ F4637643: asan_crash_log_curl_8.14.0-Arbitrary-WRITE.log\n  - curl 8.15.0 (x86_64-pc-linux-gnu) libcurl/8.15.0 OpenSSL/3.5.0 zlib/1.3.1 brotli/1.1.0 zstd/1.5.5 libpsl/0.21.2 (only Arbitrary write ) \n+ F4637644: asan_crash_log_curl_8.15.0-Arbitrary-WRITE.log\n=>  tested on : \n - All version listed above tested on Linux kali 6.3.0-kali1-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.3.7-1kali1.\n - Ubuntu 24.04.1 (I only tested curl version 8.14.0  on it) \n - I used curl version 8.14.0 to inverstigate the root cause of this, so there might be slight changed in line numbers when I refer to some fucntions. \n\n## Steps To Reproduce:\n\n\n  1. Download the last target version from github and unizp it: \n  \n    wget https://github.com/curl/curl/releases/download/curl-8_14_0/curl-8.14.0.zip && unzip curl-8.14.0.zip && cd curl-8.14.0\n\n  2. Build and install: \n```\n    CFLAGS=\"-fsanitize=address,undefined -g -O0 -fno-omit-frame-pointer\" ./configure --with-openssl \n    \n    make all -j$(nproc)  &&  sudo make install \n    \n    curl --version\n\n>> while true; do curl --url \"c071993_domain22.com/image[0-10]tp.com/dir[0-10]/api/path[0-10]/api\" -Zs --max-time 0.01; echo $?; done\n28\n28\n28\n134\n=================================================================\n==405371==ERROR: AddressSanitizer: heap-use-after-free on address 0x522000306eb0 at pc 0x7fb7ad920768 bp 0x7ffe25f15920 sp 0x7ffe25f15918\nREAD of size 16 at 0x522000306eb0 thread T0\n\n```\nPlease refer to the crash file F4637643: asan_crash_log_curl_8.14.0-Arbitrary-WRITE.log \n\nUse this is you want to stop the loop when the crash occurs: \n\n```\nwhile true; do \n    crash_=$(ASAN_OPTIONS=\"abort_on_error=1\" curl --url \"c071993_domain22.com/image[0-10]tp.com/dir[0-10]/api/path[0-10]/api\" -Zs --max-time 0.01 2>&1)\n    error_code=$?; echo $error_code\n    if [ \"$error_code\" -eq 134 ]; then\n      echo \"$crash_\"\n      break\n    fi\ndone\n```\n\nWe can also use config file , write a config file (conf.txt) : \n```\n   // ---------------- Begin conf.txt -----------------------------\n        --url \"c071993_domain22.com/image[0-10]tp.com/dir[0-10]/api/path[0-10]/api\"\n        -Zs\n        --max-time 0.01\n\n    // ----------------END conf.txt -----------------------------\n```\n\nThen execute : \n```\nwhile true; do ASAN_OPTIONS=\"abort_on_error=1\" curl --config conf.txt;echo $? ;done\n```\n\nTo stop the loop  when the crash detected : \n\n```\nwhile true; do\n    crash_=$(ASAN_OPTIONS=\"abort_on_error=1\" curl --config conf.txt 2>&1)\n    error_code=$?\n    if [ \"$error_code\" -eq 134 ]; then\n      echo \"$crash_\"\n      break \n    fi\ndone\n  ```\n## Triaging the crash: \n\nFor traiging the crash I mainly focused on ASAN output alongs with manual code review , Also the coredump file was helpful (couldn't upload it cuz it's 830  MB in size). \n- to enable it (debian based os) : \n```\n    export ASAN_OPTIONS=\"abort_on_error=1:disable_coredump=0:unmap_shadow_on_exit=1\"\n    ulimit -c unlimited\n\n--> Execute until it crashs \nwhile true; do      \n        crash_=$(curl --url \"c071993_domain22.com/image[0-10]tp.com/dir[0-10]/api/path[0-10]/api\" -Zs --max-time 0.01 2>&1)\n        error_code=$?; echo $error_code\n        if [ \"$error_code\" -eq 134 ]; then\n          echo \"$crash_\"\n          break\n        fi\n    done\n\nRun the coredump file with gdb : \n Run coredump with gdb \n    >> gdb curl core.599869\n```\n- main transfer loop : \n\n```\n     while(!s->mcode && (s->still_running || s->more_transfers)) {\n          \n          /* If stopping prematurely (eg due to a --fail-early condition) then\n             signal that any transfers in the multi should abort (via progress\n             callback). */\n             \n          if(s->wrapitup) {\n            if(!s->still_running)\n              break;\n            if(!s->wrapitup_processed) {\n              struct per_transfer *per;\n              for(per = transfers; per; per = per->next) {\n                if(per->added)\n                  per->abort = TRUE;\n              }\n              s->wrapitup_processed = TRUE;\n            }\n          }\n\n          s->mcode = curl_multi_poll(s->multi, NULL, 0, 1000, NULL);\n          if(!s->mcode)\n            s->mcode = curl_multi_perform(s->multi, &s->still_running);\n          if(!s->mcode)\n            result = check_finished(s);\n      }\n```\n- when curl called in parallel mode the function `curl_multi_perform()` is used.\n\n  -  As crash output shows, when `curl_easy_init()` function was called, it uses  Curl_open(&data) function to allocate Curl_easy struct `(data = calloc(1, sizeof(struct Curl_easy));)` then assign it to `&data` that was passed to `Curl_open()`.\n```\n      CURLcode Curl_open(struct Curl_easy **curl)\n        {\n         CURLcode result;\n          struct Curl_easy *data;\n\n          /* simple start-up: alloc the struct, init it with zeroes and return */\n          data = calloc(1, sizeof(struct Curl_easy)); // ALLOCATION \n\n        // setup data \n          }\n          else\n            *curl = data;  \n          return result;\n        }\n```\n\n - Once the transfer completed the `post_per_transfer()` function was called within `check_finished(s)`, which invokes `curl_easy_cleanup()`, which calls `Curl_close(&data)` and  that frees the data components and null their pointers using Curl_safefree(), Curl_freeset(),etc, then frees data itself which deallocates the entire  struct Curl_easy data including its state.timenode( struct Curl_tree timenode) .\n\n ```\n                    CURLcode Curl_close(struct Curl_easy **datap) \n                        {\n                          struct Curl_easy *data;   \n\n                          // frees Curl_easy data components\n      \n                          free(data); // data freed ( struct Curl_easy *data ), But not nulled  Emmm \n                          return CURLE_OK;\n                        }\n```\n```\n\n - At multi.c:3474, `Curl_expire_clear()` function calls Curl_splayremove(multi->timetree, &data->state.timenode,&multi->timetree)` passing the same pointer (&data->state.timenode) that was  freed as second argument.  \n \n -  At /splay.c:234, the `Curl_splayremove()` function does pointers manipulation (assuming passed removenode is a valid node in the tree), which writes into freed heap memory (use-after-free -> arbitrary write).\n\n```\n             int Curl_splayremove(struct Curl_tree *t,\n                                 struct Curl_tree *removenode, // second argument => &data->state.timenode\n                                 struct Curl_tree **newroot)\n            {\n   \n              static const struct curltime KEY_NOTUSED = {\n                ~0, -1\n              }; /* will *NEVER* appear */\n              struct Curl_tree *x;\n\n              if(!t)\n                return 1;\n\n              DEBUGASSERT(removenode);\n\n              if(compare(KEY_NOTUSED, removenode->key) == 0) {\n                /* Key set to NOTUSED means it is a subnode within a 'same' linked list\n                   and thus we can unlink it easily. */\n                if(removenode->samen == removenode)\n                  /* A non-subnode should never be set to KEY_NOTUSED */\n                  return 3;\n                removenode->samep->samen = removenode->samen; // splay.c:234 \n                \n                removenode->samen->samep = removenode->samep;\n\n                /* Ensures that double-remove gets caught. */\n                removenode->samen = removenode;\n\n                *newroot = t; /* return the same root */\n                return 0;\n              }\n\n```\n## Notes: \n\n\n- Since those bracket ranges \"[1-10]\" are purely a feature of the curl command line (and config file) - known by URL globbing - , and these types of urls aren't supported by libcurl APIs, this bug occurs when curl binary or libcurl API parses a bracket-range URL(expanding the range into an array) then uses them in parallel mode (-Z) with curl_multi_perform, curl_multi_poll,etc.\n- The crash is triggered when using the --max-time option set to a relatively low value (0.01 with [1-10];  0.1 with [1-100] ranges in the URL also triggers the bug) \n-  I believe that we can reprodoce this issue and reach the vulnerable path using libcurl APIs, I tried with 10-at-a-time.c with editing urls array to parsed one by --libcurl options and add other options (like CURLOPT_NOPROGRESS for --silent and (easy_handle,CURLOPT_TIMEOUT_MS,10L) for max-time 0.01 ) but it didn't work. cuz the behavior of --max-time in curl command applied on the entire URL (with bracket ranges), so it needs more work on this . \n- For clarity I still  haven't triggered the the same crash with C code (using libcurl <curl/curl.h>). \n- This bug only triggerd with Address Sanitizers enabled, and doesn't necessarily lead to app's crash, without ASAN enabled it's only corrupts the heeap with some low memory addresses (curl version 8.15.0) and abort in (curl version 8.14.0) which lead to segfault that might crash the app when it runs for more several iterations, which could make the perfect attack as normal curl operation with no obvious indicators (but quite challaging to debug cause we can't use gdb and strace when asan enabled) \n- This bug also can be triggered with additional functionalities such as --append (-a), --upload (-T).\n- Therefor  I suggest Severity High  For this BUG. \n- Still trying to figure out a reliable way to exploit this . \n\n## Supporting Material/References:\n\n  - CWE-416: Use After Free: https://cwe.mitre.org/data/definitions/416.html\n  - CWE-123: Write-what-where Condition: https://cwe.mitre.org/data/definitions/123.html\n  - https://curl.se/libcurl/c/curl_multi_perform.html\n  - https://everything.curl.dev/cmdline/urls/globbing.html\n  -  https://curl.se/libcurl/c/10-at-a-time.html\n  -  https://www.youtube.com/watch?v=YV3jewkUJ54\n\n## Impact\n\n- The reliable exploit of this bug allow Attacker that controlled server to Execute arbitrary commands on victim's system.\n- The execution could also achieved using some injection techiniques. \n- it might  be more impactful if it's chained with another vulnerabilities that allow both controling the url passed to curl/libcurl, and hijacking server responses for heap massaging. \n- Heap feng shui and heap Grooming techniques can be used to overwrite the target address and execute commands on victim's machine (still inverstigating)",
+  "weakness": {
+    "id": 50,
+    "name": "Use After Free"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 4637640,
+      "file_name": "asan_crash_log_curl_8.13.0-Arbitrary-READ.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/ly7indmyy8vp7osrcuq3ehkazkut?response-content-disposition=attachment%3B%20filename%3D%22asan_crash_log_curl_8.13.0-Arbitrary-READ.log%22%3B%20filename%2A%3DUTF-8%27%27asan_crash_log_curl_8.13.0-Arbitrary-READ.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSO6E42NB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042850Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIFFxyQJ0YM9NRXKi34cAoZylOoir%2Fd1epI2OPnbU3ZUjAiBF2alHP%2BbdBbbs%2BxcjYAKsnuPnlwABPpEzs9NvEWNUUSqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMVY3wXoPhWN3uin2yKo8Fl60qDHHWL00R8vcKvI3m3gjaPTMCJuqXnpAa1T0%2FzOgo3w5bdEEL2zGnZRv3BycCV7c8MFsNEiPDw6HIUF1%2BhrbWfaidkP1VfgMwEysFT6xUednSG8gB4bpkUIxHZMPR0bF2qrTmYRukoTWyIz0i8GH0v%2FuIj%2FX7PPNqLPZUIXCQxqugbpx%2FPO9ef2s6AvXTymtEeCjDYBPdsx6uwelUmJPiEIlaPDgcoKipEEko5G2UtKwlHaGvSibjPQum9tQ38uM9kJ%2F6K%2BtOv5SyiXL0Jw45IfzG6RfTC%2BQj%2FqP76z9NBCeixgfpHiFdWx5duRPgaFh%2FDZ2K4RFBzvRBQvbv4l4g%2FICe8vI6fQQue6BTeIfOL5pwpJ9OH%2FB9ZnT4qet8pQbj9F5mniUDOvZw9EIgbcLyCvxUpQSkRI0Yxia87X9Gr%2FBcwE43%2B8v8PKU07ukOqVMqrr%2B%2Fx0GkYabMgoMlu3sH0i1RSecIllrD2%2BIPL1YvkiEa6bgeXj0gfPi61Cm8vmGMN1272F3Yh8bRMMBri2cb5z%2By0mnq03sCaPJ77o6mwG80UGrVzCGw6N%2F5LfTYVTI8B%2B6H7G27UqutxZMUpUuTUDe%2FPFOgDvviG921ZVeX5lnT6uXzK279fb5KCMSzoUwfqNsQndxJFvmgQFA3pesHm1dPqYesZQplctALb1RfxjPkAvAYGqenIKxiEb0dRnvzSBLdLD3lZdg0utB4oaujjCN3YUINfMRhqNrr%2BHBuRquHwUZ61qEXeYnpCKrGsWsrFOoloDqVZFuBw%2BH3PfxmLK%2B0GHnEJuV9mVhJqK%2BdUmXG8uRBDDXa2mtxvm5L0hrEU7gOXv5nZMBYqFVTHbeicSCIOsndKNrGMePKeDCX6ZzSBjqyARVOx35Z4KJPHPY7jtO6djIt3PazUlSX6rfJPyf6EkD9PaLugQHqOzeb%2FK8Shl76FYITdbIIjLkPK64Ex67P36r8ZFI%2BLVEVpZGQTxZXjjKKfgpQ1HIiaKpxmdm5l3pTnT5G%2F039Viwx14xM9H2mRy7pEPgrQi0M6JSFUCJs5ZwBhXraLikg32Gxk1EmZBrqxbeuNmX28q51yj0b%2BFZsEuz4yI2MKm%2F4jQ03avmRFzTrzeQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1f103efd66c720d9f0936a63f7ef35d80a301de180f291c21afb2d844cbf748b",
+      "file_size": 7134,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 4637641,
+      "file_name": "asan_crash_log_curl_8.13.0-Arbitrary-WRITE.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/wbq1s1q7jpcdll4s1yadrfkf9d5t?response-content-disposition=attachment%3B%20filename%3D%22asan_crash_log_curl_8.13.0-Arbitrary-WRITE.log%22%3B%20filename%2A%3DUTF-8%27%27asan_crash_log_curl_8.13.0-Arbitrary-WRITE.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSO6E42NB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042850Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIFFxyQJ0YM9NRXKi34cAoZylOoir%2Fd1epI2OPnbU3ZUjAiBF2alHP%2BbdBbbs%2BxcjYAKsnuPnlwABPpEzs9NvEWNUUSqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMVY3wXoPhWN3uin2yKo8Fl60qDHHWL00R8vcKvI3m3gjaPTMCJuqXnpAa1T0%2FzOgo3w5bdEEL2zGnZRv3BycCV7c8MFsNEiPDw6HIUF1%2BhrbWfaidkP1VfgMwEysFT6xUednSG8gB4bpkUIxHZMPR0bF2qrTmYRukoTWyIz0i8GH0v%2FuIj%2FX7PPNqLPZUIXCQxqugbpx%2FPO9ef2s6AvXTymtEeCjDYBPdsx6uwelUmJPiEIlaPDgcoKipEEko5G2UtKwlHaGvSibjPQum9tQ38uM9kJ%2F6K%2BtOv5SyiXL0Jw45IfzG6RfTC%2BQj%2FqP76z9NBCeixgfpHiFdWx5duRPgaFh%2FDZ2K4RFBzvRBQvbv4l4g%2FICe8vI6fQQue6BTeIfOL5pwpJ9OH%2FB9ZnT4qet8pQbj9F5mniUDOvZw9EIgbcLyCvxUpQSkRI0Yxia87X9Gr%2FBcwE43%2B8v8PKU07ukOqVMqrr%2B%2Fx0GkYabMgoMlu3sH0i1RSecIllrD2%2BIPL1YvkiEa6bgeXj0gfPi61Cm8vmGMN1272F3Yh8bRMMBri2cb5z%2By0mnq03sCaPJ77o6mwG80UGrVzCGw6N%2F5LfTYVTI8B%2B6H7G27UqutxZMUpUuTUDe%2FPFOgDvviG921ZVeX5lnT6uXzK279fb5KCMSzoUwfqNsQndxJFvmgQFA3pesHm1dPqYesZQplctALb1RfxjPkAvAYGqenIKxiEb0dRnvzSBLdLD3lZdg0utB4oaujjCN3YUINfMRhqNrr%2BHBuRquHwUZ61qEXeYnpCKrGsWsrFOoloDqVZFuBw%2BH3PfxmLK%2B0GHnEJuV9mVhJqK%2BdUmXG8uRBDDXa2mtxvm5L0hrEU7gOXv5nZMBYqFVTHbeicSCIOsndKNrGMePKeDCX6ZzSBjqyARVOx35Z4KJPHPY7jtO6djIt3PazUlSX6rfJPyf6EkD9PaLugQHqOzeb%2FK8Shl76FYITdbIIjLkPK64Ex67P36r8ZFI%2BLVEVpZGQTxZXjjKKfgpQ1HIiaKpxmdm5l3pTnT5G%2F039Viwx14xM9H2mRy7pEPgrQi0M6JSFUCJs5ZwBhXraLikg32Gxk1EmZBrqxbeuNmX28q51yj0b%2BFZsEuz4yI2MKm%2F4jQ03avmRFzTrzeQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ab031c965c48f1e2d4bee44f22463a533b639280f97b1744a6485ed468b0a0c7",
+      "file_size": 7386,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 4637642,
+      "file_name": "asan_crash_log_curl_8.14.0-Arbitrary-READ.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/nch5z64vxkqf6qtvghpaqj9iqk72?response-content-disposition=attachment%3B%20filename%3D%22asan_crash_log_curl_8.14.0-Arbitrary-READ.log%22%3B%20filename%2A%3DUTF-8%27%27asan_crash_log_curl_8.14.0-Arbitrary-READ.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSO6E42NB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042850Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIFFxyQJ0YM9NRXKi34cAoZylOoir%2Fd1epI2OPnbU3ZUjAiBF2alHP%2BbdBbbs%2BxcjYAKsnuPnlwABPpEzs9NvEWNUUSqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMVY3wXoPhWN3uin2yKo8Fl60qDHHWL00R8vcKvI3m3gjaPTMCJuqXnpAa1T0%2FzOgo3w5bdEEL2zGnZRv3BycCV7c8MFsNEiPDw6HIUF1%2BhrbWfaidkP1VfgMwEysFT6xUednSG8gB4bpkUIxHZMPR0bF2qrTmYRukoTWyIz0i8GH0v%2FuIj%2FX7PPNqLPZUIXCQxqugbpx%2FPO9ef2s6AvXTymtEeCjDYBPdsx6uwelUmJPiEIlaPDgcoKipEEko5G2UtKwlHaGvSibjPQum9tQ38uM9kJ%2F6K%2BtOv5SyiXL0Jw45IfzG6RfTC%2BQj%2FqP76z9NBCeixgfpHiFdWx5duRPgaFh%2FDZ2K4RFBzvRBQvbv4l4g%2FICe8vI6fQQue6BTeIfOL5pwpJ9OH%2FB9ZnT4qet8pQbj9F5mniUDOvZw9EIgbcLyCvxUpQSkRI0Yxia87X9Gr%2FBcwE43%2B8v8PKU07ukOqVMqrr%2B%2Fx0GkYabMgoMlu3sH0i1RSecIllrD2%2BIPL1YvkiEa6bgeXj0gfPi61Cm8vmGMN1272F3Yh8bRMMBri2cb5z%2By0mnq03sCaPJ77o6mwG80UGrVzCGw6N%2F5LfTYVTI8B%2B6H7G27UqutxZMUpUuTUDe%2FPFOgDvviG921ZVeX5lnT6uXzK279fb5KCMSzoUwfqNsQndxJFvmgQFA3pesHm1dPqYesZQplctALb1RfxjPkAvAYGqenIKxiEb0dRnvzSBLdLD3lZdg0utB4oaujjCN3YUINfMRhqNrr%2BHBuRquHwUZ61qEXeYnpCKrGsWsrFOoloDqVZFuBw%2BH3PfxmLK%2B0GHnEJuV9mVhJqK%2BdUmXG8uRBDDXa2mtxvm5L0hrEU7gOXv5nZMBYqFVTHbeicSCIOsndKNrGMePKeDCX6ZzSBjqyARVOx35Z4KJPHPY7jtO6djIt3PazUlSX6rfJPyf6EkD9PaLugQHqOzeb%2FK8Shl76FYITdbIIjLkPK64Ex67P36r8ZFI%2BLVEVpZGQTxZXjjKKfgpQ1HIiaKpxmdm5l3pTnT5G%2F039Viwx14xM9H2mRy7pEPgrQi0M6JSFUCJs5ZwBhXraLikg32Gxk1EmZBrqxbeuNmX28q51yj0b%2BFZsEuz4yI2MKm%2F4jQ03avmRFzTrzeQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=33ae893e129ecab27eba1502444ae1651d41957bc10c97c87bdc3e85cee5bcc2",
+      "file_size": 7347,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 4637643,
+      "file_name": "asan_crash_log_curl_8.14.0-Arbitrary-WRITE.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/4a8mfb8kr2ju62k0kc4zb68g3nhv?response-content-disposition=attachment%3B%20filename%3D%22asan_crash_log_curl_8.14.0-Arbitrary-WRITE.log%22%3B%20filename%2A%3DUTF-8%27%27asan_crash_log_curl_8.14.0-Arbitrary-WRITE.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSO6E42NB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042850Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIFFxyQJ0YM9NRXKi34cAoZylOoir%2Fd1epI2OPnbU3ZUjAiBF2alHP%2BbdBbbs%2BxcjYAKsnuPnlwABPpEzs9NvEWNUUSqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMVY3wXoPhWN3uin2yKo8Fl60qDHHWL00R8vcKvI3m3gjaPTMCJuqXnpAa1T0%2FzOgo3w5bdEEL2zGnZRv3BycCV7c8MFsNEiPDw6HIUF1%2BhrbWfaidkP1VfgMwEysFT6xUednSG8gB4bpkUIxHZMPR0bF2qrTmYRukoTWyIz0i8GH0v%2FuIj%2FX7PPNqLPZUIXCQxqugbpx%2FPO9ef2s6AvXTymtEeCjDYBPdsx6uwelUmJPiEIlaPDgcoKipEEko5G2UtKwlHaGvSibjPQum9tQ38uM9kJ%2F6K%2BtOv5SyiXL0Jw45IfzG6RfTC%2BQj%2FqP76z9NBCeixgfpHiFdWx5duRPgaFh%2FDZ2K4RFBzvRBQvbv4l4g%2FICe8vI6fQQue6BTeIfOL5pwpJ9OH%2FB9ZnT4qet8pQbj9F5mniUDOvZw9EIgbcLyCvxUpQSkRI0Yxia87X9Gr%2FBcwE43%2B8v8PKU07ukOqVMqrr%2B%2Fx0GkYabMgoMlu3sH0i1RSecIllrD2%2BIPL1YvkiEa6bgeXj0gfPi61Cm8vmGMN1272F3Yh8bRMMBri2cb5z%2By0mnq03sCaPJ77o6mwG80UGrVzCGw6N%2F5LfTYVTI8B%2B6H7G27UqutxZMUpUuTUDe%2FPFOgDvviG921ZVeX5lnT6uXzK279fb5KCMSzoUwfqNsQndxJFvmgQFA3pesHm1dPqYesZQplctALb1RfxjPkAvAYGqenIKxiEb0dRnvzSBLdLD3lZdg0utB4oaujjCN3YUINfMRhqNrr%2BHBuRquHwUZ61qEXeYnpCKrGsWsrFOoloDqVZFuBw%2BH3PfxmLK%2B0GHnEJuV9mVhJqK%2BdUmXG8uRBDDXa2mtxvm5L0hrEU7gOXv5nZMBYqFVTHbeicSCIOsndKNrGMePKeDCX6ZzSBjqyARVOx35Z4KJPHPY7jtO6djIt3PazUlSX6rfJPyf6EkD9PaLugQHqOzeb%2FK8Shl76FYITdbIIjLkPK64Ex67P36r8ZFI%2BLVEVpZGQTxZXjjKKfgpQ1HIiaKpxmdm5l3pTnT5G%2F039Viwx14xM9H2mRy7pEPgrQi0M6JSFUCJs5ZwBhXraLikg32Gxk1EmZBrqxbeuNmX28q51yj0b%2BFZsEuz4yI2MKm%2F4jQ03avmRFzTrzeQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=1247d544b23a99bc3344c2198f16f861c4227b4505d26b062a8a57b6cbb74b19",
+      "file_size": 7387,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 4637644,
+      "file_name": "asan_crash_log_curl_8.15.0-Arbitrary-WRITE.log",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bq2elx3orjroltab3l2ykgsxfao7?response-content-disposition=attachment%3B%20filename%3D%22asan_crash_log_curl_8.15.0-Arbitrary-WRITE.log%22%3B%20filename%2A%3DUTF-8%27%27asan_crash_log_curl_8.15.0-Arbitrary-WRITE.log&response-content-type=text%2Fx-log&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSO6E42NB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042850Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIFFxyQJ0YM9NRXKi34cAoZylOoir%2Fd1epI2OPnbU3ZUjAiBF2alHP%2BbdBbbs%2BxcjYAKsnuPnlwABPpEzs9NvEWNUUSqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMVY3wXoPhWN3uin2yKo8Fl60qDHHWL00R8vcKvI3m3gjaPTMCJuqXnpAa1T0%2FzOgo3w5bdEEL2zGnZRv3BycCV7c8MFsNEiPDw6HIUF1%2BhrbWfaidkP1VfgMwEysFT6xUednSG8gB4bpkUIxHZMPR0bF2qrTmYRukoTWyIz0i8GH0v%2FuIj%2FX7PPNqLPZUIXCQxqugbpx%2FPO9ef2s6AvXTymtEeCjDYBPdsx6uwelUmJPiEIlaPDgcoKipEEko5G2UtKwlHaGvSibjPQum9tQ38uM9kJ%2F6K%2BtOv5SyiXL0Jw45IfzG6RfTC%2BQj%2FqP76z9NBCeixgfpHiFdWx5duRPgaFh%2FDZ2K4RFBzvRBQvbv4l4g%2FICe8vI6fQQue6BTeIfOL5pwpJ9OH%2FB9ZnT4qet8pQbj9F5mniUDOvZw9EIgbcLyCvxUpQSkRI0Yxia87X9Gr%2FBcwE43%2B8v8PKU07ukOqVMqrr%2B%2Fx0GkYabMgoMlu3sH0i1RSecIllrD2%2BIPL1YvkiEa6bgeXj0gfPi61Cm8vmGMN1272F3Yh8bRMMBri2cb5z%2By0mnq03sCaPJ77o6mwG80UGrVzCGw6N%2F5LfTYVTI8B%2B6H7G27UqutxZMUpUuTUDe%2FPFOgDvviG921ZVeX5lnT6uXzK279fb5KCMSzoUwfqNsQndxJFvmgQFA3pesHm1dPqYesZQplctALb1RfxjPkAvAYGqenIKxiEb0dRnvzSBLdLD3lZdg0utB4oaujjCN3YUINfMRhqNrr%2BHBuRquHwUZ61qEXeYnpCKrGsWsrFOoloDqVZFuBw%2BH3PfxmLK%2B0GHnEJuV9mVhJqK%2BdUmXG8uRBDDXa2mtxvm5L0hrEU7gOXv5nZMBYqFVTHbeicSCIOsndKNrGMePKeDCX6ZzSBjqyARVOx35Z4KJPHPY7jtO6djIt3PazUlSX6rfJPyf6EkD9PaLugQHqOzeb%2FK8Shl76FYITdbIIjLkPK64Ex67P36r8ZFI%2BLVEVpZGQTxZXjjKKfgpQ1HIiaKpxmdm5l3pTnT5G%2F039Viwx14xM9H2mRy7pEPgrQi0M6JSFUCJs5ZwBhXraLikg32Gxk1EmZBrqxbeuNmX28q51yj0b%2BFZsEuz4yI2MKm%2F4jQ03avmRFzTrzeQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=151d6c90f8da64e04caaa46bbd48ac15c27ad1109aa33ad4a72f78f41d4158da",
+      "file_size": 7518,
+      "type": "text/x-log",
+      "moderated": null
+    },
+    {
+      "id": 4637660,
+      "file_name": "bug_svg.png",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/bl9zn9hw6frbbku073mwfugtfm8l?response-content-disposition=attachment%3B%20filename%3D%22bug_svg.png%22%3B%20filename%2A%3DUTF-8%27%27bug_svg.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQSO6E42NB%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T042850Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEDwaCXVzLXdlc3QtMiJGMEQCIFFxyQJ0YM9NRXKi34cAoZylOoir%2Fd1epI2OPnbU3ZUjAiBF2alHP%2BbdBbbs%2BxcjYAKsnuPnlwABPpEzs9NvEWNUUSqyBQgFEAMaDDAxMzYxOTI3NDg0OSIMVY3wXoPhWN3uin2yKo8Fl60qDHHWL00R8vcKvI3m3gjaPTMCJuqXnpAa1T0%2FzOgo3w5bdEEL2zGnZRv3BycCV7c8MFsNEiPDw6HIUF1%2BhrbWfaidkP1VfgMwEysFT6xUednSG8gB4bpkUIxHZMPR0bF2qrTmYRukoTWyIz0i8GH0v%2FuIj%2FX7PPNqLPZUIXCQxqugbpx%2FPO9ef2s6AvXTymtEeCjDYBPdsx6uwelUmJPiEIlaPDgcoKipEEko5G2UtKwlHaGvSibjPQum9tQ38uM9kJ%2F6K%2BtOv5SyiXL0Jw45IfzG6RfTC%2BQj%2FqP76z9NBCeixgfpHiFdWx5duRPgaFh%2FDZ2K4RFBzvRBQvbv4l4g%2FICe8vI6fQQue6BTeIfOL5pwpJ9OH%2FB9ZnT4qet8pQbj9F5mniUDOvZw9EIgbcLyCvxUpQSkRI0Yxia87X9Gr%2FBcwE43%2B8v8PKU07ukOqVMqrr%2B%2Fx0GkYabMgoMlu3sH0i1RSecIllrD2%2BIPL1YvkiEa6bgeXj0gfPi61Cm8vmGMN1272F3Yh8bRMMBri2cb5z%2By0mnq03sCaPJ77o6mwG80UGrVzCGw6N%2F5LfTYVTI8B%2B6H7G27UqutxZMUpUuTUDe%2FPFOgDvviG921ZVeX5lnT6uXzK279fb5KCMSzoUwfqNsQndxJFvmgQFA3pesHm1dPqYesZQplctALb1RfxjPkAvAYGqenIKxiEb0dRnvzSBLdLD3lZdg0utB4oaujjCN3YUINfMRhqNrr%2BHBuRquHwUZ61qEXeYnpCKrGsWsrFOoloDqVZFuBw%2BH3PfxmLK%2B0GHnEJuV9mVhJqK%2BdUmXG8uRBDDXa2mtxvm5L0hrEU7gOXv5nZMBYqFVTHbeicSCIOsndKNrGMePKeDCX6ZzSBjqyARVOx35Z4KJPHPY7jtO6djIt3PazUlSX6rfJPyf6EkD9PaLugQHqOzeb%2FK8Shl76FYITdbIIjLkPK64Ex67P36r8ZFI%2BLVEVpZGQTxZXjjKKfgpQ1HIiaKpxmdm5l3pTnT5G%2F039Viwx14xM9H2mRy7pEPgrQi0M6JSFUCJs5ZwBhXraLikg32Gxk1EmZBrqxbeuNmX28q51yj0b%2BFZsEuz4yI2MKm%2F4jQ03avmRFzTrzeQ%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=f4749373771c644271f0eec7fd6cfac9303003f2f6ed89186660b2f750c8b6b8",
+      "file_size": 56529,
+      "type": "image/png",
+      "moderated": false
+    }
+  ],
+  "allow_singular_disclosure_at": null,
+  "vote_count": 30,
+  "voters": [
+    "thalaivar304",
+    "2026",
+    "lonely_cat",
+    "iide9x",
+    "sniperl96",
+    "gaurav_7777",
+    "johnnywatters",
+    "kawinduwijewardhane",
+    "rivex_team",
+    "0xs3iif",
+    "and 20 more..."
+  ],
+  "structured_scope": {
+    "databaseId": 18844,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/curl/curl",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "3283232",
+  "votes": 30,
+  "latest_disclosable_activity_at": "2025-08-06T15:34:21.900Z",
+  "severity": null,
+  "_metadata": {
+    "saved_at": "2026-07-03T12:28:50.329286",
+    "source": "https://hackerone.com/reports/3283232.json",
+    "report_id": 3283232
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjgzMjMy",
+    "databaseId": "3283232",
+    "title": "Use After Free (that leads to arbitrary Write for some versions) ",
+    "url": "https://hackerone.com/reports/3283232",
+    "state": null,
+    "substate": "informative",
+    "disclosed_at": "2025-08-06T15:34:22.164Z",
+    "created_at": "2025-08-02T16:30:30.343Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzUw",
+      "name": "Use After Free",
+      "external_id": "cwe-416"
+    },
+    "severity": null,
+    "reporter": {
+      "username": "letshack9707"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzMyODMyMzI=",
+    "_id": "3283232",
+    "disclosed": true,
+    "votes": 30,
+    "latest_disclosable_activity_at": "2025-08-06T15:34:21.900Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8zMjgzMjMy",
+      "databaseId": "3283232",
+      "title": "Use After Free (that leads to arbitrary Write for some versions) ",
+      "url": "https://hackerone.com/reports/3283232",
+      "disclosed_at": "2025-08-06T15:34:22.164Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzM1NjYz",
+      "handle": "curl",
+      "name": "curl",
+      "url": "https://hackerone.com/curl",
+      "currency": "usd"
+    }
+  }
+}

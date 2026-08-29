@@ -1,0 +1,239 @@
+{
+  "id": 712979,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MTI5Nzk=",
+  "url": "https://hackerone.com/reports/712979",
+  "title": "Creating malformed URLs via new line character in-between two URLs leads to misrepresented hyperlinks in Tweets/DMs",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "low",
+  "readable_substate": "Resolved",
+  "created_at": "2019-10-12T22:37:45.876Z",
+  "submitted_at": "2019-10-12T22:37:45.876Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "zlz",
+    "url": "/zlz",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/vguW8buhDGXNqiNQRoHZFHsN/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 61,
+    "url": "https://hackerone.com/x",
+    "handle": "x",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/ikx4ept298unt534kpz4am2bd4zs/72249f83db42955adfcb43c5cad84162ec49002aa21a79c3606f682c8e48f4e6",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/ikx4ept298unt534kpz4am2bd4zs/1d3351b56b27c9bb56ce22821a57514a7210186a77aefb760cd2113272723c1f"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "X / xAI",
+      "twitter_handle": "XSecurity",
+      "website": "https://x.com",
+      "about": "X helps you create and share ideas and information instantly, without barriers."
+    }
+  },
+  "has_bounty?": true,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [],
+  "singular_disclosure_disabled": true,
+  "disclosed_at": "2020-01-24T22:02:45.331Z",
+  "bug_reporter_agreed_on_going_public_at": "2020-01-10T21:26:26.795Z",
+  "team_member_agreed_on_going_public_at": "2020-01-24T22:02:45.262Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "## Summary\nWhen composing a tweet or a direct message it is possible to use a new line character (`%0d`) to seperate two URLs within the actual hyperlinking process, but not the URL displaying process. The new line character acts as an invisible character that disrupts the actual hyperlinking process, whereas when previewed does not show up. This allows an attacker to create realistic looking phishing URLs via combining `attacker.com` + `%0d` + `website.com`. If an attacker controlled both `itter.com` and `fakewebsite.tw` in the below request, they could trick victim's into browsing to, what they think would be, `fakewebsite.twitter.com`.\n\n```\nfakewebsite.tw + %0d + itter.com\n```\n\nThese two URLs, when put together and displayed, would look like the following on a tweet or a direct message:\n\n{F606210}\n\nBut, after being actually clicked, would take you to the following URLs:\n\n{F606211}\n* [https://fakewebsite.tw](https://fakewebsite.tw)\n\n{F606212}\n* [https://itter.com](https://itter.com)\n\nThis is also possible to do in direct messages, as so...\n\n{F606213}\n\n## Description\nI don't think this falls under any real classification of issues other than \"CRLF injection\", but even then, it's definitely not the right category. This is simply abusing Twitter's URL composing process to create fake hyperlinks. Overall I think this is a neat issue that I think would definitely be exploited by bad actors.\n\n## Steps To Reproduce:\n\n1.) Open either (1) direct messages, or (2) composing a tweet\n2.) Type out `fakewebsite.twitter.com`, click enter, and intercept the request with Burp Suite\n3.) Modify the `status` or `text` parameter (depending on if you're tweeting or DMing) to be `fakewebsite.tw%0ditter.com` like so...\n\n```\nPOST /1.1/dm/new.json HTTP/1.1\nHost: api.twitter.com\n\ntext=fakewebsite.tw%0ditter.com&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&conversation_id=██████&recipient_ids=false&request_id=&ext=mediaColor,altText,mediaStats,highlightedLabel,cameraMoment\n```\n\n4.) Observe the URL is displayed as `fakewebsite.twitter.com` but is actually a hyperlink to both `fakewebsite.tw` and `itter.com`.\n\n## Impact\n\nThis could be exploited as a targeted attack or mass phishing attack towards Twitter (the ongoing cryptocurrency scams) by abusing the integrity of Twitter's URL rendering service to create legitimate looking URLs. Although Twitter cannot control the content that is displayed on the other URL, it is possible to control the way URLs are displayed before presenting them to the user.",
+  "weakness": {
+    "id": 69,
+    "name": "CRLF Injection"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 606208,
+      "file_name": "google_twitter_com.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/dJLbX381BoQ1gi6uAM7zDPBU?response-content-disposition=attachment%3B%20filename%3D%22google_twitter_com.PNG%22%3B%20filename%2A%3DUTF-8%27%27google_twitter_com.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051543Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=ac0054e32c68194c2d05a193a6dd01466b30416eff8d9e009ecc60e20e6f22c6",
+      "file_size": 15290,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 606210,
+      "file_name": "fakewebsite_google.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/3Mt4YV5UWaZnBP1dsGpFhyCf?response-content-disposition=attachment%3B%20filename%3D%22fakewebsite_google.PNG%22%3B%20filename%2A%3DUTF-8%27%27fakewebsite_google.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051543Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=9731e661a7ee74cf30403697c0cac7e99b47057bfe13015a8a56e5da36662012",
+      "file_size": 16112,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 606211,
+      "file_name": "fakewebsite_1.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/odPwSQt3XraW7phwVG3bnAu8?response-content-disposition=attachment%3B%20filename%3D%22fakewebsite_1.PNG%22%3B%20filename%2A%3DUTF-8%27%27fakewebsite_1.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051543Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e015f7e886535382b9cd51a804e2c9f1b96aa4a5b1ce42f47291171129d50a92",
+      "file_size": 13373,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 606212,
+      "file_name": "fakewebsite_2.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/9rKWXVxFft6M9NxVi85dUjNf?response-content-disposition=attachment%3B%20filename%3D%22fakewebsite_2.PNG%22%3B%20filename%2A%3DUTF-8%27%27fakewebsite_2.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051543Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=d97568b7521d027459df6476a77d91fddba5f41d65785f70ee17ffdb8cc406bb",
+      "file_size": 11555,
+      "type": "image/png",
+      "moderated": null
+    },
+    {
+      "id": 606213,
+      "file_name": "fakewebsite_tw.PNG",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/TgXGzJbbs2MYpqEBHYYhWEU7?response-content-disposition=attachment%3B%20filename%3D%22fakewebsite_tw.PNG%22%3B%20filename%2A%3DUTF-8%27%27fakewebsite_tw.PNG&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ6GV5B44G%2F20260708%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260708T051543Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLXdlc3QtMiJHMEUCIEzS910Pk5MSbM25u4%2BcgL4NEZXyUptfPrsyFpoBcqWKAiEAvdZmggq98aW5IsYFmg5CT%2FdS%2BW7T11k4XOORMhtB%2B%2FYqsQUIfhADGgwwMTM2MTkyNzQ4NDkiDG7XhSxHEcQHk9y3ByqOBS8Eneccwnym%2FrvhTYZriMVmSY7WmV0bPO5%2B2TbjOrpT5uihndhYPo6R1g3I8u2bfbnrPyjaRELi7fgzZjHJJUCl2Q7As%2FA21%2BnMYyHgXs35Qd%2FXOsCrT5jOiAVrsfFkD0cl%2BR7EexUtYAB6RBIf5JWhaUuhJ2qDD3KAkHqqpEmJrz4yNL31h9sGBZg86LKXVj2RDX0xM7C12abXwy9o8ns3Ji001Zbn%2B9aDBRY0lnYd40iw7IOUT6gm7BJm2Idls0QgK1DqF2wIVjbNBwVr1FNT1Aw7yWrieN9HS%2BbNZfX%2FKQ5ZGAwOzOyjJFPE1bqKDQTiVN4OndolYZ5FxAIGYdn47F6LD0JwWkzZSY4KbaEjUwIgy73XCNG2JTvK8O4u0HkjXaHT2RTJxTLX8fWxT6lVhXYSUe5j%2FwnItLPXTLf%2F8AU1y8C3Z5aD5k%2FgB%2BGtr4BsfWmArEiw%2FAh8dsD11uPBH1cYJ4wSx3qku5zE7EjrVJWwMWO1qsHeLmKrIjvOThzMT5Rc%2FtcOEstRWyjGfiD2ob7GMmsRt%2B5DYxAeN3Oo72COZ3TnramhKDR1chZ9a15W49AH0Umk87UgY4geTbFaiHyMD2VjJSJphdHhjmPy2%2FM1UJQq7%2BEfAx5VcyHH7KETXqbYuSMEaFZG9B1koTmze7%2BKW%2BZSNFuHXLzwADf8ivmPTqoP1DD0XKRkBYLBrYyV1atOKmZm8NQ%2FiyB6j3ACapBpqhfzlw5zE0ATxnJsOyqU%2BRrAWBB1Mpc6Rba9zY9K%2BeE9%2FWFcrs9TciU9UT1e0Fm3zdkdXQzo%2Fdchs0DmeGdKifrLihkghh%2FUiXpBnCoJA51h03yqoQRPdXDVwQVcrDSOiW9YJA5h1lfJLTDzrbfSBjqxAfGLFz64r2jtOIddBP9cmlhhw4nZ1tm0howAf%2FzXPMaWPpqmYzk7fYgxP5WCMq1pPyfm4VD5v1IJTt%2FJdn6R1yEBmq%2FebtlcUFzp2NN09R6T4IMvGONR8kcZhXZQ6Egf6m8vXZcPBLMDwAcdmOdtAKD%2FnHFx%2FEsbwX7X71MLW81NCKIP%2FkH3L%2BZG5EU4enjnOGnX6cnNp5CR%2F%2F9rnxbnY9rvWwYxst0ueBu%2FwGcgiTn2yQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=e8fc098877426fdc94184d1e4ae7b744bd26a677804c25428cfa678866892915",
+      "file_size": 5842,
+      "type": "image/png",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2020-02-09T21:26:26.872Z",
+  "allow_singular_disclosure_after": -202204156.77865797,
+  "singular_disclosure_allowed": true,
+  "vote_count": 96,
+  "voters": [
+    "secseth",
+    "orange303",
+    "drsniper",
+    "thaivu",
+    "cdl",
+    "foobar7",
+    "zonduu",
+    "base_64",
+    "securitychops",
+    "grumpinout",
+    "and 86 more..."
+  ],
+  "severity": {
+    "rating": "low",
+    "author_type": "User"
+  },
+  "structured_scope": {
+    "databaseId": 1062,
+    "asset_type": "WILDCARD",
+    "asset_identifier": "*.twitter.com",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "712979",
+  "votes": 96,
+  "latest_disclosable_activity_at": "2020-01-24T22:02:45.347Z",
+  "_metadata": {
+    "saved_at": "2026-07-08T13:15:43.773962",
+    "source": "https://hackerone.com/reports/712979.json",
+    "report_id": 712979
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MTI5Nzk=",
+    "databaseId": "712979",
+    "title": "Creating malformed URLs via new line character in-between two URLs leads to misrepresented hyperlinks in Tweets/DMs",
+    "url": "https://hackerone.com/reports/712979",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2020-01-24T22:02:45.331Z",
+    "created_at": "2019-10-12T22:37:45.876Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzY5",
+      "name": "CRLF Injection",
+      "external_id": "cwe-93"
+    },
+    "severity": {
+      "rating": "low",
+      "score": null
+    },
+    "reporter": {
+      "username": "zlz"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYx",
+      "handle": "x",
+      "name": "X / xAI",
+      "url": "https://hackerone.com/x",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": [
+        {
+          "node": {
+            "id": "Z2lkOi8vaGFja2Vyb25lL0JvdW50eS8xNjc3MDU=",
+            "amount": "0.00",
+            "awarded_amount": "0.00",
+            "awarded_bonus_amount": "0.00",
+            "created_at": "2019-10-31T23:21:58.246Z"
+          }
+        }
+      ]
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzcxMjk3OQ==",
+    "_id": "712979",
+    "disclosed": true,
+    "votes": 96,
+    "latest_disclosable_activity_at": "2020-01-24T22:02:45.347Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC83MTI5Nzk=",
+      "databaseId": "712979",
+      "title": "Creating malformed URLs via new line character in-between two URLs leads to misrepresented hyperlinks in Tweets/DMs",
+      "url": "https://hackerone.com/reports/712979",
+      "disclosed_at": "2020-01-24T22:02:45.331Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzYx",
+      "handle": "x",
+      "name": "X / xAI",
+      "url": "https://hackerone.com/x",
+      "currency": "usd"
+    }
+  }
+}

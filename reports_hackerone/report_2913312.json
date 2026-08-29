@@ -1,0 +1,210 @@
+{
+  "id": 2913312,
+  "global_id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTEzMzEy",
+  "url": "https://hackerone.com/reports/2913312",
+  "title": "Usage of unsafe random function in undici for choosing boundary",
+  "state": "Closed",
+  "substate": "resolved",
+  "severity_rating": "medium",
+  "readable_substate": "Resolved",
+  "created_at": "2024-12-24T10:43:44.172Z",
+  "submitted_at": "2024-12-24T10:43:44.475Z",
+  "is_member_of_team?": false,
+  "is_organization_group_member?": false,
+  "is_triager?": false,
+  "reporter": {
+    "disabled": false,
+    "username": "parrot409",
+    "url": "/parrot409",
+    "profile_picture_urls": {
+      "small": "/assets/avatars/default-14ffa99f59cd01423c64904352cc130ffcb6a802eadfd11777a54485749e60f2.png"
+    },
+    "is_me?": false,
+    "cleared": false,
+    "verified": false,
+    "hackerone_triager": false,
+    "hacker_mediation": false
+  },
+  "team": {
+    "id": 22984,
+    "url": "https://hackerone.com/nodejs",
+    "handle": "nodejs",
+    "profile_picture_urls": {
+      "small": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/b8e19a7691128fca51630d7f5b14644b91b3b45324f6fd488e36244d744fe35b",
+      "medium": "https://profile-photos.hackerone-user-content.com/variants/000/022/984/e600648ace4a8553247bce967d461a030aa81d49_original.png/89f037b490baf3dcca1b84283f4c85141b64c213252a9c79b56c62bf903ab542"
+    },
+    "permissions": [],
+    "submission_state": "open",
+    "default_currency": "usd",
+    "awards_miles": false,
+    "offers_bounties": true,
+    "state": "public_mode",
+    "only_cleared_hackers": false,
+    "pentest_feature_enabled?": false,
+    "pentest_retesting_ends_at": null,
+    "profile": {
+      "name": "Node.js",
+      "twitter_handle": "nodejs",
+      "website": "https://nodejs.org",
+      "about": "The Node.js JavaScript Runtime"
+    }
+  },
+  "has_bounty?": false,
+  "can_view_team": true,
+  "can_view_report": true,
+  "is_external_bug": false,
+  "is_published": false,
+  "is_participant": false,
+  "has_collaborators": false,
+  "submitted_by_team_member": false,
+  "submitted_with_assistant": false,
+  "stage": 4,
+  "public": true,
+  "visibility": "full",
+  "cve_ids": [
+    "CVE-2025-22150"
+  ],
+  "singular_disclosure_disabled": false,
+  "disclosed_at": "2025-01-23T13:43:08.671Z",
+  "bug_reporter_agreed_on_going_public_at": "2025-01-23T13:43:08.508Z",
+  "team_member_agreed_on_going_public_at": "2025-01-21T18:03:25.382Z",
+  "comments_closed?": false,
+  "facebook_team?": false,
+  "team_private?": false,
+  "vulnerability_information": "**Summary:** \n[Undici uses Math.random()](https://github.com/nodejs/undici/blob/8b06b8250907d92fead664b3368f1d2aa27c1f35/lib/web/fetch/body.js#L113) to choose the boundary for a `multipart/form-data` request. It is known that the output of `Math.random()` can be predicted if several of its generated values are known.\n\n**Description:** \nIf an attacker can access a few generated values of `Math.random()` and has control over one of the fields of a multipart request, they can add or overwrite fields that are not meant to be controllable.\n\nIf there is a mechanism in an app that sends multipart requests to an attacker-controlled website, they can use this to leak the necessary values.\n\nHere is an example app that is vulnerable to this bug.\n```javascript\n#!/usr/bin/env node\nconst express = require('express')\n\nconst BACKEND_API = 'http://localhost:2000/order.php'\n\nconst app = express()\n\napp.use(express.urlencoded({ extended: false }))\n\napp.get('/trigger-webhook',(req,res)=>{\n\tlet url = req.query.url\n\tlet data = new FormData()\n\tdata.append('event','example-event')\n\tfetch(url,{\n\t\tbody: data,\n\t\tmethod: 'POST'\n\t})\n\tres.send('OK')\n})\n\napp.post('/order',(req,res)=>{\n\tlet description = req.body.description || 'Please wrap it in Christmas-themed wrapping paper.'\n\tlet data = new FormData()\n\tdata.append('price','4000')\n\tdata.append('customer_id','1')\n\tdata.append('item_id','1')\n\tdata.append('description',description)\n\tfetch(BACKEND_API,{\n\t\tbody: data,\n\t\tmethod: `POST`\n\t}).then(r=>r.text()).then(r=>res.send(r)).catch(r=>res.send('Err'))\n})\n\napp.listen(8000)\n```\n\n`BACKEND_API` points to this php app (`order.php`):\n\n```php\n$<?= $_POST['price'] ?> has been subtracted from the account of customer #<?= $_POST['customer_id'] ?> for item <?= $_POST['item_id'] ?>.\ndescription of order: (\"<?= $_POST['description'] ?>\")\n```\n\n## Steps To Reproduce:\n  1. Extract F3883352.\n  2. In the `server` directory: `npm install; node ./server.js`.\n  3. In the `server` directory: `php -S 127.0.0.1:2000`.\n  4. In the `exp` directory: `pip3 install z3-solver; node ./exp.js`.\n\nA successful exploit looks like this:\n```\n$ node --version\nv22.12.0\n$ node ./server.js \n\n```\n```\n$ node ./exp.js \nNeed 9 more values\nNeed 8 more values\nNeed 7 more values\nNeed 6 more values\nNeed 5 more values\nNeed 4 more values\nNeed 3 more values\nNeed 2 more values\nNeed 1 more values\n$4000 has been subtracted from the account of customer #1337 for item 1.\ndescription of order: (\"zzz\")\n```\n\nThe `customer_id` parameter could be successfully tampered with.\n\n## Impact: \n\nAn attacker can tamper with the requests going to the backend APIs if certain conditions are met.\n\n## Supporting Material/References:\n\n-  `predict.py` is the modified version of https://github.com/PwnFunction/v8-randomness-predictor/tree/main\n- https://blog.securityevaluators.com/hacking-the-javascript-lottery-80cc437e3b7f\n\n## Impact\n\nAn attacker can tamper with the requests going to the backend APIs if certain conditions are met.",
+  "weakness": {
+    "id": 43,
+    "name": "Use of Insufficiently Random Values"
+  },
+  "original_report_id": null,
+  "original_report_url": null,
+  "attachments": [
+    {
+      "id": 3883352,
+      "file_name": "report.tar.xz",
+      "expiring_url": "https://hackerone-us-west-2-production-attachments.s3.us-west-2.amazonaws.com/2i0sfsucc6rebgubrn8b04gc09xg?response-content-disposition=attachment%3B%20filename%3D%22report.tar.xz%22%3B%20filename%2A%3DUTF-8%27%27report.tar.xz&response-content-type=application%2Fx-xz&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQGK6FURQ3RASQ6XY%2F20260703%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260703T043502Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjED0aCXVzLXdlc3QtMiJHMEUCIQDS18M7KSJI%2FauGYju8kX7Na4bleFtlWe5Y3A2iV9%2BMwQIgckvcIr3JsTtWs7wP0myBxDK9JL%2F33OjL%2BIWDRt7t0pEqsQUIBhADGgwwMTM2MTkyNzQ4NDkiDFDHSgKykWp9ydfH1CqOBXcTkLOcL%2FN9Va4Z0gFPBJn00gCqogJ5OhVCItBpRv30bsHzyg53FT1lHCDlVKN1Y9NePV%2Fg0n96mTqQmGbwPjvvGhiyrsSa%2FPfqBGTm6QdNHej3TbLs3rJKMQ4BpBvCNgtZGAX8qFVLtE5GosTXLDWv1bVdAzr16ZkcNb46jvF4Dwk3Mb0hYYRtTIs1OF3wzoMEuXkh4G21H7tHh4eNCGvo63GbP%2FUSnkSPLop70j1Y8MxjUHlyTH5XzGaNa9OKGpzsdlwX%2BXiPixCumu%2Fn4ANRzKVEhq7MGmCg6P6pxv4gG6NBKfGU%2F%2FHrLtrj%2F1XT0t000tS%2Fd0ScfIVpy4FHUhssDrM7bVdnUjpYLdSQ1w6E23GrGX81YakfHudFpdKiRsJMb2ck9YTxlBTb3jTgGip1CVAiiIanrvIQJvlvBodP%2Bl3BxKXLlrjJQXIxKIbdZcghRGoKxxIkBQGOEu6YWBrMimiR64y73bczt9EnjUeqsyJKIjWjsPFF2MpGbsgkmZFNCf92f0nVwlbub1qwRmQQIqZAoZ1tSsYVbdROodGcE2brlRmbiUOZGjc%2FX377hLTIIuDkp1UF4gjJmkx6Etor6LLYCyqPBKt58BhmUS47D1P%2FbM%2FFCcFHxzqLq6XIbIfFbA%2FaBATYq3AAsGS1xb4qMa3oe59NYfQbtclDeKRraP7oTTOa%2BvSGvi1AH6dvL2CTRG7%2BPxL5jDF%2Bh5ZvPnp31e6KwFOjKIGXOB%2BK%2F10u%2FmLryUlXMBl4qp1wa76rZK8FLnlonhpaq8oGX9nFB%2FmoEzzKdLHQzRfnZg38T8GYcdLF4kqFrEpc9FGXaLr29t57Gyr7PXnkyUWa7XTnhA5ReNvNIuhcYTEcAGSjbjCj9pzSBjqxAQUZWRRW5IyVo%2FYvbQNtMfhxyx8B3X4CA8t%2BRH9eJ8N0ce5ACRQajjY2oAHwh3XpCJ2qYeVoYWi8oVF7ydLlKr6%2F4vB3noDSLe9C61VGK5Z7GuwULm47S1VHfIxVFvSvj8V9s7c74Pzq73dlusopiEQE4%2BsPZM0FM36zrTdhjzI0lFcr63%2F%2BtTQb8pU6CS2X5gSDFUqtIEawl%2BLnk1JvaBJcsqU%2FLS9y%2FDFdng3lgzx0TQ%3D%3D&X-Amz-SignedHeaders=host&X-Amz-Signature=de52d36b4c3838f171ba52414f10f83ea059643c6840cd8b12bf17ca98bca4a5",
+      "file_size": 1968,
+      "type": "application/x-xz",
+      "moderated": null
+    }
+  ],
+  "allow_singular_disclosure_at": "2025-02-20T18:03:25.720Z",
+  "allow_singular_disclosure_after": -42978696.599812746,
+  "singular_disclosure_allowed": true,
+  "vote_count": 24,
+  "voters": [
+    "0x800700e1",
+    "zy9ard3",
+    "mohaned0101",
+    "never_die",
+    "odaysec",
+    "2026",
+    "bolabolabola",
+    "i_0x0",
+    "realkalki",
+    "luca88",
+    "and 14 more..."
+  ],
+  "severity": {
+    "rating": "medium",
+    "score": 6.8,
+    "author_type": "Team",
+    "metrics": {
+      "attack_vector": "network",
+      "attack_complexity": "high",
+      "privileges_required": "none",
+      "user_interaction": "required",
+      "scope": "unchanged",
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none"
+    }
+  },
+  "structured_scope": {
+    "databaseId": 666,
+    "asset_type": "SOURCE_CODE",
+    "asset_identifier": "https://github.com/nodejs/node",
+    "max_severity": "critical"
+  },
+  "abilities": {
+    "assignable_team_members": [],
+    "assignable_team_member_groups": []
+  },
+  "is_exploit_agent_supported?": false,
+  "is_linear_agent_ui_supported?": false,
+  "summaries": [
+    {
+      "category": "team",
+      "can_view?": true,
+      "can_create?": false
+    },
+    {
+      "category": "researcher",
+      "can_view?": true,
+      "can_create?": false
+    }
+  ],
+  "databaseId": "2913312",
+  "votes": 23,
+  "latest_disclosable_activity_at": "2025-01-23T13:43:08.904Z",
+  "_metadata": {
+    "saved_at": "2026-07-03T12:35:02.443146",
+    "source": "https://hackerone.com/reports/2913312.json",
+    "report_id": 2913312
+  },
+  "_graphql_detail": {
+    "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTEzMzEy",
+    "databaseId": "2913312",
+    "title": "Usage of unsafe random function in undici for choosing boundary",
+    "url": "https://hackerone.com/reports/2913312",
+    "state": null,
+    "substate": "resolved",
+    "disclosed_at": "2025-01-23T13:43:08.671Z",
+    "created_at": "2024-12-24T10:43:44.172Z",
+    "submitted_at": null,
+    "weakness": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1dlYWtuZXNzLzQz",
+      "name": "Use of Insufficiently Random Values",
+      "external_id": "cwe-330"
+    },
+    "severity": {
+      "rating": "medium",
+      "score": 6.8
+    },
+    "reporter": {
+      "username": "parrot409"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    },
+    "bounties": {
+      "edges": []
+    }
+  },
+  "_hacktivity": {
+    "__typename": "HacktivityDocument",
+    "id": "Z2lkOi8vaGFja2Vyb25lL0NvbXBsZXRlSGFja3Rpdml0eVJlcG9ydEluZGV4LzI5MTMzMTI=",
+    "_id": "2913312",
+    "disclosed": true,
+    "votes": 23,
+    "latest_disclosable_activity_at": "2025-01-23T13:43:08.904Z",
+    "report": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL1JlcG9ydC8yOTEzMzEy",
+      "databaseId": "2913312",
+      "title": "Usage of unsafe random function in undici for choosing boundary",
+      "url": "https://hackerone.com/reports/2913312",
+      "disclosed_at": "2025-01-23T13:43:08.671Z"
+    },
+    "team": {
+      "id": "Z2lkOi8vaGFja2Vyb25lL0VuZ2FnZW1lbnRzOjpCdWdCb3VudHlQcm9ncmFtLzIyOTg0",
+      "handle": "nodejs",
+      "name": "Node.js",
+      "url": "https://hackerone.com/nodejs",
+      "currency": "usd"
+    }
+  }
+}
